@@ -1,6 +1,13 @@
-# Requirements
+---
+name: requirements
+description: Elicit and structure raw customer needs. Output to sdlc/01-REQUIREMENTS.md
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Elicit and structure raw customer needs. Output to sdlc/01-REQUIREMENTS.md
+# Requirements
 
 ## Execution Prompt
 1. Adopt the @WRITER persona.

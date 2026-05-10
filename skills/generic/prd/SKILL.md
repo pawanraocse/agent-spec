@@ -1,6 +1,13 @@
-# Prd
+---
+name: prd
+description: Generate Product Requirements Document with MoSCoW and Validation. Output to sdlc/03-PRD.md
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Generate Product Requirements Document with MoSCoW and Validation. Output to sdlc/03-PRD.md
+# Prd
 
 ## Execution Prompt
 1. Adopt the @WRITER persona.

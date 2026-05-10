@@ -1,6 +1,13 @@
-# Index-project
+---
+name: index-project
+description: Run Graphify to build or update the KNOWLEDGE-GRAPH.md
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Run Graphify to build or update the KNOWLEDGE-GRAPH.md
+# Index-project
 
 ## Execution Prompt
 1. Run the `bin/agent-spec-index.sh` script.

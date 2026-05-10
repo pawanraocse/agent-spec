@@ -1,6 +1,13 @@
-# Snapshot
+---
+name: snapshot
+description: Generate SESSION-SNAPSHOT.md to save current state.
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Generate SESSION-SNAPSHOT.md to save current state.
+# Snapshot
 
 ## Execution Prompt
 1. Review the chat history for the current session.

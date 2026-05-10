@@ -1,6 +1,13 @@
-# Review
+---
+name: review
+description: Deep skeptical code review.
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Deep skeptical code review.
+# Review
 
 ## Execution Prompt
 1. Adopt the @REVIEWER persona.

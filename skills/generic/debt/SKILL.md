@@ -1,6 +1,13 @@
-# Debt
+---
+name: debt
+description: Analyze code and log technical debt.
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Analyze code and log technical debt.
+# Debt
 
 ## Execution Prompt
 1. Adopt the @REFACTOR persona.

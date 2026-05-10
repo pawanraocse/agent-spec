@@ -1,6 +1,13 @@
-# Solid-check
+---
+name: solid-check
+description: Audit a file specifically for SOLID principle violations.
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Audit a file specifically for SOLID principle violations.
+# Solid-check
 
 ## Execution Prompt
 1. Adopt the @ARCHITECT persona.

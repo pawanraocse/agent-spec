@@ -135,9 +135,16 @@ for skill in skills:
 for skill in skills:
     skill_dir = os.path.join(GENERIC_DIR, skill['name'])
     os.makedirs(skill_dir, exist_ok=True)
-    content = f"""# {skill['name'].capitalize()}
+    content = f"""---
+name: {skill['name']}
+description: {skill['description']}
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: {skill['description']}
+# {skill['name'].capitalize()}
 
 ## Execution Prompt
 {skill['content']}

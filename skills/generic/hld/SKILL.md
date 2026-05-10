@@ -1,6 +1,13 @@
-# Hld
+---
+name: hld
+description: Generate High Level Design and Architecture. Output to sdlc/04-HLD.md
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Generate High Level Design and Architecture. Output to sdlc/04-HLD.md
+# Hld
 
 ## Execution Prompt
 1. Adopt the @ARCHITECT persona.

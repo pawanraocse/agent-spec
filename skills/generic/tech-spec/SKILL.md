@@ -1,6 +1,13 @@
-# Tech-spec
+---
+name: tech-spec
+description: Define feasibility, tech stack, and NFRs. Output to sdlc/02-TECH-SPEC.md
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
 
-**Description**: Define feasibility, tech stack, and NFRs. Output to sdlc/02-TECH-SPEC.md
+# Tech-spec
 
 ## Execution Prompt
 1. Adopt the @ARCHITECT persona.
