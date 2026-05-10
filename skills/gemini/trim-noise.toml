@@ -1,5 +1,5 @@
 [command]
-name = "defluffer"
+name = "trim-noise"
 description = "Token reduction: Remove conversational filler."
 
 [prompt]

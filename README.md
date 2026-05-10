@@ -108,8 +108,8 @@ Instead of asking the AI to "build a login page," you invoke its expert personas
 
 ### 2. Manage Your Token Budget (Token Reduction)
 Long chats exhaust the AI's context window, leading to amnesia and degraded reasoning. When the chat gets long, use token reduction skills:
-- **`/caveman`**: The AI outputs *only* code blocks. No pleasantries, no markdown explanations. Maximum token savings.
-- **`/defluffer`**: The AI removes conversational filler ("Certainly! I can help with that!"). Reduces output by ~40%.
+- **`/raw-code`**: The AI outputs *only* code blocks. No pleasantries, no markdown explanations. Maximum token savings.
+- **`/trim-noise`**: The AI removes conversational filler ("Certainly! I can help with that!"). Reduces output by ~40%.
 - **`/dense`**: The AI outputs heavily condensed bullet points and tables instead of paragraphs.
 
 ### 3. End Your Session (Update Memory)

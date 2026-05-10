@@ -28,8 +28,8 @@ While personas define *how* an agent behaves (rules and tone), skills define *wh
 - `/debt`: Analyzes code and logs findings to `TECH-DEBT-REGISTER.md`.
 
 ### Context Management (Token Savers)
-- `/caveman`: Minimal output. Code only. No pleasantries.
-- `/defluffer`: Removes conversational filler (reduces output by ~40%).
+- `/raw-code`: Minimal output. Code only. No pleasantries.
+- `/trim-noise`: Removes conversational filler (reduces output by ~40%).
 - `/dense`: Maximum information density (tables, bullet points, abbreviations).
 - `/verbose`: Restores default chatty behavior.
 

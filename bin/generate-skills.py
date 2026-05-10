@@ -60,12 +60,12 @@ skills = [
         "content": "1. Adopt the @REFACTOR persona.\n2. Analyze the specified code for smells or debt.\n3. Append a new entry to the Active Technical Debt table in `.agent-spec/TECH-DEBT-REGISTER.md`."
     },
     {
-        "name": "caveman",
+        "name": "raw-code",
         "description": "Token reduction: Minimal output. Code only.",
         "content": "CRITICAL RULE: From now on, output ONLY code blocks. No pleasantries. No explanations. No markdown outside of the code block. If I ask a question, answer in 5 words or less."
     },
     {
-        "name": "defluffer",
+        "name": "trim-noise",
         "description": "Token reduction: Remove conversational filler.",
         "content": "CRITICAL RULE: From now on, do not use conversational filler (e.g., 'Certainly!', 'I can help with that'). Provide direct, concise answers. Reduce output length by 40%."
     },

@@ -62,8 +62,8 @@ These commands are installed in `.gemini/commands/` (TOML format):
 /snapshot      → Save session state
 /solid-check   → SOLID gate on code
 /debt          → Analyze tech debt
-/caveman       → Minimal output mode
-/defluffer     → Remove verbosity
+/raw-code      → Minimal output mode
+/trim-noise    → Remove verbosity
 /dense         → Maximum density mode
 /verbose       → Restore default mode
 ```

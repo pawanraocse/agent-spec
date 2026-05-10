@@ -1,5 +1,5 @@
 [command]
-name = "caveman"
+name = "raw-code"
 description = "Token reduction: Minimal output. Code only."
 
 [prompt]

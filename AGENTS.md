@@ -96,8 +96,8 @@ Type these slash commands in your agent:
 /snapshot        Save session state
 /solid-check     Run SOLID gate on code
 /debt            Analyze and register technical debt
-/caveman         Minimal output mode (no fluff)
-/defluffer       Remove verbosity, keep signal
+/raw-code        Minimal output mode (no fluff)
+/trim-noise      Remove verbosity, keep signal
 /dense           Maximum information density
 /verbose         Restore default output mode
 ```
