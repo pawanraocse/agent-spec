@@ -1,6 +1,6 @@
 ---
-name: tech-spec
-description: Define feasibility, tech stack, and NFRs. Output to sdlc/02-TECH-SPEC.md
+name: "tech-spec"
+description: "Define feasibility, tech stack, and NFRs. Output to sdlc/02-TECH-SPEC.md"
 allowed-tools:
   - "Read"
   - "Write"

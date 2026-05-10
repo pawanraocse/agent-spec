@@ -1,6 +1,6 @@
 ---
-name: review
-description: Deep skeptical code review.
+name: "review"
+description: "Deep skeptical code review."
 allowed-tools:
   - "Read"
   - "Write"

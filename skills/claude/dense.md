@@ -1,6 +1,10 @@
 ---
-name: dense
-description: Token reduction: Maximum information density.
+name: "dense"
+description: "Token reduction: Maximum information density."
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Dense Skill

@@ -1,6 +1,10 @@
 ---
-name: requirements
-description: Elicit and structure raw customer needs. Output to sdlc/01-REQUIREMENTS.md
+name: "requirements"
+description: "Elicit and structure raw customer needs. Output to sdlc/01-REQUIREMENTS.md"
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Requirements Skill

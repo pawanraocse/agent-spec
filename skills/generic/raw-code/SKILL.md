@@ -1,6 +1,6 @@
 ---
-name: raw-code
-description: Token reduction: Minimal output. Code only.
+name: "raw-code"
+description: "Token reduction: Minimal output. Code only."
 allowed-tools:
   - "Read"
   - "Write"

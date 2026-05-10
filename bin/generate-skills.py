@@ -94,8 +94,12 @@ for d in [CLAUDE_DIR, GEMINI_DIR, CURSOR_DIR, GENERIC_DIR]:
 # Generate Claude Skills (.md with YAML frontmatter)
 for skill in skills:
     content = f"""---
-name: {skill['name']}
-description: {skill['description']}
+name: "{skill['name']}"
+description: "{skill['description']}"
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # {skill['name'].capitalize()} Skill
@@ -136,8 +140,8 @@ for skill in skills:
     skill_dir = os.path.join(GENERIC_DIR, skill['name'])
     os.makedirs(skill_dir, exist_ok=True)
     content = f"""---
-name: {skill['name']}
-description: {skill['description']}
+name: "{skill['name']}"
+description: "{skill['description']}"
 allowed-tools:
   - "Read"
   - "Write"

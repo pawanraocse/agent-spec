@@ -1,6 +1,6 @@
 ---
-name: hld
-description: Generate High Level Design and Architecture. Output to sdlc/04-HLD.md
+name: "hld"
+description: "Generate High Level Design and Architecture. Output to sdlc/04-HLD.md"
 allowed-tools:
   - "Read"
   - "Write"

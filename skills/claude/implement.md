@@ -1,6 +1,10 @@
 ---
-name: implement
-description: Trigger the 6-Gate coding pipeline based on the LLD.
+name: "implement"
+description: "Trigger the 6-Gate coding pipeline based on the LLD."
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Implement Skill

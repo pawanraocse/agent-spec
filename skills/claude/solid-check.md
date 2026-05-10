@@ -1,6 +1,10 @@
 ---
-name: solid-check
-description: Audit a file specifically for SOLID principle violations.
+name: "solid-check"
+description: "Audit a file specifically for SOLID principle violations."
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Solid-check Skill

@@ -1,6 +1,6 @@
 ---
-name: lld
-description: Generate Low Level Design (Classes, DB Schemas, API Contracts). Output to sdlc/05-LLD.md
+name: "lld"
+description: "Generate Low Level Design (Classes, DB Schemas, API Contracts). Output to sdlc/05-LLD.md"
 allowed-tools:
   - "Read"
   - "Write"

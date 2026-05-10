@@ -1,6 +1,10 @@
 ---
-name: index-project
-description: Run Graphify to build or update the KNOWLEDGE-GRAPH.md
+name: "index-project"
+description: "Run Graphify to build or update the KNOWLEDGE-GRAPH.md"
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Index-project Skill

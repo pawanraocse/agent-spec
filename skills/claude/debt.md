@@ -1,6 +1,10 @@
 ---
-name: debt
-description: Analyze code and log technical debt.
+name: "debt"
+description: "Analyze code and log technical debt."
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Debt Skill

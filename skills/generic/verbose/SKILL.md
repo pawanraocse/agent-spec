@@ -1,6 +1,6 @@
 ---
-name: verbose
-description: Restore default chatty behavior.
+name: "verbose"
+description: "Restore default chatty behavior."
 allowed-tools:
   - "Read"
   - "Write"

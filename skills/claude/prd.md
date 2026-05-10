@@ -1,6 +1,10 @@
 ---
-name: prd
-description: Generate Product Requirements Document with MoSCoW and Validation. Output to sdlc/03-PRD.md
+name: "prd"
+description: "Generate Product Requirements Document with MoSCoW and Validation. Output to sdlc/03-PRD.md"
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Prd Skill

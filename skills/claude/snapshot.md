@@ -1,6 +1,10 @@
 ---
-name: snapshot
-description: Generate SESSION-SNAPSHOT.md to save current state.
+name: "snapshot"
+description: "Generate SESSION-SNAPSHOT.md to save current state."
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Snapshot Skill

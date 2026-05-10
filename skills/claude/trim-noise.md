@@ -1,6 +1,10 @@
 ---
-name: trim-noise
-description: Token reduction: Remove conversational filler.
+name: "trim-noise"
+description: "Token reduction: Remove conversational filler."
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
 ---
 
 # Trim-noise Skill
