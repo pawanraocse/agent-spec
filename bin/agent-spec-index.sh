@@ -36,9 +36,9 @@ echo -e "  ✅ Detected: ${STACK_DETAILS}"
 
 # --- 2. Count files ---
 echo -e "\n${YELLOW}[2/4] Scanning project files...${NC}"
-JAVA_COUNT=$( (find "${PROJECT_ROOT}/src" -name "*.java" 2>/dev/null || true) | wc -l | tr -d ' ' )
-TS_COUNT=$( (find "${PROJECT_ROOT}/src" -name "*.ts" 2>/dev/null || true) | wc -l | tr -d ' ' )
-TEST_COUNT=$( (find "${PROJECT_ROOT}" \( -name "*Test*.java" -o -name "*.spec.ts" \) 2>/dev/null || true) | wc -l | tr -d ' ' )
+JAVA_COUNT=$( (find "${PROJECT_ROOT}" -type f -name "*.java" 2>/dev/null || true) | grep -vE "(/node_modules/|/target/|/dist/|/build/|/\.git/|/\.idea/|/\.venv/)" | wc -l | tr -d ' ' || true )
+TS_COUNT=$( (find "${PROJECT_ROOT}" -type f -name "*.ts" 2>/dev/null || true) | grep -vE "(/node_modules/|/target/|/dist/|/build/|/\.git/|/\.idea/|/\.venv/)" | wc -l | tr -d ' ' || true )
+TEST_COUNT=$( (find "${PROJECT_ROOT}" -type f \( -name "*Test*.java" -o -name "*.spec.ts" \) 2>/dev/null || true) | grep -vE "(/node_modules/|/target/|/dist/|/build/|/\.git/|/\.idea/|/\.venv/)" | wc -l | tr -d ' ' || true )
 echo -e "  Java: ${JAVA_COUNT} | TypeScript: ${TS_COUNT} | Tests: ${TEST_COUNT}"
 
 # --- 3. Write knowledge-graph.json ---
