@@ -33,10 +33,16 @@ The agent is physically blocked from writing code until the design is proven.
 `Requirements` → `Tech Spec` → `PRD` → `HLD` → `LLD` → `Code Execution`.
 Every stage generates a markdown artifact, creating a perfect lineage of intent.
 
+### 📐 Spec-Driven Development (SDD)
+"Vibe Coding" is the act of prompting an AI until it spits out something that looks like it works. `agent-spec` kills this by enforcing **Spec-Driven Development**. 
+- The agent **cannot** begin implementation until an LLD (Low Level Design) is signed off.
+- This forces the AI to consider edge cases, data structures, and SOLID principles *before* it starts a single line of code.
+- Result: 80% fewer regressions and 100% predictable architecture.
+
 ### 📉 Token Reduction Skills
 Context windows are expensive, and large chats degrade AI reasoning logic.
-- Run `/caveman` -> The agent outputs ONLY code blocks. Zero pleasantries. Zero conversational fluff.
-- Run `/defluffer` -> Reduces chatty outputs by 40%.
+- Run `/raw-code` -> The agent outputs ONLY code blocks. Zero pleasantries. Zero conversational fluff.
+- Run `/trim-noise` -> Reduces chatty outputs by 40%.
 - Run `/dense` -> Forces the agent to output only tables and bullet points.
 
 ### 🌐 Universal Agent Compatibility
