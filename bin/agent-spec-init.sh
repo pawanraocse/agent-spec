@@ -2,7 +2,7 @@
 # =============================================================================
 # agent-spec-init.sh
 # Initialize agent-spec framework in the current project directory.
-# Usage: ./bin/agent-spec-init.sh [--agent claude|gemini|cursor|all]
+# Usage: ./bin/agent-spec-init.sh [--force]
 # =============================================================================
 
 set -eo pipefail # Remove -u to handle unbound BASH_SOURCE
@@ -31,7 +31,13 @@ fi
 PROJECT_ROOT="$(pwd)"
 DATE=$(date '+%Y-%m-%d')
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
-AGENT="${1:-all}"
+
+FORCE_OVERWRITE="false"
+for arg in "$@"; do
+  if [ "$arg" = "--force" ]; then
+    FORCE_OVERWRITE="true"
+  fi
+done
 
 
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
@@ -225,7 +231,7 @@ echo -e "${YELLOW}[3/7] Installing Claude skills → .claude/commands/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.claude/commands"
 for skill in "${AGENT_SPEC_HOME}/skills/claude/"*.md; do
   skill_name=$(basename "${skill}")
-  if [ ! -f "${PROJECT_ROOT}/.claude/commands/${skill_name}" ]; then
+  if [ ! -f "${PROJECT_ROOT}/.claude/commands/${skill_name}" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
     cp "${skill}" "${PROJECT_ROOT}/.claude/commands/${skill_name}"
   fi
 done
@@ -239,7 +245,7 @@ echo -e "${YELLOW}[4/7] Installing Gemini skills → .gemini/commands/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.gemini/commands"
 for skill in "${AGENT_SPEC_HOME}/skills/gemini/"*.toml; do
   skill_name=$(basename "${skill}")
-  if [ ! -f "${PROJECT_ROOT}/.gemini/commands/${skill_name}" ]; then
+  if [ ! -f "${PROJECT_ROOT}/.gemini/commands/${skill_name}" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
     cp "${skill}" "${PROJECT_ROOT}/.gemini/commands/${skill_name}"
   fi
 done
@@ -259,7 +265,7 @@ echo -e "  ✅ Installed .cursor/rules/agent-spec-rules.md"
 # Copy cursor skills
 for skill in "${AGENT_SPEC_HOME}/skills/cursor/"*.md; do
   skill_name=$(basename "${skill}")
-  if [ ! -f "${PROJECT_ROOT}/.cursor/rules/${skill_name}" ]; then
+  if [ ! -f "${PROJECT_ROOT}/.cursor/rules/${skill_name}" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
     cp "${skill}" "${PROJECT_ROOT}/.cursor/rules/${skill_name}"
   fi
 done
@@ -275,7 +281,7 @@ for skill_dir in "${AGENT_SPEC_HOME}/skills/generic/"*/; do
   if [ -d "${skill_dir}" ]; then
     skill_name=$(basename "${skill_dir}")
     mkdir -p "${PROJECT_ROOT}/.agents/skills/${skill_name}"
-    if [ ! -f "${PROJECT_ROOT}/.agents/skills/${skill_name}/SKILL.md" ]; then
+    if [ ! -f "${PROJECT_ROOT}/.agents/skills/${skill_name}/SKILL.md" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
       cp "${skill_dir}/SKILL.md" "${PROJECT_ROOT}/.agents/skills/${skill_name}/SKILL.md"
     fi
   fi
