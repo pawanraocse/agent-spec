@@ -27,7 +27,7 @@ Default: **CODE-REVIEWER** — skeptical, precise, always cites source.
 
 Activate with: `"Activate: @PERSONA_NAME"`
 
-See `AGENTS.md` and `personas/` for the full persona list and their hard rules.
+See `AGENTS.md` and `.agent-spec/personas/` for the full persona list and their hard rules.
 
 ---
 
@@ -90,7 +90,7 @@ Gemini will REFUSE if asked to:
 Always write `.agent-spec/SESSION-SNAPSHOT.md` at session end.
 Always update `.agent-spec/PROJECT-INDEX.md` if files were changed.
 
-See `memory/SESSION-SNAPSHOT.md` for the snapshot template.
+See `.agent-spec/memory/SESSION-SNAPSHOT.md` for the snapshot template.
 
 ---
 

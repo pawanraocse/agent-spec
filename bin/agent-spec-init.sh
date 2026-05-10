@@ -187,6 +187,20 @@ if [ ! -f "${PROJECT_ROOT}/.agent-spec/TECH-DEBT-REGISTER.md" ]; then
   echo -e "  ✅ Created .agent-spec/TECH-DEBT-REGISTER.md"
 fi
 
+# ---------------------------------------------------------------------------
+# 1b. Install framework folders → .agent-spec/
+# ---------------------------------------------------------------------------
+echo -e "${YELLOW}[1b/6] Installing framework folders...${NC}"
+FRAMEWORK_FOLDERS=("personas" "pipeline" "rules" "coding-standards" "anti-hallucination" "memory" "templates")
+
+for folder in "${FRAMEWORK_FOLDERS[@]}"; do
+  if [ -d "${AGENT_SPEC_HOME}/${folder}" ]; then
+    mkdir -p "${PROJECT_ROOT}/.agent-spec/${folder}"
+    cp -R "${AGENT_SPEC_HOME}/${folder}/"* "${PROJECT_ROOT}/.agent-spec/${folder}/"
+    echo -e "  ✅ Installed .agent-spec/${folder}/"
+  fi
+done
+
 echo -e "  ✅ Created .agent-spec/sdlc/ directory"
 
 # ---------------------------------------------------------------------------

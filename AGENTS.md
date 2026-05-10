@@ -33,7 +33,7 @@ GATE 5: IMPLEMENTATION → Test-first (TDD). Apply coding standards.
 GATE 6: VERIFICATION → Audit. Update PROJECT-INDEX. Write snapshot.
 ```
 
-See `pipeline/` directory for the full gate specifications.
+See `.agent-spec/pipeline/` directory for the full gate specifications.
 
 ---
 
@@ -54,7 +54,7 @@ Select the appropriate persona for the task. Personas cannot be mixed mid-task.
 | `Activate: @DATA` | Data Engineer | Schema, migrations |
 | `Activate: @DEVOPS` | DevOps Engineer | CI/CD, Docker, config |
 
-See `personas/` directory for each persona's full specification.
+See `.agent-spec/personas/` directory for each persona's full specification.
 
 ---
 
@@ -76,7 +76,7 @@ Every agent MUST follow the confidence scoring system:
 4. What could break (explicit risk)
 5. How to verify (exact test command)
 
-See `anti-hallucination/` for the full protocol.
+See `.agent-spec/anti-hallucination/` for the full protocol.
 
 ---
 
@@ -117,7 +117,7 @@ NEVER continue past a failing test
 NEVER add a dependency without discussing tradeoffs
 ```
 
-Full rules: `rules/ABSOLUTE-RULES.md`
+Full rules: `.agent-spec/rules/ABSOLUTE-RULES.md`
 
 ---
 
@@ -132,7 +132,7 @@ ALWAYS write a Session Snapshot at the end of a session
 NEVER present multiple solutions without a clear recommendation
 ```
 
-Full rules: `rules/COMMUNICATION-RULES.md`
+Full rules: `.agent-spec/rules/COMMUNICATION-RULES.md`
 
 ---
 
@@ -147,7 +147,7 @@ CANNOT merge pull requests
 CANNOT make privacy or data-retention decisions
 ```
 
-Full rules: `rules/AUTONOMY-LIMITS.md`
+Full rules: `.agent-spec/rules/AUTONOMY-LIMITS.md`
 
 ---
 
@@ -159,9 +159,9 @@ Full rules: `rules/AUTONOMY-LIMITS.md`
 .agent-spec/SESSION-SNAPSHOT.md     Latest session state
 .agent-spec/graph/knowledge-graph.json  Graphify index
 .agent-spec/sdlc/                   SDLC stage outputs
-coding-standards/SOLID-PRINCIPLES.md   SOLID reference
-coding-standards/languages/JAVA.md     Java standards
-coding-standards/languages/ANGULAR.md  Angular standards
+.agent-spec/coding-standards/SOLID-PRINCIPLES.md   SOLID reference
+.agent-spec/coding-standards/languages/JAVA.md     Java standards
+.agent-spec/coding-standards/languages/ANGULAR.md  Angular standards
 ```
 
 ---
