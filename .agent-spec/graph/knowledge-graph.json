@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "project": "agent-spec",
+  "generated": "2026-05-10T08:50:48",
+  "generator": "agent-spec-index v1.0.0",
+  "tech_stack": "Unknown",
+  "stats": {
+    "java_files": 0,
+    "ts_files": 0,
+    "test_files": 0
+  },
+  "nodes": [],
+  "edges": [],
+  "note": "Agent should populate nodes/edges via /index-project skill"
+}
