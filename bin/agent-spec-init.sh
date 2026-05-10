@@ -264,9 +264,9 @@ echo -e "  ✅ Installed $(ls "${PROJECT_ROOT}/.cursor/skills/" | wc -l | tr -d 
 # 6. Install Generic skills → .agents/skills/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[6/6] Installing generic skills → .agents/skills/...${NC}"
+echo -e "${YELLOW}[6/7] Installing generic skills → .agents/skills/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.agents/skills"
-for skill_dir in "${AGENT_SPEC_HOME}/skills/generic/"/*/; do
+for skill_dir in "${AGENT_SPEC_HOME}/skills/generic/"*/; do
   if [ -d "${skill_dir}" ]; then
     skill_name=$(basename "${skill_dir}")
     mkdir -p "${PROJECT_ROOT}/.agents/skills/${skill_name}"
@@ -274,6 +274,19 @@ for skill_dir in "${AGENT_SPEC_HOME}/skills/generic/"/*/; do
   fi
 done
 echo -e "  ✅ Installed generic skills"
+
+# ---------------------------------------------------------------------------
+# 7. Install Framework Binaries → .agent-spec/bin/
+# ---------------------------------------------------------------------------
+echo ""
+echo -e "${YELLOW}[7/7] Installing framework binaries → .agent-spec/bin/...${NC}"
+mkdir -p "${PROJECT_ROOT}/.agent-spec/bin"
+cp "${AGENT_SPEC_HOME}/bin/agent-spec-index.sh" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-index"
+cp "${AGENT_SPEC_HOME}/bin/agent-spec-new.sh"   "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-new"
+chmod +x "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-index"
+chmod +x "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-new"
+echo -e "  ✅ Installed agent-spec binaries"
+
 
 # ---------------------------------------------------------------------------
 # Done
@@ -285,8 +298,8 @@ echo -e "${GREEN}╚════════════════════
 echo ""
 echo "Next steps:"
 echo "  1. Fill in: .agent-spec/PROJECT-INDEX.md"
-echo "  2. Run:     agent-spec index --graphify  (if existing project)"
-echo "  3. Or run:  agent-spec new               (to start SDLC from scratch)"
+echo "  2. Run:     ./.agent-spec/bin/agent-spec-index --graphify"
+echo "  3. Or run:  ./.agent-spec/bin/agent-spec-new               (to start SDLC from scratch)"
 echo ""
 echo "Available skills in Claude Code:"
 echo "  /requirements  /tech-spec  /prd  /hld  /lld  /implement  /review"
