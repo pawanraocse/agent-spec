@@ -83,10 +83,10 @@ You can install `agent-spec` into **any existing project** in seconds. There are
 cd my-awesome-project
 
 # 2. Run the init script (downloads framework to .agent-spec/)
-curl -sSL https://raw.githubusercontent.com/pawan/agent-spec/main/bin/agent-spec-init.sh | bash
+curl -sSL https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/agent-spec-init.sh | bash
 
 # 3. Build your project's Knowledge Graph
-./.agent-spec/bin/agent-spec-index.sh --graphify
+agent-spec index --graphify
 ```
 
 Now, open your AI agent (Cursor, Claude Code, etc.) and type:
