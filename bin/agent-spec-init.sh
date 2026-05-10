@@ -5,18 +5,34 @@
 # Usage: ./bin/agent-spec-init.sh [--agent claude|gemini|cursor|all]
 # =============================================================================
 
-set -euo pipefail
+set -eo pipefail # Remove -u to handle unbound BASH_SOURCE
 
-AGENT_SPEC_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; NC='\033[0m'
+
+GITHUB_RAW_URL="https://raw.githubusercontent.com/pawanraocse/agent-spec/main"
+
+# Detect if we are running locally or remotely
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  AGENT_SPEC_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  MODE="LOCAL"
+else
+  AGENT_SPEC_HOME="/tmp/agent-spec-$(date +%s)"
+  MODE="REMOTE"
+  mkdir -p "${AGENT_SPEC_HOME}"
+  echo -e "${YELLOW}Downloading framework from GitHub...${NC}"
+  curl -sSL "https://github.com/pawanraocse/agent-spec/archive/refs/heads/main.tar.gz" | tar -xz -C "${AGENT_SPEC_HOME}" --strip-components=1
+fi
+
+# Cleanup on exit if remote
+if [ "$MODE" = "REMOTE" ]; then
+  trap 'rm -rf "${AGENT_SPEC_HOME}"' EXIT
+fi
+
 PROJECT_ROOT="$(pwd)"
 DATE=$(date '+%Y-%m-%d')
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
 AGENT="${1:-all}"
 
-GREEN='\033[0;32m'
-BLUE='\033[0;34m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║         agent-spec init v1.0.0           ║${NC}"
