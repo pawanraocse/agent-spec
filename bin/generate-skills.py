@@ -81,6 +81,28 @@ skills = [
     }
 ]
 
+# Define the 10 personas as skills for discoverability
+personas_list = [
+    ("architect", "Principal Software Architect"),
+    ("security", "Security Auditor"),
+    ("perf", "Performance Engineer"),
+    ("qa", "QA Engineer"),
+    ("reviewer", "Code Reviewer"),
+    ("writer", "Technical Writer"),
+    ("refactor", "Refactor Specialist"),
+    ("api", "API Designer"),
+    ("data", "Data Engineer"),
+    ("devops", "DevOps Engineer")
+]
+
+for p_name, p_role in personas_list:
+    skills.append({
+        "name": p_name,
+        "description": f"Switch mindset to @{p_name.upper()} ({p_role})",
+        "content": f"1. Adopt the @{p_name.upper()} persona mindset.\n2. Read your full persona specification from .agent-spec/personas/{p_name.upper()}.md.\n3. Acknowledge the mindset switch and wait for instructions."
+    })
+
+
 # Directories
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLAUDE_DIR = os.path.join(PROJECT_ROOT, "skills", "claude")
@@ -156,4 +178,4 @@ allowed-tools:
     with open(os.path.join(skill_dir, "SKILL.md"), "w") as f:
         f.write(content)
 
-print("Generated 60 skill files successfully.")
+print(f"Generated {len(skills) * 4} skill files successfully.")

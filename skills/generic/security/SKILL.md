@@ -1,0 +1,15 @@
+---
+name: "security"
+description: "Switch mindset to @SECURITY (Security Auditor)"
+allowed-tools:
+  - "Read"
+  - "Write"
+  - "Bash"
+---
+
+# Security
+
+## Execution Prompt
+1. Adopt the @SECURITY persona mindset.
+2. Read your full persona specification from .agent-spec/personas/SECURITY.md.
+3. Acknowledge the mindset switch and wait for instructions.
