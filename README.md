@@ -82,15 +82,44 @@ You can install `agent-spec` into **any existing project** in seconds. There are
 # 1. Navigate to your project
 cd my-awesome-project
 
-# 2. Run the init script (downloads framework to .agent-spec/)
+# 2. Run the init script (downloads framework to .agent-spec/ and installs skills)
 curl -sSL https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/agent-spec-init.sh | bash
 
-# 3. Build your project's Knowledge Graph
-agent-spec index --graphify
+# 3. Build your project's initial Knowledge Graph
+./.agent-spec/bin/agent-spec-index.sh --graphify
 ```
 
-Now, open your AI agent (Cursor, Claude Code, etc.) and type:
-> *"Activate: @ARCHITECT. Run the /tech-spec skill for a new password reset feature."*
+---
+
+## 🔄 The Daily Workflow (How to use it)
+
+Once installed, your AI agent is equipped with new skills, personas, and memory. Here is how you interact with it daily:
+
+### 1. Start a Feature (Use Skills & Personas)
+Instead of asking the AI to "build a login page," you invoke its expert personas and pipeline skills:
+> *"Activate: @ARCHITECT. Run the `/prd` skill to define the requirements for a password reset feature."*
+> 
+> *"Activate: @QA. Run the `/review` skill on `AuthService.java` to check for missing edge cases."*
+
+**Awesome Persona Examples:**
+- `@DATA`: Obsesses over DB normalization. Will reject migrations that cause data loss.
+- `@SECURITY`: Assumes zero-trust. Will flag missing rate-limiters or hardcoded secrets.
+- `@REFACTOR`: The Boy Scout. Cleans up technical debt safely without changing behavior.
+
+### 2. Manage Your Token Budget (Token Reduction)
+Long chats exhaust the AI's context window, leading to amnesia and degraded reasoning. When the chat gets long, use token reduction skills:
+- **`/caveman`**: The AI outputs *only* code blocks. No pleasantries, no markdown explanations. Maximum token savings.
+- **`/defluffer`**: The AI removes conversational filler ("Certainly! I can help with that!"). Reduces output by ~40%.
+- **`/dense`**: The AI outputs heavily condensed bullet points and tables instead of paragraphs.
+
+### 3. End Your Session (Update Memory)
+LLMs forget everything when you close the chat. `agent-spec` relies on explicit state updates to maintain persistent memory.
+
+**At the end of your day, do two things:**
+1. **Update the Graph**: If you added new files or changed architecture, run `./.agent-spec/bin/agent-spec-index.sh --graphify` (or type `/index-project`) to rebuild the dependency map.
+2. **Save the State**: Type `/snapshot`. The agent will summarize what it just built, what's broken, and what files need to be loaded tomorrow, saving it to `.agent-spec/SESSION-SNAPSHOT.md`.
+
+When you open a new chat tomorrow, simply say: *"Read the session snapshot and let's resume."*
 
 ---
 
