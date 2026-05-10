@@ -221,31 +221,35 @@ install_with_merge "${AGENT_SPEC_HOME}/COPILOT.md" "${PROJECT_ROOT}/COPILOT.md" 
 # 3. Install Claude skills → .claude/commands/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[3/6] Installing Claude skills → .claude/commands/...${NC}"
+echo -e "${YELLOW}[3/7] Installing Claude skills → .claude/commands/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.claude/commands"
 for skill in "${AGENT_SPEC_HOME}/skills/claude/"*.md; do
   skill_name=$(basename "${skill}")
-  cp "${skill}" "${PROJECT_ROOT}/.claude/commands/${skill_name}"
+  if [ ! -f "${PROJECT_ROOT}/.claude/commands/${skill_name}" ]; then
+    cp "${skill}" "${PROJECT_ROOT}/.claude/commands/${skill_name}"
+  fi
 done
-echo -e "  ✅ Installed $(ls "${PROJECT_ROOT}/.claude/commands/" | wc -l | tr -d ' ') Claude skills"
+echo -e "  ✅ Installed Claude skills"
 
 # ---------------------------------------------------------------------------
 # 4. Install Gemini skills → .gemini/commands/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[4/6] Installing Gemini skills → .gemini/commands/...${NC}"
+echo -e "${YELLOW}[4/7] Installing Gemini skills → .gemini/commands/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.gemini/commands"
 for skill in "${AGENT_SPEC_HOME}/skills/gemini/"*.toml; do
   skill_name=$(basename "${skill}")
-  cp "${skill}" "${PROJECT_ROOT}/.gemini/commands/${skill_name}"
+  if [ ! -f "${PROJECT_ROOT}/.gemini/commands/${skill_name}" ]; then
+    cp "${skill}" "${PROJECT_ROOT}/.gemini/commands/${skill_name}"
+  fi
 done
-echo -e "  ✅ Installed $(ls "${PROJECT_ROOT}/.gemini/commands/" | wc -l | tr -d ' ') Gemini skills"
+echo -e "  ✅ Installed Gemini skills"
 
 # ---------------------------------------------------------------------------
 # 5. Install Cursor skills → .cursor/rules/ + .cursor/skills/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[5/6] Installing Cursor skills...${NC}"
+echo -e "${YELLOW}[5/7] Installing Cursor skills...${NC}"
 mkdir -p "${PROJECT_ROOT}/.cursor/rules"
 mkdir -p "${PROJECT_ROOT}/.cursor/skills"
 
@@ -256,9 +260,11 @@ echo -e "  ✅ Installed .cursor/rules/agent-spec-rules.md"
 # Copy cursor skills
 for skill in "${AGENT_SPEC_HOME}/skills/cursor/"*.md; do
   skill_name=$(basename "${skill}")
-  cp "${skill}" "${PROJECT_ROOT}/.cursor/skills/${skill_name}"
+  if [ ! -f "${PROJECT_ROOT}/.cursor/skills/${skill_name}" ]; then
+    cp "${skill}" "${PROJECT_ROOT}/.cursor/skills/${skill_name}"
+  fi
 done
-echo -e "  ✅ Installed $(ls "${PROJECT_ROOT}/.cursor/skills/" | wc -l | tr -d ' ') Cursor skills"
+echo -e "  ✅ Installed Cursor skills"
 
 # ---------------------------------------------------------------------------
 # 6. Install Generic skills → .agents/skills/
@@ -270,7 +276,9 @@ for skill_dir in "${AGENT_SPEC_HOME}/skills/generic/"*/; do
   if [ -d "${skill_dir}" ]; then
     skill_name=$(basename "${skill_dir}")
     mkdir -p "${PROJECT_ROOT}/.agents/skills/${skill_name}"
-    cp "${skill_dir}/SKILL.md" "${PROJECT_ROOT}/.agents/skills/${skill_name}/SKILL.md"
+    if [ ! -f "${PROJECT_ROOT}/.agents/skills/${skill_name}/SKILL.md" ]; then
+      cp "${skill_dir}/SKILL.md" "${PROJECT_ROOT}/.agents/skills/${skill_name}/SKILL.md"
+    fi
   fi
 done
 echo -e "  ✅ Installed generic skills"
