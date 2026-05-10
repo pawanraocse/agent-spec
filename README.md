@@ -83,7 +83,7 @@ You can install `agent-spec` into **any existing project** in seconds. There are
 cd my-awesome-project
 
 # 2. Run the init script (downloads framework to .agent-spec/ and installs skills)
-curl -sSL https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/agent-spec-init.sh | bash
+curl -sSL "https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/agent-spec-init.sh?t=$(date +%s)" | bash
 
 # 3. Build your project's initial Knowledge Graph
 ./.agent-spec/bin/agent-spec-index.sh --graphify

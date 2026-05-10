@@ -246,12 +246,11 @@ done
 echo -e "  ✅ Installed Gemini skills"
 
 # ---------------------------------------------------------------------------
-# 5. Install Cursor skills → .cursor/rules/ + .cursor/skills/
+# 5. Install Cursor skills → .cursor/rules/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[5/7] Installing Cursor skills...${NC}"
+echo -e "${YELLOW}[5/7] Installing Cursor rules...${NC}"
 mkdir -p "${PROJECT_ROOT}/.cursor/rules"
-mkdir -p "${PROJECT_ROOT}/.cursor/skills"
 
 # Copy cursor rules (always-on)
 cat "${AGENT_SPEC_HOME}/CURSOR.md" > "${PROJECT_ROOT}/.cursor/rules/agent-spec-rules.md"
@@ -260,11 +259,11 @@ echo -e "  ✅ Installed .cursor/rules/agent-spec-rules.md"
 # Copy cursor skills
 for skill in "${AGENT_SPEC_HOME}/skills/cursor/"*.md; do
   skill_name=$(basename "${skill}")
-  if [ ! -f "${PROJECT_ROOT}/.cursor/skills/${skill_name}" ]; then
-    cp "${skill}" "${PROJECT_ROOT}/.cursor/skills/${skill_name}"
+  if [ ! -f "${PROJECT_ROOT}/.cursor/rules/${skill_name}" ]; then
+    cp "${skill}" "${PROJECT_ROOT}/.cursor/rules/${skill_name}"
   fi
 done
-echo -e "  ✅ Installed Cursor skills"
+echo -e "  ✅ Installed Cursor rules"
 
 # ---------------------------------------------------------------------------
 # 6. Install Generic skills → .agents/skills/
