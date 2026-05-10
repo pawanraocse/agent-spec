@@ -1,0 +1,11 @@
+.DS_Store
+.agent-spec/graph/knowledge-graph.json
+.agent-spec/graph/KNOWLEDGE-GRAPH.md
+.agent-spec/sdlc/*.md
+!.agent-spec/sdlc/README.md
+.agent-spec/SESSION-SNAPSHOT.md
+node_modules/
+dist/
+build/
+.env
+*.log
