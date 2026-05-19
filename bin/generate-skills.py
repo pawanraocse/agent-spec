@@ -113,8 +113,10 @@ GENERIC_DIR = os.path.join(PROJECT_ROOT, "skills", "generic")
 for d in [CLAUDE_DIR, GEMINI_DIR, CURSOR_DIR, GENERIC_DIR]:
     os.makedirs(d, exist_ok=True)
 
-# Generate Claude Skills (.md with YAML frontmatter)
+# Generate Claude Skills (Directory with SKILL.md)
 for skill in skills:
+    skill_dir = os.path.join(CLAUDE_DIR, skill['name'])
+    os.makedirs(skill_dir, exist_ok=True)
     content = f"""---
 name: "{skill['name']}"
 description: "{skill['description']}"
@@ -128,7 +130,7 @@ allowed-tools:
 
 {skill['content']}
 """
-    with open(os.path.join(CLAUDE_DIR, f"{skill['name']}.md"), "w") as f:
+    with open(os.path.join(skill_dir, "SKILL.md"), "w") as f:
         f.write(content)
 
 # Generate Gemini Skills (.toml)

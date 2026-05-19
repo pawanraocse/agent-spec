@@ -238,15 +238,18 @@ install_with_merge "${AGENT_SPEC_HOME}/CURSOR.md"  "${PROJECT_ROOT}/CURSOR.md"  
 install_with_merge "${AGENT_SPEC_HOME}/COPILOT.md" "${PROJECT_ROOT}/COPILOT.md" "COPILOT.md"
 
 # ---------------------------------------------------------------------------
-# 3. Install Claude skills → .claude/commands/
+# 3. Install Claude skills → .claude/skills/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[3/7] Installing Claude skills → .claude/commands/...${NC}"
-mkdir -p "${PROJECT_ROOT}/.claude/commands"
-for skill in "${AGENT_SPEC_HOME}/skills/claude/"*.md; do
-  skill_name=$(basename "${skill}")
-  if [ ! -f "${PROJECT_ROOT}/.claude/commands/${skill_name}" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
-    cp "${skill}" "${PROJECT_ROOT}/.claude/commands/${skill_name}"
+echo -e "${YELLOW}[3/7] Installing Claude skills → .claude/skills/...${NC}"
+mkdir -p "${PROJECT_ROOT}/.claude/skills"
+for skill_dir in "${AGENT_SPEC_HOME}/skills/claude/"*/; do
+  if [ -d "${skill_dir}" ]; then
+    skill_name=$(basename "${skill_dir}")
+    mkdir -p "${PROJECT_ROOT}/.claude/skills/${skill_name}"
+    if [ ! -f "${PROJECT_ROOT}/.claude/skills/${skill_name}/SKILL.md" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
+      cp "${skill_dir}/SKILL.md" "${PROJECT_ROOT}/.claude/skills/${skill_name}/SKILL.md"
+    fi
   fi
 done
 echo -e "  ✅ Installed Claude skills"
