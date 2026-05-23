@@ -20,4 +20,11 @@ The ideas in agent-spec draw on decades of software engineering wisdom:
 
 ---
 
+## Karpathy Behavioral Guidelines
+- **Source**: [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT License)
+- **Author**: Forrest Chang (derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls)
+- **Contribution**: The "Simplicity First" and "Surgical Changes" principles were adapted and integrated into agent-spec's Absolute Rules (#8, #9), coding standards, and anti-hallucination protocol. The concrete before/after examples in `coding-standards/examples/` were inspired by the repository's `EXAMPLES.md`.
+
+---
+
 *If this framework helps you ship better software with AI agents, that's the only credit needed.*

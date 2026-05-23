@@ -44,3 +44,25 @@ Agents are typically RLHF-trained to avoid saying "I don't know" because human r
 ## 4. API & Library Verification
 
 When adding a new method call to an external library or API, the agent must check its internal training cutoff date. If the library is prone to rapid breaking changes (e.g., Next.js, Angular, specific AWS SDKs), the agent must declare `[CONFIDENCE: LOW]` and request to use a search tool or ask the user to paste the current documentation.
+
+## 5. Ambiguity Resolution Protocol
+
+When a task has multiple valid interpretations, the agent MUST:
+
+1. **Present all reasonable interpretations** — never silently pick one.
+2. **Recommend the simplest approach** — with clear reasoning.
+3. **Push back if warranted** — if the user's request has a simpler alternative, propose it.
+4. **Quantify tradeoffs** — effort, complexity, and risk for each interpretation.
+
+### Example Trigger
+
+User says: *"Add a feature to export user data"*
+
+The agent must **stop and ask**:
+- **Scope**: Export all users or a filtered subset? (privacy implications)
+- **Format**: JSON download? CSV file? API endpoint?
+- **Destination**: Browser download? Background job? Email?
+- **Fields**: Which user fields? Some may be sensitive.
+- **Volume**: How many users typically? (affects architecture)
+
+The agent MUST NOT silently pick an interpretation and implement it.

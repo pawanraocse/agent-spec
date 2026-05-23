@@ -115,6 +115,8 @@ NEVER modify .env or secrets files
 NEVER make a breaking change without a linked ADR
 NEVER continue past a failing test
 NEVER add a dependency without discussing tradeoffs
+NEVER over-engineer — minimum code for the stated problem only
+NEVER modify code outside the current task scope without permission
 ```
 
 Full rules: `.agent-spec/rules/ABSOLUTE-RULES.md`

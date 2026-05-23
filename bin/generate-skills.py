@@ -27,17 +27,17 @@ skills = [
     {
         "name": "lld",
         "description": "Generate Low Level Design (Classes, DB Schemas, API Contracts). Output to sdlc/05-LLD.md",
-        "content": "1. Adopt the @ARCHITECT persona.\n2. Read 04-HLD.md and KNOWLEDGE-GRAPH.md.\n3. Define exact class structures, DB tables, and JSON payloads.\n4. Verify SOLID principles.\n5. Output to .agent-spec/sdlc/05-LLD.md."
+        "content": "1. Adopt the @ARCHITECT persona.\n2. Read 04-HLD.md and KNOWLEDGE-GRAPH.md.\n3. Define exact class structures, DB tables, and JSON payloads.\n4. Verify SOLID principles AND apply the Simplicity First standard (coding-standards/SIMPLICITY-FIRST.md) to prevent over-engineering.\n5. Output to .agent-spec/sdlc/05-LLD.md."
     },
     {
         "name": "implement",
         "description": "Trigger the 6-Gate coding pipeline based on the LLD.",
-        "content": "1. Acknowledge implementation start.\n2. Begin GATE-1-DISCOVERY.md.\n3. Do not proceed to the next gate until the current gate's checklist is complete and approved."
+        "content": "1. Acknowledge implementation start.\n2. Begin GATE-1-DISCOVERY.md.\n3. Do not proceed to the next gate until the current gate's checklist is complete and approved.\n4. Strictly enforce Absolute Rule #9 (Surgical Changes) — modify only what is strictly required for the current task."
     },
     {
         "name": "review",
         "description": "Deep skeptical code review.",
-        "content": "1. Adopt the @REVIEWER persona.\n2. Review the specified files against coding-standards/CLEAN-CODE.md.\n3. Identify logic flaws, style violations, and missing tests.\n4. Output findings using [BLOCKER], [MINOR], and [NIT] tags."
+        "content": "1. Adopt the @REVIEWER persona.\n2. Review the specified files against coding-standards/CLEAN-CODE.md AND coding-standards/SIMPLICITY-FIRST.md.\n3. Identify logic flaws, style violations, and missing tests.\n4. Output findings using [BLOCKER], [MINOR], and [NIT] tags."
     },
     {
         "name": "solid-check",

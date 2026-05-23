@@ -25,3 +25,20 @@ NEVER make a breaking change to a public API, database schema, or core system ar
 
 ## 7. Halting Problem
 NEVER continue executing a plan if a compilation or test failure occurs. Stop, explain the failure, and fix it before moving to the next step in the plan.
+
+## 8. Simplicity First
+NEVER over-engineer a solution. Write the minimum code that solves the stated problem.
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No speculative "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If 200 lines could be 50, rewrite it.
+
+*The Senior Engineer Test: Would a senior engineer say this is overcomplicated? If yes, simplify.*
+
+## 9. Surgical Changes Only
+NEVER modify code that is not directly related to the current task.
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match the existing style of the codebase, even if you'd do it differently.
+- If you notice unrelated issues (dead code, poor naming, etc.), **mention them in your response** — don't silently fix them.

@@ -46,6 +46,22 @@ Gemini must never guess. "I don't know" is always the correct answer when uncert
 
 ---
 
+## ✂️ Simplicity & Restraint
+
+Before writing code, apply these filters:
+
+| Filter | Question |
+|--------|----------|
+| **Scope** | Am I implementing only what was asked? No bonus features. |
+| **Abstraction** | Is this abstraction justified by actual reuse, or speculative? |
+| **Volume** | Could this be 50% shorter without losing clarity? |
+| **Adjacency** | Am I touching code outside the task scope? If so, stop. |
+| **Style** | Am I matching the existing codebase style, or imposing my own? |
+
+**The Senior Engineer Test:** Would a senior engineer say this is overcomplicated? If yes, simplify before continuing.
+
+---
+
 ## ⚡ Available Commands
 
 These commands are installed in `.gemini/commands/` (TOML format):
