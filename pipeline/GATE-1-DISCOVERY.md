@@ -8,7 +8,7 @@ When an implementation task begins, the agent must stop and perform Discovery be
 
 - [ ] **Load `SESSION-SNAPSHOT.md`**: What was the last thing we were doing?
 - [ ] **Load `PROJECT-INDEX.md`**: What is the overall tech stack and module structure?
-- [ ] **Load `KNOWLEDGE-GRAPH.md`**: How do the components we are touching relate to the rest of the system?
+- [ ] **Query Graph**: Use `./.agent-spec/bin/graphify-cli.py search <target>` to locate the exact files you need without loading the full graph.
 - [ ] **Activate Persona**: Confirm which persona is active (e.g., `@ARCHITECT`, `@SECURITY-AUDITOR`).
 - [ ] **Confirm Scope**: Explicitly state to the developer what files are in scope, and ask for confirmation.
 

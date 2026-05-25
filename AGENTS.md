@@ -11,10 +11,11 @@ Before doing ANYTHING, every agent MUST load:
 
 ```
 1. .agent-spec/PROJECT-INDEX.md          ← What this project is
-2. .agent-spec/graph/KNOWLEDGE-GRAPH.md  ← How components relate
-3. .agent-spec/SESSION-SNAPSHOT.md       ← Where we left off
-4. .agent-spec/CONSTITUTION.md           ← Project-specific rules
+2. .agent-spec/SESSION-SNAPSHOT.md       ← Where we left off
+3. .agent-spec/CONSTITUTION.md           ← Project-specific rules
 ```
+
+*Note: Do NOT load `KNOWLEDGE-GRAPH.md` by default as it consumes too many tokens. Use the `query-graph` skill to lazy-load specific dependencies from `knowledge-graph.json` only when required.*
 
 If any of these files do not exist → run `/index-project` before proceeding.
 

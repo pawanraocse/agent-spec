@@ -10,8 +10,8 @@ To prevent the agent from inventing APIs, assuming library versions, or guessing
 
 Before making any technical claim, the agent MUST prepend one of the following scores:
 
-- **`[CONFIDENCE: HIGH]`**: The agent has directly read the relevant source code file during the *current* session. It knows exactly what is in the file.
-- **`[CONFIDENCE: MEDIUM]`**: The agent is relying on standard framework patterns (e.g., "In Spring Boot, controllers are typically annotated with `@RestController`"), but it hasn't verified the exact code in this specific project.
+- **`[CONFIDENCE: HIGH]`**: The agent has directly read the relevant source code file OR ran `./.agent-spec/bin/graphify-cli.py query` during the *current* session. It knows exactly what is in the file and its blast radius.
+- **`[CONFIDENCE: MEDIUM]`**: The agent is relying on standard framework patterns (e.g., "In Spring Boot, controllers are typically annotated with `@RestController`"), but it hasn't verified the exact code in this specific project via graphify or file reads.
 - **`[CONFIDENCE: LOW]`**: The agent is making an educated guess based on context clues.
 - **`[CONFIDENCE: UNKNOWN]`**: The agent does not have the information needed to make a claim.
 

@@ -1,15 +1,83 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "project": "agent-spec",
-  "generated": "2026-05-10T09:19:17",
-  "generator": "agent-spec-index v1.0.0",
-  "tech_stack": "Unknown",
+  "generated": "2026-05-25T21:53:52.205540",
+  "generator": "graphify-build-automated",
   "stats": {
     "java_files": 0,
     "ts_files": 0,
-    "test_files": 0
+    "test_files": 0,
+    "py_files": 3,
+    "go_files": 0
   },
-  "nodes": [],
-  "edges": [],
-  "note": "Agent should populate nodes/edges via /index-project skill"
+  "nodes": [
+    {
+      "id": "bin/graphify-build.py",
+      "type": "file",
+      "path": "bin/graphify-build.py"
+    },
+    {
+      "id": "bin/graphify-cli.py",
+      "type": "file",
+      "path": "bin/graphify-cli.py"
+    },
+    {
+      "id": "bin/generate-skills.py",
+      "type": "file",
+      "path": "bin/generate-skills.py"
+    }
+  ],
+  "edges": [
+    {
+      "source": "bin/graphify-build.py",
+      "target": "re",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-build.py",
+      "target": "os",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-build.py",
+      "target": "datetime",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-build.py",
+      "target": "json",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-cli.py",
+      "target": "sys",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-cli.py",
+      "target": "os",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-cli.py",
+      "target": "argparse",
+      "type": "imports"
+    },
+    {
+      "source": "bin/graphify-cli.py",
+      "target": "json",
+      "type": "imports"
+    },
+    {
+      "source": "bin/generate-skills.py",
+      "target": "os",
+      "type": "imports"
+    },
+    {
+      "source": "bin/generate-skills.py",
+      "target": "json",
+      "type": "imports"
+    }
+  ],
+  "note": "Automatically populated via AST/Regex extraction."
 }

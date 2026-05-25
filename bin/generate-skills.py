@@ -22,22 +22,22 @@ skills = [
     {
         "name": "hld",
         "description": "Generate High Level Design and Architecture. Output to sdlc/04-HLD.md",
-        "content": "1. Adopt the @ARCHITECT persona.\n2. Read 03-PRD.md, 02-TECH-SPEC.md, and KNOWLEDGE-GRAPH.md.\n3. Define components, data flow, and API boundaries.\n4. Generate a Mermaid diagram for the architecture.\n5. Output to .agent-spec/sdlc/04-HLD.md."
+        "content": "1. Adopt the @ARCHITECT persona.\n2. Read 03-PRD.md and 02-TECH-SPEC.md.\n3. Run `./.agent-spec/bin/graphify-cli.py stats` to get a bird's-eye view of the system architecture.\n4. Define components, data flow, and API boundaries.\n5. Generate a Mermaid diagram for the architecture.\n6. Output to .agent-spec/sdlc/04-HLD.md."
     },
     {
         "name": "lld",
         "description": "Generate Low Level Design (Classes, DB Schemas, API Contracts). Output to sdlc/05-LLD.md",
-        "content": "1. Adopt the @ARCHITECT persona.\n2. Read 04-HLD.md and KNOWLEDGE-GRAPH.md.\n3. Define exact class structures, DB tables, and JSON payloads.\n4. Verify SOLID principles AND apply the Simplicity First standard (coding-standards/SIMPLICITY-FIRST.md) to prevent over-engineering.\n5. Output to .agent-spec/sdlc/05-LLD.md."
+        "content": "1. Adopt the @ARCHITECT persona.\n2. Read 04-HLD.md.\n3. Run `./.agent-spec/bin/graphify-cli.py search <domain>` to explore existing related classes.\n4. Define exact class structures, DB tables, and JSON payloads.\n5. Verify SOLID principles AND apply the Simplicity First standard (coding-standards/SIMPLICITY-FIRST.md) to prevent over-engineering.\n6. Output to .agent-spec/sdlc/05-LLD.md."
     },
     {
         "name": "implement",
         "description": "Trigger the 6-Gate coding pipeline based on the LLD.",
-        "content": "1. Acknowledge implementation start.\n2. Begin GATE-1-DISCOVERY.md.\n3. Do not proceed to the next gate until the current gate's checklist is complete and approved.\n4. Strictly enforce Absolute Rule #9 (Surgical Changes) — modify only what is strictly required for the current task."
+        "content": "1. Acknowledge implementation start.\n2. Begin GATE-1-DISCOVERY.md.\n3. Run `./.agent-spec/bin/graphify-cli.py query --file <target_file>` to understand the blast radius before modifying any code.\n4. Do not proceed to the next gate until the current gate's checklist is complete and approved.\n5. Strictly enforce Absolute Rule #9 (Surgical Changes) — modify only what is strictly required for the current task."
     },
     {
         "name": "review",
         "description": "Deep skeptical code review.",
-        "content": "1. Adopt the @REVIEWER persona.\n2. Review the specified files against coding-standards/CLEAN-CODE.md AND coding-standards/SIMPLICITY-FIRST.md.\n3. Identify logic flaws, style violations, and missing tests.\n4. Output findings using [BLOCKER], [MINOR], and [NIT] tags."
+        "content": "1. Adopt the @REVIEWER persona.\n2. Run `./.agent-spec/bin/graphify-cli.py query --file <target_file>` to understand what depends on the file being reviewed.\n3. Review the specified files against coding-standards/CLEAN-CODE.md AND coding-standards/SIMPLICITY-FIRST.md.\n4. Identify logic flaws, style violations, and missing tests.\n5. Output findings using [BLOCKER], [MINOR], and [NIT] tags."
     },
     {
         "name": "solid-check",
@@ -48,6 +48,11 @@ skills = [
         "name": "index-project",
         "description": "Run Graphify to build or update the KNOWLEDGE-GRAPH.md",
         "content": "1. Run the `bin/agent-spec-index.sh` script.\n2. If unable to run scripts, manually scan the `src/` directory and update `.agent-spec/graph/knowledge-graph.json` and `KNOWLEDGE-GRAPH.md`."
+    },
+    {
+        "name": "query-graph",
+        "description": "Run the Graphify CLI to query the architecture instead of loading the whole graph.",
+        "content": "1. Run `./.agent-spec/bin/graphify-cli.py --help` to see available commands.\n2. Use `query --file <path>` to see file imports and blast radius.\n3. Use `search <keyword>` to find domain components.\n4. Use `stats` for an overview."
     },
     {
         "name": "snapshot",
@@ -106,11 +111,11 @@ for p_name, p_role in personas_list:
 # Directories
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLAUDE_DIR = os.path.join(PROJECT_ROOT, "skills", "claude")
-GEMINI_DIR = os.path.join(PROJECT_ROOT, "skills", "gemini")
 CURSOR_DIR = os.path.join(PROJECT_ROOT, "skills", "cursor")
 GENERIC_DIR = os.path.join(PROJECT_ROOT, "skills", "generic")
+GITHUB_DIR = os.path.join(PROJECT_ROOT, ".github")
 
-for d in [CLAUDE_DIR, GEMINI_DIR, CURSOR_DIR, GENERIC_DIR]:
+for d in [CLAUDE_DIR, CURSOR_DIR, GENERIC_DIR, GITHUB_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # Generate Claude Skills (Directory with SKILL.md)
@@ -133,19 +138,7 @@ allowed-tools:
     with open(os.path.join(skill_dir, "SKILL.md"), "w") as f:
         f.write(content)
 
-# Generate Gemini Skills (.toml)
-for skill in skills:
-    content = f"""[command]
-name = "{skill['name']}"
-description = "{skill['description']}"
-
-[prompt]
-text = \"\"\"
-{skill['content']}
-\"\"\"
-"""
-    with open(os.path.join(GEMINI_DIR, f"{skill['name']}.toml"), "w") as f:
-        f.write(content)
+# Deprecated: Gemini TOML generation is removed as Antigravity/Gemini natively supports the Generic folder structure.
 
 # Generate Cursor Skills (.md)
 for skill in skills:
@@ -180,4 +173,20 @@ allowed-tools:
     with open(os.path.join(skill_dir, "SKILL.md"), "w") as f:
         f.write(content)
 
-print(f"Generated {len(skills) * 4} skill files successfully.")
+# Generate GitHub Copilot / Codex Aggregated Skills
+copilot_content = "# Project Skills & Instructions\n\n"
+for skill in skills:
+    copilot_content += f"## /{skill['name']}\n**Description**: {skill['description']}\n{skill['content']}\n\n"
+
+with open(os.path.join(GITHUB_DIR, "copilot-instructions.md"), "w") as f:
+    f.write(copilot_content)
+
+# Generate Windsurf Rules (.windsurfrules)
+windsurf_content = "# Windsurf Project Rules & Skills\n\n"
+for skill in skills:
+    windsurf_content += f"## /{skill['name']}\n{skill['content']}\n\n"
+
+with open(os.path.join(PROJECT_ROOT, ".windsurfrules"), "w") as f:
+    f.write(windsurf_content)
+
+print("Generated universal skill files successfully.")

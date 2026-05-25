@@ -255,24 +255,21 @@ done
 echo -e "  ✅ Installed Claude skills"
 
 # ---------------------------------------------------------------------------
-# 4. Install Gemini skills → .gemini/commands/
+# 4. Install GitHub Copilot / Codex skills → .github/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[4/7] Installing Gemini skills → .gemini/commands/...${NC}"
-mkdir -p "${PROJECT_ROOT}/.gemini/commands"
-for skill in "${AGENT_SPEC_HOME}/skills/gemini/"*.toml; do
-  skill_name=$(basename "${skill}")
-  if [ ! -f "${PROJECT_ROOT}/.gemini/commands/${skill_name}" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
-    cp "${skill}" "${PROJECT_ROOT}/.gemini/commands/${skill_name}"
-  fi
-done
-echo -e "  ✅ Installed Gemini skills"
+echo -e "${YELLOW}[4/8] Installing GitHub Copilot instructions...${NC}"
+mkdir -p "${PROJECT_ROOT}/.github"
+if [ ! -f "${PROJECT_ROOT}/.github/copilot-instructions.md" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
+  cp "${AGENT_SPEC_HOME}/.github/copilot-instructions.md" "${PROJECT_ROOT}/.github/copilot-instructions.md"
+fi
+echo -e "  ✅ Installed GitHub Copilot instructions"
 
 # ---------------------------------------------------------------------------
 # 5. Install Cursor skills → .cursor/rules/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[5/7] Installing Cursor rules...${NC}"
+echo -e "${YELLOW}[5/8] Installing Cursor rules...${NC}"
 mkdir -p "${PROJECT_ROOT}/.cursor/rules"
 
 # Copy cursor rules (always-on)
@@ -289,10 +286,20 @@ done
 echo -e "  ✅ Installed Cursor rules"
 
 # ---------------------------------------------------------------------------
-# 6. Install Generic skills → .agents/skills/
+# 6. Install Windsurf rules → .windsurfrules
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[6/7] Installing generic skills → .agents/skills/...${NC}"
+echo -e "${YELLOW}[6/8] Installing Windsurf rules...${NC}"
+if [ ! -f "${PROJECT_ROOT}/.windsurfrules" ] || [ "$FORCE_OVERWRITE" = "true" ]; then
+  cp "${AGENT_SPEC_HOME}/.windsurfrules" "${PROJECT_ROOT}/.windsurfrules"
+fi
+echo -e "  ✅ Installed Windsurf rules"
+
+# ---------------------------------------------------------------------------
+# 7. Install Generic skills (for Antigravity/Gemini) → .agents/skills/
+# ---------------------------------------------------------------------------
+echo ""
+echo -e "${YELLOW}[7/8] Installing generic skills → .agents/skills/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.agents/skills"
 for skill_dir in "${AGENT_SPEC_HOME}/skills/generic/"*/; do
   if [ -d "${skill_dir}" ]; then
@@ -306,15 +313,16 @@ done
 echo -e "  ✅ Installed generic skills"
 
 # ---------------------------------------------------------------------------
-# 7. Install Framework Binaries → .agent-spec/bin/
+# 8. Install Framework Binaries → .agent-spec/bin/
 # ---------------------------------------------------------------------------
 echo ""
-echo -e "${YELLOW}[7/7] Installing framework binaries → .agent-spec/bin/...${NC}"
+echo -e "${YELLOW}[8/8] Installing framework binaries → .agent-spec/bin/...${NC}"
 mkdir -p "${PROJECT_ROOT}/.agent-spec/bin"
 cp "${AGENT_SPEC_HOME}/bin/agent-spec-index.sh" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-index"
 cp "${AGENT_SPEC_HOME}/bin/agent-spec-new.sh"   "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-new"
-chmod +x "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-index"
-chmod +x "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-new"
+cp "${AGENT_SPEC_HOME}/bin/graphify-build.py"   "${PROJECT_ROOT}/.agent-spec/bin/graphify-build.py"
+cp "${AGENT_SPEC_HOME}/bin/graphify-cli.py"     "${PROJECT_ROOT}/.agent-spec/bin/graphify-cli.py"
+chmod +x "${PROJECT_ROOT}/.agent-spec/bin/"*
 echo -e "  ✅ Installed agent-spec binaries"
 
 

@@ -12,10 +12,11 @@ At the **start of every session**, before any other action:
 ```
 1. Read: .agent-spec/SESSION-SNAPSHOT.md    → Where were we?
 2. Read: .agent-spec/PROJECT-INDEX.md       → What is this project?
-3. Read: .agent-spec/graph/KNOWLEDGE-GRAPH.md → Component relationships
-4. Read: .agent-spec/CONSTITUTION.md        → Project-specific rules
-5. Confirm context loaded. Ask if current.
+3. Read: .agent-spec/CONSTITUTION.md        → Project-specific rules
+4. Confirm context loaded. Ask if current.
 ```
+
+*Note: Do NOT load `KNOWLEDGE-GRAPH.md` by default. Use the `query-graph` skill to read specific parts of `knowledge-graph.json` only when needed.*
 
 If `.agent-spec/` does not exist → instruct user to run `agent-spec init`.
 
@@ -62,9 +63,9 @@ Before writing code, apply these filters:
 
 ---
 
-## ⚡ Available Commands
+## ⚡ Available Skills
 
-These commands are installed in `.gemini/commands/` (TOML format):
+These skills are available in the `.agents/skills/` directory:
 
 ```
 /requirements  → Structure raw customer requirements
@@ -75,6 +76,7 @@ These commands are installed in `.gemini/commands/` (TOML format):
 /implement     → 6-Gate coding pipeline
 /review        → SOLID + security + performance review
 /index-project → Graphify scan → knowledge graph
+/query-graph   → Query knowledge-graph.json for specific dependencies
 /snapshot      → Save session state
 /solid-check   → SOLID gate on code
 /debt          → Analyze tech debt

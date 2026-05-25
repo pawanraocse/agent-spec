@@ -12,7 +12,7 @@ Before any code is modified, the agent must prove the intended design respects t
     - **L**: (If subclassing) Does this break parent contracts?
     - **I**: (If interface) Is it lean?
     - **D**: Are high-level modules free of low-level implementation details?
-- [ ] **Dependency Graph Check**: Will this change introduce a circular dependency? 
+- [ ] **Dependency Graph Check**: Run `./.agent-spec/bin/graphify-cli.py query --file <file>` to verify blast radius. Will this change introduce a circular dependency? 
 - [ ] **New File vs Existing File**: If appending to an existing file makes it exceed 400 lines, explicitly suggest creating a new file/class instead.
 
 ## The Output
