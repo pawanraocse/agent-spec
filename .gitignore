@@ -9,3 +9,9 @@ dist/
 build/
 .env
 *.log
+
+# Local test init artifacts
+/.agent-spec/
+/.agents/
+/.claude/
+/.cursor/
