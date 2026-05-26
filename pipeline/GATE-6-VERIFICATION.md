@@ -8,7 +8,7 @@ After all tasks from Gate 4 are complete and tests are passing, the agent must f
 
 - [ ] **Anti-Hallucination Audit**: Run the `VERIFICATION-CHECKLIST.md`. Did we hallucinate any APIs? Do the tests actually cover the edge cases?
 - [ ] **Update Project Index**: Add the new components or modify the "Last Updated" timestamp in `.agent-spec/PROJECT-INDEX.md`.
-- [ ] **Update Knowledge Graph**: Modify `.agent-spec/graph/knowledge-graph.json` to reflect new dependencies.
+- [ ] **Update Knowledge Graph**: Run `./.agent-spec/bin/agent-spec-index --graphify` to automatically rebuild the dependency graph.
 - [ ] **Write Session Snapshot**: Capture the exact state of the project in `SESSION-SNAPSHOT.md` so the next session can resume perfectly.
 
 ## The Output
