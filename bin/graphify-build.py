@@ -162,8 +162,12 @@ def write_project_index(stack, modules):
 |------|-----------|------|------|
 | {date_str} | | 1 (Discovery) | Initial auto-indexing |
 """
-    with open(index_path, 'w') as f:
-        f.write(content)
+    if not os.path.exists(index_path):
+        with open(index_path, 'w') as f:
+            f.write(content)
+        print("Auto-generated PROJECT-INDEX.md")
+    else:
+        print("PROJECT-INDEX.md already exists, skipping auto-generation to preserve human notes.")
 
 if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -177,7 +181,6 @@ if __name__ == "__main__":
     nodes, edges, stats, modules = build_graph()
     
     write_project_index(stack, modules)
-    print("Auto-generated PROJECT-INDEX.md")
     
     graph_data = {
         "version": "2.0",
