@@ -8,9 +8,9 @@ The `agent-spec` memory system solves the "amnesia" problem where language model
 
 ## Core Components
 
-1. **[PROJECT-INDEX.md](PROJECT-INDEX.md)**: The human-readable narrative of the project. Tells the agent *what* the project is, what the modules do, and what the major architectural decisions are.
-2. **[KNOWLEDGE-GRAPH.md](KNOWLEDGE-GRAPH.md)**: The machine-readable dependency map (Graphify). Tells the agent *how* components interact, preventing circular dependencies and incorrect assumptions about structure.
-3. **[SESSION-SNAPSHOT.md](SESSION-SNAPSHOT.md)**: The point-in-time capture of current work. Tells the agent *where* we left off in the previous session.
+1. **`../PROJECT-INDEX.md`**: The human-readable narrative of the project. Tells the agent *what* the project is, what the modules do, and what the major architectural decisions are. (Auto-generated during initialization).
+2. **`../graph/KNOWLEDGE-GRAPH.md`**: The machine-readable dependency map (Graphify). Tells the agent *how* components interact, preventing circular dependencies and incorrect assumptions about structure.
+3. **`../SESSION-SNAPSHOT.md`**: The point-in-time capture of current work. Tells the agent *where* we left off in the previous session.
 
 ## Context Budgeting
 
