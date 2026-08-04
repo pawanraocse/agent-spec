@@ -46,11 +46,22 @@ Context windows are expensive, and large chats degrade AI reasoning logic.
 - Run `/dense` -> Forces the agent to output only tables and bullet points.
 
 ### 🌐 Universal Agent Compatibility
-When you run the init script, the framework automatically installs **60 native skills** directly into your project:
-- `.claude/commands/` (for Claude Code)
-- `.gemini/commands/` (for Gemini CLI)
-- `.cursor/skills/` (for Cursor)
-- `.agents/skills/` (for Generic/Copilot agents)
+When you run the init script, the framework installs its **26 skills** into every supported agent's
+native location, so the same command works whichever tool you open:
+
+| Tool | Installed to |
+|------|--------------|
+| Claude Code | `.claude/skills/<name>/SKILL.md` |
+| Cursor | `.cursor/rules/<name>.md` |
+| Generic / Copilot / Gemini / Antigravity | `.agents/skills/<name>/SKILL.md` |
+| GitHub Copilot (instructions) | `.github/copilot-instructions.md` |
+| Windsurf | `.windsurfrules` |
+
+Root-level `CLAUDE.md`, `AGENTS.md`, `COPILOT.md`, `CURSOR.md` and `GEMINI.md` are installed too.
+
+> **After installing, restart your agent CLI.** Claude Code only watches `.claude/skills/` if that
+> directory existed when the session started — if the installer just created it, the skills won't
+> show up until you restart.
 
 ### 🚨 The Pre-Change Declaration
 Tired of AI silently deleting half your file? We fixed that. Before executing a file modification, `agent-spec` forces the AI to output a **Pre-Change Declaration** stating:

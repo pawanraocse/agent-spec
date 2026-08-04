@@ -7,6 +7,26 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Fixed
+- **`/index-project` pointed at a path that never exists in an installed project.** The skill said to
+  run `bin/agent-spec-index.sh`, but `agent-spec-init.sh` installs that script as
+  `.agent-spec/bin/agent-spec-index` (relocated, `.sh` stripped). The old path only resolved inside
+  the agent-spec source repo, so the skill failed on first use in every consuming project. Fixed in
+  all three variants (`skills/claude/`, `skills/generic/`, `skills/cursor/`) and expanded with the
+  correct graph output locations, a verification step, and the `graphify-build.py` fallback.
+- **README documented the wrong install locations.** It listed `.claude/commands/`, `.gemini/commands/`
+  and `.cursor/skills/`; the installer actually writes `.claude/skills/`, `.cursor/rules/` and
+  `.agents/skills/` (Gemini is served by `.agents/skills/` + `GEMINI.md`, never `.gemini/`). Replaced
+  with a table matching what the script does, and corrected the skill count from 60 to 26.
+
+### Changed
+- **`agent-spec-init.sh` now tells you to restart your agent CLI first.** Claude Code only watches
+  `.claude/skills/` if the directory existed when the session started; when the installer creates it
+  mid-session the skills are installed correctly but stay invisible until a restart. This was silent
+  and looked like a broken install. Also noted in the README.
+
 ## [1.0.0] — 2026-05-09
 
 ### Added
