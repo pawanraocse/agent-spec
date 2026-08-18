@@ -41,7 +41,8 @@ Because different AI platforms (Claude Code, Gemini CLI, Cursor, GitHub Copilot)
 
 When you run `agent-spec init`, the framework copies the correct format into your project root:
 
-- **Claude**: `.claude/commands/*.md` (Markdown with YAML frontmatter)
-- **Gemini**: `.gemini/commands/*.toml` (TOML format)
-- **Cursor**: `.cursor/skills/*.md` (Markdown, referenced by rules)
-- **Generic**: `.agents/skills/*/SKILL.md` (Standard markdown for Copilot/Custom agents)
+- **Claude**: `.claude/skills/<name>/SKILL.md` (Markdown with YAML frontmatter)
+- **Cursor**: `.cursor/rules/<name>.md` (Markdown, loaded as rules)
+- **Generic**: `.agents/skills/<name>/SKILL.md` (standard markdown for Gemini/Copilot/Antigravity)
+- **Copilot**: `.github/copilot-instructions.md` (single always-on instructions file)
+- **Windsurf**: `.windsurfrules` (single always-on rules file)

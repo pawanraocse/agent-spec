@@ -67,7 +67,7 @@
 
 ## /index-project
 **Description**: Run Graphify to build or update the KNOWLEDGE-GRAPH.md
-1. Run the `bin/agent-spec-index.sh` script.
+1. Run the `./.agent-spec/bin/agent-spec-index --graphify` script.
 2. If unable to run scripts, manually scan the `src/` directory and update `.agent-spec/graph/knowledge-graph.json` and `KNOWLEDGE-GRAPH.md`.
 
 ## /query-graph
