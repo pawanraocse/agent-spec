@@ -15,7 +15,7 @@
 
 ### 🕸️ Graphify: Zero-Amnesia Memory
 LLMs forget your architecture the moment you start a new chat. `agent-spec` solves this.
-- Run `./bin/agent-spec-index.sh` to automatically scan your codebase and build a machine-readable JSON Knowledge Graph and Mermaid diagram.
+- Run `./.agent-spec/bin/agent-spec-index --graphify` to automatically scan your codebase and build a machine-readable JSON Knowledge Graph and Mermaid diagram.
 - The agent reads this map to understand dependencies *before* writing code, preventing circular dependencies and context amnesia.
 
 ### 🎭 10 Expert Personas
@@ -103,7 +103,7 @@ cd my-awesome-project
 curl -sSL "https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/agent-spec-init.sh?t=$(date +%s)" | bash
 
 # 3. Build your project's initial Knowledge Graph
-./.agent-spec/bin/agent-spec-index.sh --graphify
+./.agent-spec/bin/agent-spec-index --graphify
 ```
 
 ---
@@ -133,7 +133,7 @@ Long chats exhaust the AI's context window, leading to amnesia and degraded reas
 LLMs forget everything when you close the chat. `agent-spec` relies on explicit state updates to maintain persistent memory.
 
 **At the end of your day, do two things:**
-1. **Update the Graph**: If you added new files or changed architecture, run `./.agent-spec/bin/agent-spec-index.sh --graphify` (or type `/index-project`) to rebuild the dependency map.
+1. **Update the Graph**: If you added new files or changed architecture, run `./.agent-spec/bin/agent-spec-index --graphify` (or type `/index-project`) to rebuild the dependency map.
 2. **Save the State**: Type `/snapshot`. The agent will summarize what it just built, what's broken, and what files need to be loaded tomorrow, saving it to `.agent-spec/SESSION-SNAPSHOT.md`.
 
 When you open a new chat tomorrow, simply say: *"Read the session snapshot and let's resume."*

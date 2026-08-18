@@ -90,7 +90,9 @@ Before writing code, apply these filters:
 
 ## ⚡ Available Slash Commands
 
-These skills are installed in `.claude/commands/`:
+These skills are installed as `.claude/skills/<name>/SKILL.md`:
+
+**Pipeline & analysis**
 
 | Command | What Triggers |
 |---------|--------------|
@@ -101,12 +103,33 @@ These skills are installed in `.claude/commands/`:
 | `/lld` | SDLC Gate 4: Low Level Design |
 | `/implement $ARGUMENTS` | 6-Gate coding pipeline |
 | `/review` | SOLID + security + performance review |
-| `/index-project` | Graphify scan → update knowledge graph |
-| `/snapshot` | Save current session state |
 | `/solid-check $ARGUMENTS` | SOLID gate on specified code |
 | `/debt` | Analyze and register tech debt |
-| `/caveman` | Switch to minimal output mode |
-| `/defluffer` | Remove verbosity from responses |
+| `/index-project` | Graphify scan → update knowledge graph |
+| `/query-graph $ARGUMENTS` | Query the graph instead of loading all of it |
+| `/snapshot` | Save current session state |
+
+**Persona switches** — see `personas/` for each one's hard rules
+
+| Command | Activates |
+|---------|-----------|
+| `/architect` | @ARCHITECT — Principal Software Architect |
+| `/security` | @SECURITY — Security Auditor |
+| `/qa` | @QA — QA Engineer |
+| `/reviewer` | @REVIEWER — Code Reviewer (default) |
+| `/refactor` | @REFACTOR — Refactor Specialist |
+| `/api` | @API — API Designer |
+| `/data` | @DATA — Data Engineer |
+| `/devops` | @DEVOPS — DevOps Engineer |
+| `/perf` | @PERF — Performance Engineer |
+| `/writer` | @WRITER — Technical Writer |
+
+**Token reduction**
+
+| Command | What Triggers |
+|---------|--------------|
+| `/raw-code` | Code blocks only, no prose |
+| `/trim-noise` | Cut conversational filler |
 | `/dense` | Maximum information density mode |
 | `/verbose` | Restore default mode |
 
@@ -115,8 +138,8 @@ These skills are installed in `.claude/commands/`:
 ## 🪨 Token Management
 
 Claude must monitor context window usage:
-- When in `/caveman` mode: code only, single-line answers, no preamble
-- When in `/defluffer` mode: cut all filler phrases, reduce by 40-60%
+- When in `/raw-code` mode: code only, single-line answers, no preamble
+- When in `/trim-noise` mode: cut all filler phrases, reduce by 40-60%
 - When in `/dense` mode: use tables, bullets, abbreviations, no prose
 - When context is >70% full: **proactively run `/snapshot`** before continuing
 

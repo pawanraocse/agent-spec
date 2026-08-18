@@ -40,13 +40,14 @@ All non-trivial claims must include confidence rating:
 
 ## 💡 Cursor Skills
 
-Cursor skills are installed in `.cursor/skills/`. Reference them in chat by describing the task:
+Cursor skills are installed in `.cursor/rules/`. Reference them in chat by describing the task:
 - "Run requirements skill for: [description]"
 - "Run prd skill using the requirements doc"
 - "Run solid-check on UserService.java"
-- "Switch to caveman mode" / "Switch to defluffer mode"
+- "Switch to raw-code mode" / "Switch to trim-noise mode"
 
-Cursor will load the skill content from `.cursor/skills/[skill-name].md` and execute.
+Cursor will load the skill content from `.cursor/rules/[skill-name].md` and execute.
+The always-on rules live alongside them in `.cursor/rules/agent-spec-rules.md`.
 
 ---
 

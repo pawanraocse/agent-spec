@@ -20,6 +20,20 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   and `.cursor/skills/`; the installer actually writes `.claude/skills/`, `.cursor/rules/` and
   `.agents/skills/` (Gemini is served by `.agents/skills/` + `GEMINI.md`, never `.gemini/`). Replaced
   with a table matching what the script does, and corrected the skill count from 60 to 26.
+- **The remaining agent config files documented the same wrong install locations.** The README fix
+  above missed its siblings: `CLAUDE.md` said `.claude/commands/`, `CURSOR.md` said `.cursor/skills/`,
+  `COPILOT.md` said `.github/skills/` (the installer writes only `.github/copilot-instructions.md`;
+  Copilot's skills come from `.agents/skills/`), and `skills/README.md` still listed all three plus a
+  `.gemini/commands/*.toml` target the installer has never produced. All now match the script.
+- **`/caveman` and `/defluffer` do not exist.** `CLAUDE.md`, `CURSOR.md` and `COPILOT.md` advertised
+  both; the actual skills are `/raw-code` and `/trim-noise`. Invoking either documented name was a
+  guaranteed miss.
+- **`CLAUDE.md` was missing 11 of the 26 installed skills** — `/query-graph` and the ten persona
+  switches added in `bf5410f` (`/architect`, `/security`, `/qa`, `/reviewer`, `/refactor`, `/api`,
+  `/data`, `/devops`, `/perf`, `/writer`) never made it into the slash-command table.
+- **Two more stale `bin/agent-spec-index.sh` references**, in `.windsurfrules` and
+  `.github/copilot-instructions.md`, plus three in the README that kept the `.sh` the installer
+  strips. Same failure as the `/index-project` fix above.
 
 ### Changed
 - **`agent-spec-init.sh` now tells you to restart your agent CLI first.** Claude Code only watches

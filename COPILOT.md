@@ -38,12 +38,13 @@ Always declare confidence:
 
 ## 💡 Copilot Skills
 
-Skills installed in `.github/skills/`. Invoke via Copilot Chat:
+These instructions are installed as `.github/copilot-instructions.md`; the skill files they
+refer to are installed as `.agents/skills/<name>/SKILL.md`. Invoke via Copilot Chat:
 - `@agent-spec /prd "feature description"`
 - `@agent-spec /hld`
 - `@agent-spec /solid-check`
-- `@agent-spec /caveman` — minimal responses
-- `@agent-spec /defluffer` — concise responses
+- `@agent-spec /raw-code` — minimal responses, code only
+- `@agent-spec /trim-noise` — concise responses
 
 ---
 
