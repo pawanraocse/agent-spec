@@ -9,6 +9,15 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **`sdlc-team/` — a standalone Claude Code plugin** providing a gated SDLC pipeline: 9 subagents
+  (PRD → HLD → LLD → implementation → review → test → QA → deployment), 11 skills and 10 slash
+  commands. Drops into any repo with no other setup. Orchestration runs in the main conversation
+  rather than a subagent, because subagents cannot pause to ask the user anything — putting the
+  pipeline inside one would silently discard the confirmation gates. Stages hand off through files
+  in `docs/sdlc/<slug>/`, and every stage reconciles its output against the previous artifact,
+  halting on anything `MISSING` or `CONTRADICTS`.
+
 ### Fixed
 - **`/index-project` pointed at a path that never exists in an installed project.** The skill said to
   run `bin/agent-spec-index.sh`, but `agent-spec-init.sh` installs that script as

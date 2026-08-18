@@ -33,6 +33,33 @@ The agent is physically blocked from writing code until the design is proven.
 `Requirements` → `Tech Spec` → `PRD` → `HLD` → `LLD` → `Code Execution`.
 Every stage generates a markdown artifact, creating a perfect lineage of intent.
 
+### 🤖 The `sdlc-team` Plugin (Claude Code)
+Bundled in this repo as a **standalone Claude Code plugin** — drop `sdlc-team/` into any project and
+get a virtual engineering team. No `agent-spec init` required; it works on its own.
+
+Nine subagents cover the full lifecycle, driven by one command:
+
+```bash
+claude --plugin-dir ./sdlc-team
+```
+
+```
+/new-feature "add CSV export"
+  → prd-writer → hld-architect → lld-designer → developer
+  → code-reviewer → tester → qa-validator → deployment-engineer
+```
+
+It **pauses for your confirmation after every stage** — no chaining two stages on one approval.
+Each stage reconciles its output against the previous stage's artifact and reports what doesn't
+add up, so a dropped requirement surfaces at the next gate instead of in production. Individual
+stages also run standalone (`/review` on a PR, `/ask-architect` for ad-hoc advice).
+
+Two agents (`code-reviewer`, `qa-validator`) have no edit tool by design — an agent that can
+modify what it's checking isn't a gate.
+
+See [`sdlc-team/README.md`](sdlc-team/README.md) for the pipeline and install options, and
+[`sdlc-team/TESTING.md`](sdlc-team/TESTING.md) for prompts that verify each agent behaves.
+
 ### 📐 Spec-Driven Development (SDD)
 "Vibe Coding" is the act of prompting an AI until it spits out something that looks like it works. `agent-spec` kills this by enforcing **Spec-Driven Development**. 
 - The agent **cannot** begin implementation until an LLD (Low Level Design) is signed off.
