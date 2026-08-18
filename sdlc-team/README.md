@@ -13,7 +13,44 @@ A dropped requirement should surface at the next gate — not in production.
 
 ## Install
 
-### Try it in one repo (no install)
+### Quickest — run the installer
+
+From wherever you cloned this repo:
+
+```bash
+./sdlc-team/install.sh /path/to/your-project
+```
+
+On Windows:
+
+```powershell
+.\sdlc-team\install.ps1 C:\path\to\your-project
+```
+
+Omit the path to install into the current directory. Both scripts copy the plugin to
+`<project>/.claude/skills/sdlc-team/`, verify the install, run `claude plugin validate`
+if the CLI is on PATH, and warn you if `.gitignore` would hide it from teammates.
+
+Flags: `--force` / `-Force` to overwrite an existing install, `--dev` / `-Dev` to skip
+copying and just print the `--plugin-dir` command.
+
+> **Restart Claude Code afterwards.** It only picks up `.claude/skills/` that existed
+> when the session started. A mid-session install looks broken but is not.
+
+Then try `/prd add CSV export`. If that command is not found, try the namespaced form
+`/sdlc-team:prd`.
+
+### Manual — if you would rather not run a script
+
+```bash
+mkdir -p your-project/.claude/skills
+cp -R sdlc-team your-project/.claude/skills/sdlc-team
+```
+
+Commit `.claude/skills/sdlc-team/` and it loads automatically for everyone who clones
+the repo, once they accept the workspace trust prompt.
+
+### Session-only, no install
 
 ```bash
 claude --plugin-dir /path/to/sdlc-team
@@ -21,29 +58,13 @@ claude --plugin-dir /path/to/sdlc-team
 
 Loads for that session only. Best for evaluating it.
 
-### Install for a project (shared with the team)
-
-Copy the folder into the repo and commit it:
-
-```bash
-mkdir -p .claude/skills
-cp -R /path/to/sdlc-team .claude/skills/sdlc-team
-git add .claude/skills/sdlc-team && git commit -m "Add sdlc-team plugin"
-```
-
-It loads automatically as `sdlc-team@skills-dir` for anyone who clones the repo, once
-they accept the workspace trust prompt.
-
-> **Restart Claude Code after installing.** A session that started before the plugin
-> existed will not see it, which looks like a broken install but is not.
-
-Verify with:
+### Verify
 
 ```bash
 claude plugin validate ./sdlc-team
 ```
 
-No other setup, dependencies, or marketplace registration is required.
+No dependencies and no marketplace registration are required.
 
 ---
 
@@ -196,8 +217,10 @@ sdlc-team/
 ├── commands/        10 slash commands
 ├── skills/          11 skills
 │   └── coding-assistant/references/   framework specifics, loaded on demand
-├── README.md
-└── TESTING.md      verification prompts per agent and skill
+├── install.sh       installer (WSL / Linux / macOS)
+├── install.ps1      installer (Windows)
+├── TESTING.md       verification prompts per agent and skill
+└── README.md
 ```
 
 ---

@@ -17,6 +17,11 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   pipeline inside one would silently discard the confirmation gates. Stages hand off through files
   in `docs/sdlc/<slug>/`, and every stage reconciles its output against the previous artifact,
   halting on anything `MISSING` or `CONTRADICTS`.
+- **`sdlc-team/install.sh` and `install.ps1`** — installers for the plugin. They copy it to
+  `<project>/.claude/skills/sdlc-team/` so Claude Code auto-discovers it with no `--plugin-dir`
+  flag, verify the result, run `claude plugin validate` when the CLI is on PATH, and warn when
+  `.gitignore` would hide the install from teammates. `--force`/`-Force` overwrites;
+  `--dev`/`-Dev` skips copying and prints the session-only command instead.
 
 ### Fixed
 - **`/index-project` pointed at a path that never exists in an installed project.** The skill said to

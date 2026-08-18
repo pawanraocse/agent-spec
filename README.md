@@ -37,11 +37,18 @@ Every stage generates a markdown artifact, creating a perfect lineage of intent.
 Bundled in this repo as a **standalone Claude Code plugin** — drop `sdlc-team/` into any project and
 get a virtual engineering team. No `agent-spec init` required; it works on its own.
 
-Nine subagents cover the full lifecycle, driven by one command:
+Nine subagents cover the full lifecycle. Install it into any project with one command:
 
 ```bash
-claude --plugin-dir ./sdlc-team
+./sdlc-team/install.sh /path/to/your-project
 ```
+
+```powershell
+.\sdlc-team\install.ps1 C:\path\to\your-project
+```
+
+Then **restart Claude Code** — it only picks up `.claude/skills/` that existed when the session
+started, so a mid-session install looks broken but is not.
 
 ```
 /new-feature "add CSV export"
