@@ -21,7 +21,7 @@ for arg in "$@"; do
   case "$arg" in
     --force) FORCE="true" ;;
     --dev)   DEV="true" ;;
-    -h|--help) sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)  sed -n '3,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *)       TARGET="$arg" ;;
   esac
 done
