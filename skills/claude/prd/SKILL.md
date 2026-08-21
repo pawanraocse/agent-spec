@@ -1,6 +1,6 @@
 ---
 name: "prd"
-description: "Generate Product Requirements Document with MoSCoW and Validation. Output to sdlc/03-PRD.md"
+description: "Generate Product Requirements Document with MoSCoW and Validation. Output to .agent-spec/sdlc/03-PRD.md"
 allowed-tools:
   - "Read"
   - "Write"
@@ -10,8 +10,12 @@ allowed-tools:
 # Prd Skill
 
 1. Adopt the @WRITER persona.
-2. Read 01-REQUIREMENTS.md and 02-TECH-SPEC.md.
+2. Read `.agent-spec/sdlc/01-REQUIREMENTS.md` and `02-TECH-SPEC.md`.
 3. Follow the iterative Discover -> Document -> Review cycle.
 4. Apply MoSCoW prioritization to all features.
-5. Run the 14-point Validation Checklist defined in sdlc/03-PRD.md.
-6. Output to .agent-spec/sdlc/03-PRD.md and provide a Status Report in chat.
+5. Run the 14-point Validation Checklist defined in `.agent-spec/sdlc/03-PRD.md`.
+6. Output to `.agent-spec/sdlc/03-PRD.md`.
+7. **Before reporting done: run the [`self-review`](../self-review/SKILL.md) loop** on what
+   you wrote — two passes, apply the fixes yourself, then give the Status Report once. Do
+   not hand over a draft and wait to be asked for a review. Pay particular attention to
+   coverage: every upstream requirement must have a home here.
