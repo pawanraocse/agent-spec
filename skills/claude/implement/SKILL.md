@@ -1,16 +1,23 @@
 ---
 name: "implement"
 description: "Build a change through the 6-gate pipeline — declare before touching, tests first, surgical diff, self-review at the end, honest report."
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Edit"
-  - "Bash"
-  - "Grep"
-  - "Glob"
 ---
 
 # Implement Skill
+
+## Gate
+
+```bash
+ls .agent-spec/sdlc/05-LLD*.md 2>/dev/null || echo "no LLD — small-change mode"
+```
+
+If an LLD covers this area, read it first and build what it specifies; a diff that
+contradicts an approved design is a defect even when it works. If there is none, this is
+small-change mode — proceed, but say so, so nobody assumes a design gate was passed.
+
+**If the cause of the problem is not yet known, stop and run `/investigate` instead.**
+Edit-test-edit without a mechanism is the most expensive loop in this framework.
+
 
 ## Before writing anything
 

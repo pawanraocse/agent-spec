@@ -1,11 +1,6 @@
 ---
 name: "snapshot"
 description: "Append a dated section to SESSION-SNAPSHOT.md to save current session state. Never overwrites — the running record of corrections and reversed decisions is the point."
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Edit"
-  - "Bash"
 ---
 
 # Snapshot Skill

@@ -6,9 +6,14 @@ If you build a workflow that makes your AI agent more effective, we want it in `
 
 ## How to Submit a Skill
 
-1. **Define the Skill**: Create a markdown file describing the prompt, inputs, and expected outputs.
-2. **Translate it**: Provide versions for Claude (YAML frontmatter), Gemini (TOML), and Generic (Markdown).
-3. **Open a PR**: Submit it to the `skills/` directory of this repository.
+1. **Write it once**: `skills/claude/<name>/SKILL.md` — YAML frontmatter (`name`,
+   `description`) plus a markdown body. This is the only hand-edited copy.
+2. **Render the rest**: run `./bin/agent-spec-render-skills.sh`. Cursor and the generic
+   agents read the same `SKILL.md` shape, so the installer copies it directly; the
+   script regenerates the two flat formats (`.windsurfrules`,
+   `.github/copilot-instructions.md`). Never edit those by hand — they are overwritten.
+   `--check` fails if they are stale.
+3. **Open a PR** against `skills/claude/`.
 
 ## Skill Design Guidelines
 

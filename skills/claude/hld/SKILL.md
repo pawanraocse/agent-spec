@@ -1,13 +1,21 @@
 ---
 name: "hld"
 description: "Generate High Level Design and Architecture — service boundaries, data model, API contracts, NFRs. Gated on an approved PRD/TECH-SPEC. Output to .agent-spec/sdlc/04-HLD.md"
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Bash"
 ---
 
 # HLD Skill
+
+## Gate
+
+```bash
+test -f .agent-spec/sdlc/03-PRD.md && echo present || echo MISSING
+```
+
+`MISSING` → stop. Say that `/prd` has to run first, and why this gate cannot
+substitute for it. **Never synthesise the upstream document to unblock yourself** — a
+design built on an invented predecessor is worse than no design, because it looks
+approved.
+
 
 Adopt the **@ARCHITECT** persona.
 
@@ -71,3 +79,10 @@ Additionally, for an HLD specifically:
 
 `.agent-spec/sdlc/04-HLD.md`, self-reviewed. Then **stop** — the LLD is a separate,
 separately-approved step.
+
+## Next gate
+
+`/lld` — classes, schemas and contracts, one file per service.
+
+State this and stop. Do not run the next gate yourself — each one is a separate approval,
+and chaining two on one "yes" is how a requirement gets dropped without anyone noticing.

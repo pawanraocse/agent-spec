@@ -10,6 +10,7 @@
 At the start of every session:
 
 ```
+0. If .agent-spec/.onboarding-needed exists → run the `onboard` skill FIRST.
 1. Read: .agent-spec/SESSION-SNAPSHOT.md
 2. Read: .agent-spec/PROJECT-INDEX.md
 3. Read: .agent-spec/graph/KNOWLEDGE-GRAPH.md

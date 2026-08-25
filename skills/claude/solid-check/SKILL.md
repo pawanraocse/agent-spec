@@ -3,7 +3,8 @@ name: "solid-check"
 description: "Audit a file specifically for SOLID principle violations, sanity-checked against SIMPLICITY-FIRST so it does not manufacture abstractions."
 allowed-tools:
   - "Read"
-  - "Write"
+  - "Grep"
+  - "Glob"
   - "Bash"
 ---
 

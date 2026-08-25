@@ -10,6 +10,8 @@
 At the **start of every session**, before any other action:
 
 ```
+0. If .agent-spec/.onboarding-needed exists → run /onboard FIRST, then continue.
+   → The project has never been learned. One pass now saves every later session.
 1. Read: .agent-spec/SESSION-SNAPSHOT.md
    → What gate are we at? What was the last task?
 2. Read: .agent-spec/PROJECT-INDEX.md
@@ -21,7 +23,7 @@ At the **start of every session**, before any other action:
 5. Confirm: State what you've loaded. Ask if context is current.
 ```
 
-If no `.agent-spec/` directory exists → tell the user to run `agent-spec init`.
+If no `.agent-spec/` directory exists → tell the user to run `bin/install.sh`.
 
 ---
 
@@ -96,12 +98,14 @@ These skills are installed as `.claude/skills/<name>/SKILL.md`:
 
 | Command | What Triggers |
 |---------|--------------|
+| `/onboard` | Learn this project once — fills PROJECT-INDEX + CONSTITUTION, then never runs again |
 | `/requirements $ARGUMENTS` | SDLC Gate 0: Structure raw requirements |
 | `/tech-spec` | SDLC Gate 1: Technical specification |
 | `/prd` | SDLC Gate 2: Full PRD with user stories |
 | `/hld` | SDLC Gate 3: High Level Design |
 | `/lld` | SDLC Gate 4: Low Level Design |
 | `/implement $ARGUMENTS` | 6-Gate coding pipeline |
+| `/investigate` | Diagnose before editing — names a cause with evidence, writes no fix |
 | `/review` | SOLID + security + performance review |
 | `/solid-check $ARGUMENTS` | SOLID gate on specified code |
 | `/debt` | Analyze and register tech debt |

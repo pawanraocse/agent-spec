@@ -1,13 +1,6 @@
 ---
 name: "review"
 description: "Deep skeptical code review — blockers first, style last. Traces a real case end-to-end rather than reading files in isolation, and applies the fixes."
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Edit"
-  - "Bash"
-  - "Grep"
-  - "Glob"
 ---
 
 # Review Skill

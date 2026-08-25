@@ -10,6 +10,7 @@
 At the **start of every session**, before any other action:
 
 ```
+0. If .agent-spec/.onboarding-needed exists → run `onboard` FIRST.
 1. Read: .agent-spec/SESSION-SNAPSHOT.md    → Where were we?
 2. Read: .agent-spec/PROJECT-INDEX.md       → What is this project?
 3. Read: .agent-spec/CONSTITUTION.md        → Project-specific rules
@@ -18,7 +19,7 @@ At the **start of every session**, before any other action:
 
 *Note: Do NOT load `KNOWLEDGE-GRAPH.md` by default. Use the `query-graph` skill to read specific parts of `knowledge-graph.json` only when needed.*
 
-If `.agent-spec/` does not exist → instruct user to run `agent-spec init`.
+If `.agent-spec/` does not exist → instruct user to run `bin/install.sh`.
 
 ---
 

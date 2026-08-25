@@ -1,11 +1,6 @@
 ---
 name: "self-review"
 description: "The mandatory review-and-repair loop that runs INSIDE any artifact-producing skill (hld, lld, requirements, tech-spec, prd, implement) before it reports done. Bounded, not open-ended. Also invokable standalone as /self-review <file>."
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Bash"
-  - "Grep"
 ---
 
 # Self-Review

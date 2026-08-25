@@ -1,13 +1,21 @@
 ---
 name: "lld"
 description: "Generate Low Level Design — classes, DB schemas, API contracts, sequence flows. One file per service. Gated on an approved 04-HLD.md. Output to .agent-spec/sdlc/05-LLD[-<service>].md"
-allowed-tools:
-  - "Read"
-  - "Write"
-  - "Bash"
 ---
 
 # LLD Skill
+
+## Gate
+
+```bash
+test -f .agent-spec/sdlc/04-HLD.md && echo present || echo MISSING
+```
+
+`MISSING` → stop. Say that `/hld` has to run first, and why this gate cannot
+substitute for it. **Never synthesise the upstream document to unblock yourself** — a
+design built on an invented predecessor is worse than no design, because it looks
+approved.
+
 
 Adopt the **@ARCHITECT** persona.
 
@@ -68,3 +76,10 @@ Additionally, for an LLD specifically:
 
 `.agent-spec/sdlc/05-LLD-<service>.md`, one per service, self-reviewed. A single
 `05-LLD.md` is correct only when the HLD defines exactly one service.
+
+## Next gate
+
+`/implement` — the 6-gate coding pipeline, one LLD section at a time.
+
+State this and stop. Do not run the next gate yourself — each one is a separate approval,
+and chaining two on one "yes" is how a requirement gets dropped without anyone noticing.

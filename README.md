@@ -1,181 +1,81 @@
 # 🚀 agent-spec
+
 > **Stop "vibe coding." Start engineering.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Framework: Agnostic](https://img.shields.io/badge/Framework-Agnostic-success.svg)](#)
 [![Agents: Claude | Cursor | Gemini | Copilot](https://img.shields.io/badge/Agents-Claude%20|%20Cursor%20|%20Gemini%20|%20Copilot-blueviolet)](#)
 
-**agent-spec** is a framework that installs directly into your repository to turn your hallucination-prone AI coding assistant into a disciplined, context-aware software engineer.
+A framework that installs into your repo and turns a hallucination-prone coding assistant
+into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
+strict confidence scoring, and 29 skills that work in Claude Code, Cursor, Gemini, Copilot
+and Windsurf.
 
 ---
 
-## 🔥 The Superpowers (Features)
+## Install
 
-`agent-spec` doesn't just prompt your AI—it fundamentally changes how it operates by imposing a strict operating system of rules, memory, and pipelines.
-
-### 🕸️ Graphify: Zero-Amnesia Memory
-LLMs forget your architecture the moment you start a new chat. `agent-spec` solves this.
-- Run `./.agent-spec/bin/agent-spec-index --graphify` to automatically scan your codebase and build a machine-readable JSON Knowledge Graph and Mermaid diagram.
-- The agent reads this map to understand dependencies *before* writing code, preventing circular dependencies and context amnesia.
-
-### 🎭 10 Expert Personas
-Default AI agents are "Yes Men" that will write terrible code just to appease you quickly. We fix that with strict personas:
-- `Activate: @ARCHITECT` -> Enforces SOLID principles and blocks the creation of God Objects.
-- `Activate: @SECURITY` -> Assumes zero-trust. Demands parameterized queries and rejects hardcoded secrets.
-- `Activate: @QA` -> Enforces Test-Driven Development (TDD). No code without a failing test first.
-
-### 🛡️ Strict Anti-Hallucination Protocol
-Agents love to guess API signatures and library versions. `agent-spec` enforces a strict `[CONFIDENCE]` scoring protocol. 
-If the agent hasn't read the actual file in the current session, it is forbidden from claiming `[CONFIDENCE: HIGH]`. It is explicitly trained that saying *"I don't know, let me check the file"* is the correct answer.
-
-### 🚦 The 6-Gate SDLC Pipeline
-The agent is physically blocked from writing code until the design is proven.
-`Requirements` → `Tech Spec` → `PRD` → `HLD` → `LLD` → `Code Execution`.
-Every stage generates a markdown artifact, creating a perfect lineage of intent.
-
-### 🤖 The `sdlc-team` Plugin (Claude Code)
-Bundled in this repo as a **standalone Claude Code plugin** — drop `sdlc-team/` into any project and
-get a virtual engineering team. No `agent-spec init` required; it works on its own.
-
-Nine subagents cover the full lifecycle. Install it into any project with one command:
+One command. No Python or Node dependencies.
 
 ```bash
-./sdlc-team/install.sh /path/to/your-project
+curl -sSL https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/install.sh | bash
 ```
 
-```powershell
-.\sdlc-team\install.ps1 C:\path\to\your-project
-```
+It installs skills **machine-wide** — every project on the box gets them — and sets up
+`.agent-spec/` in the current directory. Run it in an empty directory and you get a new
+project, git and all.
 
-Then **restart Claude Code** — it only picks up `.claude/skills/` that existed when the session
-started, so a mid-session install looks broken but is not.
+**Update:** re-run the exact same command.
 
-```
-/new-feature "add CSV export"
-  → prd-writer → hld-architect → lld-designer → developer
-  → code-reviewer → tester → qa-validator → deployment-engineer
-```
+Then restart your agent (skills are read at session start) and type **`/onboard`**. It
+reads the graph and the manifest, writes `PROJECT-INDEX.md` and `CONSTITUTION.md` from
+what is actually in your repo, and never runs again — so no later session has to
+rediscover the project.
 
-It **pauses for your confirmation after every stage** — no chaining two stages on one approval.
-Each stage reconciles its output against the previous stage's artifact and reports what doesn't
-add up, so a dropped requirement surfaces at the next gate instead of in production. Individual
-stages also run standalone (`/review` on a PR, `/ask-architect` for ad-hoc advice).
+<details>
+<summary>Options</summary>
 
-Two agents (`code-reviewer`, `qa-validator`) have no edit tool by design — an agent that can
-modify what it's checking isn't a gate.
+| Flag | Effect |
+|---|---|
+| `--skills-only` | Machine-wide skills, touch nothing in this directory |
+| `--project-only` | This directory only |
+| `--project-skills` | Also commit skills into `.claude/` and `.cursor/` (team repos) |
+| `--lean` | Skip the 8 SDLC-design skills |
+| `--force` | Overwrite existing project files |
 
-See [`sdlc-team/README.md`](sdlc-team/README.md) for the pipeline and install options, and
-[`sdlc-team/TESTING.md`](sdlc-team/TESTING.md) for prompts that verify each agent behaves.
-
-### 📐 Spec-Driven Development (SDD)
-"Vibe Coding" is the act of prompting an AI until it spits out something that looks like it works. `agent-spec` kills this by enforcing **Spec-Driven Development**. 
-- The agent **cannot** begin implementation until an LLD (Low Level Design) is signed off.
-- This forces the AI to consider edge cases, data structures, and SOLID principles *before* it starts a single line of code.
-- Result: 80% fewer regressions and 100% predictable architecture.
-
-### 📉 Token Reduction Skills
-Context windows are expensive, and large chats degrade AI reasoning logic.
-- Run `/raw-code` -> The agent outputs ONLY code blocks. Zero pleasantries. Zero conversational fluff.
-- Run `/trim-noise` -> Reduces chatty outputs by 40%.
-- Run `/dense` -> Forces the agent to output only tables and bullet points.
-
-### 🌐 Universal Agent Compatibility
-When you run the init script, the framework installs its **26 skills** into every supported agent's
-native location, so the same command works whichever tool you open:
-
-| Tool | Installed to |
-|------|--------------|
-| Claude Code | `.claude/skills/<name>/SKILL.md` |
-| Cursor | `.cursor/rules/<name>.md` |
-| Generic / Copilot / Gemini / Antigravity | `.agents/skills/<name>/SKILL.md` |
-| GitHub Copilot (instructions) | `.github/copilot-instructions.md` |
-| Windsurf | `.windsurfrules` |
-
-Root-level `CLAUDE.md`, `AGENTS.md`, `COPILOT.md`, `CURSOR.md` and `GEMINI.md` are installed too.
-
-> **After installing, restart your agent CLI.** Claude Code only watches `.claude/skills/` if that
-> directory existed when the session started — if the installer just created it, the skills won't
-> show up until you restart.
-
-### 🚨 The Pre-Change Declaration
-Tired of AI silently deleting half your file? We fixed that. Before executing a file modification, `agent-spec` forces the AI to output a **Pre-Change Declaration** stating:
-1. What it will change.
-2. What could break if it is wrong.
-3. The exact bash command to verify the change.
-
-### 📝 Auto-Logging Technical Debt
-When the AI detects a code smell or a missing index but isn't tasked with fixing it, it doesn't just leave a `// TODO`. The `/debt` skill forces the AI to autonomously log it to a central `.agent-spec/TECH-DEBT-REGISTER.md` file.
-
-### 🎯 Context Budgeting (Needle-in-a-Haystack Protection)
-Loading 10,000 files into a 200k context window destroys AI reasoning. `agent-spec` enforces **Distance-Based Loading**. Using the Graphify map, the AI is only allowed to load the target file, its immediate imports (Distance 1), and files that depend on it (Distance -1).
-
-### 📚 Built-in Coding Standards
-Out of the box, `agent-spec` injects rigorous templates for Clean Code, SOLID Principles, Java (Spring Boot), and Angular. The agent reviews its own code against these standards *before* presenting it to you.
+</details>
 
 ---
 
-## 🛑 Why Did We Build This?
+## Skills
 
-Modern AI agents are incredible at writing code, but they suffer from fatal flaws when working on real-world codebases:
-1. **The "Vibe Coding" Trap**: Jumping straight to writing code without understanding the architecture, resulting in tightly-coupled spaghetti code.
-2. **Amnesia**: Forgetting the decisions made in the previous chat session.
-3. **The God Object**: Happily appending 1,000 lines to a single file just to satisfy a vague prompt.
-
-`agent-spec` solves all of this locally, right inside your repo.
-
----
-
-## ⚡ Quickstart
-
-You can install `agent-spec` into **any existing project** in seconds. There are zero python or node dependencies.
-
-```bash
-# 1. Navigate to your project
-cd my-awesome-project
-
-# 2. Run the init script (downloads framework to .agent-spec/ and installs skills)
-curl -sSL "https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/agent-spec-init.sh?t=$(date +%s)" | bash
-
-# 3. Build your project's initial Knowledge Graph
-./.agent-spec/bin/agent-spec-index --graphify
-```
+| | |
+|---|---|
+| **Onboarding** | `/onboard` |
+| **SDLC pipeline** | `/requirements` `/tech-spec` `/prd` `/hld` `/lld` `/implement` |
+| **Diagnosis** | `/investigate` |
+| **Review** | `/review` `/self-review` `/solid-check` `/debt` |
+| **Memory** | `/index-project` `/query-graph` `/snapshot` |
+| **Token budget** | `/raw-code` `/dense` `/trim-noise` `/verbose` |
+| **Personas** | `/architect` `/security` `/qa` `/reviewer` `/refactor` `/api` `/data` `/devops` `/perf` `/writer` |
 
 ---
 
-## 🔄 The Daily Workflow (How to use it)
+## Docs
 
-Once installed, your AI agent is equipped with new skills, personas, and memory. Here is how you interact with it daily:
+- [What it actually does](docs/features.md) — Graphify, personas, the 6 gates, context budgeting
+- [Daily workflow](docs/workflow.md) — starting a feature, managing tokens, ending a session
+- [Agent compatibility](docs/agents.md) — where files land, the WSL two-homes problem
+- [Why this exists](docs/why.md)
+- [`sdlc-team/`](sdlc-team/README.md) — standalone Claude Code plugin, nine subagents, no install required
 
-### 1. Start a Feature (Use Skills & Personas)
-Instead of asking the AI to "build a login page," you invoke its expert personas and pipeline skills:
-> *"Activate: @ARCHITECT. Run the `/prd` skill to define the requirements for a password reset feature."*
-> 
-> *"Activate: @QA. Run the `/review` skill on `AuthService.java` to check for missing edge cases."*
+## Contributing
 
-**Awesome Persona Examples:**
-- `@DATA`: Obsesses over DB normalization. Will reject migrations that cause data loss.
-- `@SECURITY`: Assumes zero-trust. Will flag missing rate-limiters or hardcoded secrets.
-- `@REFACTOR`: The Boy Scout. Cleans up technical debt safely without changing behavior.
+New personas, specialised skills and pipeline refinements are all welcome — open a PR.
+Skills are authored once in `skills/claude/<name>/SKILL.md`; run
+`./bin/agent-spec-render-skills.sh` afterwards to regenerate the flat formats. See
+[`skills/third-party/README.md`](skills/third-party/README.md) for community extensions.
 
-### 2. Manage Your Token Budget (Token Reduction)
-Long chats exhaust the AI's context window, leading to amnesia and degraded reasoning. When the chat gets long, use token reduction skills:
-- **`/raw-code`**: The AI outputs *only* code blocks. No pleasantries, no markdown explanations. Maximum token savings.
-- **`/trim-noise`**: The AI removes conversational filler ("Certainly! I can help with that!"). Reduces output by ~40%.
-- **`/dense`**: The AI outputs heavily condensed bullet points and tables instead of paragraphs.
+## License
 
-### 3. End Your Session (Update Memory)
-LLMs forget everything when you close the chat. `agent-spec` relies on explicit state updates to maintain persistent memory.
-
-**At the end of your day, do two things:**
-1. **Update the Graph**: If you added new files or changed architecture, run `./.agent-spec/bin/agent-spec-index --graphify` (or type `/index-project`) to rebuild the dependency map.
-2. **Save the State**: Type `/snapshot`. The agent will summarize what it just built, what's broken, and what files need to be loaded tomorrow, saving it to `.agent-spec/SESSION-SNAPSHOT.md`.
-
-When you open a new chat tomorrow, simply say: *"Read the session snapshot and let's resume."*
-
----
-
-## 🤝 Contributing
-We welcome contributions! Whether it's a new Persona, a specialized Skill (like AWS deployment or Rust standards), or a refinement to the pipeline, please open a PR. See `skills/third-party/README.md` for our curated list of community extensions.
-
-## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT — see [LICENSE](LICENSE).
