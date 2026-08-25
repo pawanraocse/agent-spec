@@ -8,9 +8,13 @@ not a dependency the agent can traverse, and a graph full of `import json` is
 noise that hides the real structure.
 """
 import os
+import sys
 import re
 import json
 import argparse
+
+# Cycle detection recurses to the depth of the longest import chain.
+sys.setrecursionlimit(10000)
 from collections import defaultdict, Counter
 from datetime import datetime
 

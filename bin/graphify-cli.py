@@ -9,6 +9,9 @@ import os
 import sys
 import json
 import argparse
+
+# Cycle detection recurses to the depth of the longest import chain.
+sys.setrecursionlimit(10000)
 from collections import Counter, defaultdict
 
 GRAPH_PATH = os.path.join(os.getcwd(), ".agent-spec", "graph", "knowledge-graph.json")
@@ -19,7 +22,11 @@ def load_graph():
         sys.exit(f"No graph at {GRAPH_PATH}. Run ./.agent-spec/bin/agent-spec-index first.")
     with open(GRAPH_PATH) as f:
         graph = json.load(f)
-    if graph.get("version", "0") < "3.0":
+    try:
+        version = float(str(graph.get("version", "0")).split(".")[0])
+    except ValueError:
+        version = 0.0
+    if version < 3:
         print("! graph was built by an older Graphify and has unresolved edges.\n"
               "  Rebuild it: ./.agent-spec/bin/agent-spec-index\n", file=sys.stderr)
     return graph
