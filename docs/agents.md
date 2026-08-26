@@ -44,7 +44,7 @@ on demand, which is the behaviour the framework is designed around.
 ## Why only one file under `.cursor/rules/`
 
 Cursor loads every file in `.cursor/rules/` in every conversation. Earlier versions of
-agent-spec dumped all 26 skills there, making them permanently resident context. Skills
+agent-spec dumped every skill there, making them permanently resident context. Skills
 now live in `.cursor/skills/`, which Cursor loads on demand; `.cursor/rules/` holds one
 `.mdc` — the standing rules that genuinely should always apply.
 

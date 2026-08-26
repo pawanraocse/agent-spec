@@ -86,21 +86,32 @@ See `.agent-spec/anti-hallucination/` for the full protocol.
 Type these slash commands in your agent:
 
 ```
-/requirements    Structure customer requirements
-/tech-spec       Generate technical specification
-/prd             Full Product Requirements Document
-/hld             High Level Design
-/lld             Low Level Design
-/implement       Start 6-Gate coding pipeline
-/review          SOLID + security + performance review
-/index-project   Scan codebase → build knowledge graph
-/snapshot        Save session state
-/solid-check     Run SOLID gate on code
-/debt            Analyze and register technical debt
-/raw-code        Minimal output mode (no fluff)
-/trim-noise      Remove verbosity, keep signal
-/dense           Maximum information density
-/verbose         Restore default output mode
+/onboard         Learn this project once → PROJECT-INDEX + CONSTITUTION
+/investigate     Diagnose before editing — cause with evidence, no fix
+/requirements    SDLC gate 1: structure customer requirements
+/tech-spec       SDLC gate 2: feasibility, stack, NFRs
+/prd             SDLC gate 3: user stories and MoSCoW
+/hld             SDLC gate 4: service boundaries and data model
+/lld             SDLC gate 5: classes, schemas, sequence flows
+/implement       6-gate coding pipeline
+/review          Deep code review, blockers first, fixes applied
+/self-review     Bounded repair loop, runs inside artifact-producing skills
+/solid-check     SOLID audit of one file (audit-only, cannot edit)
+/debt            Register technical debt found outside scope
+/index-project   Rebuild the dependency graph
+/query-graph     Blast radius, coupling, cycles — without reading files
+/snapshot        Append session state to SESSION-SNAPSHOT.md
+/raw-code        Terse: code blocks only
+/dense           Terse: tables and bullets
+/trim-noise      Terse: filler out, sentences kept
+/verbose         Turn the terse modes off
+```
+
+Personas, each carrying its absolute rules inline:
+
+```
+/architect  /security  /qa  /reviewer  /refactor
+/api        /data      /devops  /perf   /writer
 ```
 
 ---

@@ -41,13 +41,15 @@ All non-trivial claims must include confidence rating:
 
 ## 💡 Cursor Skills
 
-Cursor skills are installed in `.cursor/rules/`. Reference them in chat by describing the task:
+Skills are installed machine-wide in `~/.cursor/skills/<name>/SKILL.md` and load on
+demand. `.cursor/rules/` holds one always-on file, `agent-spec.mdc` — these standing
+rules. Reference a skill in chat by describing the task:
 - "Run requirements skill for: [description]"
 - "Run prd skill using the requirements doc"
 - "Run solid-check on UserService.java"
 - "Switch to raw-code mode" / "Switch to trim-noise mode"
 
-Cursor will load the skill content from `.cursor/rules/[skill-name].md` and execute.
+Cursor loads the matching `SKILL.md` on demand and follows it.
 The always-on rules live alongside them in `.cursor/rules/agent-spec-rules.md`.
 
 ---

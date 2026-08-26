@@ -90,13 +90,18 @@ copy_skills() {
     name="$(basename "${dir}")"
     [ -f "${dir}SKILL.md" ] || continue
     if [ "$LEAN" = "true" ] && [[ " ${LEAN_EXCLUDE} " == *" ${name} "* ]]; then
+      # Prune, do not merely skip. Re-running with --lean over a full install has to
+      # actually remove the excluded skills, or --lean silently does nothing on update.
+      # Only ever removes a directory agent-spec itself ships; anything else in the
+      # destination is the user's and is left alone.
+      rm -rf "${dest:?}/${name}"
       skipped=$((skipped + 1)); continue
     fi
     mkdir -p "${dest}/${name}"
     cp -r "${dir}." "${dest}/${name}/"
     installed=$((installed + 1))
   done
-  echo -e "  ${GREEN}✓${NC} ${installed} skills → ${dest}$([ "$skipped" -gt 0 ] && echo "   (${skipped} excluded)")"
+  echo -e "  ${GREEN}✓${NC} ${installed} skills → ${dest}$([ "$skipped" -gt 0 ] && echo "   (${skipped} removed/excluded)")"
 }
 
 # ---------------------------------------------------------------------------
@@ -187,7 +192,9 @@ echo -e "  ${GREEN}✓${NC} agent config files (AGENTS, CLAUDE, GEMINI, CURSOR)"
 
 # Cursor always-on rules. One .mdc, not 27 — everything else is an on-demand skill.
 mkdir -p "${PROJECT_ROOT}/.cursor/rules"
-if [ ! -f "${PROJECT_ROOT}/.cursor/rules/agent-spec.mdc" ] || [ "$FORCE" = "true" ]; then
+# Always regenerated: this file is ours, derived from CURSOR.md. Writing it only when
+# absent meant "re-run to update" never actually updated the standing rules.
+if true; then
   {
     echo "---"
     echo "description: agent-spec standing rules — session protocol, personas, hard stops."

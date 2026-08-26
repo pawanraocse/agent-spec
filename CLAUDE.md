@@ -92,7 +92,7 @@ Before writing code, apply these filters:
 
 ## ⚡ Available Slash Commands
 
-These skills are installed as `.claude/skills/<name>/SKILL.md`:
+Installed machine-wide in `~/.claude/skills/<name>/SKILL.md`, so they are available in every project. `bin/install.sh --project-skills` also commits them to `.claude/skills/` for team repos.
 
 **Pipeline & analysis**
 
