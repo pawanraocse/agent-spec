@@ -1,6 +1,7 @@
 ---
 name: "implement"
-description: "Build a change through the 6-gate pipeline — declare before touching, tests first, surgical diff, self-review at the end, honest report."
+description: >-
+  Build a change through the 6-gate pipeline: declare, test first, surgical diff, self-review, honest report.
 ---
 
 # Implement Skill

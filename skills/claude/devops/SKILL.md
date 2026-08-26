@@ -1,7 +1,7 @@
 ---
 name: "devops"
 description: >-
-  Work as @DEVOPS (DevOps Engineer). Carries the persona's absolute rules inline, so the mindset switch costs no extra file read. Use when the user says "activate @DEVOPS", "as a devops engineer", or invokes /devops.
+  Work as @DEVOPS — DevOps engineer. Reproducible builds, secrets hygiene, rollback paths. Carries its absolute rules inline.
 ---
 
 # devops

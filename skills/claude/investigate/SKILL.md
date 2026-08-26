@@ -1,7 +1,7 @@
 ---
 name: "investigate"
 description: >-
-  Diagnose before editing. For unknown causes, intermittent failures, performance regressions and anything where the mechanism is not yet known. Produces a named cause with evidence, not a fix. Use when the request is "why is X happening", "it broke and I don't know why", or a first fix attempt has already failed.
+  Diagnose before editing — name the cause with evidence, write no fix. Use for "why is X happening" and failed first attempts.
 ---
 
 # investigate

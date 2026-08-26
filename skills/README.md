@@ -38,18 +38,15 @@ While personas define *how* an agent behaves (rules and tone), skills define *wh
 ## How Skills Are Installed
 
 Every skill is authored once, in `skills/claude/<name>/SKILL.md`. Claude Code, Cursor and
-the generic agents all read that same shape, so the installer copies it directly. Only
-Windsurf and Copilot need a different format, and those are rendered by
-`bin/agent-spec-render-skills.sh`.
+the generic agents all read that same shape, so the installer copies it directly. One
+tree, no translations, nothing to regenerate.
 
 `bin/install.sh` installs skills **machine-wide** by default, so they are available in
 every project without a per-project step:
 
 - **Claude**: `~/.claude/skills/<name>/SKILL.md` (and the Windows home, on WSL)
 - **Cursor**: `~/.cursor/skills/<name>/SKILL.md` — on-demand skills, not always-on rules
-- **Copilot**: `.github/copilot-instructions.md` per project (single always-on file)
-- **Windsurf**: `.windsurfrules` per project (single always-on file)
+- **Antigravity / generic**: `.agents/skills/<name>/SKILL.md` per project
 
-`--project-skills` additionally writes `.claude/skills/`, `.cursor/skills/` and
-`.agents/skills/` inside the repo, for teams that want them committed. See
-[`docs/agents.md`](../docs/agents.md).
+`--project-skills` additionally writes `.claude/skills/` and `.cursor/skills/` inside the
+repo, for teams that want them committed. See [`docs/agents.md`](../docs/agents.md).

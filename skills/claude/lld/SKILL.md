@@ -1,6 +1,7 @@
 ---
 name: "lld"
-description: "Generate Low Level Design — classes, DB schemas, API contracts, sequence flows. One file per service. Gated on an approved 04-HLD.md. Output to .agent-spec/sdlc/05-LLD[-<service>].md"
+description: >-
+  SDLC gate 5: classes, schemas, sequence flows into 05-LLD.md, one per service. Needs 04-HLD.md.
 ---
 
 # LLD Skill

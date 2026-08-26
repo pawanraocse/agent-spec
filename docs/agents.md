@@ -2,10 +2,9 @@
 
 Back-link: [README](../README.md)
 
-One source tree, `skills/claude/<name>/SKILL.md`, serves every agent. Cursor and the
-generic agents read the same `SKILL.md` shape, so the installer copies it directly.
-Windsurf and Copilot take a single flat file, rendered by
-`bin/agent-spec-render-skills.sh`.
+One source tree, `skills/claude/<name>/SKILL.md`, serves every agent. Claude Code, Cursor
+and the generic agents (Antigravity, Gemini) all read the same `SKILL.md` shape, so the
+installer copies it directly. There are no translations and nothing to regenerate.
 
 ## Where things land
 
@@ -24,12 +23,23 @@ Per project:
 |---|---|
 | `.agent-spec/` | constitution, graph, SDLC artifacts, personas, standards, `bin/` |
 | `.cursor/rules/agent-spec.mdc` | the standing rules, `alwaysApply: true` |
-| `.windsurfrules` | every skill, flattened |
-| `.github/copilot-instructions.md` | every skill, flattened |
-| `CLAUDE.md` `AGENTS.md` `CURSOR.md` `GEMINI.md` `COPILOT.md` | root configs |
+| `.agents/skills/<name>/SKILL.md` | Antigravity and other generic agents (no user-level home) |
+| `CLAUDE.md` `AGENTS.md` `CURSOR.md` `GEMINI.md` | root configs |
 
-`--project-skills` additionally copies the skills into `.claude/skills/`,
-`.cursor/skills/` and `.agents/skills/` — for team repos that want them committed.
+`--project-skills` additionally copies the skills into `.claude/skills/` and
+`.cursor/skills/` — for team repos that want them committed rather than relying on each
+machine's install.
+
+## Why Windsurf and Copilot are not supported
+
+They were, until it turned out the support was actively harmful. Both read a single
+always-on file, whose entire content sits in context on every turn, and the framework
+inlined all 29 skill bodies into it — roughly 15,000 tokens per turn to carry skills of
+which a turn uses at most one. Neither file carried the standing rules.
+
+Rather than maintain a second, always-on shape of every skill for agents nobody here
+uses, the two formats were dropped. Claude, Cursor and the generic agents all load skills
+on demand, which is the behaviour the framework is designed around.
 
 ## Why only one file under `.cursor/rules/`
 

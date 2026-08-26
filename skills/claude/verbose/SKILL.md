@@ -1,7 +1,7 @@
 ---
 name: "verbose"
 description: >-
-  Turn off /raw-code, /dense and /trim-noise and return to normal explanatory output. Use when the user says "normal mode", "stop terse", or invokes /verbose.
+  Turn off raw-code, dense and trim-noise. Triggers on "normal mode", "stop terse".
 ---
 
 # verbose

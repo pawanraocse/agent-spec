@@ -1,6 +1,7 @@
 ---
 name: "review"
-description: "Deep skeptical code review — blockers first, style last. Traces a real case end-to-end rather than reading files in isolation, and applies the fixes."
+description: >-
+  Deep code review — blockers first, style last, fixes applied. Traces one real case end to end.
 ---
 
 # Review Skill

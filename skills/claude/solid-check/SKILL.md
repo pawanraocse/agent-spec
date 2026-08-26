@@ -1,6 +1,7 @@
 ---
 name: "solid-check"
-description: "Audit a file specifically for SOLID principle violations, sanity-checked against SIMPLICITY-FIRST so it does not manufacture abstractions."
+description: >-
+  Audit one file for SOLID violations, checked against SIMPLICITY-FIRST so it invents no abstractions.
 allowed-tools:
   - "Read"
   - "Grep"

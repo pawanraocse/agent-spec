@@ -1,7 +1,7 @@
 ---
 name: "refactor"
 description: >-
-  Work as @REFACTOR (Refactor Specialist). Carries the persona's absolute rules inline, so the mindset switch costs no extra file read. Use when the user says "activate @REFACTOR", "as a refactor specialist", or invokes /refactor.
+  Work as @REFACTOR — refactor specialist. Behaviour preserved, verification brackets every edit. Carries its absolute rules inline.
 ---
 
 # refactor

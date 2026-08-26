@@ -1,7 +1,7 @@
 ---
 name: "trim-noise"
 description: >-
-  Terse mode — cut conversational filler, keep normal sentences. The lightest terse mode. Stays on for the rest of the session until /verbose. Use when the user says "less filler", "be concise", "get to the point", or invokes /trim-noise.
+  Terse mode: filler out, sentences kept. Lightest. Persists until /verbose. Triggers on "be concise".
 ---
 
 # trim-noise

@@ -180,10 +180,10 @@ install_config() {
     cp "${src}" "${dest}"
   fi
 }
-for f in AGENTS.md CLAUDE.md GEMINI.md CURSOR.md COPILOT.md; do
+for f in AGENTS.md CLAUDE.md GEMINI.md CURSOR.md; do
   install_config "${AGENT_SPEC_HOME}/${f}" "${PROJECT_ROOT}/${f}"
 done
-echo -e "  ${GREEN}✓${NC} agent config files (AGENTS, CLAUDE, GEMINI, CURSOR, COPILOT)"
+echo -e "  ${GREEN}✓${NC} agent config files (AGENTS, CLAUDE, GEMINI, CURSOR)"
 
 # Cursor always-on rules. One .mdc, not 27 — everything else is an on-demand skill.
 mkdir -p "${PROJECT_ROOT}/.cursor/rules"
@@ -199,23 +199,15 @@ if [ ! -f "${PROJECT_ROOT}/.cursor/rules/agent-spec.mdc" ] || [ "$FORCE" = "true
 fi
 echo -e "  ${GREEN}✓${NC} .cursor/rules/agent-spec.mdc"
 
-# Flat single-file formats.
-for pair in ".windsurfrules:.windsurfrules" ".github/copilot-instructions.md:.github/copilot-instructions.md"; do
-  src="${AGENT_SPEC_HOME}/${pair%%:*}"; dest="${PROJECT_ROOT}/${pair##*:}"
-  [ -f "${src}" ] || continue
-  [ "${src}" = "${dest}" ] && continue
-  if [ ! -f "${dest}" ] || [ "$FORCE" = "true" ]; then
-    mkdir -p "$(dirname "${dest}")"; cp "${src}" "${dest}"
-  fi
-done
-echo -e "  ${GREEN}✓${NC} .windsurfrules, .github/copilot-instructions.md"
+# Antigravity and the other generic agents have no user-level skill home, so their
+# copy is project-local. Claude and Cursor are already covered machine-wide.
+copy_skills "${PROJECT_ROOT}/.agents/skills"
 
-# Per-project skill copies: off by default — the machine-wide install already
-# covers every project. Opt in for repos that want them committed.
+# Extra per-agent copies: off by default. Opt in for repos that want the skills
+# committed next to the code rather than relying on each machine's install.
 if [ "$PROJECT_SKILLS" = "true" ]; then
   copy_skills "${PROJECT_ROOT}/.claude/skills"
   copy_skills "${PROJECT_ROOT}/.cursor/skills"
-  copy_skills "${PROJECT_ROOT}/.agents/skills"
 fi
 
 # Framework binaries, extensionless — these are the CLI the skills call.

@@ -1,6 +1,7 @@
 ---
 name: "snapshot"
-description: "Append a dated section to SESSION-SNAPSHOT.md to save current session state. Never overwrites — the running record of corrections and reversed decisions is the point."
+description: >-
+  Append a dated section to SESSION-SNAPSHOT.md. Never overwrites. Use at session end, or past 70% context.
 ---
 
 # Snapshot Skill

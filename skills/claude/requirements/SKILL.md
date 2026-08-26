@@ -1,6 +1,7 @@
 ---
 name: "requirements"
-description: "Elicit and structure raw customer needs. Output to .agent-spec/sdlc/01-REQUIREMENTS.md"
+description: >-
+  SDLC gate 1: structure raw needs into 01-REQUIREMENTS.md.
 ---
 
 # Requirements Skill

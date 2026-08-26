@@ -1,7 +1,7 @@
 ---
 name: "query-graph"
 description: >-
-  Answer a structural question from the dependency graph instead of reading files — blast radius, coupling, cycles, where something lives. Costs a few hundred tokens where the equivalent file reads cost tens of thousands. Use before changing any file, and whenever the question is "what depends on", "where is", "how is X wired".
+  Answer structural questions from the dependency graph, not file reads. Use for blast radius, coupling, cycles, "where is X".
 ---
 
 # query-graph

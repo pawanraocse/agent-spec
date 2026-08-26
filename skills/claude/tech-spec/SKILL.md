@@ -1,6 +1,7 @@
 ---
 name: "tech-spec"
-description: "Define feasibility, tech stack, and NFRs. Output to .agent-spec/sdlc/02-TECH-SPEC.md"
+description: >-
+  SDLC gate 2: feasibility, stack and NFRs into 02-TECH-SPEC.md. Needs 01-REQUIREMENTS.md.
 ---
 
 # Tech-spec Skill

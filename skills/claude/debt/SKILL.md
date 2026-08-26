@@ -1,7 +1,7 @@
 ---
 name: "debt"
 description: >-
-  Log technical debt to .agent-spec/TECH-DEBT-REGISTER.md instead of leaving a TODO nobody reads. Use when a code smell, missing index, absent test or known shortcut is found during other work and fixing it now would be out of scope.
+  Log technical debt to TECH-DEBT-REGISTER.md. Use for a real defect risk found outside the current task's scope.
 ---
 
 # debt

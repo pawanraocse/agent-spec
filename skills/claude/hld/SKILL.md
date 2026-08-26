@@ -1,6 +1,7 @@
 ---
 name: "hld"
-description: "Generate High Level Design and Architecture — service boundaries, data model, API contracts, NFRs. Gated on an approved PRD/TECH-SPEC. Output to .agent-spec/sdlc/04-HLD.md"
+description: >-
+  SDLC gate 4: service boundaries, data model, API contracts into 04-HLD.md. Needs 03-PRD.md.
 ---
 
 # HLD Skill

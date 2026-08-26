@@ -1,7 +1,7 @@
 ---
 name: "raw-code"
 description: >-
-  Terse mode — code blocks only, no prose around them. Stays on for the rest of the session until /verbose. Use when the user says "code only", "just the code", "no explanation", or invokes /raw-code.
+  Terse mode: code blocks only, no prose. Persists until /verbose. Triggers on "code only", "just the code".
 ---
 
 # raw-code

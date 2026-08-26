@@ -4,12 +4,12 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Framework: Agnostic](https://img.shields.io/badge/Framework-Agnostic-success.svg)](#)
-[![Agents: Claude | Cursor | Gemini | Copilot](https://img.shields.io/badge/Agents-Claude%20|%20Cursor%20|%20Gemini%20|%20Copilot-blueviolet)](#)
+[![Agents: Claude | Cursor | Antigravity](https://img.shields.io/badge/Agents-Claude%20|%20Cursor%20|%20Antigravity-blueviolet)](#)
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-strict confidence scoring, and 29 skills that work in Claude Code, Cursor, Gemini, Copilot
-and Windsurf.
+strict confidence scoring, and 29 skills that work in Claude Code, Cursor and
+Antigravity.
 
 ---
 
@@ -72,8 +72,8 @@ rediscover the project.
 ## Contributing
 
 New personas, specialised skills and pipeline refinements are all welcome — open a PR.
-Skills are authored once in `skills/claude/<name>/SKILL.md`; run
-`./bin/agent-spec-render-skills.sh` afterwards to regenerate the flat formats. See
+Skills are authored once in `skills/claude/<name>/SKILL.md`; every agent reads that same
+shape, so there is nothing to regenerate. See
 [`skills/third-party/README.md`](skills/third-party/README.md) for community extensions.
 
 ## License

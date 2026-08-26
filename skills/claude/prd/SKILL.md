@@ -1,6 +1,7 @@
 ---
 name: "prd"
-description: "Generate Product Requirements Document with MoSCoW and Validation. Output to .agent-spec/sdlc/03-PRD.md"
+description: >-
+  SDLC gate 3: user stories and MoSCoW into 03-PRD.md. Needs 02-TECH-SPEC.md.
 ---
 
 # Prd Skill

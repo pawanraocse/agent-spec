@@ -1,7 +1,7 @@
 ---
 name: "index-project"
 description: >-
-  Rebuild the dependency graph and PROJECT-INDEX.md from the current tree. Run it after adding files, moving modules or changing architecture — every other skill's structural answers are only as fresh as this. Use when the graph is stale, at the end of a session, or when a query returns something that contradicts the code.
+  Rebuild the dependency graph and PROJECT-INDEX. Use after adding, moving or renaming files, and when a query looks stale.
 ---
 
 # index-project

@@ -1,7 +1,7 @@
 ---
 name: "dense"
 description: >-
-  Terse mode — maximum information density: tables and bullets, no paragraphs. Stays on for the rest of the session until /verbose. Use when the user says "dense", "just the facts", "table it", or invokes /dense.
+  Terse mode: tables and bullets, no paragraphs. Persists until /verbose. Triggers on "dense", "just the facts".
 ---
 
 # dense
