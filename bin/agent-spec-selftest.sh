@@ -397,6 +397,15 @@ grep -q "CONSEC_ERRORS" "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
   && ok "the suite stops after consecutive unbilled runs" \
   || bad "no abort on repeated unbilled runs — a usage limit burns the whole suite"
 
+# Mode against mode ranks two skills. Only a control arm with no skill body can
+# say whether either saves anything against plain Claude Code.
+grep -q 'if \[ "${skill}" != "none" \]' "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
+  && ok "the benchmark has a no-skill control arm" \
+  || bad "no control arm — the suite can only rank the modes, never measure them"
+[ -f "${HOME_DIR}/benchmarks/tasks/04-long-session.task" ] \
+  && ok "the suite has a long-session task" \
+  || bad "no long-session task — raw-code-full's reading rules are untestable"
+
 # A skill body is re-read every turn. raw-code-full lost its own benchmark by 5%
 # because 4,247 bytes of rationale sat in the prompt prefix. Rationale belongs in
 # docs; the body holds imperatives.

@@ -1,0 +1,7 @@
+Write AUDIT.md at the repository root: one line for every file directly inside bin/,
+in the form
+
+    <filename> — <what it does, one sentence, under 15 words>
+
+Every file in bin/ must have a line, and each description must be specific enough that
+someone who has not read the file can tell what it is for. Do not modify anything else.

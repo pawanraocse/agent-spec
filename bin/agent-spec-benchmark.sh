@@ -15,6 +15,11 @@
 #   bin/agent-spec-benchmark.sh --repeats 3
 #   bin/agent-spec-benchmark.sh --repeats 5 --tasks 01-add-cli-flag --model sonnet
 #   bin/agent-spec-benchmark.sh --report            # re-print from saved results
+#   bin/agent-spec-benchmark.sh --arm-b none        # a mode against no mode at all
+#
+# The arm named "none" runs with no skill body injected. It is the control, and
+# without it the suite can only rank the two modes against each other — never say
+# whether either saves anything against plain Claude Code.
 #
 # Each task is a pair under benchmarks/tasks/:
 #   <name>.task     the prompt, given verbatim to both arms
@@ -80,18 +85,25 @@ one_run() {
   # The skill body is injected. A leading /skill-name line in a -p prompt is
   # passed through as plain text and the mode never takes effect, which silently
   # turns the whole comparison into one configuration against itself.
-  local body; body="$(cat "${HOME_DIR}/skills/claude/${skill}/SKILL.md" 2>/dev/null)"
-  [ -n "${body}" ] || die "no skill body for ${skill}"
+  # The arm named "none" is the control: no skill body at all. Without it the
+  # suite can only say which mode is cheaper, never whether either one saves
+  # anything against plain Claude Code — which is the number the skills claim.
+  local body=""
+  if [ "${skill}" != "none" ]; then
+    body="$(cat "${HOME_DIR}/skills/claude/${skill}/SKILL.md" 2>/dev/null)"
+    [ -n "${body}" ] || die "no skill body for ${skill}"
+  fi
+  local -a sysargs=()
+  [ -n "${body}" ] && sysargs=(--append-system-prompt "${body}")
 
   local started; started="$(date +%s)"
   ( cd "${dir}" && env -u CLAUDECODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT \
-    claude -p "${prompt}" \
-      --append-system-prompt "${body}" \
+    claude -p "${prompt}" ${sysargs[@]+"${sysargs[@]}"} \
       --output-format json \
       --session-id "${sid}" \
       --model "${MODEL}" \
       --permission-mode acceptEdits \
-      --allowed-tools "Bash Read Write Edit MultiEdit Glob Grep" \
+      --allowed-tools "Bash Read Write Edit MultiEdit Glob Grep Task" \
       --max-budget-usd "${BUDGET}" \
       > "${dir}/.result.json" 2> "${dir}/.stderr.txt" )
   local elapsed=$(( $(date +%s) - started ))

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# The long-session task. Fifteen files, 4,216 lines, 176 KB: read naively that is
+# roughly 44,000 tokens of context, re-read on every subsequent turn. This is the
+# only task in the suite where the reading discipline in agent-spec-raw-code-full
+# — line ranges, capped output, a subagent for broad sweeps, the graph before the
+# files — has anything to act on. The short tasks cannot test it.
+set -uo pipefail
+[ -f AUDIT.md ] || { echo "no AUDIT.md"; exit 1; }
+
+MISSING=""
+for f in bin/*; do
+  [ -f "$f" ] || continue
+  b="$(basename "$f")"
+  grep -qF "$b" AUDIT.md || MISSING="${MISSING} ${b}"
+done
+[ -z "${MISSING}" ] || { echo "AUDIT.md does not mention:${MISSING}"; exit 1; }
+
+# A filename with no description is a listing, not an audit.
+THIN="$(awk -F'—' 'NF>1 { n=split($2,w," "); if (n<3) print $1 }' AUDIT.md | tr -d ' ' | tr '\n' ' ')"
+[ -z "${THIN}" ] || { echo "described in under three words: ${THIN}"; exit 1; }
+
+DASHED="$(grep -c '—' AUDIT.md)"
+COUNT="$(ls -1 bin | wc -l | tr -d ' ')"
+[ "${DASHED}" -ge "${COUNT}" ] || { echo "only ${DASHED} described lines for ${COUNT} entries"; exit 1; }
+
+# Nothing outside the deliverable may change.
+STRAY="$(git status --porcelain -- bin/ skills/ docs/ benchmarks/ '*.md' \
+         | grep -v ' AUDIT.md$' | grep -v '?? AUDIT.md' | head -3)"
+[ -z "${STRAY}" ] || { echo "changed files outside the task: ${STRAY}"; exit 1; }
+
+echo "ok: ${DASHED} described entries for ${COUNT} files in bin/"
