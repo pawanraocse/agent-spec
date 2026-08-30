@@ -25,15 +25,15 @@ STATE_PATH = os.path.join(SDLC, "STATE.json")
 
 # gate number -> (name, skill, artifact it produces, artifacts it requires)
 GATES = [
-    ("REQUIREMENTS", "/requirements", "01-REQUIREMENTS.md", []),
-    ("TECH-SPEC",    "/tech-spec",    "02-TECH-SPEC.md",    ["01-REQUIREMENTS.md"]),
-    ("PRD",          "/prd",          "03-PRD.md",          ["02-TECH-SPEC.md"]),
-    ("HLD",          "/hld",          "04-HLD.md",          ["03-PRD.md"]),
-    ("LLD",          "/lld",          "05-LLD.md",          ["04-HLD.md"]),
-    ("DEVELOPMENT",  "/implement",    None,                 ["05-LLD.md"]),
-    ("REVIEW",       "/review",       "06-REVIEW.md",       ["05-LLD.md"]),
-    ("TESTING",      "/testing",      "07-TEST-REPORT.md",  ["06-REVIEW.md"]),
-    ("VALIDATION",   "/validation",   "08-VALIDATION.md",   ["07-TEST-REPORT.md",
+    ("REQUIREMENTS", "/agent-spec-requirements", "01-REQUIREMENTS.md", []),
+    ("TECH-SPEC",    "/agent-spec-tech-spec",    "02-TECH-SPEC.md",    ["01-REQUIREMENTS.md"]),
+    ("PRD",          "/agent-spec-prd",          "03-PRD.md",          ["02-TECH-SPEC.md"]),
+    ("HLD",          "/agent-spec-hld",          "04-HLD.md",          ["03-PRD.md"]),
+    ("LLD",          "/agent-spec-lld",          "05-LLD.md",          ["04-HLD.md"]),
+    ("DEVELOPMENT",  "/agent-spec-implement",    None,                 ["05-LLD.md"]),
+    ("REVIEW",       "/agent-spec-review",       "06-REVIEW.md",       ["05-LLD.md"]),
+    ("TESTING",      "/agent-spec-testing",      "07-TEST-REPORT.md",  ["06-REVIEW.md"]),
+    ("VALIDATION",   "/agent-spec-validation",   "08-VALIDATION.md",   ["07-TEST-REPORT.md",
                                                              "01-REQUIREMENTS.md"]),
 ]
 
@@ -185,7 +185,7 @@ def cmd_reset(args):
     state = {"feature": args.feature, "gate": 0, "gate_name": GATES[0][0],
              "artifacts": {}, "history": []}
     save_state(state)
-    print("pipeline reset for '%s'. Start with /requirements." % args.feature)
+    print("pipeline reset for '%s'. Start with /agent-spec-requirements." % args.feature)
     return 0
 
 

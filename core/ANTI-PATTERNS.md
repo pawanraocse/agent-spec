@@ -42,7 +42,7 @@ When collaborating with AI agents, certain approaches consistently lead to failu
 
 **Why it fails**: "Needle in a haystack" degradation. When the context window is flooded with irrelevant data, the agent's attention mechanism gets diluted. It will miss critical instructions and generate lower-quality logic.
 
-**The agent-spec Fix**: Token-reduction skills (`/caveman`, `/dense`) and Graphify memory. The agent queries `KNOWLEDGE-GRAPH.md` to find *exactly* which files it needs, rather than loading everything.
+**The agent-spec Fix**: Token-reduction skills (`/caveman`, `/agent-spec-dense`) and Graphify memory. The agent queries `KNOWLEDGE-GRAPH.md` to find *exactly* which files it needs, rather than loading everything.
 
 ## 6. The "Yes Man" Anti-Pattern
 
@@ -50,4 +50,4 @@ When collaborating with AI agents, certain approaches consistently lead to failu
 
 **Why it fails**: Most base models are heavily RLHF-tuned to be helpful and compliant. They will rarely push back against bad ideas unless explicitly instructed to do so.
 
-**The agent-spec Fix**: Strict Persona Rules. The `@SECURITY-AUDITOR` persona is given an *Absolute Rule* to refuse implementation of insecure patterns, forcing a conversation about tradeoffs.
+**The agent-spec Fix**: Strict Persona Rules. The `@SECURITY` persona is given an *Absolute Rule* to refuse implementation of insecure patterns, forcing a conversation about tradeoffs.

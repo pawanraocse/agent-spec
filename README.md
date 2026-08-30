@@ -8,8 +8,8 @@
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-strict confidence scoring, and 32 skills that work in Claude Code, Cursor and
-Antigravity.
+strict confidence scoring, and 25 prefixed skills that work in Claude Code, Cursor
+and Antigravity.
 
 ---
 
@@ -32,7 +32,7 @@ home, merged into any existing `settings.json` without touching what is already 
 The hook puts a short project digest — stack, graph size, current gate, last session — in
 front of every session, so no session begins by reading four files to work out where it is.
 
-Then restart your agent (skills are read at session start) and type **`/onboard`**. It
+Then restart your agent (skills are read at session start) and type **`/agent-spec-onboard`**. It
 reads the graph and the manifest, writes `PROJECT-INDEX.md` and `CONSTITUTION.md` from
 what is actually in your repo, and never runs again — so no later session has to
 rediscover the project.
@@ -45,7 +45,7 @@ rediscover the project.
 | `--skills-only` | Machine-wide skills, touch nothing in this directory |
 | `--project-only` | This directory only |
 | `--project-skills` | Also commit skills into `.claude/` and `.cursor/` (team repos) |
-| `--lean` | Skip the 8 SDLC-design skills |
+| `--lean` | Skip the 5 SDLC-design skills |
 | `--force` | Overwrite existing project files |
 
 </details>
@@ -54,17 +54,22 @@ rediscover the project.
 
 ## Skills
 
+Every command is prefixed `agent-spec-`, so it is obvious in a transcript which tool ran
+and where it came from.
+
 | | |
 |---|---|
-| **Onboarding** | `/onboard` |
-| **SDLC pipeline** | `/sdlc` routes; `/requirements` `/tech-spec` `/prd` `/hld` `/lld` `/implement` `/review` `/testing` `/validation` |
-| **Diagnosis** | `/investigate` |
-| **Review** | `/review` `/self-review` `/solid-check` `/debt` |
-| **Memory** | `/index-project` `/query-graph` `/snapshot` |
-| **Token budget** | `/raw-code` `/dense` `/trim-noise` `/verbose` |
-| **Personas** | `/architect` `/security` `/qa` `/reviewer` `/refactor` `/api` `/data` `/devops` `/perf` `/writer` |
+| **Router** | `/agent-spec` — picks the right skill for the job when you are not sure |
+| **Onboarding** | `/agent-spec-onboard` |
+| **SDLC pipeline** | `/agent-spec-sdlc` routes; `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-validation` |
+| **Diagnosis** | `/agent-spec-investigate` |
+| **Review** | `/agent-spec-review` `-self-review` `-solid-check` `-debt` |
+| **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
+| **Memory** | `/agent-spec-remember` `/agent-spec-snapshot` |
+| **Personas** | `/agent-spec-persona <role>` — architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
+| **Token budget** | `/agent-spec-raw-code` `-dense` `-trim-noise` `-verbose` |
 
----
+25 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
 ## Docs
 

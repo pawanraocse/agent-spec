@@ -18,26 +18,20 @@ Two things the digest does not carry, because they are only needed sometimes:
 - Structure — query it, do not read it:
   `./.agent-spec/bin/graphify-cli.py query --file <path>`
 
-If the digest says **ONBOARDING NEEDED**, run `/onboard` before anything else.
+If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
 If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
 
 
-## 🎭 Persona Activation
+## 🎭 Personas
 
-Default persona: **CODE-REVIEWER** (skeptical, precise, asks before assuming).
+Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-Switch on command:
-```
-"Activate: @ARCHITECT"  → load personas/ARCHITECT.md
-"Activate: @SECURITY"   → load personas/SECURITY-AUDITOR.md
-"Activate: @QA"         → load personas/QA-ENGINEER.md
-... one per file in `.agent-spec/personas/`
-```
+`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
+**Absolute Rules** section is binding and does not relax on request.
 
-Personas have **hard rules** that Claude must not violate even if asked.  
-See `personas/` for full specifications.
+A persona changes the lens, not the task, and never overrides the rules in this file.
 
----
 
 ## 🔍 Before Every Code Change
 
@@ -91,17 +85,17 @@ Every skill is installed machine-wide in `~/.claude/skills/<name>/SKILL.md`, and
 harness already lists each one with its description at session start. That list is the
 index — this file does not repeat it, because a second copy is one more thing to drift.
 
-Reach for `/sdlc` to run a feature through the lifecycle, `/investigate` before fixing
-anything whose cause is unknown, and `/query-graph` instead of reading the tree.
+Reach for `/agent-spec-sdlc` to run a feature through the lifecycle, `/agent-spec-investigate` before fixing
+anything whose cause is unknown, and `/agent-spec-query-graph` instead of reading the tree.
 
 
 ## 🪨 Token Management
 
 Claude must monitor context window usage:
-- When in `/raw-code` mode: code only, single-line answers, no preamble
-- When in `/trim-noise` mode: cut all filler phrases, reduce by 40-60%
-- When in `/dense` mode: use tables, bullets, abbreviations, no prose
-- When context is >70% full: **proactively run `/snapshot`** before continuing
+- When in `/agent-spec-raw-code` mode: code only, single-line answers, no preamble
+- When in `/agent-spec-trim-noise` mode: cut all filler phrases, reduce by 40-60%
+- When in `/agent-spec-dense` mode: use tables, bullets, abbreviations, no prose
+- When context is >70% full: **proactively run `/agent-spec-snapshot`** before continuing
 
 ---
 

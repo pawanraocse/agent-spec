@@ -1,6 +1,6 @@
 # Stage 4: High Level Design (HLD)
 
-> **Skill**: `/hld`
+> **Skill**: `/agent-spec-hld`
 > **Input**: `.agent-spec/sdlc/03-prd.md` & `02-tech-spec.md`
 > **Output**: `.agent-spec/sdlc/04-hld.md`
 
@@ -9,7 +9,7 @@ Translate the Product Requirements (WHAT) into a System Architecture (HOW at a m
 
 ## Process
 
-When the `/hld` skill is invoked, the `@ARCHITECT` persona automatically takes over. The agent must:
+When the `/agent-spec-hld` skill is invoked, the `@ARCHITECT` persona automatically takes over. The agent must:
 
 1. **Load Context**: Read the PRD, Tech Spec, and the project's `KNOWLEDGE-GRAPH.md`.
 2. **Component Mapping**: Identify which existing services/modules will be modified, and which new ones will be created.

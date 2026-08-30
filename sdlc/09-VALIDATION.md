@@ -1,6 +1,6 @@
 # Stage 9: Validation
 
-> **Skill**: `/validation`
+> **Skill**: `/agent-spec-validation`
 > **Input**: `07-TEST-REPORT.md` and `01-REQUIREMENTS.md`
 > **Output**: `.agent-spec/sdlc/08-VALIDATION.md`
 

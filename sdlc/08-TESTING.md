@@ -1,13 +1,13 @@
 # Stage 8: Testing
 
-> **Skill**: `/testing`
+> **Skill**: `/agent-spec-testing`
 > **Input**: `06-REVIEW.md`, `03-PRD.md`, `05-LLD.md`
 > **Output**: `.agent-spec/sdlc/07-TEST-REPORT.md`
 
 ## The Goal
 
 Run everything, and report the truth about what passed. This stage does not write the
-first test — `/implement` gate G2 does that, before the fix. This stage runs the whole
+first test — `/agent-spec-implement` gate G2 does that, before the fix. This stage runs the whole
 suite, finds what nobody wrote a test for, and closes the gaps that matter.
 
 ## What the gate covers

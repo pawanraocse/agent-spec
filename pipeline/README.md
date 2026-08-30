@@ -3,7 +3,7 @@
 > These six gates run **inside** SDLC gate 5. They are not a second pipeline.
 
 The nine SDLC gates are the lifecycle: requirements through validation, one artifact each,
-state in `.agent-spec/sdlc/STATE.json`. The six below are the micro-process `/implement`
+state in `.agent-spec/sdlc/STATE.json`. The six below are the micro-process `/agent-spec-implement`
 follows while writing the code for gate 5.
 
 `skills/claude/implement/SKILL.md` is the executable definition. This file exists so the
@@ -24,6 +24,6 @@ times, so they were removed rather than maintained twice.
 
 Do not proceed to the next gate until the current one's checklist is complete.
 
-Before G1, `/implement` also reads the project's hard rules, the coding standards, and the
+Before G1, `/agent-spec-implement` also reads the project's hard rules, the coding standards, and the
 graph — `context --task` for the file list and `query --file` for the blast radius — and
 posts a Pre-Change Declaration. Confidence LOW or UNKNOWN stops the change and asks.

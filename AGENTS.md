@@ -18,7 +18,7 @@ Two things the digest does not carry, because they are only needed sometimes:
 - Structure — query it, do not read it:
   `./.agent-spec/bin/graphify-cli.py query --file <path>`
 
-If the digest says **ONBOARDING NEEDED**, run `/onboard` before anything else.
+If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
 If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
 
 
@@ -35,45 +35,35 @@ Nine gates. State lives in `.agent-spec/sdlc/STATE.json`, not in anyone's memory
 
 | Gate | Skill | Produces |
 |---|---|---|
-| 0 REQUIREMENTS | `/requirements` | `01-REQUIREMENTS.md` — assigns the `REQ-` identifiers |
-| 1 TECH-SPEC | `/tech-spec` | `02-TECH-SPEC.md` |
-| 2 PRD | `/prd` | `03-PRD.md` |
-| 3 HLD | `/hld` | `04-HLD.md` |
-| 4 LLD | `/lld` | `05-LLD.md`, one per service |
-| 5 DEVELOPMENT | `/implement` | code + tests |
-| 6 REVIEW | `/review` | `06-REVIEW.md` |
-| 7 TESTING | `/testing` | `07-TEST-REPORT.md` |
-| 8 VALIDATION | `/validation` | `08-VALIDATION.md` |
+| 0 REQUIREMENTS | `/agent-spec-requirements` | `01-REQUIREMENTS.md` — assigns the `REQ-` identifiers |
+| 1 TECH-SPEC | `/agent-spec-tech-spec` | `02-TECH-SPEC.md` |
+| 2 PRD | `/agent-spec-prd` | `03-PRD.md` |
+| 3 HLD | `/agent-spec-hld` | `04-HLD.md` |
+| 4 LLD | `/agent-spec-lld` | `05-LLD.md`, one per service |
+| 5 DEVELOPMENT | `/agent-spec-implement` | code + tests |
+| 6 REVIEW | `/agent-spec-review` | `06-REVIEW.md` |
+| 7 TESTING | `/agent-spec-testing` | `07-TEST-REPORT.md` |
+| 8 VALIDATION | `/agent-spec-validation` | `08-VALIDATION.md` |
 
-`/sdlc` routes: it reads the state, runs the one gate that is due, and stops.
+`/agent-spec-sdlc` routes: it reads the state, runs the one gate that is due, and stops.
 
 **One gate per approval. Never chain two.** A change too small for a design pass runs in
-small-change mode — `/implement` directly, said out loud, with no gate recorded.
+small-change mode — `/agent-spec-implement` directly, said out loud, with no gate recorded.
 
-`/implement` has its own internal six gates (placement, tests first, build, boundary,
+`/agent-spec-implement` has its own internal six gates (placement, tests first, build, boundary,
 clean, self-review). Those are inside gate 5, not a second pipeline.
 
 
-## 🎭 Active Personas
+## 🎭 Personas
 
-Select the appropriate persona for the task. Personas cannot be mixed mid-task.
+Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-| Command | Persona | Use When |
-|---------|---------|----------|
-| `Activate: @ARCHITECT` | Architect | System design, new module, refactor |
-| `Activate: @SECURITY` | Security Auditor | Auth, APIs, data handling |
-| `Activate: @PERF` | Performance Engineer | Slow queries, scale, memory |
-| `Activate: @QA` | QA Engineer | Writing tests, coverage |
-| `Activate: @REVIEWER` | Code Reviewer | PR review, code quality |
-| `Activate: @WRITER` | Tech Writer | Docs, ADRs, changelogs |
-| `Activate: @REFACTOR` | Refactor Specialist | Tech debt, legacy cleanup |
-| `Activate: @API` | API Designer | New endpoints, contracts |
-| `Activate: @DATA` | Data Engineer | Schema, migrations |
-| `Activate: @DEVOPS` | DevOps Engineer | CI/CD, Docker, config |
+`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
+**Absolute Rules** section is binding and does not relax on request.
 
-See `.agent-spec/personas/` directory for each persona's full specification.
+A persona changes the lens, not the task, and never overrides the rules in this file.
 
----
 
 ## 🛡️ Anti-Hallucination Protocol
 
@@ -103,8 +93,8 @@ Every skill is installed machine-wide in `~/.claude/skills/<name>/SKILL.md`, and
 harness already lists each one with its description at session start. That list is the
 index — this file does not repeat it, because a second copy is one more thing to drift.
 
-Reach for `/sdlc` to run a feature through the lifecycle, `/investigate` before fixing
-anything whose cause is unknown, and `/query-graph` instead of reading the tree.
+Reach for `/agent-spec-sdlc` to run a feature through the lifecycle, `/agent-spec-investigate` before fixing
+anything whose cause is unknown, and `/agent-spec-query-graph` instead of reading the tree.
 
 
 ## 📏 Absolute Rules (Non-Negotiable)

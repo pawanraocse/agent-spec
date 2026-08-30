@@ -156,6 +156,79 @@ KEEP="$(python3 -c "import json;print(json.load(open('$SET')).get('model'))")"
 want "existing settings preserved" "opus" "$KEEP"
 
 echo ""
+echo "[7] skill naming contract"
+BAD=0
+for d in "${HOME_DIR}/skills/claude"/*/; do
+  n="$(basename "$d")"
+  case "$n" in agent-spec*) ;; *) BAD=$((BAD+1)); echo "     unprefixed: $n" ;; esac
+  # the frontmatter name must equal the directory, or the harness lists a skill nobody can invoke
+  FM="$(sed -n 's/^name: "\(.*\)"$/\1/p' "${d}SKILL.md" | head -1)"
+  [ "$FM" = "$n" ] || { BAD=$((BAD+1)); echo "     name mismatch: $n vs $FM"; }
+done
+want "every skill prefixed and self-consistent" 0 "$BAD"
+
+echo ""
+echo "[8] memory"
+MEM="${HOME_DIR}/bin/agent-spec-memory.py"
+( cd "$P" && python3 "$MEM" add --type constraint --subject "selftest" --source "selftest" "This is a constraint recorded by the self test to prove the store works." >/dev/null )
+COUNT="$( cd "$P" && python3 "$MEM" list | head -1 | grep -o '[0-9]\+' )"
+want "fact recorded" 1 "$COUNT"
+( cd "$P" && python3 "$MEM" add --type constraint --subject "selftest" --source "selftest" "This is a constraint recorded by the self test to prove the store works." >/dev/null )
+COUNT="$( cd "$P" && python3 "$MEM" list | head -1 | grep -o '[0-9]\+' )"
+want "identical fact not duplicated" 1 "$COUNT"
+( cd "$P" && python3 "$MEM" add --type gotcha --subject "short" --source "x" "tiny" >/dev/null 2>&1 )
+want "a fact too short to be worth keeping is refused" 2 "$?"
+OUT="$( cd "$P" && python3 "$MEM" digest )"
+case "$OUT" in *"[constraint] selftest"*) ok "fact reaches the digest" ;; *) bad "fact missing from digest" ;; esac
+OUT="$( cd "$P" && python3 "${HOME_DIR}/bin/agent-spec-digest.py" )"
+case "$OUT" in *"remembered:"*) ok "session digest carries memory" ;; *) bad "session digest has no memory block" ;; esac
+# constraints survive a prune by age; that is the whole point of the type
+( cd "$P" && python3 "$MEM" prune --older-than 0 >/dev/null )
+COUNT="$( cd "$P" && python3 "$MEM" list | head -1 | grep -o '[0-9]\+' )"
+want "constraints are never pruned by age" 1 "$COUNT"
+
+echo ""
+echo "[9] snapshot rotation"
+SNAP="$P/.agent-spec/SESSION-SNAPSHOT.md"
+: > "$SNAP"
+for i in 1 2 3 4 5; do
+  printf '# Session Snapshot — day %d\n\n## Session Summary\nfiller %d\n%s\n\n' \
+    "$i" "$i" "$(head -c 3000 /dev/zero | tr '\0' 'x')" >> "$SNAP"
+done
+( cd "$P" && python3 "$MEM" rotate >/dev/null )
+KEPT="$(grep -c '^# Session Snapshot' "$SNAP")"
+want "rotation keeps the two newest sections" 2 "$KEPT"
+ARCHIVED="$(cat "$P"/.agent-spec/memory/snapshots/*.md 2>/dev/null | grep -c '^# Session Snapshot')"
+want "and archives the other three" 3 "$ARCHIVED"
+
+echo ""
+echo "[10] indexer limits"
+BIG="${WORK}/big"; mkdir -p "$BIG/src" "$BIG/generated"
+echo '{"name":"big"}' > "$BIG/package.json"
+printf 'generated/\n' > "$BIG/.gitignore"
+echo "export const a = 1;" > "$BIG/src/a.js"
+echo "export const gen = 1;" > "$BIG/generated/huge.js"
+echo "export const m = 1;" > "$BIG/src/vendor.min.js"
+head -c 2000000 /dev/zero | tr '\0' 'x' > "$BIG/src/bundle.js"
+( cd "$BIG" && bash "${HOME_DIR}/bin/install.sh" --project-only >/dev/null 2>&1 )
+FILES="$(jq_stat "$BIG/.agent-spec/graph/knowledge-graph.json" files)"
+want "gitignored dir, minified and oversized files all skipped" 1 "$FILES"
+
+echo ""
+echo "[11] upgrade path"
+UH="${WORK}/upgradehome"
+mkdir -p "$UH/.claude/skills/review" "$UH/.claude/skills/my-own-skill"
+printf -- '---\nname: "review"\ndescription: >-\n  old\n---\nbody\n' > "$UH/.claude/skills/review/SKILL.md"
+printf -- '---\nname: "my-own-skill"\ndescription: >-\n  mine\n---\nbody\n' > "$UH/.claude/skills/my-own-skill/SKILL.md"
+( cd "$P" && HOME="$UH" WIN_CLAUDE_HOME="$UH/nowin" bash "${HOME_DIR}/bin/install.sh" --skills-only >/dev/null 2>&1 )
+LEFT="$(ls "$UH/.claude/skills" 2>/dev/null | grep -cv '^agent-spec')"
+want "the old unprefixed skill is pruned, the user's own is kept" 1 "$LEFT"
+want "and the one kept is theirs" "my-own-skill" "$(ls "$UH/.claude/skills" | grep -v '^agent-spec')"
+CURSOR_COUNT="$(ls "$UH/.cursor/skills" 2>/dev/null | wc -l | tr -d ' ')"
+CLAUDE_COUNT="$(ls "$UH/.claude/skills" 2>/dev/null | grep -c '^agent-spec')"
+want "cursor and claude get the same skill set" "$CLAUDE_COUNT" "$CURSOR_COUNT"
+
+echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
 [ "$FAIL" -eq 0 ] || exit 1

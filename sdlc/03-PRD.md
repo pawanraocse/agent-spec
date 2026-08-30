@@ -1,6 +1,6 @@
 # Stage 3: Product Requirements Document (PRD)
 
-> **Skill**: `/prd`
+> **Skill**: `/agent-spec-prd`
 > **Input**: `.agent-spec/sdlc/01-requirements.md` & `02-tech-spec.md`
 > **Output**: `.agent-spec/sdlc/03-prd.md`
 
@@ -44,7 +44,7 @@ Before finalizing the PRD, the agent must verify all 14 points:
 
 ## Output Status Report
 
-When the `/prd` skill finishes, the agent should output a status report in the chat:
+When the `/agent-spec-prd` skill finishes, the agent should output a status report in the chat:
 
 ```markdown
 📝 **PRD Status Generated**

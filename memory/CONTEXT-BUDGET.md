@@ -20,9 +20,9 @@ When discussing architectural plans or reviewing large codebases, the agent shou
 
 - `/caveman`: Emits code only. Zero explanation. Good for rapid iterations where the developer already knows the "why".
 - `/defluffer`: Removes conversational filler ("Certainly!", "I'd be happy to!"). Reduces output tokens by 40%.
-- `/dense`: Uses abbreviations, tables, and bullet points.
+- `/agent-spec-dense`: Uses abbreviations, tables, and bullet points.
 
 ## 4. The 70% Warning
 If the agent detects that the conversation has consumed >70% of the available context window, it must autonomously issue a warning:
 
-> ⚠️ **CONTEXT BUDGET WARNING**: We are approaching the limit of the effective context window. I recommend running `/snapshot` to save our state, and starting a new chat session to prevent logic degradation.
+> ⚠️ **CONTEXT BUDGET WARNING**: We are approaching the limit of the effective context window. I recommend running `/agent-spec-snapshot` to save our state, and starting a new chat session to prevent logic degradation.

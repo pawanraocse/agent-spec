@@ -11,27 +11,27 @@ While personas define *how* an agent behaves (rules and tone), skills define *wh
 ## The Core Skills
 
 ### The SDLC Builders
-- `/requirements`: Elicit and structure raw customer needs.
-- `/tech-spec`: Define feasibility and constraints.
-- `/prd`: Generate the Product Requirements Document (WHAT/WHY).
-- `/hld`: Generate the High Level Design (Architecture/Mermaid).
-- `/lld`: Generate the Low Level Design (Classes/Schemas).
+- `/agent-spec-requirements`: Elicit and structure raw customer needs.
+- `/agent-spec-tech-spec`: Define feasibility and constraints.
+- `/agent-spec-prd`: Generate the Product Requirements Document (WHAT/WHY).
+- `/agent-spec-hld`: Generate the High Level Design (Architecture/Mermaid).
+- `/agent-spec-lld`: Generate the Low Level Design (Classes/Schemas).
 
 ### The Execution Engine
-- `/implement`: Triggers the 6-Gate coding pipeline.
-- `/review`: Deep, skeptical code review against SOLID/Security standards.
-- `/solid-check`: Specifically audits a file for SOLID violations.
+- `/agent-spec-implement`: Triggers the 6-Gate coding pipeline.
+- `/agent-spec-review`: Deep, skeptical code review against SOLID/Security standards.
+- `/agent-spec-solid-check`: Specifically audits a file for SOLID violations.
 
 ### Memory & State
-- `/index-project`: Runs Graphify to build/update `KNOWLEDGE-GRAPH.md`.
-- `/snapshot`: Generates `SESSION-SNAPSHOT.md` to save state.
-- `/debt`: Analyzes code and logs findings to `TECH-DEBT-REGISTER.md`.
+- `/agent-spec-index-project`: Runs Graphify to build/update `KNOWLEDGE-GRAPH.md`.
+- `/agent-spec-snapshot`: Generates `SESSION-SNAPSHOT.md` to save state.
+- `/agent-spec-debt`: Analyzes code and logs findings to `TECH-DEBT-REGISTER.md`.
 
 ### Context Management (Token Savers)
-- `/raw-code`: Minimal output. Code only. No pleasantries.
-- `/trim-noise`: Removes conversational filler (reduces output by ~40%).
-- `/dense`: Maximum information density (tables, bullet points, abbreviations).
-- `/verbose`: Restores default chatty behavior.
+- `/agent-spec-raw-code`: Minimal output. Code only. No pleasantries.
+- `/agent-spec-trim-noise`: Removes conversational filler (reduces output by ~40%).
+- `/agent-spec-dense`: Maximum information density (tables, bullet points, abbreviations).
+- `/agent-spec-verbose`: Restores default chatty behavior.
 
 ---
 

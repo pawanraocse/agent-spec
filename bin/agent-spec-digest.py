@@ -12,11 +12,12 @@ silent in projects that do not use the framework.
 """
 import json
 import os
+import subprocess
 import sys
 
 ROOT = os.getcwd()
 SPEC = os.path.join(ROOT, ".agent-spec")
-MAX_BYTES = 1400
+MAX_BYTES = 2600
 
 
 def read(path, limit=None):
@@ -88,6 +89,21 @@ def graph_line():
     return line + ("\nmost depended on: " + hot if hot else "")
 
 
+def remembered():
+    """Facts recorded with agent-spec-memory. Bounded by that tool, not by this one."""
+    sibling = os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-spec-memory.py")
+    for script in (os.path.join(SPEC, "bin", "agent-spec-memory.py"), sibling):
+        if not os.path.exists(script):
+            continue
+        try:
+            out = subprocess.run([sys.executable, script, "digest"], cwd=ROOT,
+                                 capture_output=True, text=True, timeout=5)
+        except (OSError, subprocess.SubprocessError):
+            return ""
+        return out.stdout.strip()
+    return ""
+
+
 def main():
     if not os.path.isdir(SPEC):
         return 0
@@ -95,7 +111,7 @@ def main():
     out = ["<agent-spec-digest>"]
 
     if os.path.exists(os.path.join(SPEC, ".onboarding-needed")):
-        out.append("ONBOARDING NEEDED — run /onboard before anything else.")
+        out.append("ONBOARDING NEEDED — run /agent-spec-onboard before anything else.")
 
     out.append(graph_line())
     out.append("pipeline: " + gate())
@@ -104,10 +120,16 @@ def main():
     if summary:
         out.append("last session: " + summary)
 
+    facts = remembered()
+    if facts:
+        out.append("remembered:")
+        out.append(facts)
+
     out.append(
         "Do NOT open PROJECT-INDEX.md, KNOWLEDGE-GRAPH.md or SESSION-SNAPSHOT.md to "
         "re-derive the above; it is already here. Query structure with "
-        "./.agent-spec/bin/graphify-cli.py; read CONSTITUTION.md only before editing code."
+        "./.agent-spec/bin/graphify-cli.py; read CONSTITUTION.md only before editing code. "
+        "More facts: ./.agent-spec/bin/agent-spec-memory.py search <term>."
     )
     out.append("</agent-spec-digest>")
 

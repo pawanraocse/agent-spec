@@ -1,60 +1,68 @@
 {
   "version": "4.0",
   "project": "agent-spec",
-  "generated": "2026-08-30T10:57:00.431056",
+  "generated": "2026-08-30T11:19:37.549496",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
-    "files": 4,
+    "files": 6,
     "internal_edges": 0,
     "integration_edges": 0,
-    "external_packages": 7,
-    "test_files": 2,
+    "external_packages": 9,
+    "test_files": 4,
     "cycles": 0,
     "services": 0,
     "endpoints": 0,
     "topics": 0,
     "layer_violations": 0,
     "languages": {
-      "python": 4
+      "python": 6
     },
     "layers": {
-      "test": 2,
+      "test": 4,
       "unknown": 2
     },
     "most_depended": [],
     "top_external": [
       [
         "json",
-        4
+        6
       ],
       [
         "os",
-        4
+        6
       ],
       [
         "sys",
-        4
+        6
       ],
       [
         "argparse",
-        2
+        4
+      ],
+      [
+        "re",
+        4
+      ],
+      [
+        "datetime",
+        3
       ],
       [
         "collections",
         2
       ],
       [
-        "datetime",
+        "subprocess",
         1
       ],
       [
-        "re",
+        "hashlib",
         1
       ]
     ]
   },
-  "orphan_count": 4,
+  "orphan_count": 6,
   "services": {},
   "layer_violations": [],
   "topics": {},
@@ -71,6 +79,28 @@
       "id": "bin/agent-spec-digest.py",
       "type": "test",
       "path": "bin/agent-spec-digest.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-gate.py",
+      "type": "test",
+      "path": "bin/agent-spec-gate.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-memory.py",
+      "type": "test",
+      "path": "bin/agent-spec-memory.py",
       "lang": "python",
       "layer": "test",
       "service": null,
@@ -116,30 +146,38 @@
   "external": [
     [
       "json",
-      4
+      6
     ],
     [
       "os",
-      4
+      6
     ],
     [
       "sys",
-      4
+      6
     ],
     [
       "argparse",
-      2
+      4
+    ],
+    [
+      "re",
+      4
+    ],
+    [
+      "datetime",
+      3
     ],
     [
       "collections",
       2
     ],
     [
-      "datetime",
+      "subprocess",
       1
     ],
     [
-      "re",
+      "hashlib",
       1
     ]
   ],

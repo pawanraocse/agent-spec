@@ -18,19 +18,20 @@ Two things the digest does not carry, because they are only needed sometimes:
 - Structure — query it, do not read it:
   `./.agent-spec/bin/graphify-cli.py query --file <path>`
 
-If the digest says **ONBOARDING NEEDED**, run `/onboard` before anything else.
+If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
 If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
 
 
-## 🎭 Persona System
+## 🎭 Personas
 
-Default: **CODE-REVIEWER** — skeptical, precise, always cites source.
+Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-Activate with: `"Activate: @PERSONA_NAME"`
+`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
+**Absolute Rules** section is binding and does not relax on request.
 
-See `AGENTS.md` and `.agent-spec/personas/` for the full persona list and their hard rules.
+A persona changes the lens, not the task, and never overrides the rules in this file.
 
----
 
 ## 📊 Confidence Scoring (MANDATORY)
 

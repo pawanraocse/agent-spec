@@ -1,6 +1,6 @@
 # Stage 7: Review
 
-> **Skill**: `/review`
+> **Skill**: `/agent-spec-review`
 > **Input**: the diff from stage 6, plus `05-LLD.md`
 > **Output**: `.agent-spec/sdlc/06-REVIEW.md`
 

@@ -1,6 +1,6 @@
 # Stage 2: Technical Specification
 
-> **Skill**: `/tech-spec`
+> **Skill**: `/agent-spec-tech-spec`
 > **Input**: `.agent-spec/sdlc/01-requirements.md`
 > **Output**: `.agent-spec/sdlc/02-tech-spec.md`
 
@@ -9,7 +9,7 @@ Assess the technical feasibility of the requirements, choose the appropriate tec
 
 ## Process
 
-When the `/tech-spec` skill is invoked, the agent must:
+When the `/agent-spec-tech-spec` skill is invoked, the agent must:
 
 1. **Load** the requirements document.
 2. **Assess Feasibility**: Can this be built with the current tech stack? (Check `PROJECT-INDEX.md`).

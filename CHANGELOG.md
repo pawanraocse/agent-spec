@@ -10,6 +10,50 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`/agent-spec` — the router.** Choosing between 25 skills is itself a decision, and
+  choosing wrong is expensive: `/agent-spec-implement` on a defect whose cause is unknown
+  burns a session on edit-test-edit. The router reads the pipeline state, matches the
+  request against an ordered table whose top rows exist to prevent exactly those mistakes,
+  fetches the file list from the graph, and hands off to one skill. It never does the work
+  itself and never chains two skills on one request.
+- **Project memory** — `.agent-spec/memory/facts/`, one fact per file, typed `constraint`,
+  `decision`, `gotcha` or `reference`, each dated and sourced. `bin/agent-spec-memory.py`
+  adds, lists, searches, shows and prunes them, and the `SessionStart` hook prints them
+  all — constraints first, under a byte cap — so a fact recorded once is known by every
+  later session without anyone opening a file. Capped at forty and pruned deliberately;
+  memory that grows without limit becomes the problem it was meant to solve. The skill is
+  `/agent-spec-remember`, and it is explicit about what does not belong: anything the
+  repository already answers.
+- **Snapshot rotation.** `SESSION-SNAPSHOT.md` is append-only by design, but append-only
+  is not unbounded — past about 12 KB whatever loads it truncates, silently, oldest first.
+  `agent-spec-memory.py rotate` moves the older sections into `memory/snapshots/` where
+  they stay readable on purpose. Nothing is deleted. `/agent-spec-snapshot` runs it.
+- **Legacy skill pruning on upgrade.** An install that only copied the new prefixed names
+  would leave the old ones beside them — 22 duplicate commands, two of every pipeline
+  gate, no way to tell which ran. The installer now removes them by name, and only when
+  the directory carries a `SKILL.md` whose frontmatter matches, so a skill the user wrote
+  is never touched.
+- **Indexer limits for real repositories** — `.gitignore` directories excluded on top of
+  the built-in list, files over 1 MB and minified or generated ones skipped as written by
+  a tool rather than a person, symlink loops terminated, and hitting the file ceiling
+  reported rather than silently producing a partial graph.
+
+### Changed
+- **Every skill is now prefixed `agent-spec-`**, so a transcript shows which tool ran and
+  where it came from. `/prd` is `/agent-spec-prd`, and so on throughout.
+- **The ten persona skills are one skill.** `/agent-spec-persona <role>` covers architect,
+  security, qa, data, devops, perf, refactor, api, writer and reviewer. Each role's
+  Absolute Rules live in `.agent-spec/personas/<ROLE>.md`, which was always the source of
+  truth — the ten skills were lifting it verbatim, which is a second copy and therefore a
+  second thing to drift.
+- Persona references across `CLAUDE.md`, `AGENTS.md`, `CURSOR.md`, `GEMINI.md` and
+  `core/` pointed at `SECURITY-AUDITOR.md`, `QA-ENGINEER.md` and `CODE-REVIEWER` — three
+  filenames that have never existed in `personas/`. All corrected.
+- `--lean` now holds back five SDLC-design skills rather than eight; the list it named
+  included two skills that no longer exist under those names.
+- The self-test covers the skill naming contract, memory, rotation, indexer limits and the
+  upgrade path: **29 assertions, all passing**, up from 16.
+
 - **`/sdlc` orchestrator and `bin/agent-spec-gate.py`** — the nine SDLC gates now have state
   on disk (`.agent-spec/sdlc/STATE.json`) instead of in whichever context window is open.
   `status` says where the pipeline is, `check <n>` exits 1 with the missing artifact named,

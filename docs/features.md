@@ -9,6 +9,11 @@ knowledge graph, a Mermaid summary and an observed-conventions file. Only files 
 mtime or size moved are re-parsed, so re-indexing a large repository is cheap. The agent
 queries that map before writing code, instead of re-reading the tree every session.
 
+It is built for real repositories: `.gitignore` directories are excluded on top of the
+built-in list, files over 1 MB and minified or generated ones are skipped as written by a
+tool rather than a person, symlink loops terminate, and hitting the file ceiling is
+reported rather than silently producing a partial graph.
+
 It records more than imports. Each file carries a **layer** (controller, service, data,
 integration, contract, config, util) and the **service** that owns it — one per manifest
 below the root. On top of the import edges it recovers the coupling no import graph can
@@ -16,7 +21,7 @@ see: HTTP calls matched to a service name, and Kafka, Rabbit or SQS topics match
 producer to consumer. Two services that talk over a broker share no line of code; without
 those edges they look unrelated.
 
-Query it without loading it — this is the `/query-graph` skill:
+Query it without loading it — this is the `/agent-spec-query-graph` skill:
 
 | Question | Command |
 |---|---|
@@ -28,9 +33,9 @@ Query it without loading it — this is the `/query-graph` skill:
 | Is the layering holding? | `layers` |
 | Where is X? | `search <keyword>` |
 
-## `/onboard` — learn the project once
+## `/agent-spec-onboard` — learn the project once
 
-On the first session after install, `.agent-spec/.onboarding-needed` triggers `/onboard`.
+On the first session after install, `.agent-spec/.onboarding-needed` triggers `/agent-spec-onboard`.
 It reads the graph, the build manifest and the commit log — not the source tree — and
 writes `PROJECT-INDEX.md` and `CONSTITUTION.md` from what is actually in the repo: stack,
 build and test commands, layering, conventions, hard constraints. Then it deletes the
@@ -39,9 +44,38 @@ marker and never runs again. Anything it cannot evidence is tagged
 
 Every later session reads those two files instead of rediscovering the project.
 
+## The router
+
+`/agent-spec` picks the skill. Choosing between 25 of them is itself a decision, and
+choosing wrong is expensive — `/agent-spec-implement` on a defect whose cause is unknown
+burns a session on edit-test-edit. The router reads the pipeline state, matches the
+request against an ordered table whose top rows exist to prevent exactly those mistakes,
+fetches the file list from the graph, and hands off to **one** skill. It never does the
+work itself, and it never chains two skills on one request.
+
+## Project memory
+
+Two kinds, deliberately separate.
+
+**Facts** — `.agent-spec/memory/facts/`, one per file, typed `constraint`, `decision`,
+`gotcha` or `reference`, each dated and sourced. The `SessionStart` hook prints them all,
+constraints first, under a byte cap. A fact recorded once is known by every later session
+without anyone opening a file. Capped at forty and pruned deliberately, because memory
+that grows without limit becomes the problem it was meant to solve.
+
+**Narrative** — `SESSION-SNAPSHOT.md`, append-only, one dated section per session, holding
+the corrections and reversed decisions that are its most valuable content. Append-only is
+not unbounded: past about 12 KB whatever loads it truncates, silently, oldest first.
+`agent-spec-memory.py rotate` moves the older sections into `memory/snapshots/` where they
+remain readable on purpose. Nothing is deleted.
+
+`/agent-spec-remember` says what does **not** belong in memory: anything the repository
+already answers. A copy of something the graph knows goes stale silently.
+
 ## 10 expert personas
 
-Default agents are yes-men. These are not.
+One skill, `/agent-spec-persona <role>`, ten roles. Default agents are yes-men. These are
+not.
 
 - `@ARCHITECT` — enforces SOLID, blocks God Objects.
 - `@SECURITY` — zero-trust; demands parameterised queries, rejects hardcoded secrets.
@@ -49,7 +83,9 @@ Default agents are yes-men. These are not.
 - `@DATA` — obsesses over normalisation, rejects lossy migrations.
 - `@REFACTOR` — cleans debt without changing behaviour.
 
-Full roster in `personas/`. Each has hard rules the agent may not violate on request.
+Full roster in `personas/`, one file each. The **Absolute Rules** section of that file is
+binding and does not relax on request — not for "just this once", not for a test, not
+because the user asked.
 
 ## Anti-hallucination protocol
 
@@ -67,7 +103,7 @@ of code.
 
 The ordering is not remembered, it is stored. `.agent-spec/sdlc/STATE.json` holds the
 current gate, and `bin/agent-spec-gate.py check <n>` refuses a gate whose predecessor
-never produced its artifact. `/sdlc` reads that state, runs the one gate that is due and
+never produced its artifact. `/agent-spec-sdlc` reads that state, runs the one gate that is due and
 stops; one gate per approval, never two chained on a single "yes".
 
 The last gate is the only one that looks all the way back to the first.
@@ -94,14 +130,14 @@ down:
   graph size, current gate, last session's summary. It replaces the old protocol of
   opening four files to work out where things stand.
 - **An `agent-spec` output style**, installed into `settings.json`, makes dense output the
-  default rather than something `/raw-code` has to be typed to get, session after session.
+  default rather than something `/agent-spec-raw-code` has to be typed to get, session after session.
 
 `bin/agent-spec-bench.sh` prints what all of that actually costs, so the claim can be
 checked.
 
 ## Auto-logged technical debt
 
-A code smell the agent was not asked to fix does not become a `// TODO`. `/debt` logs it
+A code smell the agent was not asked to fix does not become a `// TODO`. `/agent-spec-debt` logs it
 to `.agent-spec/TECH-DEBT-REGISTER.md`.
 
 ## Built-in coding standards
