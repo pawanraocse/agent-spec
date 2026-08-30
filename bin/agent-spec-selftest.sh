@@ -375,6 +375,28 @@ JSON
 OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
 case "$OUT" in *"Both arms failed the same"*) ok "a task both arms fail is called a broken task" ;; *) bad "misreported equal completion as differing" ;; esac
 case "$OUT" in *"rates differ"*) bad "claimed rates differ when they are equal" ;; *) ok "and equal rates are not reported as differing" ;; esac
+# A run that billed nothing never reached the model — a usage limit, an expired
+# login. Its clone is untouched, so its verify message describes an empty repo
+# and reads exactly like the mode did the work badly. Counting those as failures
+# is how an account problem becomes a false finding about a skill.
+python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
+import json
+for r in range(3):
+    for arm, skill in (("A", "agent-spec-raw-code"), ("B", "agent-spec-raw-code-full")):
+        print(json.dumps({"arm": arm, "skill": skill, "task": "t1", "repeat": r,
+            "verdict": "PASS", "cost": 0.10, "turns": 5, "seconds": 9,
+            "session": "s", "in": 1, "write": 1, "read": 1, "out": 1, "is_error": False}))
+print(json.dumps({"arm": "A", "skill": "agent-spec-raw-code", "task": "t2", "repeat": 1,
+    "verdict": "FAIL", "cost": 0.0, "turns": 1, "seconds": 3, "session": "z",
+    "in": 0, "write": 0, "read": 0, "out": 0, "is_error": True}))
+JSON
+OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
+case "$OUT" in *"1 run(s) never reached the model"*) ok "an unbilled run is reported as an error, not a failed task" ;; *) bad "counted a zero-cost run as a task failure" ;; esac
+case "$OUT" in *"3 (100%)"*) ok "and is excluded from the completion rate" ;; *) bad "unbilled run polluted the completion rate" ;; esac
+grep -q "CONSEC_ERRORS" "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
+  && ok "the suite stops after consecutive unbilled runs" \
+  || bad "no abort on repeated unbilled runs — a usage limit burns the whole suite"
+
 # A skill body is re-read every turn. raw-code-full lost its own benchmark by 5%
 # because 4,247 bytes of rationale sat in the prompt prefix. Rationale belongs in
 # docs; the body holds imperatives.

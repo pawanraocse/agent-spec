@@ -38,6 +38,8 @@ BUDGET="5"
 REPEATS="3"
 TASKS=""
 REPORT_ONLY="false"
+CONSEC_ERRORS=0
+ABORT_AFTER=3
 
 die() { echo -e "${RED}✗${NC} $*" >&2; exit 1; }
 
@@ -94,12 +96,42 @@ one_run() {
       > "${dir}/.result.json" 2> "${dir}/.stderr.txt" )
   local elapsed=$(( $(date +%s) - started ))
 
+  # A run that billed nothing never reached the model — a usage limit, an auth
+  # expiry, a network error. Its clone is untouched, so the verify script then
+  # reports a task failure, which reads exactly like the mode did the work badly.
+  # That is how a whole suite can look like a finding about the two modes when
+  # it is a finding about the account.
+  local errmsg
+  errmsg="$(python3 - "${dir}/.result.json" "${dir}/.stderr.txt" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    d = {}
+usage = d.get("usage") or {}
+billed = (d.get("total_cost_usd") or 0) > 0 or (usage.get("output_tokens") or 0) > 0
+if not billed:
+    msg = str(d.get("result") or d.get("error") or "").strip()
+    if not msg:
+        try:
+            msg = open(sys.argv[2]).read().strip()
+        except Exception:
+            msg = ""
+    msg = msg or "the run never reached the model"
+    print(msg.splitlines()[0][:160])
+PY
+)"
+
   # The verify script is the arbiter, not the model's own report.
   local verdict="FAIL" vout=""
-  if [ -s "${dir}/.result.json" ]; then
+  if [ -n "${errmsg}" ]; then
+    verdict="ERROR"
+    vout="${errmsg}"
+  elif [ -s "${dir}/.result.json" ]; then
     vout="$(cd "${dir}" && bash "${TASK_DIR}/${task}.verify" 2>&1)"
     [ $? -eq 0 ] && verdict="PASS"
   else
+    verdict="ERROR"
     vout="no result json"
   fi
 
@@ -129,12 +161,28 @@ PY
 import json
 try: print('%.4f' % (json.load(open('${dir}/.result.json')).get('total_cost_usd') or 0))
 except Exception: print('0.0000')")"
+  case "${verdict}" in
+    PASS)
+      echo -e "    ${GREEN}PASS${NC}  ${label} ${task} #${rep}  \$${cost}  ${elapsed}s"
+      CONSEC_ERRORS=0 ;;
+    ERROR)
+      echo -e "    ${YELLOW}ERROR${NC} ${label} ${task} #${rep}  nothing billed  ${elapsed}s  — $(echo "${vout}" | head -1)"
+      CONSEC_ERRORS=$(( CONSEC_ERRORS + 1 )) ;;
+    *)
+      echo -e "    ${RED}FAIL${NC}  ${label} ${task} #${rep}  \$${cost}  ${elapsed}s  — $(echo "${vout}" | head -1)"
+      CONSEC_ERRORS=0 ;;
+  esac
+
+  # Keep what a run that did not pass left behind. Deleting it was why the last
+  # suite could not say whether the failures were the modes or the account.
   if [ "${verdict}" = "PASS" ]; then
-    echo -e "    ${GREEN}PASS${NC}  ${label} ${task} #${rep}  \$${cost}  ${elapsed}s"
+    rm -rf "${dir}"
   else
-    echo -e "    ${RED}FAIL${NC}  ${label} ${task} #${rep}  \$${cost}  ${elapsed}s  — $(echo "${vout}" | head -1)"
+    local keep="${OUT_DIR}/failed/${label}-${task}-${rep}"
+    rm -rf "${keep}"; mkdir -p "${keep}"
+    cp "${dir}/.result.json" "${dir}/.stderr.txt" "${keep}/" 2>/dev/null
+    rm -rf "${dir}"
   fi
-  rm -rf "${dir}"          # keep the results, not the clones
 }
 
 # ---------------------------------------------------------------------------
@@ -152,6 +200,27 @@ for line in open(path):
 if not rows:
     print("no results"); raise SystemExit(1)
 
+# A run that billed nothing never happened. Counting it as a failed task turns
+# an account problem into a false finding about a mode, so it is reported
+# separately and excluded from every rate and every median below.
+def never_ran(r):
+    return r.get("verdict") == "ERROR" or (not r.get("cost") and not r.get("out"))
+
+errors = [r for r in rows if never_ran(r)]
+rows = [r for r in rows if not never_ran(r)]
+if errors:
+    print("\n=== %d run(s) never reached the model — excluded ===" % len(errors))
+    seen = []
+    for r in errors:
+        key = (r["skill"], r["task"], r["repeat"])
+        seen.append("%s %s #%d" % (r["arm"], r["task"], r["repeat"]))
+    print("  " + ", ".join(seen[:8]) + (" …" if len(seen) > 8 else ""))
+    print("  Nothing was billed for these. Their clones were untouched, so any")
+    print("  verify message they produced describes an empty repository, not a mode.")
+if not rows:
+    print("\nEvery run billed nothing. There is no comparison to make.")
+    raise SystemExit(0)
+
 arms = [arm_a, arm_b]
 by = defaultdict(list)
 for r in rows:
@@ -159,7 +228,7 @@ for r in rows:
 
 def med(v): return st.median(v) if v else 0.0
 
-print("\n=== completion rate ===")
+print("\n=== completion rate (runs that reached the model) ===")
 print("%-28s %10s %10s" % ("", "runs", "verified"))
 overall = {}
 for a in arms:
@@ -212,7 +281,13 @@ b_runs, b_ok = overall[arm_b]
 if a_ok == 0 or b_ok == 0:
     print("One arm verified nothing. There is no comparison to make.")
     raise SystemExit(0)
-if a_ok != b_ok:
+a_rate = a_ok / a_runs if a_runs else 0.0
+b_rate = b_ok / b_runs if b_runs else 0.0
+if a_runs != b_runs:
+    print("The arms did not get the same number of runs (%d vs %d), so nothing here"
+          % (a_runs, b_runs))
+    print("is a paired comparison. Re-run the suite when it can finish.")
+if abs(a_rate - b_rate) > 1e-9:
     print("Completion rates differ (%d/%d vs %d/%d). Cost per verified task already"
           % (a_ok, a_runs, b_ok, b_runs))
     print("accounts for that, but a mode that fails more often is worse even when cheaper.")
@@ -255,7 +330,9 @@ for t in ${SUITE}; do
   verification cannot be scored, and an unscored task rewards not doing the work."
 done
 
-mkdir -p "${OUT_DIR}/work"
+mkdir -p "${OUT_DIR}/work" "${OUT_DIR}/failed"
+rm -rf "${OUT_DIR}/failed"/*
+ABORTED="false"
 : > "${OUT_DIR}/results.jsonl"
 
 TOTAL=$(( $(echo "${SUITE}" | wc -w) * REPEATS * 2 ))
@@ -272,6 +349,15 @@ for t in ${SUITE}; do
     # or load lands on both equally.
     one_run A "${ARM_A}" "${t}" "${rep}"
     one_run B "${ARM_B}" "${t}" "${rep}"
+    if [ "${CONSEC_ERRORS}" -ge "${ABORT_AFTER}" ]; then
+      echo ""
+      echo -e "${RED}✗${NC} ${CONSEC_ERRORS} runs in a row billed nothing. Stopping."
+      echo "  Usually a usage limit or an expired login, not the suite. Evidence:"
+      echo "  ${OUT_DIR}/failed/"
+      echo "  Resume when it clears; results so far are kept and --report re-prints them."
+      ABORTED="true"
+      break 2
+    fi
   done
 done
 
