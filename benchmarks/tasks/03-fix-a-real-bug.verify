@@ -4,6 +4,9 @@ set -uo pipefail
 OUT="$(python3 bin/agent-spec-memory.py add --type gotcha --subject t --source s tiny 2>&1)"
 echo "$OUT" | grep -q "10" || { echo "message does not state the minimum: $OUT"; exit 1; }
 grep -q 'len(text) < 10' bin/agent-spec-memory.py || { echo "the limit itself was changed"; exit 1; }
-CHANGED=$(git status --porcelain | wc -l)
-[ "$CHANGED" -le 1 ] || { echo "touched $CHANGED files, expected 1"; git status --porcelain; exit 1; }
+# Count only source files. Running the command under test legitimately writes
+# into .agent-spec/ — a fact file, a refreshed graph — and scoring that as scope
+# creep punishes an agent for verifying its own work.
+CHANGED=$(git status --porcelain -- bin/ skills/ docs/ benchmarks/ '*.md' | wc -l)
+[ "$CHANGED" -le 1 ] || { echo "touched $CHANGED source files, expected 1"; git status --porcelain -- bin/ skills/ docs/ benchmarks/ '*.md'; exit 1; }
 echo "ok: $OUT"

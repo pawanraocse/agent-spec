@@ -127,6 +127,38 @@ the paths, or the verdict and the failures, come back. That does the job a filte
 advertises, without the filtered remainder still landing in the conversation and being
 re-read on every remaining turn.
 
+## The measured result: no difference between the two modes
+
+18 runs, 3 tasks, 3 repeats per arm, interleaved, `claude-sonnet-5`, each in a fresh clone.
+
+| | `/agent-spec-raw-code` | `/agent-spec-raw-code-full` |
+|---|---|---|
+| Verified completion | 6 of 9 | 6 of 9 |
+| Median cost per verified task | **$0.0811** | **$0.0852** |
+| Range | $0.0634 – $0.1136 | $0.0690 – $0.1098 |
+| Tasks won | 1 | 0 |
+| Tasks indistinguishable | 2 | 2 |
+
+**`raw-code-full` was 5.0% more expensive, not cheaper**, and on two of three tasks the
+ranges overlap. The honest headline is *no measurable difference*.
+
+The mechanism is visible in the buckets and is the framework's own lesson turned back on
+it. `agent-spec-raw-code-full/SKILL.md` is 6,770 bytes against `raw-code`'s 2,523 — about
+**1,062 extra tokens sitting in the system prompt, re-read on every turn**. On the
+five-turn search task that predicts roughly 5,300 extra cache-read tokens; the measured
+difference was +4,570. The caveman prose it exists to enable saved **−2 output tokens** on
+that same task.
+
+A skill body is context. A mode that spends 1,062 tokens per turn telling the agent to
+spend fewer tokens has to save more than 1,062 tokens per turn, and on short tasks it does
+not. The advice inside `raw-code-full` is still correct — turns and context dominate, which
+is exactly *why* its own size defeats it — but it earns its keep only on long sessions,
+and the suite above is made of short ones.
+
+Task `03-fix-a-real-bug` failed in all six runs, both arms, on a verifier that counted
+generated files under `.agent-spec/` as scope creep. That is a broken verifier, not a
+finding about either mode; it has been scoped to source files and needs re-running.
+
 ## The resulting order of leverage
 
 1. **Fewer turns.** Batch independent calls; never poll; do not split one edit across three
@@ -190,7 +222,7 @@ anyway, which is the variable under test.
 
 The manual `start`/`end`/`report` path — it records the transcript
 boundary around each arm, refuses an arm where no new transcript appeared, and warns when
-the two arms were given different tasks. **As of this writing the paired run has not been
-completed, so no saving is claimed for `agent-spec-raw-code` or
-`agent-spec-raw-code-full`.** What is claimed is the share of the bill each one can reach:
-13.2% and roughly 99.5% respectively.
+the two arms were given different tasks. **The suite has now been run: no measurable
+difference, and `raw-code-full` 5.0% more expensive per verified task.** See the section
+above. What each can still be said to *address* is 13.2% and roughly 99.5% of the bill
+respectively — reach is not the same as saving, and this is the difference between them.

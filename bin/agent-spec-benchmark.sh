@@ -212,10 +212,14 @@ b_runs, b_ok = overall[arm_b]
 if a_ok == 0 or b_ok == 0:
     print("One arm verified nothing. There is no comparison to make.")
     raise SystemExit(0)
-if a_ok != a_runs or b_ok != b_runs:
+if a_ok != b_ok:
     print("Completion rates differ (%d/%d vs %d/%d). Cost per verified task already"
           % (a_ok, a_runs, b_ok, b_runs))
     print("accounts for that, but a mode that fails more often is worse even when cheaper.")
+elif a_ok != a_runs:
+    print("Both arms failed the same %d of %d runs. A task both arms fail is a broken"
+          % (a_runs - a_ok, a_runs))
+    print("task or a broken verifier, not a finding about either mode — fix it and re-run.")
 print("tasks won: /%s %d, /%s %d, indistinguishable %d"
       % (arm_a, wins[arm_a], arm_b, wins[arm_b], wins["tie"]))
 ma, mb = medians[arm_a], medians[arm_b]

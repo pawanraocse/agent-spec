@@ -362,6 +362,19 @@ OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --repo
 case "$OUT" in *"33%"*|*"1 (33%)"*) ok "a failing arm's completion rate is exposed" ;; *) bad "completion rate not reported" ;; esac
 case "$OUT" in *"too few"*) ok "a delta from one verified run is refused" ;; *) bad "quoted a delta from n=1" ;; esac
 case "$OUT" in *"NO MEASURABLE DIFFERENCE"*) ok "and a noise-dominated suite says so" ;; *) bad "no noise verdict" ;; esac
+# Equal-but-imperfect completion is not "rates differ"; and a task both arms fail
+# is a broken task, which is a different message and a different action.
+python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
+import json
+for r in range(3):
+    for arm,skill in (("A","agent-spec-raw-code"),("B","agent-spec-raw-code-full")):
+        print(json.dumps({"arm":arm,"skill":skill,"task":"t1","repeat":r,
+            "verdict":"FAIL" if r==2 else "PASS","cost":0.10,"turns":5,"seconds":9,
+            "session":"s","in":1,"write":1,"read":1,"out":1,"is_error":False}))
+JSON
+OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
+case "$OUT" in *"Both arms failed the same"*) ok "a task both arms fail is called a broken task" ;; *) bad "misreported equal completion as differing" ;; esac
+case "$OUT" in *"rates differ"*) bad "claimed rates differ when they are equal" ;; *) ok "and equal rates are not reported as differing" ;; esac
 
 echo ""
 echo "-----------------------------------------"
