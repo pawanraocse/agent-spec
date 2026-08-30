@@ -47,7 +47,8 @@ expensive mistakes.
 | A fact worth keeping — a decision, a constraint, a gotcha | `/agent-spec-remember` | |
 | End of session, or context past 70% | `/agent-spec-snapshot` | |
 | A specific lens is wanted — security, architecture, data | `/agent-spec-persona <role>` | Then continue with the skill that was already running |
-| Output is too long, or too terse | `/agent-spec-raw-code`, `-dense`, `-trim-noise`, `-verbose` | |
+| Output is too long, or too terse | `/agent-spec-raw-code` (output only), `/agent-spec-raw-code-full` (everything), `/agent-spec-verbose` | |
+| "what is this session costing" | `./.agent-spec/bin/agent-spec-tokens.py session` | Measured, not estimated |
 
 ## 3. Ambiguous requests
 

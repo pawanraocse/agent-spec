@@ -90,7 +90,7 @@ echo ""
 LEGACY_SKILLS="api architect data devops hld implement index-project investigate lld \
 onboard perf prd qa query-graph raw-code refactor requirements review reviewer sdlc \
 security self-review snapshot solid-check tech-spec testing trim-noise dense verbose \
-validation writer debt"
+validation writer debt agent-spec-dense agent-spec-trim-noise"
 
 prune_legacy() {
   local dest="$1" removed=0
@@ -285,8 +285,9 @@ cp "${AGENT_SPEC_HOME}/bin/graphify-cli.py"     "${PROJECT_ROOT}/.agent-spec/bin
 cp "${AGENT_SPEC_HOME}/bin/agent-spec-digest.py" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-digest.py"
 cp "${AGENT_SPEC_HOME}/bin/agent-spec-gate.py"   "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-gate.py"
 cp "${AGENT_SPEC_HOME}/bin/agent-spec-memory.py" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-memory.py"
+cp "${AGENT_SPEC_HOME}/bin/agent-spec-tokens.py" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-tokens.py"
 chmod +x "${PROJECT_ROOT}/.agent-spec/bin/"*
-echo -e "  ${GREEN}✓${NC} .agent-spec/bin/ (agent-spec-index, graphify-cli.py, graphify-build.py, agent-spec-digest.py, agent-spec-gate.py, agent-spec-memory.py)"
+echo -e "  ${GREEN}✓${NC} .agent-spec/bin/ (agent-spec-index, graphify-cli.py, graphify-build.py, agent-spec-digest.py, agent-spec-gate.py, agent-spec-memory.py, agent-spec-tokens.py)"
 
 # New project: the raw-requirements stub and a git repo.
 if [ "$IS_NEW" = "true" ]; then

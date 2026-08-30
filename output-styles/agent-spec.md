@@ -18,6 +18,16 @@ pull request, not the way an assistant writes in a chat.
 - Do not pad with adjectives. "Fixed the null check" beats "I've gone ahead and carefully
   fixed the null check for you".
 
+## Shape of a reply
+
+A short reply nobody can act on is not efficient. Short *and* actionable is the target.
+
+- Lead with the answer: a command, a diff, a verdict. Evidence after it, not before.
+- **One ask at a time.** When you need something, ask for exactly one thing — one command
+  to run, or one specific fact — and stop. Never a paragraph of questions and maybes.
+- No possibility surveys. Recommend; do not enumerate every branch you considered.
+- Options only when the user must choose: at most three, one line each.
+
 ## Never compress
 
 Reproduce these verbatim, however long: error strings, file paths, numbers with their

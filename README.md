@@ -8,7 +8,7 @@
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-project memory that survives a new chat, strict confidence scoring, and 25 prefixed skills
+project memory that survives a new chat, strict confidence scoring, and 24 prefixed skills
 that work in Claude Code, Cursor and Antigravity.
 
 ---
@@ -24,7 +24,8 @@ Unreleased work on `main`, on top of 1.0.0. What is in place today:
 | **Pipeline** | nine gates with state on disk, and requirement traceability from gate 0 to gate 8 |
 | **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
 | **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
-| **Tests** | `bin/agent-spec-selftest.sh` — 29 assertions across Python, Java-microservice and Node fixtures |
+| **Tests** | `bin/agent-spec-selftest.sh` — 38 assertions across Python, Java-microservice and Node fixtures |
+| **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript — measured buckets, not bytes ÷ 4 |
 
 Known gaps, stated rather than hidden:
 
@@ -94,13 +95,14 @@ and where it came from.
 | **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
 | **Memory** | `/agent-spec-remember` `/agent-spec-snapshot` |
 | **Personas** | `/agent-spec-persona <role>` — architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
-| **Token budget** | `/agent-spec-raw-code` `-dense` `-trim-noise` `-verbose` |
+| **Token budget** | `/agent-spec-raw-code` (output only) `-raw-code-full` (everything) `-verbose` |
 
-25 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
+24 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
 ## Docs
 
 - [What it actually does](docs/features.md) — Graphify, personas, the nine gates, context budgeting
+- [Token efficiency](docs/token-efficiency.md) — where the tokens actually go, measured, and why the popular savings claims do not hold
 - [Daily workflow](docs/workflow.md) — starting a feature, managing tokens, ending a session
 - [Agent compatibility](docs/agents.md) — where files land, the WSL two-homes problem
 - [Why this exists](docs/why.md)
@@ -108,8 +110,9 @@ and where it came from.
 ## Maintaining
 
 ```bash
-bin/agent-spec-selftest.sh   # 29 assertions: three language fixtures, gates, memory, upgrade path
-bin/agent-spec-bench.sh      # always-on context cost, per-skill cost, graph query cost
+bin/agent-spec-selftest.sh   # 38 assertions: three language fixtures, gates, memory, upgrade path
+bin/agent-spec-bench.sh      # always-on and per-skill cost, estimated at 4 bytes per token
+bin/agent-spec-bench.sh --session   # measured, from the real session transcript
 ```
 
 Both must pass before anything is merged. The self-test builds throwaway fixtures and

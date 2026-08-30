@@ -1,21 +1,22 @@
 ---
 name: "agent-spec-verbose"
 description: >-
-  Turn off raw-code, dense and trim-noise. Triggers on "normal mode", "stop terse".
+  Turn off the terse modes. Reading and turn discipline stay on. Triggers on "normal mode", "stop terse".
 ---
 
-# verbose
+# agent-spec-verbose
 
 Terse mode off.
 
-Clears whichever of `/agent-spec-raw-code`, `/agent-spec-dense` or `/agent-spec-trim-noise` is active. Resume normal
-explanatory output: full sentences, prose or tables as the content warrants, explanation
-where it earns its place.
+Clears whichever of `/agent-spec-raw-code` or `/agent-spec-raw-code-full` is active.
+Resume normal explanatory output: full sentences, prose or tables as the content warrants,
+explanation where it earns its place.
 
 Not a licence to pad. The standing project rules still apply — no filler, no unrequested
-recaps, no "next steps" nobody asked for. Verbose means *explain when explaining helps*,
-not *write more*.
+recaps, no "next steps" nobody asked for, and still one ask at a time rather than a
+paragraph of questions. Verbose means *explain when explaining helps*, not *write more*.
 
-The reading discipline is **not** cleared: still delegate broad searches to the Explore
-agent, still read ranges over whole files, still cap noisy command output. That saves
-tokens at every verbosity.
+**The token discipline is not cleared.** Batch independent tool calls, ask the graph before
+opening files, read line ranges, prefer a targeted edit to a rewrite, cap noisy command
+output. Those govern roughly four fifths of the bill and are worth keeping at every
+verbosity — only the prose style changes here.

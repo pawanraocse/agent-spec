@@ -59,14 +59,20 @@ Long chats exhaust the window and degrade reasoning.
 
 | Skill | Effect |
 |---|---|
-| `/agent-spec-trim-noise` | Filler out, normal sentences kept. Lightest. |
-| `/agent-spec-dense` | Tables and bullets, no paragraphs. |
-| `/agent-spec-raw-code` | Code blocks only, nothing outside them. |
-| `/agent-spec-verbose` | Back to normal prose. |
+| `/agent-spec-raw-code` | Output only: code blocks, one ask at a time. About 21% of the bill. |
+| `/agent-spec-raw-code-full` | Everything: fewer turns, smaller context, cheaper writes, capped tool output, caveman prose. |
+| `/agent-spec-verbose` | Back to normal prose. Turn and reading discipline stay on. |
 
-All three terse modes also carry reading discipline: broad searches go to a subagent,
-structure questions go to the graph rather than to file reads, and commands get capped
-output. That is the larger half of the saving — output style is the smaller one.
+Measure rather than assume:
+
+```bash
+./.agent-spec/bin/agent-spec-tokens.py session
+```
+
+On a real session here, cache re-reads were 56% of the weighted cost, cache writes 23%,
+output 21%, and everything tools returned 0.7%. Output style is the smallest half of the
+smallest bucket — see [token efficiency](token-efficiency.md), which also has the measured
+refutation of the popular 60-90% savings claims.
 
 ## Remembering something
 

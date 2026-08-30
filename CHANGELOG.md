@@ -10,6 +10,39 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`bin/agent-spec-tokens.py` — measurement instead of assertion.** Claude Code writes a
+  JSONL transcript per session in which every assistant turn carries a `usage` object with
+  the four token buckets. This reads it: `session` reports the buckets weighted by price
+  ratio, `tools` reports what was written into each tool and what came back, and `compare`
+  puts two transcripts side by side for an honest A/B. Read-only; the price ratios are
+  overridable with `--weights` because they are an assumption, not a measurement.
+  `bin/agent-spec-bench.sh --session` delegates to it, and the byte-based numbers are now
+  labelled as the estimates they are.
+- **`/agent-spec-raw-code-full`** — the whole token stack, ordered by measured leverage:
+  fewer turns, smaller context, cheaper writes, capped tool output, and caveman prose last
+  because that is where the evidence puts it. The numbers are in the skill body so nobody
+  reorders it on intuition.
+- **`docs/token-efficiency.md`** — where the tokens actually went in a real session here,
+  with the JetBrains SkillsBench and Hackenberger figures and their links, so the next
+  person to read a "60-90% savings" claim finds the measured refutation in the repository.
+
+### Changed
+- **`/agent-spec-raw-code` is now honestly scoped to output.** It had carried a reading-
+  discipline section that made it look like it covered more than it did; that moved to
+  `raw-code-full`. Both skills, and the always-on output style, gained the rule that
+  matters more than terseness: lead with the answer, ask for exactly one thing at a time,
+  and never answer with a paragraph of questions and possibilities.
+- The self-test covers token measurement and the terse-mode set: **38 assertions, all
+  passing**, up from 29. Two of the new assertions were wrong on their first run — the
+  expected weighted total was miscalculated by hand — and the tool was right.
+
+### Removed
+- **`/agent-spec-dense` and `/agent-spec-trim-noise`.** The output style already makes
+  dense-with-full-sentences the default, so both toggled toward what was already on. Two
+  terse modes remain — `raw-code` for output, `raw-code-full` for everything — plus
+  `verbose` as the off switch. The installer prunes both from every `.claude` and
+  `.cursor` home on upgrade.
+
 - **`/agent-spec` — the router.** Choosing between 25 skills is itself a decision, and
   choosing wrong is expensive: `/agent-spec-implement` on a defect whose cause is unknown
   burns a session on edit-test-edit. The router reads the pipeline state, matches the

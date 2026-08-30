@@ -132,8 +132,11 @@ down:
 - **An `agent-spec` output style**, installed into `settings.json`, makes dense output the
   default rather than something `/agent-spec-raw-code` has to be typed to get, session after session.
 
-`bin/agent-spec-bench.sh` prints what all of that actually costs, so the claim can be
-checked.
+`bin/agent-spec-bench.sh` prints what all of that costs as an estimate, and
+`bin/agent-spec-bench.sh --session` measures the real thing from the session transcript.
+The order of leverage is not what the tooling ecosystem advertises — turns and context
+size dominate, and prose compression is worth about 2% — so
+[token efficiency](token-efficiency.md) carries the numbers and their sources.
 
 ## Auto-logged technical debt
 

@@ -229,6 +229,40 @@ CLAUDE_COUNT="$(ls "$UH/.claude/skills" 2>/dev/null | grep -c '^agent-spec')"
 want "cursor and claude get the same skill set" "$CLAUDE_COUNT" "$CURSOR_COUNT"
 
 echo ""
+echo "[12] token measurement"
+TOK="${HOME_DIR}/bin/agent-spec-tokens.py"
+FIX="${WORK}/fixture.jsonl"
+# Two assistant turns with known usage, one Bash call and its result.
+cat > "$FIX" <<'JSONL'
+{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"output_tokens":50},"content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"0123456789"}]}]}}
+{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"output_tokens":50},"content":[]}}
+JSONL
+OUT="$(python3 "$TOK" session --file "$FIX" 2>&1)"
+want "counts the turns"        "2 assistant turns, ~1,100 tokens of context re-read per turn" "$(echo "$OUT" | sed -n 2p)"
+want "sums the buckets" "2,000" "$(echo "$OUT" | awk '$1=="cache_read_input_tokens"{print $2}')"
+want "weights them (2000*0.1 + 200*1.25 + 100*5 + 20)" "970" "$(echo "$OUT" | awk '$1=="TOTAL"{print $2}')"
+OUT="$(python3 "$TOK" --weights read=1 session --file "$FIX" 2>&1)"
+case "$OUT" in *"read=1"*) ok "weights are overridable" ;; *) bad "--weights ignored" ;; esac
+OUT="$(python3 "$TOK" tools --file "$FIX" 2>&1)"
+case "$OUT" in *"Bash"*"10 B"*) ok "attributes a result to its tool" ;; *) bad "tool attribution wrong" ;; esac
+python3 "$TOK" session --file "${WORK}/does-not-exist.jsonl" >/dev/null 2>&1
+want "a missing transcript exits nonzero with a reason" 1 "$?"
+
+echo ""
+echo "[13] terse modes"
+MODES="$(ls -d "${HOME_DIR}/skills/claude"/agent-spec-{raw-code,raw-code-full,verbose,dense,trim-noise} 2>/dev/null | wc -l | tr -d ' ')"
+want "three remain: raw-code, raw-code-full, verbose" 3 "$MODES"
+UH2="${WORK}/upgrade2"
+mkdir -p "$UH2/.claude/skills/agent-spec-dense" "$UH2/.claude/skills/agent-spec-trim-noise" "$UH2/.claude/skills/mine"
+printf -- '---\nname: "agent-spec-dense"\ndescription: >-\n  old\n---\nbody\n' > "$UH2/.claude/skills/agent-spec-dense/SKILL.md"
+printf -- '---\nname: "agent-spec-trim-noise"\ndescription: >-\n  old\n---\nbody\n' > "$UH2/.claude/skills/agent-spec-trim-noise/SKILL.md"
+printf -- '---\nname: "mine"\ndescription: >-\n  mine\n---\nbody\n' > "$UH2/.claude/skills/mine/SKILL.md"
+( cd "$P" && HOME="$UH2" WIN_CLAUDE_HOME="$UH2/nowin" bash "${HOME_DIR}/bin/install.sh" --skills-only >/dev/null 2>&1 )
+want "the dropped modes are pruned on upgrade" 0 "$(ls "$UH2/.claude/skills" | grep -cE 'agent-spec-(dense|trim-noise)$')"
+want "and the user's own skill survives" "mine" "$(ls "$UH2/.claude/skills" | grep -v '^agent-spec')"
+
+echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
 [ "$FAIL" -eq 0 ] || exit 1

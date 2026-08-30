@@ -8,6 +8,7 @@
 # compare two revisions of this repository, not close enough to quote elsewhere.
 #
 # Usage: bin/agent-spec-bench.sh [project-dir]
+#        bin/agent-spec-bench.sh --session    # measured, from the session transcript
 # =============================================================================
 set -uo pipefail
 
@@ -18,7 +19,15 @@ BOLD='\033[1m'; NC='\033[0m'
 bytes() { [ -f "$1" ] && wc -c < "$1" | tr -d ' ' || echo 0; }
 tokens() { echo $(( $1 / 4 )); }
 
-echo -e "${BOLD}Always-on context${NC}  (paid every turn)"
+# --session hands over to the one thing here that is measured rather than estimated.
+# Everything below it is bytes divided by four, which compares two revisions of a file
+# and cannot measure a session at all.
+if [ "${1:-}" = "--session" ]; then
+  exec python3 "${HOME_DIR}/bin/agent-spec-tokens.py" session
+fi
+
+echo -e "${BOLD}Always-on context${NC}  (paid every turn — ESTIMATED at 4 bytes per token)"
+echo "  For measured numbers from the real session transcript: bin/agent-spec-bench.sh --session"
 echo "  One config file loads per agent, not all four. The total below uses CLAUDE.md."
 for f in AGENTS.md CLAUDE.md CURSOR.md GEMINI.md; do
   B=$(bytes "${HOME_DIR}/${f}")
