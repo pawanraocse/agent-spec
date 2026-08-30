@@ -10,6 +10,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`agent-spec-tokens.py corpus`** — the same buckets aggregated across every session on
+  the machine. One session proves nothing about the shape of the bill; it could be an
+  artefact of that day's task. Measured across **20 sessions, 4 projects, 6,377 assistant
+  turns, 252,494,557 weighted tokens**: cache re-reads 56.7%, cache writes 30.0%, output
+  13.2%, and everything tools returned **0.51%**. Average context grew from 31,453 tokens
+  on the first turn to 355,548 on the last, 11.3x. That corpus, not a single session, is
+  what the ordering in `agent-spec-raw-code-full` now rests on.
+- **`bin/agent-spec-ab.sh`** — the harness for an honest A/B. It records the transcript
+  boundary before and after each arm, refuses to record an arm where no new transcript
+  appeared (a resumed session invalidates the run, and a mislabelled arm is worse than no
+  measurement), warns when the two arms were given different tasks, and hands the pair to
+  `agent-spec-tokens.py compare`. It deliberately does not run the sessions: a genuinely
+  fresh context is the variable under test.
+
+### Changed
+- Self-test: **50 assertions**, all passing, up from 45.
+
 - **`agent-spec-tokens.py context`** — the answer to "what do we do about context
   re-reads", which are 56% of the bill. A context cannot be compressed in place: a cache
   read bills at a tenth precisely because the bytes are unchanged, so editing them

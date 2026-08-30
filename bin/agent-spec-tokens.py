@@ -14,6 +14,7 @@ no way to count.
 Read-only. It never writes anything under ~/.claude.
 
   context   how big the context has grown, and whether a reset now pays for itself
+  corpus    the same buckets across every session on this machine
   session   the four buckets, weighted, for one session
   tools     per tool: what was written into it, what came back, the largest results
   compare   two transcripts side by side, for an honest A/B
@@ -193,6 +194,90 @@ def print_session(data, weights):
           % ("{:,}".format(returned // 4), 100 * (returned // 4) / grand))
 
 
+def all_transcripts():
+    """Every transcript this machine has, across every project."""
+    root = os.path.join(os.path.expanduser("~"), ".claude", "projects")
+    out = []
+    try:
+        projects = sorted(os.listdir(root))
+    except OSError:
+        return out
+    for name in projects:
+        d = os.path.join(root, name)
+        if not os.path.isdir(d):
+            continue
+        for f in sorted(os.listdir(d)):
+            if f.endswith(".jsonl"):
+                out.append((name, os.path.join(d, f)))
+    return out
+
+
+def print_corpus(weights, min_turns=5):
+    """Aggregate across every session on this machine.
+
+    One session proves nothing about the shape of the bill — it could be an artefact
+    of that day's task. Across a corpus the shares are stable, and that is the only
+    basis on which the ordering in `agent-spec-raw-code-full` is defensible.
+    """
+    found = all_transcripts()
+    if not found:
+        print("No transcripts under ~/.claude/projects.", file=sys.stderr)
+        return 1
+
+    totals = Counter()
+    turns = 0
+    sessions = 0
+    skipped = 0
+    projects = set()
+    tool_in = 0
+    tool_out = 0
+    growth = []
+
+    for project, path in found:
+        data = read_usage(path)
+        if data["turns"] < min_turns:
+            skipped += 1
+            continue
+        sessions += 1
+        projects.add(project)
+        turns += data["turns"]
+        for key, _ in BUCKETS:
+            totals[key] += data["totals"].get(key, 0)
+        tool_in += sum(data["tool_in_bytes"].values())
+        tool_out += sum(data["tool_out_bytes"].values())
+        last = data["last_usage"]
+        end = ((last.get("cache_read_input_tokens", 0) or 0)
+               + (last.get("cache_creation_input_tokens", 0) or 0))
+        if data["first_context"]:
+            growth.append((data["first_context"], end, data["turns"]))
+
+    w = weighted(totals, weights)
+    grand = sum(w.values()) or 1
+
+    print("=== corpus: %d sessions across %d projects, %d assistant turns ==="
+          % (sessions, len(projects), turns))
+    print("(%d sessions under %d turns were skipped as too short to be representative)\n"
+          % (skipped, min_turns))
+    print("%-30s %16s %16s %7s" % ("bucket", "tokens", "weighted", "share"))
+    for key, _ in sorted(BUCKETS, key=lambda b: -w[b[0]]):
+        print("%-30s %16s %16s %6.1f%%"
+              % (key, "{:,}".format(totals.get(key, 0)), "{:,.0f}".format(w[key]),
+                 100 * w[key] / grand))
+    print("%-30s %16s %16s" % ("TOTAL", "", "{:,.0f}".format(grand)))
+
+    out_tokens = totals.get("output_tokens", 0) or 1
+    print("\n%-46s %6.1f%% of output" % ("output spent writing into tools:",
+                                         100 * (tool_in // 4) / out_tokens))
+    print("%-46s %6.2f%% of the bill" % ("everything tools returned:",
+                                         100 * (tool_out // 4) / grand))
+    if growth:
+        starts = sum(g[0] for g in growth) / len(growth)
+        ends = sum(g[1] for g in growth) / len(growth)
+        print("\naverage context, first turn: %s   last turn: %s   (%.1fx)"
+              % ("{:,.0f}".format(starts), "{:,.0f}".format(ends), ends / max(starts, 1)))
+    return 0
+
+
 def print_context(data, weights):
     """Current context size, what carrying it costs, and when to reset.
 
@@ -301,10 +386,16 @@ def main():
     p.add_argument("a")
     p.add_argument("b")
 
+    p = sub.add_parser("corpus", help="aggregate across every session on this machine")
+    p.add_argument("--min-turns", type=int, default=5)
+
     sub.add_parser("list", help="transcripts available for this project")
 
     args = parser.parse_args()
     weights = parse_weights(args.weights)
+
+    if args.command == "corpus":
+        return print_corpus(weights, args.min_turns)
 
     if args.command == "list":
         found = transcripts()

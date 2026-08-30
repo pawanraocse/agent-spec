@@ -22,6 +22,26 @@ assistant turn carries a `usage` object with four token buckets. That is ground 
 an estimate, labelled as one, useful for comparing two revisions of a file. Only
 `--session` measures.
 
+## Where the tokens went, across the whole corpus
+
+One session proves nothing about the shape of the bill — it could be an artefact of that
+day's task. `agent-spec-tokens.py corpus` aggregates every session on the machine.
+**20 sessions, 4 projects, 6,377 assistant turns, 252,494,557 weighted tokens:**
+
+| Bucket | Tokens | Weighted | Share |
+|---|---|---|---|
+| `cache_read_input_tokens` | 1,432,876,457 | 143,287,646 | **56.7%** |
+| `cache_creation_input_tokens` | 60,651,843 | 75,814,804 | 30.0% |
+| `output_tokens` | 6,664,178 | 33,320,890 | 13.2% |
+| `input_tokens` | 71,218 | 71,218 | 0.0% |
+
+- Output spent writing *into* tools — mostly whole file bodies: **19.3% of all output.**
+- Everything tools returned: **0.51% of the bill.**
+- Average context: **31,453 tokens on turn 1 → 355,548 on the last turn, 11.3x.**
+
+That is the corpus the ordering below rests on. The single-session figures that follow are
+kept because they are reproducible by anyone reading this file.
+
 ## Where the tokens went
 
 One real session in this repository, 228 assistant turns. Weighted at the standard price
@@ -134,3 +154,10 @@ subagent on a cheaper model — is in `/agent-spec-raw-code-full` §2.
 **Never report a saving you have not measured.** Two sessions are comparable only if they
 did the same work; a shorter session on a smaller task is not an efficiency gain, and
 reporting it as one is how a 60–90% claim gets made.
+
+`bin/agent-spec-ab.sh` is the harness for doing it properly — it records the transcript
+boundary around each arm, refuses an arm where no new transcript appeared, and warns when
+the two arms were given different tasks. **As of this writing the paired run has not been
+completed, so no saving is claimed for `agent-spec-raw-code` or
+`agent-spec-raw-code-full`.** What is claimed is the share of the bill each one can reach:
+13.2% and roughly 99.5% respectively.

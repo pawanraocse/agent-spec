@@ -281,6 +281,19 @@ echo "# agent-spec sync" > "$UH2/.claude/sync-agent-spec-skills.sh"
 want "the superseded sync script is removed" 0 "$(ls "$UH2/.claude/sync-agent-spec-skills.sh" 2>/dev/null | wc -l | tr -d ' ')"
 
 echo ""
+echo "[15] corpus and the A/B harness"
+OUT="$(python3 "$TOK" corpus --min-turns 1 2>&1)"
+case "$OUT" in *"sessions across"*"projects"*) ok "corpus aggregates across projects" ;; *) bad "corpus output wrong" ;; esac
+bash "${HOME_DIR}/bin/agent-spec-ab.sh" >/dev/null 2>&1
+want "the A/B runner refuses a bare invocation" 1 "$?"
+( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" start A "measure this" >/dev/null 2>&1 )
+want "arming an arm records the task" "measure this" "$(cat "$P/.agent-spec/ab/task-A.txt" 2>/dev/null)"
+( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" end A >/dev/null 2>&1 )
+want "ending an arm with no new transcript is refused" 1 "$?"
+( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" report >/dev/null 2>&1 )
+want "a report with unfinished arms is refused" 1 "$?"
+
+echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
 [ "$FAIL" -eq 0 ] || exit 1

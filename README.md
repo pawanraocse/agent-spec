@@ -24,7 +24,7 @@ Unreleased work on `main`, on top of 1.0.0. What is in place today:
 | **Pipeline** | nine gates with state on disk, and requirement traceability from gate 0 to gate 8 |
 | **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
 | **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
-| **Tests** | `bin/agent-spec-selftest.sh` — 45 assertions across Python, Java-microservice and Node fixtures |
+| **Tests** | `bin/agent-spec-selftest.sh` — 50 assertions across Python, Java-microservice and Node fixtures |
 | **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript — measured buckets, not bytes ÷ 4 |
 | **Subagents** | `agent-spec-search` and `agent-spec-verify`, pinned to a cheap model, so broad sweeps and noisy test output never enter the main context |
 
@@ -111,7 +111,7 @@ and where it came from.
 ## Maintaining
 
 ```bash
-bin/agent-spec-selftest.sh   # 45 assertions: three language fixtures, gates, memory, upgrade path
+bin/agent-spec-selftest.sh   # 50 assertions: three language fixtures, gates, memory, upgrade path
 bin/agent-spec-bench.sh      # always-on and per-skill cost, estimated at 4 bytes per token
 bin/agent-spec-bench.sh --session   # measured, from the real session transcript
 ```
