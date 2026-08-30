@@ -8,8 +8,35 @@
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-strict confidence scoring, and 25 prefixed skills that work in Claude Code, Cursor
-and Antigravity.
+project memory that survives a new chat, strict confidence scoring, and 25 prefixed skills
+that work in Claude Code, Cursor and Antigravity.
+
+---
+
+## Status
+
+Unreleased work on `main`, on top of 1.0.0. What is in place today:
+
+| | |
+|---|---|
+| **Router** | `/agent-spec` reads the pipeline state and hands off to exactly one skill |
+| **Graph** | services, layers, HTTP and broker edges, incremental indexing — not just imports |
+| **Pipeline** | nine gates with state on disk, and requirement traceability from gate 0 to gate 8 |
+| **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
+| **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
+| **Tests** | `bin/agent-spec-selftest.sh` — 29 assertions across Python, Java-microservice and Node fixtures |
+
+Known gaps, stated rather than hidden:
+
+- Layer classification is a path and filename heuristic. It is reported, never enforced.
+- HTTP integration edges resolve only when the called host matches a detected service
+  name. A gateway, a config-driven base URL, or a discovery name that differs from the
+  directory name is invisible. Broker edges have no such limitation.
+- `from pkg import a` resolves to `pkg/__init__.py`, not `pkg/a.py`.
+- Whether Claude Code picks up `outputStyle: "agent-spec"` from a freshly written
+  `settings.json` has not been observed in a live session.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
 ---
 
@@ -81,15 +108,22 @@ and where it came from.
 ## Maintaining
 
 ```bash
-bin/agent-spec-selftest.sh   # fixtures for Python, Java microservices and Node; 16 assertions
+bin/agent-spec-selftest.sh   # 29 assertions: three language fixtures, gates, memory, upgrade path
 bin/agent-spec-bench.sh      # always-on context cost, per-skill cost, graph query cost
 ```
+
+Both must pass before anything is merged. The self-test builds throwaway fixtures and
+asserts the failures that have actually shipped here before — edges resolving to nothing,
+an indexer overwriting its own output, a gate running without its predecessor, an upgrade
+leaving duplicate skills behind.
 
 ## Contributing
 
 New personas, specialised skills and pipeline refinements are all welcome — open a PR.
-Skills are authored once in `skills/claude/<name>/SKILL.md`; every agent reads that same
-shape, so there is nothing to regenerate. See
+Skills are authored once in `skills/claude/agent-spec-<name>/SKILL.md`; every agent reads
+that same shape, so there is nothing to regenerate. The directory name and the frontmatter
+`name` must match, and both must carry the `agent-spec-` prefix — the self-test enforces
+it. See
 [`skills/third-party/README.md`](skills/third-party/README.md) for community extensions.
 
 ## License
