@@ -75,7 +75,11 @@ run_arm() {
   # CLAUDECODE is unset because Claude Code refuses to launch inside itself. If
   # you are reading this from inside a session, that guard is why: run this from
   # a plain terminal.
-  env -u CLAUDECODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT \
+  # The `cd` is the entire point of the clone and was missing from the first two
+  # runs: `claude -p` inherits the caller's working directory, so both arms were
+  # reading and would have edited the real repository, while `git status` was
+  # checked in an untouched clone and therefore always reported zero.
+  ( cd "${dir}" && env -u CLAUDECODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT \
     claude -p "${prompt}" \
       --output-format json \
       --session-id "${sid}" \
@@ -83,7 +87,7 @@ run_arm() {
       --permission-mode acceptEdits \
       --allowed-tools "Bash Read Write Edit MultiEdit Glob Grep" \
       --max-budget-usd "${budget}" \
-      > "${STATE_DIR}/result-${label}.json" 2> "${STATE_DIR}/stderr-${label}.txt"
+      > "${STATE_DIR}/result-${label}.json" 2> "${STATE_DIR}/stderr-${label}.txt" )
   local rc=$?
   local elapsed=$(( $(date +%s) - started ))
 
@@ -116,6 +120,17 @@ print('    ' + str(d.get('result'))[:300])"
   changed="$(cd "${dir}" && git status --porcelain | wc -l | tr -d ' ')"
   printf '%s\n' "${changed}" > "${STATE_DIR}/changed-${label}.txt"
   ( cd "${dir}" && git status --porcelain > "${STATE_DIR}/changes-${label}.txt" )
+
+  # Locate the transcript and confirm it was filed under the clone. If it is filed
+  # under the caller's directory, the arm ran in the wrong tree and every number
+  # from it describes the wrong experiment.
+  local tpath
+  tpath="$(find "${HOME}/.claude/projects" -name "${sid}.jsonl" 2>/dev/null | head -1)"
+  if [ -n "${tpath}" ] && ! printf '%s' "${tpath}" | grep -q "work-${label}"; then
+    echo -e "  ${RED}!${NC} this arm ran OUTSIDE its clone — transcript filed at:"
+    echo "      ${tpath}"
+    echo "    Every number from it describes the wrong tree. Treat the run as void."
+  fi
 
   local denials
   denials="$(python3 -c "

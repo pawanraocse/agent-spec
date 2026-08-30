@@ -319,6 +319,12 @@ grep -q 'THIS RESULT IS VOID' "${HOME_DIR}/bin/agent-spec-ab.sh" \
   && ok "the void guard is wired into the runner" || bad "void guard missing from ab.sh"
 grep -q 'allowed-tools' "${HOME_DIR}/bin/agent-spec-ab.sh" \
   && ok "arms are allowed the tools the task needs" || bad "arms cannot run Bash"
+# claude -p inherits the caller's working directory. Without a cd, both arms read
+# the real repository while git status was checked in an untouched clone.
+grep -q 'cd "${dir}" && env -u CLAUDECODE' "${HOME_DIR}/bin/agent-spec-ab.sh" \
+  && ok "each arm runs inside its own clone" || bad "arms run in the caller's directory"
+grep -q 'ran OUTSIDE its clone' "${HOME_DIR}/bin/agent-spec-ab.sh" \
+  && ok "and the transcript location is checked, not assumed" || bad "no clone-location check"
 
 echo ""
 echo "-----------------------------------------"
