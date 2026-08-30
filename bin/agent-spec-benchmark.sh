@@ -82,8 +82,13 @@ one_run() {
   local sid; sid="$(uuid)"
   local prompt; prompt="$(cat "${TASK_DIR}/${task}.task")"
 
+  case "${label}" in
+    [A-Z]) ;;
+    *) die "bad arm label '${label}' — it becomes a directory name" ;;
+  esac
   rm -rf "${dir}"
   git clone --quiet --no-hardlinks "${REPO}" "${dir}" 2>/dev/null || die "clone failed"
+  [ -d "${dir}" ] || die "clone reported success but ${dir} does not exist"
 
   # The skill body is injected. A leading /skill-name line in a -p prompt is
   # passed through as plain text and the mode never takes effect, which silently
@@ -374,6 +379,8 @@ if [ -n "${ARMS}" ]; then
 else
   ARM_LIST="${ARM_A} ${ARM_B}"
 fi
+ARM_LABELS="A B C D E F G H"
+[ "$(echo "${ARM_LIST}" | wc -w)" -le 8 ] || die "at most 8 arms"
 for a in ${ARM_LIST}; do
   [ "${a}" = "none" ] && continue
   [ -f "${HOME_DIR}/skills/claude/${a}/SKILL.md" ] || die "no skill body for ${a}"
@@ -396,9 +403,13 @@ for t in ${SUITE}; do
   for rep in $(seq 1 "${REPEATS}"); do
     # Arms are interleaved rather than run in blocks, so drift in service latency
     # or load lands on both equally.
-    i=0
+    i=1
     for a in ${ARM_LIST}; do
-      one_run "$(printf "\\$(printf '%%03o' $((65 + i)))")" "${a}" "${t}" "${rep}"
+      # The label ends up in a directory name, so it is a plain letter from a
+      # fixed list. Computing it with printf escapes produced the literal string
+      # "\000", every arm shared one clone, and claude exited on a path it could
+      # not lstat before any run reached the model.
+      one_run "$(echo "${ARM_LABELS}" | cut -d' ' -f"${i}")" "${a}" "${t}" "${rep}"
       i=$(( i + 1 ))
     done
     if [ "${CONSEC_ERRORS}" -ge "${ABORT_AFTER}" ]; then

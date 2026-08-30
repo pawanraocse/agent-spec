@@ -406,6 +406,28 @@ grep -q 'if \[ "${skill}" != "none" \]' "${HOME_DIR}/bin/agent-spec-benchmark.sh
   && ok "the suite has a long-session task" \
   || bad "no long-session task — raw-code-full's reading rules are untestable"
 
+# The harness end to end, with a stubbed claude so it costs nothing. The label
+# is used as a directory name: when it was computed with printf escapes every
+# arm resolved to the literal "\000", shared one clone, and claude exited on a
+# path it could not lstat — 36 runs aborted before one reached the model.
+HARNESS="${WORK}/harness"
+git clone --quiet --no-hardlinks "${HOME_DIR}" "${HARNESS}" 2>/dev/null
+mkdir -p "${WORK}/stub"
+cat > "${WORK}/stub/claude" <<'STUB'
+#!/usr/bin/env bash
+echo '{"total_cost_usd":0.05,"num_turns":5,"is_error":false,"usage":{"input_tokens":3,"cache_creation_input_tokens":1000,"cache_read_input_tokens":20000,"output_tokens":500}}'
+STUB
+chmod +x "${WORK}/stub/claude"
+OUT="$( cd "${HARNESS}" && env -u CLAUDECODE PATH="${WORK}/stub:$PATH" \
+        bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
+        --arms none,agent-spec-raw-code,agent-spec-raw-code-full \
+        --tasks 01-add-cli-flag --repeats 1 2>&1 )"
+case "$OUT" in *"A 01-add-cli-flag"*) ok "arm labels are plain letters" ;; *) bad "arm label is not a letter — it becomes a directory name" ;; esac
+case "$OUT" in *"C 01-add-cli-flag"*) ok "three arms run and are labelled A, B, C" ;; *) bad "third arm never ran" ;; esac
+N="$(ls "${HARNESS}/.agent-spec/benchmark/failed" 2>/dev/null | wc -l | tr -d ' ')"
+want "each arm gets its own clone" 3 "$N"
+case "$OUT" in *"plain (no skill)"*) ok "the control arm is named in the report" ;; *) bad "control arm missing from report" ;; esac
+
 # A skill body is re-read every turn. raw-code-full lost its own benchmark by 5%
 # because 4,247 bytes of rationale sat in the prompt prefix. Rationale belongs in
 # docs; the body holds imperatives.
