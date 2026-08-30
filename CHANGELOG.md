@@ -10,6 +10,21 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`bin/agent-spec-ab.sh run "<task>"`** — the A/B now runs itself. Both arms are launched
+  with `claude -p`, each with its own `--session-id` and its own throwaway clone of the
+  repository, so neither arm ever sees the other's edits and neither touches the working
+  tree. `--output-format json` returns the authoritative usage totals and the real dollar
+  cost, which is the one figure that already has the price ratios baked in. The manual
+  `start`/`end`/`report` path remains for a task worth driving by hand.
+- The confounds are controlled deliberately and named in the script's own header: fresh
+  context per arm, identical task string, identical starting tree, identical pinned model.
+  An arm that reports `is_error` is refused rather than counted — a failed arm is not a
+  cheap arm. The report ends by saying that one task is one data point.
+
+### Changed
+- Self-test: **53 assertions**, all passing, up from 50. The new ones cover the nesting
+  guard, the signed cost delta, and the single-sample caveat.
+
 - **`agent-spec-tokens.py corpus`** — the same buckets aggregated across every session on
   the machine. One session proves nothing about the shape of the bill; it could be an
   artefact of that day's task. Measured across **20 sessions, 4 projects, 6,377 assistant

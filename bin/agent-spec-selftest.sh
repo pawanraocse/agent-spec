@@ -292,6 +292,17 @@ want "arming an arm records the task" "measure this" "$(cat "$P/.agent-spec/ab/t
 want "ending an arm with no new transcript is refused" 1 "$?"
 ( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" report >/dev/null 2>&1 )
 want "a report with unfinished arms is refused" 1 "$?"
+# The automated path must refuse to run nested: Claude Code will not launch inside
+# itself, and a nested run is not a fresh context, which is the variable under test.
+OUT="$( cd "$P" && CLAUDECODE=1 bash "${HOME_DIR}/bin/agent-spec-ab.sh" run "x" 2>&1 )"
+case "$OUT" in *"plain terminal"*) ok "the automated run refuses to nest" ;; *) bad "no nesting guard" ;; esac
+# The comparison table must render from two result JSONs and name a direction.
+mkdir -p "${WORK}/abt"
+echo '{"num_turns":18,"total_cost_usd":0.82,"duration_ms":94000,"usage":{"input_tokens":40,"cache_creation_input_tokens":52000,"cache_read_input_tokens":610000,"output_tokens":9800}}' > "${WORK}/abt/a.json"
+echo '{"num_turns":11,"total_cost_usd":0.54,"duration_ms":71000,"usage":{"input_tokens":36,"cache_creation_input_tokens":49000,"cache_read_input_tokens":318000,"output_tokens":6100}}' > "${WORK}/abt/b.json"
+OUT="$(bash -c "$(sed -n '/^report_json() {/,/^}/p' "${HOME_DIR}/bin/agent-spec-ab.sh"; echo "report_json ${WORK}/abt/a.json ${WORK}/abt/b.json ARM_A ARM_B")" 2>&1)"
+case "$OUT" in *"34.1% cheaper"*) ok "the comparison reports a signed cost delta" ;; *) bad "cost delta missing or wrong" ;; esac
+case "$OUT" in *"One task is one data point"*) ok "and refuses to let one run become a headline" ;; *) bad "no single-sample caveat" ;; esac
 
 echo ""
 echo "-----------------------------------------"

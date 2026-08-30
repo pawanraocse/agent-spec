@@ -155,7 +155,14 @@ subagent on a cheaper model — is in `/agent-spec-raw-code-full` §2.
 did the same work; a shorter session on a smaller task is not an efficiency gain, and
 reporting it as one is how a 60–90% claim gets made.
 
-`bin/agent-spec-ab.sh` is the harness for doing it properly — it records the transcript
+`bin/agent-spec-ab.sh run "<task>"` runs it properly and automatically: both arms via
+`claude -p`, each with its own session id and its own throwaway clone at the same commit,
+so the only variable is the mode. It reports the token buckets and the real dollar cost
+per arm, and it refuses to count an arm that errored. Run it from a plain terminal —
+Claude Code will not launch inside itself, and a nested run would not be a fresh context
+anyway, which is the variable under test.
+
+The manual `start`/`end`/`report` path — it records the transcript
 boundary around each arm, refuses an arm where no new transcript appeared, and warns when
 the two arms were given different tasks. **As of this writing the paired run has not been
 completed, so no saving is claimed for `agent-spec-raw-code` or
