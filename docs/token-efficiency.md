@@ -66,12 +66,54 @@ combines `rtk`, `caveman` and `TokenSave`. Over a large corpus of sessions the t
 measured 2.8%, 0.5% and 0.4% — **3.7% combined**. `TokenSave` is graph querying, which this
 framework already has as Graphify.
 
+## Context re-reads: you cannot compress them, you reset
+
+Cache reads are 56% of the bill and the obvious reaction is to compress the context. It
+does not work, for a mechanical reason: **a cache read bills at a tenth precisely because
+the bytes are unchanged.** Edit them and the prefix is invalidated, so the whole thing is
+re-written at cache-write price. Compression is not a discount on a re-read; it is a
+re-write.
+
+Nor can a filtering proxy help here. `rtk` and its kind rewrite command *output*. The
+context is the conversation — every previous message, every tool result already accepted.
+No `Bash` hook can reach it. That is why the benchmark found `rtk` capped at about 3% of
+input while cache reads dominated.
+
+So the two real moves are carry it or start again, and which one wins is arithmetic:
+
+```bash
+./.agent-spec/bin/agent-spec-tokens.py context
+```
+
+Measured on one session in this repository:
+
+| | Tokens |
+|---|---|
+| Context on turn 1 | 32,786 |
+| Context on turn 258 | 327,898 (10.0x) |
+| Cost of carrying it | 32,790 per turn |
+| Cost of a fresh session | 15,978 once, then 1,278 per turn |
+| **Break-even** | **0.5 turns** |
+
+Resetting wins, and far earlier than intuition suggests — long before the context feels
+large. A *reset* also beats a *compaction*: compaction pays output price to generate a
+summary and then carries it, while `/agent-spec-snapshot` writes the same state to a file
+that was going to be written at session end anyway.
+
+The other half of the answer is not to put things in the main context at all.
+`agent-spec-search` and `agent-spec-verify` are subagents pinned to a cheap model: a broad
+sweep or a full test run happens in a context that is discarded when it finishes, and only
+the paths, or the verdict and the failures, come back. That does the job a filtering proxy
+advertises, without the filtered remainder still landing in the conversation and being
+re-read on every remaining turn.
+
 ## The resulting order of leverage
 
 1. **Fewer turns.** Batch independent calls; never poll; do not split one edit across three
    messages; do not re-read a file to confirm an edit landed.
-2. **Smaller context.** Ask the graph before opening files; read line ranges; delegate broad
-   sweeps to a subagent on a cheap model; snapshot and start fresh at a task boundary.
+2. **Reset at task boundaries**, and keep bulk reading out of the main context entirely —
+   graph before files, line ranges not whole files, `agent-spec-search` and
+   `agent-spec-verify` for anything broad or noisy.
 3. **Cheaper writes.** Targeted `Edit` over rewriting; never echo a file back.
 4. **Capped tool output.** `| head -50`, `--stat`, `-q`. Real, and under 1%.
 5. **Prose compression.** Roughly 2% of the total. Last, because that is where the evidence

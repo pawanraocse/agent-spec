@@ -150,6 +150,24 @@ install_harness() {
   cp "${AGENT_SPEC_HOME}/bin/agent-spec-digest.py" "${home}/hooks/agent-spec-digest.py"
   chmod +x "${home}/hooks/agent-spec-session-start.sh" "${home}/hooks/agent-spec-digest.py"
 
+  # Subagents. Their whole purpose is that their reads never enter the main
+  # conversation, and a cheap model is enough for a search or a test run — so the
+  # model is pinned in each file rather than inherited.
+  if [ -d "${AGENT_SPEC_HOME}/agents" ]; then
+    mkdir -p "${home}/agents"
+    cp "${AGENT_SPEC_HOME}/agents/"*.md "${home}/agents/" 2>/dev/null || true
+    echo -e "  ${GREEN}\u2713${NC} $(ls "${AGENT_SPEC_HOME}/agents"/*.md 2>/dev/null | wc -l | tr -d ' ') subagents \u2192 ${home}/agents"
+  fi
+
+  # An older version of this framework installed its own sync script here. It writes
+  # the pre-prefix skill names, so leaving it in place means one run silently undoes
+  # the rename. Removed only when it is unmistakably ours.
+  local stale="$(dirname "${home}")/.claude/sync-agent-spec-skills.sh"
+  if [ -f "${stale}" ] && grep -q "agent-spec" "${stale}" 2>/dev/null; then
+    rm -f "${stale}"
+    echo -e "  ${GREEN}\u2713${NC} removed superseded ${stale}"
+  fi
+
   if command -v python3 >/dev/null 2>&1; then
     local msg
     msg="$(python3 "${AGENT_SPEC_HOME}/bin/agent-spec-settings.py" \
@@ -269,6 +287,12 @@ echo -e "  ${GREEN}✓${NC} .cursor/rules/agent-spec.mdc"
 # Antigravity and the other generic agents have no user-level skill home, so their
 # copy is project-local. Claude and Cursor are already covered machine-wide.
 copy_skills "${PROJECT_ROOT}/.agents/skills"
+
+if [ -d "${AGENT_SPEC_HOME}/agents" ]; then
+  mkdir -p "${PROJECT_ROOT}/.claude/agents"
+  cp "${AGENT_SPEC_HOME}/agents/"*.md "${PROJECT_ROOT}/.claude/agents/" 2>/dev/null || true
+  echo -e "  ${GREEN}\u2713${NC} .claude/agents/ (search and verify, pinned to a cheap model)"
+fi
 
 # Extra per-agent copies: off by default. Opt in for repos that want the skills
 # committed next to the code rather than relying on each machine's install.

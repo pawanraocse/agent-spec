@@ -10,6 +10,33 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`agent-spec-tokens.py context`** — the answer to "what do we do about context
+  re-reads", which are 56% of the bill. A context cannot be compressed in place: a cache
+  read bills at a tenth precisely because the bytes are unchanged, so editing them
+  invalidates the prefix and forces a full re-write at cache-write price. The only two
+  moves are carry it or start again, and this works out which is cheaper at the size the
+  session has actually reached. Measured here: context grew 32,786 → 327,898 tokens over
+  258 turns; carrying it costs 32,790 per turn, a fresh session costs 15,978 once and then
+  1,278 per turn. **Break-even: half a turn.**
+- **Two subagents, pinned to a cheap model** — `agent-spec-search` for "where does X live",
+  and `agent-spec-verify` for any noisy command, returning the verdict and the failures and
+  leaving the passing output behind. This is the job a filtering proxy advertises, done in
+  a context that is discarded rather than one that is re-read on every remaining turn. The
+  installer writes them to every `.claude/agents` home and to `.claude/agents` in the
+  project.
+
+### Fixed
+- **The installer removes `~/.claude/sync-agent-spec-skills.sh`**, a superseded second
+  install path shipped by an older version of this framework. It writes the pre-prefix
+  skill names, so one run silently undid the rename. Removed only when the file is
+  unmistakably ours.
+
+### Changed
+- `/agent-spec-raw-code-full` §2 and `docs/token-efficiency.md` now carry the
+  compress-versus-reset arithmetic, because "compress the context" is the intuitive answer
+  and it is the wrong one.
+- Self-test: **45 assertions**, all passing, up from 38.
+
 - **`bin/agent-spec-tokens.py` — measurement instead of assertion.** Claude Code writes a
   JSONL transcript per session in which every assistant turn carries a `usage` object with
   the four token buckets. This reads it: `session` reports the buckets weighted by price

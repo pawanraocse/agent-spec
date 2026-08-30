@@ -44,16 +44,38 @@ again on turn 40 and on turn 41.
 
 ## 2. Smaller context — it multiplies everything in §1
 
+**Context cannot be compressed in place.** Cache reads bill at a tenth *because* the bytes
+are unchanged; editing them invalidates the prefix and forces a full re-write at cache-write
+price. There is no filter or proxy that can shrink it — a tool that rewrites command output
+never touches the conversation, which is what the context is. There are only two moves:
+carry it, or start again.
+
+Which is cheaper is arithmetic, and there is a command for it:
+
+```bash
+./.agent-spec/bin/agent-spec-tokens.py context
+```
+
+Measured on a real session here: context grew from 32,786 tokens on turn 1 to 327,898 by
+turn 258. Carrying that costs 32,790 per turn. A fresh session re-writes about 12,782
+tokens of always-on content, once, and then costs 1,278 per turn. **Break-even: half a
+turn.** Resetting almost always wins, and much earlier than intuition suggests.
+
+- **Reset at every task boundary.** `/agent-spec-snapshot`, then a new session. That is a
+  *reset*, not a compaction: compaction also pays output price to generate the summary and
+  then carries it, whereas a snapshot writes the same state to a file you were writing
+  anyway. Check `agent-spec-tokens.py context` if in doubt.
 - **Ask the graph before opening anything.**
   `./.agent-spec/bin/graphify-cli.py context --task "<the task>"` returns the file list and
   stops. Then `query --file <path>` for blast radius. Reading the tree to learn structure
   costs tens of thousands of tokens for an answer that costs hundreds.
 - **Read line ranges, never whole files.** Grep for the line number, read around it.
-- **Delegate broad sweeps to a subagent, on a cheap model.** "Where does X live" across many
-  files: its reads stay in its own context and only the answer returns. This is the one
-  piece of model routing a skill can actually reach.
-- **End the session at a task boundary.** `/agent-spec-snapshot`, then start fresh. One
-  unbounded thread pays its own history on every remaining turn.
+- **Delegate to a subagent, on a cheap model.** Its context is discarded when it finishes;
+  yours is re-read on every remaining turn. Two ship with the framework:
+  `agent-spec-search` for "where does X live", and `agent-spec-verify` for any noisy
+  command — a test suite, a build, a linter — which returns the verdict and the failures
+  and leaves the thousands of passing lines behind. This is the only place a filtering
+  proxy's job gets done without the filtered remainder still landing in context.
 
 ## 3. Cheaper writes — 28% of output was file bodies
 

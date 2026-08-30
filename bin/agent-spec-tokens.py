@@ -13,6 +13,7 @@ no way to count.
 
 Read-only. It never writes anything under ~/.claude.
 
+  context   how big the context has grown, and whether a reset now pays for itself
   session   the four buckets, weighted, for one session
   tools     per tool: what was written into it, what came back, the largest results
   compare   two transcripts side by side, for an honest A/B
@@ -74,6 +75,8 @@ def read_usage(path):
     """Per-turn usage, tool calls, and tool results from one transcript."""
     totals = Counter()
     turns = 0
+    first_usage = None
+    last_usage = {}
     per_turn_context = []
     tool_calls = Counter()
     tool_in_bytes = Counter()      # what the assistant wrote INTO a tool — an output cost
@@ -92,6 +95,9 @@ def read_usage(path):
             usage = message.get("usage")
             if usage and entry.get("type") == "assistant":
                 turns += 1
+                if first_usage is None:
+                    first_usage = usage
+                last_usage = usage
                 for key, _ in BUCKETS:
                     totals[key] += usage.get(key, 0) or 0
                 per_turn_context.append((usage.get("cache_read_input_tokens", 0) or 0)
@@ -118,9 +124,16 @@ def read_usage(path):
                     biggest.append((size, name))
 
     biggest.sort(reverse=True)
+    first_usage = first_usage or {}
     return {
         "path": path,
         "turns": turns,
+        "last_usage": last_usage,
+        "first_usage": first_usage,
+        "first_creation": first_usage.get("cache_creation_input_tokens", 0) or 0,
+        "first_context": ((first_usage.get("cache_read_input_tokens", 0) or 0)
+                          + (first_usage.get("cache_creation_input_tokens", 0) or 0)
+                          + (first_usage.get("input_tokens", 0) or 0)),
         "totals": totals,
         "avg_context": sum(per_turn_context) // max(turns, 1),
         "tool_calls": tool_calls,
@@ -180,6 +193,56 @@ def print_session(data, weights):
           % ("{:,}".format(returned // 4), 100 * (returned // 4) / grand))
 
 
+def print_context(data, weights):
+    """Current context size, what carrying it costs, and when to reset.
+
+    The context is re-read on every turn. It cannot be compressed in place: cache
+    reads bill at a tenth precisely *because* the bytes are unchanged, so editing
+    them invalidates the prefix and forces a full re-write at cache-write price.
+    The only two moves are carry it or start again, and this works out which is
+    cheaper at the size the session has actually reached.
+    """
+    usage = data["last_usage"]
+    context = ((usage.get("cache_read_input_tokens", 0) or 0)
+               + (usage.get("cache_creation_input_tokens", 0) or 0)
+               + (usage.get("input_tokens", 0) or 0))
+    first = data["first_context"]
+
+    carry = context * weights["read"]
+    fresh = data["first_creation"] or 13000        # what a cold session re-writes
+    reset_once = fresh * weights["write"]
+    after = fresh * weights["read"]
+    saving = carry - after
+
+    print("=== context — %s ===" % os.path.basename(data["path"]))
+    print("turn 1:    %14s tokens" % "{:,}".format(first))
+    print("turn %-4d  %14s tokens   (%.1fx growth over %d turns)"
+          % (data["turns"], "{:,}".format(context),
+             context / max(first, 1), data["turns"]))
+    print("")
+    print("carrying it costs      %10s per turn   (context x read weight)"
+          % "{:,.0f}".format(carry))
+    print("a fresh session costs  %10s once        (re-writing %s tokens of always-on)"
+          % ("{:,.0f}".format(reset_once), "{:,}".format(fresh)))
+    print("and then               %10s per turn" % "{:,.0f}".format(after))
+
+    if saving <= 0:
+        print("\nContext is already small. Carry on.")
+        return 0
+    breakeven = reset_once / saving
+    print("\nsaving after a reset:  %10s per turn" % "{:,.0f}".format(saving))
+    print("break-even:            %10.1f turns" % breakeven)
+    if breakeven < 5:
+        print("\nRESET. Run /agent-spec-snapshot, then start a new session — it pays for\n"
+              "itself in %.0f turn%s. Note this is a *reset*, not a compaction: compaction\n"
+              "also pays output price to generate the summary, and a snapshot writes the\n"
+              "same state to a file you were going to write anyway."
+              % (breakeven, "" if breakeven < 1.5 else "s"))
+    else:
+        print("\nNot yet worth resetting. Re-check after another %.0f turns." % breakeven)
+    return 0
+
+
 def print_tools(data):
     print("=== tools — %s ===" % os.path.basename(data["path"]))
     print("%-16s %6s %12s %12s" % ("tool", "calls", "written in", "returned"))
@@ -228,6 +291,9 @@ def main():
     p = sub.add_parser("session", help="the four token buckets, weighted")
     p.add_argument("--file", default=None, help="transcript path (default: most recent)")
 
+    p = sub.add_parser("context", help="context size, cost per turn, and the reset break-even")
+    p.add_argument("--file", default=None)
+
     p = sub.add_parser("tools", help="per-tool cost, and the largest results")
     p.add_argument("--file", default=None)
 
@@ -267,6 +333,8 @@ def main():
         return 1
     if args.command == "session":
         print_session(data, weights)
+    elif args.command == "context":
+        return print_context(data, weights)
     else:
         print_tools(data)
     return 0

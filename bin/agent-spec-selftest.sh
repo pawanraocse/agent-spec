@@ -263,6 +263,24 @@ want "the dropped modes are pruned on upgrade" 0 "$(ls "$UH2/.claude/skills" | g
 want "and the user's own skill survives" "mine" "$(ls "$UH2/.claude/skills" | grep -v '^agent-spec')"
 
 echo ""
+echo "[14] context break-even and subagents"
+OUT="$(python3 "$TOK" context --file "$FIX" 2>&1)"
+case "$OUT" in *"turn 1:"*) ok "reports the starting context" ;; *) bad "no turn 1 line" ;; esac
+case "$OUT" in *"break-even"*|*"already small"*) ok "reaches a reset verdict" ;; *) bad "no verdict" ;; esac
+AGENTS="$(ls "${HOME_DIR}/agents"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+at_least "subagents ship with the framework" 2 "$AGENTS"
+CHEAP=0
+for f in "${HOME_DIR}/agents"/*.md; do grep -qE '^model: (haiku|sonnet)$' "$f" || CHEAP=$((CHEAP+1)); done
+want "every subagent pins a model rather than inheriting" 0 "$CHEAP"
+want "installed into the home"    "$AGENTS" "$(ls "$UH2/.claude/agents"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+want "and into the project"       "$AGENTS" "$(ls "$P/.claude/agents"/*.md 2>/dev/null | wc -l | tr -d ' ')"
+# an older framework version installed its own sync script; leaving it re-installs old names
+touch "$UH2/.claude/sync-agent-spec-skills.sh"
+echo "# agent-spec sync" > "$UH2/.claude/sync-agent-spec-skills.sh"
+( cd "$P" && HOME="$UH2" WIN_CLAUDE_HOME="$UH2/nowin" bash "${HOME_DIR}/bin/install.sh" --skills-only >/dev/null 2>&1 )
+want "the superseded sync script is removed" 0 "$(ls "$UH2/.claude/sync-agent-spec-skills.sh" 2>/dev/null | wc -l | tr -d ' ')"
+
+echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
 [ "$FAIL" -eq 0 ] || exit 1
