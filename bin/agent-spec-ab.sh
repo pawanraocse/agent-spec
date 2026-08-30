@@ -196,6 +196,45 @@ case "${1:-}" in
     command -v claude >/dev/null 2>&1 || die "claude is not on PATH"
     command -v git >/dev/null 2>&1 || die "git is not on PATH"
 
+    # Preflight the credentials before cloning anything. `claude -p` reports "Not
+    # logged in" as a normal result with is_error set, which otherwise surfaces as
+    # "arm A did not complete" and looks like a bug in the experiment. An
+    # interactive session can be authenticated by its host process while the
+    # on-disk token is an empty stub, so the file existing proves nothing.
+    CREDS="${HOME}/.claude/.credentials.json"
+    if [ -f "${CREDS}" ] && command -v python3 >/dev/null 2>&1; then
+      HAS_TOKEN="$(python3 - "${CREDS}" <<'PY'
+import json, sys
+try:
+    d = json.load(open(sys.argv[1]))
+except Exception:
+    print("unknown"); raise SystemExit
+def any_token(o):
+    if isinstance(o, dict):
+        for k, v in o.items():
+            if "token" in k.lower() and isinstance(v, str) and v.strip():
+                return True
+            if isinstance(v, (dict, list)) and any_token(v):
+                return True
+    elif isinstance(o, list):
+        return any(any_token(x) for x in o)
+    return False
+print("yes" if any_token(d) else "no")
+PY
+)"
+      [ "${HAS_TOKEN}" = "no" ] && die "The CLI is not logged in.
+  ${CREDS} exists but holds no token, so every arm would come back
+  with \"Not logged in\" and the run would prove nothing.
+
+  An interactive Claude Code session can be authenticated by its host process
+  while that file stays an empty stub — so being logged in on the desktop app is
+  not enough for \`claude -p\`.
+
+  Fix it once, in a plain terminal:
+      claude          # then complete /login
+  then re-run this command."
+    fi
+
     mkdir -p "${STATE_DIR}"
     printf '%s\n' "${TASK}" > "${STATE_DIR}/task-A.txt"
     printf '%s\n' "${TASK}" > "${STATE_DIR}/task-B.txt"

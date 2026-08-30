@@ -303,6 +303,13 @@ echo '{"num_turns":11,"total_cost_usd":0.54,"duration_ms":71000,"usage":{"input_
 OUT="$(bash -c "$(sed -n '/^report_json() {/,/^}/p' "${HOME_DIR}/bin/agent-spec-ab.sh"; echo "report_json ${WORK}/abt/a.json ${WORK}/abt/b.json ARM_A ARM_B")" 2>&1)"
 case "$OUT" in *"34.1% cheaper"*) ok "the comparison reports a signed cost delta" ;; *) bad "cost delta missing or wrong" ;; esac
 case "$OUT" in *"One task is one data point"*) ok "and refuses to let one run become a headline" ;; *) bad "no single-sample caveat" ;; esac
+# "Not logged in" comes back as a normal result with is_error, which otherwise looks
+# like a broken experiment rather than a missing login.
+FAKEHOME="${WORK}/nologin"; mkdir -p "$FAKEHOME/.claude"
+echo '{"claudeAiOauth":{"accessToken":"","refreshToken":"","expiresAt":0}}' > "$FAKEHOME/.claude/.credentials.json"
+OUT="$( cd "$P" && HOME="$FAKEHOME" CLAUDECODE= bash "${HOME_DIR}/bin/agent-spec-ab.sh" run "x" 2>&1 )"
+case "$OUT" in *"not logged in"*) ok "an empty credential stub is caught before any arm runs" ;; *) bad "no login preflight" ;; esac
+case "$OUT" in *"work-A"*) bad "it cloned before checking the login" ;; *) ok "and nothing is cloned first" ;; esac
 
 echo ""
 echo "-----------------------------------------"
