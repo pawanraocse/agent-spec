@@ -16,6 +16,7 @@
 #   bin/agent-spec-benchmark.sh --repeats 5 --tasks 01-add-cli-flag --model sonnet
 #   bin/agent-spec-benchmark.sh --report            # re-print from saved results
 #   bin/agent-spec-benchmark.sh --arm-b none        # a mode against no mode at all
+#   bin/agent-spec-benchmark.sh --arms none,agent-spec-raw-code,agent-spec-raw-code-full
 #
 # The arm named "none" runs with no skill body injected. It is the control, and
 # without it the suite can only rank the two modes against each other — never say
@@ -38,6 +39,7 @@ GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 
 ARM_A="agent-spec-raw-code"
 ARM_B="agent-spec-raw-code-full"
+ARMS=""                 # comma separated; overrides ARM_A/ARM_B when set
 MODEL="sonnet"
 BUDGET="5"
 REPEATS="3"
@@ -52,6 +54,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --arm-a)   ARM_A="$2"; shift 2 ;;
     --arm-b)   ARM_B="$2"; shift 2 ;;
+    --arms)    ARMS="$2"; shift 2 ;;
     --model)   MODEL="$2"; shift 2 ;;
     --budget)  BUDGET="$2"; shift 2 ;;
     --repeats) REPEATS="$2"; shift 2 ;;
@@ -200,11 +203,10 @@ except Exception: print('0.0000')")"
 # ---------------------------------------------------------------------------
 
 report() {
-  python3 - "${OUT_DIR}/results.jsonl" "${ARM_A}" "${ARM_B}" <<'PY'
+  python3 - "${OUT_DIR}/results.jsonl" <<'PY'
 import json, sys, statistics as st
-from collections import defaultdict
 
-path, arm_a, arm_b = sys.argv[1:4]
+path = sys.argv[1]
 rows = []
 for line in open(path):
     try: rows.append(json.loads(line))
@@ -212,111 +214,136 @@ for line in open(path):
 if not rows:
     print("no results"); raise SystemExit(1)
 
-# A run that billed nothing never happened. Counting it as a failed task turns
-# an account problem into a false finding about a mode, so it is reported
+# A run that billed nothing never reached the model. Counting it as a failed task
+# turns an account problem into a false finding about a mode, so it is reported
 # separately and excluded from every rate and every median below.
 def never_ran(r):
     return r.get("verdict") == "ERROR" or (not r.get("cost") and not r.get("out"))
 
 errors = [r for r in rows if never_ran(r)]
-rows = [r for r in rows if not never_ran(r)]
+rows   = [r for r in rows if not never_ran(r)]
 if errors:
     print("\n=== %d run(s) never reached the model — excluded ===" % len(errors))
-    seen = []
-    for r in errors:
-        key = (r["skill"], r["task"], r["repeat"])
-        seen.append("%s %s #%d" % (r["arm"], r["task"], r["repeat"]))
-    print("  " + ", ".join(seen[:8]) + (" …" if len(seen) > 8 else ""))
+    print("  " + ", ".join("%s %s #%d" % (r["arm"], r["task"], r["repeat"]) for r in errors[:8])
+          + (" …" if len(errors) > 8 else ""))
     print("  Nothing was billed for these. Their clones were untouched, so any")
     print("  verify message they produced describes an empty repository, not a mode.")
 if not rows:
     print("\nEvery run billed nothing. There is no comparison to make.")
     raise SystemExit(0)
 
-arms = [arm_a, arm_b]
-by = defaultdict(list)
+# Arm order comes from the results themselves, so --report works on its own.
+arms = []
 for r in rows:
-    by[(r["skill"], r["task"])].append(r)
+    if r["skill"] not in arms: arms.append(r["skill"])
+tasks = sorted({r["task"] for r in rows})
+# The control, if it was run, is what every saving is measured against.
+base = "none" if "none" in arms else arms[0]
+label = lambda a: "plain (no skill)" if a == "none" else "/" + a
+W = max(len(label(a)) for a in arms) + 2
 
 def med(v): return st.median(v) if v else 0.0
+def ok_rows(a, t=None):
+    return [r for r in rows if r["skill"] == a and r["verdict"] == "PASS"
+            and (t is None or r["task"] == t)]
 
 print("\n=== completion rate (runs that reached the model) ===")
-print("%-28s %10s %10s" % ("", "runs", "verified"))
-overall = {}
+print("%-*s %8s %10s" % (W, "", "runs", "verified"))
+rate = {}
 for a in arms:
     runs = [r for r in rows if r["skill"] == a]
-    ok = [r for r in runs if r["verdict"] == "PASS"]
-    overall[a] = (len(runs), len(ok))
-    pct = 100.0 * len(ok) / len(runs) if runs else 0
-    print("%-28s %10d %7d (%.0f%%)" % ("/" + a, len(runs), len(ok), pct))
+    ok = ok_rows(a)
+    rate[a] = (len(runs), len(ok))
+    print("%-*s %8d %7d (%.0f%%)" % (W, label(a), len(runs), len(ok),
+                                     100.0 * len(ok) / len(runs) if runs else 0))
 
-print("\n=== cost per VERIFIED task (median, and range) ===")
-print("%-28s %12s %12s %12s" % ("", "median $", "min $", "max $"))
-medians = {}
+print("\n=== tokens per verified run (median) ===")
+print("%-*s %9s %9s %11s %11s %11s" % (W, "", "turns", "output", "cache wr", "cache rd", "total"))
+toks = {}
 for a in arms:
-    ok = [r["cost"] for r in rows if r["skill"] == a and r["verdict"] == "PASS"]
-    medians[a] = med(ok)
-    if ok:
-        print("%-28s %12.4f %12.4f %12.4f" % ("/" + a, med(ok), min(ok), max(ok)))
-    else:
-        print("%-28s %12s" % ("/" + a, "no verified runs"))
+    v = ok_rows(a)
+    if not v:
+        print("%-*s %9s" % (W, label(a), "—")); continue
+    m = {k: med([r[k] for r in v]) for k in ("turns", "out", "write", "read", "in")}
+    total = m["out"] + m["write"] + m["read"] + m["in"]
+    toks[a] = total
+    print("%-*s %9.1f %9.0f %11.0f %11.0f %11.0f"
+          % (W, label(a), m["turns"], m["out"], m["write"], m["read"], total))
 
-print("\n=== per task, verified runs only ===")
-tasks = sorted({r["task"] for r in rows})
-print("%-24s %14s %14s %10s" % ("task", "/" + arm_a[-14:], "/" + arm_b[-14:], "delta"))
-wins = {arm_a: 0, arm_b: 0, "tie": 0}
+print("\n=== cost per VERIFIED task ===")
+print("%-*s %11s %11s %11s %12s" % (W, "", "median $", "min $", "max $", "vs " + ("control" if base == "none" else "first")))
+cost = {}
+for a in arms:
+    c = [r["cost"] for r in ok_rows(a)]
+    if not c:
+        print("%-*s %11s" % (W, label(a), "no verified runs")); continue
+    cost[a] = med(c)
+    if a == base or base not in cost:
+        delta = "—"
+    else:
+        d = 100.0 * (cost[a] - cost[base]) / cost[base]
+        delta = "%+.1f%%" % d
+    print("%-*s %11.4f %11.4f %11.4f %12s" % (W, label(a), med(c), min(c), max(c), delta))
+
+print("\n=== per task, median cost of verified runs ===")
+hdr = "%-22s" % "task"
+for a in arms: hdr += " %13s" % (("plain" if a == "none" else a.replace("agent-spec-", ""))[:13])
+print(hdr)
+wins = {a: 0 for a in arms}; wins["tie"] = 0
 for t in tasks:
-    ca = [r["cost"] for r in rows if r["task"] == t and r["skill"] == arm_a and r["verdict"] == "PASS"]
-    cb = [r["cost"] for r in rows if r["task"] == t and r["skill"] == arm_b and r["verdict"] == "PASS"]
-    # A "median" of a single verified run is that run, and a delta between two
-    # single runs is the noise this whole script exists to get above.
-    if len(ca) < 2 or len(cb) < 2:
-        print("%-24s %14s %14s %10s" % (t, "%.4f" % med(ca) if ca else "—",
-                                        "%.4f" % med(cb) if cb else "—",
-                                        "too few (%d/%d)" % (len(ca), len(cb))))
+    line = "%-22s" % t
+    per = {}
+    for a in arms:
+        c = [r["cost"] for r in ok_rows(a, t)]
+        per[a] = c
+        line += " %13s" % ("%.4f" % med(c) if c else "—")
+    print(line)
+    # A delta needs more than one verified run per arm, and ranges that do not
+    # overlap. Anything else is the noise this script exists to get above.
+    usable = [a for a in arms if len(per[a]) >= 2]
+    if base in usable and len(usable) > 1:
+        note = []
+        for a in usable:
+            if a == base: continue
+            d = 100.0 * (med(per[a]) - med(per[base])) / med(per[base])
+            overlap = not (max(per[a]) < min(per[base]) or max(per[base]) < min(per[a]))
+            note.append("%s %+.1f%%%s" % (("plain" if a == "none" else a.replace("agent-spec-", "")),
+                                          d, " (overlaps)" if overlap else ""))
+            if overlap: wins["tie"] += 1
+            elif d < 0: wins[a] += 1
+            else: wins[base] += 1
+        print("%-22s   vs %s: %s" % ("", "plain" if base == "none" else base.replace("agent-spec-", ""),
+                                     ", ".join(note)))
+    else:
+        counts = "/".join(str(len(per[a])) for a in arms)
+        print("%-22s   too few verified runs for a delta (%s)" % ("", counts))
         wins["tie"] += 1
-        continue
-    ma, mb = med(ca), med(cb)
-    delta = 100.0 * (mb - ma) / ma if ma else 0
-    # Overlapping ranges mean the difference is inside the noise, and saying so
-    # is the point of running more than once.
-    overlap = not (max(cb) < min(ca) or max(ca) < min(cb))
-    mark = "  (overlaps)" if overlap else ""
-    print("%-24s %14.4f %14.4f %9.1f%%%s" % (t, ma, mb, delta, mark))
-    if overlap: wins["tie"] += 1
-    elif mb < ma: wins[arm_b] += 1
-    else: wins[arm_a] += 1
 
 print("\n=== verdict ===")
-a_runs, a_ok = overall[arm_a]
-b_runs, b_ok = overall[arm_b]
-if a_ok == 0 or b_ok == 0:
-    print("One arm verified nothing. There is no comparison to make.")
-    raise SystemExit(0)
-a_rate = a_ok / a_runs if a_runs else 0.0
-b_rate = b_ok / b_runs if b_runs else 0.0
-if a_runs != b_runs:
-    print("The arms did not get the same number of runs (%d vs %d), so nothing here"
-          % (a_runs, b_runs))
-    print("is a paired comparison. Re-run the suite when it can finish.")
-if abs(a_rate - b_rate) > 1e-9:
-    print("Completion rates differ (%d/%d vs %d/%d). Cost per verified task already"
-          % (a_ok, a_runs, b_ok, b_runs))
-    print("accounts for that, but a mode that fails more often is worse even when cheaper.")
-elif a_ok != a_runs:
-    print("Both arms failed the same %d of %d runs. A task both arms fail is a broken"
-          % (a_runs - a_ok, a_runs))
-    print("task or a broken verifier, not a finding about either mode — fix it and re-run.")
-print("tasks won: /%s %d, /%s %d, indistinguishable %d"
-      % (arm_a, wins[arm_a], arm_b, wins[arm_b], wins["tie"]))
-ma, mb = medians[arm_a], medians[arm_b]
-if ma and mb:
-    d = 100.0 * (mb - ma) / ma
-    print("overall median cost per verified task: %.1f%% %s for /%s"
-          % (abs(d), "lower" if d < 0 else "higher", arm_b))
-if wins["tie"] * 2 > len(tasks):
-    print("\nMost tasks are inside the noise. Report NO MEASURABLE DIFFERENCE, not a\n"
-          "percentage — a number smaller than the spread that produced it is not a result.")
+runs_seen = {rate[a][0] for a in arms}
+if len(runs_seen) > 1:
+    print("The arms did not get the same number of runs (%s), so this is not a paired"
+          % ", ".join(str(rate[a][0]) for a in arms))
+    print("comparison. Re-run the suite when it can finish.")
+rates = {round(rate[a][1] / rate[a][0], 6) if rate[a][0] else 0 for a in arms}
+if len(rates) > 1:
+    print("Completion rates differ (%s). Cost per verified task accounts for that, but"
+          % ", ".join("%d/%d" % (rate[a][1], rate[a][0]) for a in arms))
+    print("a mode that fails more often is worse even when cheaper.")
+elif any(rate[a][1] != rate[a][0] for a in arms):
+    print("Every arm failed the same runs. A task all arms fail is a broken task or a")
+    print("broken verifier, not a finding about any mode — fix it and re-run.")
+if base in cost:
+    for a in arms:
+        if a == base or a not in cost: continue
+        d = 100.0 * (cost[a] - cost[base]) / cost[base]
+        print("%s: %.1f%% %s than %s, and %+.0f tokens per run"
+              % (label(a), abs(d), "cheaper" if d < 0 else "more expensive", label(base),
+                 toks.get(a, 0) - toks.get(base, 0)))
+decided = sum(v for k, v in wins.items() if k != "tie")
+if wins["tie"] >= decided:
+    print("\nMost comparisons are inside the noise. Report NO MEASURABLE DIFFERENCE, not")
+    print("a percentage — a number smaller than the spread that produced it is not a result.")
 PY
 }
 
@@ -342,14 +369,24 @@ for t in ${SUITE}; do
   verification cannot be scored, and an unscored task rewards not doing the work."
 done
 
+if [ -n "${ARMS}" ]; then
+  ARM_LIST="$(echo "${ARMS}" | tr ',' ' ')"
+else
+  ARM_LIST="${ARM_A} ${ARM_B}"
+fi
+for a in ${ARM_LIST}; do
+  [ "${a}" = "none" ] && continue
+  [ -f "${HOME_DIR}/skills/claude/${a}/SKILL.md" ] || die "no skill body for ${a}"
+done
+
 mkdir -p "${OUT_DIR}/work" "${OUT_DIR}/failed"
 rm -rf "${OUT_DIR}/failed"/*
 ABORTED="false"
 : > "${OUT_DIR}/results.jsonl"
 
-TOTAL=$(( $(echo "${SUITE}" | wc -w) * REPEATS * 2 ))
+TOTAL=$(( $(echo "${SUITE}" | wc -w) * REPEATS * $(echo "${ARM_LIST}" | wc -w) ))
 echo "suite:   ${SUITE}"
-echo "arms:    /${ARM_A}  vs  /${ARM_B}"
+echo "arms:    $(echo "${ARM_LIST}" | sed 's/ / vs /g')"
 echo "repeats: ${REPEATS}   model: ${MODEL}   runs: ${TOTAL}"
 echo "base:    $(git rev-parse --short HEAD) on $(git rev-parse --abbrev-ref HEAD)"
 echo ""
@@ -359,8 +396,11 @@ for t in ${SUITE}; do
   for rep in $(seq 1 "${REPEATS}"); do
     # Arms are interleaved rather than run in blocks, so drift in service latency
     # or load lands on both equally.
-    one_run A "${ARM_A}" "${t}" "${rep}"
-    one_run B "${ARM_B}" "${t}" "${rep}"
+    i=0
+    for a in ${ARM_LIST}; do
+      one_run "$(printf "\\$(printf '%%03o' $((65 + i)))")" "${a}" "${t}" "${rep}"
+      i=$(( i + 1 ))
+    done
     if [ "${CONSEC_ERRORS}" -ge "${ABORT_AFTER}" ]; then
       echo ""
       echo -e "${RED}✗${NC} ${CONSEC_ERRORS} runs in a row billed nothing. Stopping."

@@ -210,6 +210,42 @@ than by a benchmark six months later.
 line of rationale in a `SKILL.md` is charged every turn for the whole session. The same
 line in `docs/` is free.
 
+## Compaction, measured
+
+The docs above argue for resetting rather than compacting, on break-even arithmetic. Here
+is what compaction actually did, from the only two compaction events in 87 transcripts on
+this machine:
+
+| session | context before | context after | change |
+|---|---|---|---|
+| `72fd452b` | 480,083 | 53,191 | **−88.9%** |
+| `64e7f4fa` | 308,223 | 46,101 | **−85.0%** |
+
+426,892 tokens per turn removed in the first case. **Nothing else measured anywhere in
+this framework is within two orders of magnitude of that.** The two terse modes differ
+from each other by 5,204 tokens per run; compaction moved 82 times more, in one command.
+
+Two honest caveats. Compaction pays output price to generate the summary, and that cost
+has not been isolated here — the break-even against a clean reset is still **UNKNOWN**.
+And a summary is lossy in a way a snapshot written to disk is not, which is why
+`/agent-spec-snapshot` before resetting remains the recommendation. But the ranking is
+now clear: **when to start over is worth more than anything either terse mode does.**
+
+## What is always-on, measured
+
+Charged on every turn of every session, whether or not any skill is invoked:
+
+| | bytes | ≈ tokens |
+|---|---|---|
+| `CLAUDE.md` | 4,912 | ~1,228 |
+| `output-styles/agent-spec.md` | 2,267 | ~567 |
+| Skill frontmatter, 24 skills | 3,836 | ~959 |
+| `SessionStart` digest | 1,745 | ~436 |
+| **Total** | **12,760** | **~3,190** |
+
+Skill *bodies* total 69,637 bytes and cost nothing until invoked. That asymmetry is the
+whole design rule: **frontmatter is rent, bodies are rent only once you move in.**
+
 ## The resulting order of leverage
 
 1. **Fewer turns.** Batch independent calls; never poll; do not split one edit across three

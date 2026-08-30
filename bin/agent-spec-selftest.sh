@@ -373,7 +373,7 @@ for r in range(3):
             "session":"s","in":1,"write":1,"read":1,"out":1,"is_error":False}))
 JSON
 OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
-case "$OUT" in *"Both arms failed the same"*) ok "a task both arms fail is called a broken task" ;; *) bad "misreported equal completion as differing" ;; esac
+case "$OUT" in *"Every arm failed the same runs"*) ok "a task every arm fails is called a broken task" ;; *) bad "misreported equal completion as differing" ;; esac
 case "$OUT" in *"rates differ"*) bad "claimed rates differ when they are equal" ;; *) ok "and equal rates are not reported as differing" ;; esac
 # A run that billed nothing never reached the model — a usage limit, an expired
 # login. Its clone is untouched, so its verify message describes an empty repo

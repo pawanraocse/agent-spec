@@ -23,8 +23,9 @@ costs more than it saves. Measured — see the comment at the end.
 Context cannot be compressed — a cache read is cheap *because* the bytes are unchanged.
 Reset instead.
 
-- `./.agent-spec/bin/agent-spec-tokens.py context` says when a reset pays. Usually now.
-- Reset at each task boundary: `/agent-spec-snapshot`, then a new session.
+- Reset at each task boundary: `/agent-spec-snapshot`, then a new session. Failing that,
+  `/compact` — measured 480,083 to 53,191 tokens, the largest saving available anywhere.
+- `./.agent-spec/bin/agent-spec-tokens.py context` says when it pays. Usually now.
 - `graphify-cli.py context --task "<task>"` before opening any file. Then `query --file`.
 - Read line ranges. Never whole files.
 - Broad sweep → `agent-spec-search` subagent. Test suite, build, linter →
@@ -68,9 +69,8 @@ question asked twice.
 Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` artifacts,
 memory files.
 
-<!-- Ordering is by measured share of cost: cache re-reads 56-69%, cache writes 13-30%,
-     output 13-21%, tool results under 1%. Sections 1-2 dominate on long sessions and
-     cannot fire on short ones: over 18 verified benchmark runs this mode showed no
-     measurable difference from agent-spec-raw-code and cost 9.9% more on the median,
-     because turn count was identical and this body was re-read every turn. Evidence,
-     and why rationale lives in docs rather than here: docs/token-efficiency.md. -->
+<!-- Ordered by measured share of cost: cache re-reads 56-69%, cache writes 13-30%,
+     output 13-21%, tool results under 1%. Sections 1-2 act only on long sessions: over
+     18 verified runs on short tasks this mode showed no measurable difference from
+     agent-spec-raw-code. Evidence, and why it lives in docs and not in this body:
+     docs/token-efficiency.md. -->
