@@ -1,7 +1,7 @@
 ---
 name: "implement"
 description: >-
-  Build a change through the 6-gate pipeline: declare, test first, surgical diff, self-review, honest report.
+  SDLC gate 5: build the change through the 6-gate coding pipeline — declare, test first, surgical diff, honest report.
 ---
 
 # Implement Skill
@@ -9,12 +9,16 @@ description: >-
 ## Gate
 
 ```bash
-ls .agent-spec/sdlc/05-LLD*.md 2>/dev/null || echo "no LLD — small-change mode"
+./.agent-spec/bin/agent-spec-gate.py check 5
 ```
 
-If an LLD covers this area, read it first and build what it specifies; a diff that
-contradicts an approved design is a defect even when it works. If there is none, this is
-small-change mode — proceed, but say so, so nobody assumes a design gate was passed.
+`BLOCKED` means there is no LLD for this area. That is not automatically a stop: a change
+too small for a design pass runs in **small-change mode** — proceed, but say so out loud,
+so nobody assumes a design gate was passed, and do not record gate 5 afterwards. Anything
+larger goes back to `/lld`.
+
+If an LLD does cover this area, read it first and build what it specifies; a diff that
+contradicts an approved design is a defect even when it works.
 
 **If the cause of the problem is not yet known, stop and run `/investigate` instead.**
 Edit-test-edit without a mechanism is the most expensive loop in this framework.
@@ -26,8 +30,10 @@ Edit-test-edit without a mechanism is the most expensive loop in this framework.
    Every time. They are deliberately not restated inside this skill.
 2. Read `.agent-spec/coding-standards/SIMPLICITY-FIRST.md` and the language standard under
    `.agent-spec/coding-standards/languages/`.
-3. Run `./.agent-spec/bin/graphify-cli.py query --file <target_file>` for the blast radius
-   **before** modifying any code.
+3. `./.agent-spec/bin/graphify-cli.py context --task "<the task>"` for the file list, then
+   `query --file <target_file>` for the blast radius — **before** modifying any code. Read
+   what those return and stop there; walking the tree anyway is how a small change costs
+   forty thousand tokens.
 4. Post the **Pre-Change Declaration**: file and line range, current behaviour *quoted from
    source*, intended change, risk, test command, confidence.
    **CONFIDENCE LOW or UNKNOWN → stop and ask.**
@@ -63,3 +69,15 @@ Do not proceed to the next gate until the current one's checklist is complete.
 What was built, what was skipped, what is still unverified. **A failing test is reported as
 a failing test, with its output.** Never report "done" over a yellow build, and never
 report tests green before they are.
+
+## Next gate
+
+`/review`.
+
+State this and stop — each gate is a separate approval.
+
+Record this gate before you stop:
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py set 5
+```

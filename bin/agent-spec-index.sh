@@ -2,7 +2,7 @@
 # =============================================================================
 # agent-spec-index.sh — Graphify project indexer
 #
-# Usage: ./.agent-spec/bin/agent-spec-index [--quiet]
+# Usage: ./.agent-spec/bin/agent-spec-index [--quiet|--rebuild]
 #
 # graphify-build.py writes all three artifacts: knowledge-graph.json,
 # KNOWLEDGE-GRAPH.md and PROJECT-INDEX.md. This wrapper only locates it and
@@ -26,11 +26,14 @@ command -v python3 >/dev/null 2>&1 || {
 
 echo -e "${YELLOW}Indexing...${NC}"
 # --graphify is accepted and ignored: it was the old flag and is still in docs.
-python3 "${BUILDER}" $([ "${1:-}" = "--quiet" ] && echo --quiet)
+python3 "${BUILDER}" $([ "${1:-}" = "--quiet" ] && echo --quiet) $([ "${1:-}" = "--rebuild" ] && echo --rebuild)
 
 echo -e "${GREEN}✓${NC} .agent-spec/graph/knowledge-graph.json"
 echo -e "${GREEN}✓${NC} .agent-spec/graph/KNOWLEDGE-GRAPH.md"
+echo -e "${GREEN}✓${NC} .agent-spec/graph/CONVENTIONS.md"
 echo -e "${GREEN}✓${NC} .agent-spec/PROJECT-INDEX.md (only if absent)"
 echo ""
 echo "Query it instead of reading it:"
+echo "  ./.agent-spec/bin/graphify-cli.py context --task \"<what you are about to do>\""
 echo "  ./.agent-spec/bin/graphify-cli.py query --file <path>"
+echo "  ./.agent-spec/bin/graphify-cli.py services   # who talks to whom"

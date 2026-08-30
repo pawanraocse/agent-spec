@@ -1,7 +1,7 @@
 ---
 name: "lld"
 description: >-
-  SDLC gate 5: classes, schemas, sequence flows into 05-LLD.md, one per service. Needs 04-HLD.md.
+  SDLC gate 4: classes, schemas, sequence flows into 05-LLD.md, one per service. Needs 04-HLD.md.
 ---
 
 # LLD Skill
@@ -9,10 +9,10 @@ description: >-
 ## Gate
 
 ```bash
-test -f .agent-spec/sdlc/04-HLD.md && echo present || echo MISSING
+./.agent-spec/bin/agent-spec-gate.py check 4
 ```
 
-`MISSING` → stop. Say that `/hld` has to run first, and why this gate cannot
+`BLOCKED` → stop. Say which gate has to run first, and why this gate cannot
 substitute for it. **Never synthesise the upstream document to unblock yourself** — a
 design built on an invented predecessor is worse than no design, because it looks
 approved.
@@ -84,3 +84,9 @@ Additionally, for an LLD specifically:
 
 State this and stop. Do not run the next gate yourself — each one is a separate approval,
 and chaining two on one "yes" is how a requirement gets dropped without anyone noticing.
+
+Record this gate before you stop:
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py set 4
+```

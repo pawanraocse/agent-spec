@@ -66,3 +66,15 @@ Five lines or fewer:
 ## Then
 
 Hand the named cause to `/implement`, which owns the fix and its regression test.
+
+## Delegate the wide reads
+
+A broad "where does this live" sweep is the single largest token cost in this skill, and
+none of what it reads is worth keeping. Send it to a subagent: its file reads stay in its
+own context and only the answer comes back.
+
+- Locating candidates across many files, directories or naming conventions → subagent.
+- Reading the two or three files you will actually reason about → do it here.
+
+Ask the graph before either: `./.agent-spec/bin/graphify-cli.py context --task "<task>"`
+returns the file list directly, and costs a few hundred tokens.

@@ -5,19 +5,22 @@
 
 ---
 
-## 🧭 Session Start Protocol
+## 🧭 Session Start
 
-At the start of every session:
+The `SessionStart` hook has already put a digest in your context: stack, graph size,
+current pipeline gate, and what the last session did. **Do not re-read
+`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those
+facts — you already have them.**
 
-```
-0. If .agent-spec/.onboarding-needed exists → run the `onboard` skill FIRST.
-1. Read: .agent-spec/SESSION-SNAPSHOT.md
-2. Read: .agent-spec/PROJECT-INDEX.md
-3. Read: .agent-spec/graph/KNOWLEDGE-GRAPH.md
-4. State what was loaded before proceeding.
-```
+Two things the digest does not carry, because they are only needed sometimes:
 
----
+- `.agent-spec/CONSTITUTION.md` — read before the first code edit of the session.
+- Structure — query it, do not read it:
+  `./.agent-spec/bin/graphify-cli.py query --file <path>`
+
+If the digest says **ONBOARDING NEEDED**, run `/onboard` before anything else.
+If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
+
 
 ## 🎭 Persona System
 
@@ -36,21 +39,6 @@ All non-trivial claims must include confidence rating:
 - `[CONFIDENCE: MEDIUM]` — pattern-based
 - `[CONFIDENCE: LOW]` — inference, validate first
 - `[CONFIDENCE: UNKNOWN]` — ask developer
-
----
-
-## 💡 Cursor Skills
-
-Skills are installed machine-wide in `~/.cursor/skills/<name>/SKILL.md` and load on
-demand. `.cursor/rules/` holds one always-on file, `agent-spec.mdc` — these standing
-rules. Reference a skill in chat by describing the task:
-- "Run requirements skill for: [description]"
-- "Run prd skill using the requirements doc"
-- "Run solid-check on UserService.java"
-- "Switch to raw-code mode" / "Switch to trim-noise mode"
-
-Cursor loads the matching `SKILL.md` on demand and follows it.
-The always-on rules live alongside them in `.cursor/rules/agent-spec-rules.md`.
 
 ---
 

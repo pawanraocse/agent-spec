@@ -19,3 +19,6 @@ build/
 # Python bytecode
 __pycache__/
 *.py[cod]
+
+# Graphify incremental cache — regenerated on every index run
+.agent-spec/graph/.cache.json

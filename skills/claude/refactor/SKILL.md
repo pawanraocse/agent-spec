@@ -1,7 +1,7 @@
 ---
 name: "refactor"
 description: >-
-  Work as @REFACTOR — refactor specialist. Behaviour preserved, verification brackets every edit. Carries its absolute rules inline.
+  Work as @REFACTOR — refactor specialist. Behaviour preserved, verification brackets every edit.
 ---
 
 # refactor

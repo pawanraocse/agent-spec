@@ -21,6 +21,14 @@ handful of the right ones instead of hundreds of arbitrary ones.
 
 1. `./.agent-spec/bin/graphify-cli.py stats` — stack, size, cycles, and the
    most-depended-upon files.
+1b. `./.agent-spec/bin/graphify-cli.py services` and `layers` — the service map, what
+   talks to what over HTTP and which topics, and whether the layering holds. On a
+   microservice estate this is the architecture; skipping it means writing a
+   constitution for a monolith that does not exist.
+1c. Read `.agent-spec/graph/CONVENTIONS.md`. The indexer already counted the test
+   framework, injection style, error handling and logging across the tree. Those counts
+   beat anything you would infer from five files — use them, and spend your reads on
+   what they cannot show.
 2. **Read the top 5 most-depended files.** This is the important step. Conventions live in
    the code every other file imports: how errors are raised, how types are declared, how
    layers talk, what the naming looks like. Five files buys most of the constitution.
@@ -47,6 +55,18 @@ Reserve `[NEEDS CLARIFICATION]` for what genuinely is not in the repository:
 - deployment target and environments, when nothing in the repo names them
 - decisions with no artifact — a convention followed nowhere consistently
 
+## Delegate the wide reads
+
+A broad "where does this live" sweep is the single largest token cost in this skill, and
+none of what it reads is worth keeping. Send it to a subagent: its file reads stay in its
+own context and only the answer comes back.
+
+- Locating candidates across many files, directories or naming conventions → subagent.
+- Reading the two or three files you will actually reason about → do it here.
+
+Ask the graph before either: `./.agent-spec/bin/graphify-cli.py context --task "<task>"`
+returns the file list directly, and costs a few hundred tokens.
+
 ## Write
 
 **`.agent-spec/PROJECT-INDEX.md`** — `graphify-build.py` already detected stack and
@@ -61,7 +81,7 @@ thing. Every entry must be evidence-backed:
 |---|---|
 | 1. Project Context | README, manifest, commit subjects |
 | 2. Hard Dependencies | the manifest's real dependency list — not what is conventional for the stack |
-| 3. Custom Project Rules | the top-5 files: layering, naming, error handling, typing, where IO and arithmetic are allowed |
+| 3. Custom Project Rules | `CONVENTIONS.md` counts first, then the top-5 files: layering, naming, error handling, typing, where IO and arithmetic are allowed |
 | 4. Banned Practices | what the code and commit history show the project avoids — a pattern absent everywhere in a large codebase is a rule |
 
 Every line points at a file you read. A line you cannot source does not go in — the

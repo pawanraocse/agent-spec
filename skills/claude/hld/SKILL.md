@@ -1,7 +1,7 @@
 ---
 name: "hld"
 description: >-
-  SDLC gate 4: service boundaries, data model, API contracts into 04-HLD.md. Needs 03-PRD.md.
+  SDLC gate 3: service boundaries, data model, API contracts into 04-HLD.md. Needs 03-PRD.md.
 ---
 
 # HLD Skill
@@ -9,10 +9,10 @@ description: >-
 ## Gate
 
 ```bash
-test -f .agent-spec/sdlc/03-PRD.md && echo present || echo MISSING
+./.agent-spec/bin/agent-spec-gate.py check 3
 ```
 
-`MISSING` → stop. Say that `/prd` has to run first, and why this gate cannot
+`BLOCKED` → stop. Say which gate has to run first, and why this gate cannot
 substitute for it. **Never synthesise the upstream document to unblock yourself** — a
 design built on an invented predecessor is worse than no design, because it looks
 approved.
@@ -87,3 +87,9 @@ separately-approved step.
 
 State this and stop. Do not run the next gate yourself — each one is a separate approval,
 and chaining two on one "yes" is how a requirement gets dropped without anyone noticing.
+
+Record this gate before you stop:
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py set 3
+```

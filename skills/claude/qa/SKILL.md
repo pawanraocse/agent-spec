@@ -1,7 +1,7 @@
 ---
 name: "qa"
 description: >-
-  Work as @QA — QA engineer. TDD, edge cases, no happy-path-only testing. Carries its absolute rules inline.
+  Work as @QA — QA engineer. TDD, edge cases, no happy-path-only testing.
 ---
 
 # qa

@@ -1,7 +1,7 @@
 ---
 name: "prd"
 description: >-
-  SDLC gate 3: user stories and MoSCoW into 03-PRD.md. Needs 02-TECH-SPEC.md.
+  SDLC gate 2: user stories and MoSCoW into 03-PRD.md. Needs 02-TECH-SPEC.md.
 ---
 
 # Prd Skill
@@ -9,10 +9,10 @@ description: >-
 ## Gate
 
 ```bash
-test -f .agent-spec/sdlc/02-TECH-SPEC.md && echo present || echo MISSING
+./.agent-spec/bin/agent-spec-gate.py check 2
 ```
 
-`MISSING` → stop. Say that `/tech-spec` has to run first, and why this gate cannot
+`BLOCKED` → stop. Say which gate has to run first, and why this gate cannot
 substitute for it. **Never synthesise the upstream document to unblock yourself** — a
 design built on an invented predecessor is worse than no design, because it looks
 approved.
@@ -35,3 +35,9 @@ approved.
 
 State this and stop. Do not run the next gate yourself — each one is a separate approval,
 and chaining two on one "yes" is how a requirement gets dropped without anyone noticing.
+
+Record this gate before you stop:
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py set 2
+```

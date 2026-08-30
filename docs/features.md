@@ -4,13 +4,29 @@ Back-link: [README](../README.md)
 
 ## Graphify — memory that survives a new chat
 
-`./.agent-spec/bin/agent-spec-index --graphify` scans the codebase and writes a
-machine-readable JSON knowledge graph plus a Mermaid diagram. The agent queries that map
-before writing code, instead of re-reading the tree every session.
+`./.agent-spec/bin/agent-spec-index` scans the codebase and writes a machine-readable JSON
+knowledge graph, a Mermaid summary and an observed-conventions file. Only files whose
+mtime or size moved are re-parsed, so re-indexing a large repository is cheap. The agent
+queries that map before writing code, instead of re-reading the tree every session.
 
-Query it without loading it: `./.agent-spec/bin/graphify-cli.py query --file <path>`
-returns imports and blast radius. `search <keyword>` finds domain components. `stats`
-gives the bird's-eye view. That is the `/query-graph` skill.
+It records more than imports. Each file carries a **layer** (controller, service, data,
+integration, contract, config, util) and the **service** that owns it — one per manifest
+below the root. On top of the import edges it recovers the coupling no import graph can
+see: HTTP calls matched to a service name, and Kafka, Rabbit or SQS topics matched from
+producer to consumer. Two services that talk over a broker share no line of code; without
+those edges they look unrelated.
+
+Query it without loading it — this is the `/query-graph` skill:
+
+| Question | Command |
+|---|---|
+| Which files does this task need? | `context --task "<description>"` |
+| What breaks if I change this? | `query --file <path> --depth 2` |
+| How does a request flow through? | `flow --from <entry-point>` |
+| Which services talk to what? | `services` |
+| What is the HTTP surface? | `endpoints` |
+| Is the layering holding? | `layers` |
+| Where is X? | `search <keyword>` |
 
 ## `/onboard` — learn the project once
 
@@ -41,12 +57,24 @@ Every claim carries a `[CONFIDENCE]` score. If the agent has not read the file i
 current session it is forbidden from claiming `HIGH`. "I don't know, let me check" is
 explicitly the correct answer; guessing is not.
 
-## The 6-gate SDLC pipeline
+## The nine-gate SDLC pipeline
 
-`Requirements → Tech Spec → PRD → HLD → LLD → Implementation`. Each gate produces a
-markdown artifact under `.agent-spec/sdlc/`, so intent has a lineage. The agent is
-blocked from implementation until the LLD is signed off — which forces edge cases, data
-structures and SOLID to be considered before the first line of code.
+`Requirements → Tech Spec → PRD → HLD → LLD → Development → Review → Testing →
+Validation`. Each gate produces a markdown artifact under `.agent-spec/sdlc/`, so intent
+has a lineage. The agent is blocked from implementation until the LLD is signed off —
+which forces edge cases, data structures and SOLID to be considered before the first line
+of code.
+
+The ordering is not remembered, it is stored. `.agent-spec/sdlc/STATE.json` holds the
+current gate, and `bin/agent-spec-gate.py check <n>` refuses a gate whose predecessor
+never produced its artifact. `/sdlc` reads that state, runs the one gate that is due and
+stops; one gate per approval, never two chained on a single "yes".
+
+The last gate is the only one that looks all the way back to the first.
+`agent-spec-gate.py trace` follows every `REQ-`, `NFR-` and `US-` identifier from gate 0
+through every downstream document and exits non-zero on one that reached nothing. Each
+handoff being locally consistent is exactly how a requirement disappears without anyone
+noticing; this is the check that notices.
 
 ## Pre-change declaration
 
@@ -56,9 +84,20 @@ change and asks.
 
 ## Context budgeting
 
-Loading 10,000 files into a 200k window destroys reasoning. Using the Graphify map the
-agent loads the target file, its direct imports (distance 1) and its dependents
-(distance −1). Nothing else.
+Loading 10,000 files into a 200k window destroys reasoning. Three mechanisms keep it
+down:
+
+- **`context --task`** returns the file list a task needs — name matches plus one hop of
+  neighbours, capped — so the agent reads that list instead of grepping its way through
+  the tree.
+- **The `SessionStart` hook** puts a ~600-byte digest in front of every session: stack,
+  graph size, current gate, last session's summary. It replaces the old protocol of
+  opening four files to work out where things stand.
+- **An `agent-spec` output style**, installed into `settings.json`, makes dense output the
+  default rather than something `/raw-code` has to be typed to get, session after session.
+
+`bin/agent-spec-bench.sh` prints what all of that actually costs, so the claim can be
+checked.
 
 ## Auto-logged technical debt
 
@@ -70,8 +109,3 @@ to `.agent-spec/TECH-DEBT-REGISTER.md`.
 Clean Code, SOLID, Simplicity-First, Java (Spring Boot) and Angular templates ship in
 `.agent-spec/coding-standards/`. The agent reviews its own output against them before
 showing it to you.
-
-## The `sdlc-team` plugin
-
-`sdlc-team/` is a standalone Claude Code plugin — nine subagents covering the full
-lifecycle, no `agent-spec` install required. See [`sdlc-team/README.md`](../sdlc-team/README.md).

@@ -7,14 +7,25 @@ Code generation is the *easiest* part for modern LLMs. Reasoning about architect
 
 ---
 
-## The 6 SDLC Stages
+## The 9 SDLC Stages
 
-1. **[01-REQUIREMENTS](01-REQUIREMENTS.md)**: Raw idea → Structured requirements.
-2. **[02-TECH-SPEC](02-TECH-SPEC.md)**: Feasibility, constraints, and tech stack choices.
-3. **[03-PRD](03-PRD.md)**: Product Requirements Document (WHAT and WHY).
-4. **[04-HLD](04-HLD.md)**: High Level Design (System architecture).
-5. **[05-LLD](05-LLD.md)**: Low Level Design (Class structures, schemas).
-6. **[06-IMPLEMENTATION](06-IMPLEMENTATION.md)**: The 6-Gate coding execution.
+| Gate | Stage | Skill | Artifact |
+|---|---|---|---|
+| 0 | **[Requirements](01-REQUIREMENTS.md)** — raw idea to structured requirements, with `REQ-` identifiers | `/requirements` | `01-REQUIREMENTS.md` |
+| 1 | **[Tech spec](02-TECH-SPEC.md)** — feasibility, constraints, stack, NFRs | `/tech-spec` | `02-TECH-SPEC.md` |
+| 2 | **[PRD](03-PRD.md)** — what and why, user stories, MoSCoW | `/prd` | `03-PRD.md` |
+| 3 | **[HLD](04-HLD.md)** — service boundaries, data model, API contracts | `/hld` | `04-HLD.md` |
+| 4 | **[LLD](05-LLD.md)** — classes, schemas, sequence flows | `/lld` | `05-LLD.md` |
+| 5 | **[Development](06-DEVELOPMENT.md)** — the six implementation gates | `/implement` | code + tests |
+| 6 | **[Review](07-REVIEW.md)** — blockers first, style last | `/review` | `06-REVIEW.md` |
+| 7 | **[Testing](08-TESTING.md)** — the whole suite, failures verbatim | `/testing` | `07-TEST-REPORT.md` |
+| 8 | **[Validation](09-VALIDATION.md)** — one verdict per requirement | `/validation` | `08-VALIDATION.md` |
+
+`/sdlc` routes between them: it reads `STATE.json`, runs the gate that is due, and stops.
+One gate per approval — chaining two on a single "yes" is how a requirement gets dropped,
+which is precisely what gate 8 exists to catch, after the cost has been paid.
+
+Note the offset: stage documents are numbered from 01, gates from 0.
 
 ---
 
@@ -25,9 +36,9 @@ This directory (`.agent-spec/sdlc/`) stores the output of each stage.
 When you trigger a skill (e.g., `/prd`), the agent will:
 1. Read the outputs of the previous stages (Requirements, Tech Spec).
 2. Generate the artifact for the current stage (PRD).
-3. Save it to `.agent-spec/sdlc/03-prd.md`.
+3. Save it to `.agent-spec/sdlc/03-PRD.md`.
 
-This creates a **lineage of intent**. If the agent is implementing code (Stage 6) and gets confused about a business rule, it can read the PRD (Stage 3) to regain context.
+This creates a **lineage of intent**. If the agent is implementing code (gate 5) and gets confused about a business rule, it can read the PRD (gate 2) to regain context. `agent-spec-gate.py trace` checks that lineage mechanically: every `REQ-`, `NFR-` and `US-` identifier from gate 0, and which downstream artifacts still mention it.
 
 ## Iterative Cycle
 

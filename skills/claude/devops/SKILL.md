@@ -1,7 +1,7 @@
 ---
 name: "devops"
 description: >-
-  Work as @DEVOPS — DevOps engineer. Reproducible builds, secrets hygiene, rollback paths. Carries its absolute rules inline.
+  Work as @DEVOPS — DevOps engineer. Reproducible builds, secrets hygiene, rollback paths.
 ---
 
 # devops

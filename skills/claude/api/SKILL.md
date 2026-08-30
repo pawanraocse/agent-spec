@@ -1,7 +1,7 @@
 ---
 name: "api"
 description: >-
-  Work as @API — API designer. Contracts before code, versioning, backward compatibility. Carries its absolute rules inline.
+  Work as @API — API designer. Contracts before code, versioning, backward compatibility.
 ---
 
 # api

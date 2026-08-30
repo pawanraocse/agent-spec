@@ -1,46 +1,58 @@
 ---
 name: "query-graph"
 description: >-
-  Answer structural questions from the dependency graph, not file reads. Use for blast radius, coupling, cycles, "where is X".
+  Answer structural questions from the dependency graph, not file reads. Blast radius, service wiring, layers, endpoints, context selection.
 ---
 
 # query-graph
 
-Reading the tree to learn the structure is the single most expensive habit an agent has.
-The graph already knows. Ask it.
-
-## Commands
+Every answer here costs a few hundred tokens. The equivalent file reads cost tens of
+thousands, and are less accurate — a grep finds the string, the graph finds the edge.
 
 ```bash
-./.agent-spec/bin/graphify-cli.py stats                       # stack, size, hot files, cycles
-./.agent-spec/bin/graphify-cli.py query --file <path>         # imports + blast radius
-./.agent-spec/bin/graphify-cli.py query --file <path> --depth 3
-./.agent-spec/bin/graphify-cli.py search <keyword>            # find files, ranked by dependents
-./.agent-spec/bin/graphify-cli.py module <dir>                # what a directory depends on and who uses it
-./.agent-spec/bin/graphify-cli.py cycles                      # import cycles
+CLI=./.agent-spec/bin/graphify-cli.py
 ```
 
-`--file` takes a suffix, not the full path: `query --file contracts/facts.py` resolves.
-An ambiguous suffix lists the candidates rather than guessing.
-
-## Which command answers which question
+## Pick the verb by the question
 
 | Question | Command |
 |---|---|
-| What breaks if I change this? | `query --file <path>` — read the BLAST RADIUS block |
-| Is this file safe to delete? | `query` — an empty blast radius means nothing imports it |
-| Where does this concept live? | `search <keyword>` — ranked, so the first hit is usually the core |
-| Is this module layered correctly? | `module <dir>` — DEPENDS ON should not contain higher layers |
-| What is the shape of this project? | `stats` |
-| Why is this hard to change? | `cycles` |
+| What breaks if I change this file? | `$CLI query --file <path> --depth 2` |
+| Which files does this task need? | `$CLI context --task "<description>"` |
+| How does a request flow through? | `$CLI flow --from <entry-point>` |
+| Which services are there, what talks to what? | `$CLI services` |
+| What is the HTTP surface? | `$CLI endpoints [--service <name>]` |
+| Is the architecture holding? | `$CLI layers` |
+| Where is X? | `$CLI search <keyword>` |
+| How coupled is this directory? | `$CLI module <path>` |
+| Overview | `$CLI stats` |
+| Any import cycles? | `$CLI cycles` |
+
+## `context` is the one to reach for first
+
+Before opening a single file for a new task:
+
+```bash
+./.agent-spec/bin/graphify-cli.py context --task "add a discount to order pricing" --budget 12
+```
+
+It returns the file list and stops. Read those files. **Do not then walk the tree
+anyway** — if the list looks wrong, the task description was vague; sharpen it and
+re-run, or raise `--budget`. Widening by hand is how a 2,000-token task becomes a
+40,000-token one.
+
+## Integration edges
+
+`type=imports` is a source dependency. `type=http` and `type=message` are recovered from
+call sites and broker annotations — two services that talk over Kafka share no import, so
+these are the only edges that show the coupling at all. Treat a `message` edge as real
+and an `http` edge as strong evidence: it is matched on a service name appearing in a URL.
 
 ## Rules
 
-- Run this **before** opening files, not after. The point is to open fewer.
-- The blast radius is the read list. Load those files, not the directory.
-- `(none)` in BLAST RADIUS means nothing internal imports it — either a genuine entry
-  point, or dead code. Say which; do not assume.
-- A stale graph gives confident wrong answers. If the tree has changed since the last
-  index, run `/index-project` first. The CLI warns when the graph predates version 3.0.
-- Markdown and config files are not indexed. `Could not find` for those is expected, not
-  an error.
+- **Never invent a dependency the graph does not show.** If `query` returns `(none)`,
+  report `(none)` — do not guess from the filename.
+- A stale graph is worse than no graph. If the file you are asking about is not in it,
+  run `/index-project` and ask again.
+- `layers` reports a heuristic classification. A violation is a finding to raise, not a
+  fact to act on unilaterally.

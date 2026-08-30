@@ -1,7 +1,7 @@
 ---
 name: "perf"
 description: >-
-  Work as @PERF — performance engineer. Measure before optimising, name the bottleneck. Carries its absolute rules inline.
+  Work as @PERF — performance engineer. Measure before optimising, name the bottleneck.
 ---
 
 # perf

@@ -8,7 +8,7 @@
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-strict confidence scoring, and 29 skills that work in Claude Code, Cursor and
+strict confidence scoring, and 32 skills that work in Claude Code, Cursor and
 Antigravity.
 
 ---
@@ -26,6 +26,11 @@ It installs skills **machine-wide** — every project on the box gets them — a
 project, git and all.
 
 **Update:** re-run the exact same command.
+
+Installing also writes an output style and a `SessionStart` hook into each `.claude`
+home, merged into any existing `settings.json` without touching what is already there.
+The hook puts a short project digest — stack, graph size, current gate, last session — in
+front of every session, so no session begins by reading four files to work out where it is.
 
 Then restart your agent (skills are read at session start) and type **`/onboard`**. It
 reads the graph and the manifest, writes `PROJECT-INDEX.md` and `CONSTITUTION.md` from
@@ -52,7 +57,7 @@ rediscover the project.
 | | |
 |---|---|
 | **Onboarding** | `/onboard` |
-| **SDLC pipeline** | `/requirements` `/tech-spec` `/prd` `/hld` `/lld` `/implement` |
+| **SDLC pipeline** | `/sdlc` routes; `/requirements` `/tech-spec` `/prd` `/hld` `/lld` `/implement` `/review` `/testing` `/validation` |
 | **Diagnosis** | `/investigate` |
 | **Review** | `/review` `/self-review` `/solid-check` `/debt` |
 | **Memory** | `/index-project` `/query-graph` `/snapshot` |
@@ -63,11 +68,17 @@ rediscover the project.
 
 ## Docs
 
-- [What it actually does](docs/features.md) — Graphify, personas, the 6 gates, context budgeting
+- [What it actually does](docs/features.md) — Graphify, personas, the nine gates, context budgeting
 - [Daily workflow](docs/workflow.md) — starting a feature, managing tokens, ending a session
 - [Agent compatibility](docs/agents.md) — where files land, the WSL two-homes problem
 - [Why this exists](docs/why.md)
-- [`sdlc-team/`](sdlc-team/README.md) — standalone Claude Code plugin, nine subagents, no install required
+
+## Maintaining
+
+```bash
+bin/agent-spec-selftest.sh   # fixtures for Python, Java microservices and Node; 16 assertions
+bin/agent-spec-bench.sh      # always-on context cost, per-skill cost, graph query cost
+```
 
 ## Contributing
 

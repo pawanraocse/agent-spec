@@ -1,7 +1,7 @@
 ---
 name: "review"
 description: >-
-  Deep code review — blockers first, style last, fixes applied. Traces one real case end to end.
+  SDLC gate 6: deep code review — blockers first, style last, fixes applied. Traces one real case end to end.
 ---
 
 # Review Skill
@@ -48,6 +48,18 @@ Skip it for markdown and design documents — the graph indexes code and will re
 `.agent-spec/coding-standards/CLEAN-CODE.md` + `SOLID-PRINCIPLES.md`. Naming, dead code,
 comment density matching the surrounding file.
 
+## Delegate the wide reads
+
+A broad "where does this live" sweep is the single largest token cost in this skill, and
+none of what it reads is worth keeping. Send it to a subagent: its file reads stay in its
+own context and only the answer comes back.
+
+- Locating candidates across many files, directories or naming conventions → subagent.
+- Reading the two or three files you will actually reason about → do it here.
+
+Ask the graph before either: `./.agent-spec/bin/graphify-cli.py context --task "<task>"`
+returns the file list directly, and costs a few hundred tokens.
+
 ## Output
 
 Tag every finding `[BLOCKER]`, `[MINOR]` or `[NIT]`, most severe first, each with
@@ -64,3 +76,35 @@ Tag every finding `[BLOCKER]`, `[MINOR]` or `[NIT]`, most severe first, each wit
 > runs *inside* `/hld`, `/lld`, `/prd`, `/tech-spec`, `/requirements` and `/implement`
 > before they report done. Same defect classes, different trigger. If you are finishing
 > your own work, it is `self-review`.
+
+## Write `.agent-spec/sdlc/06-REVIEW.md`
+
+Only when this is running as pipeline gate 6. A standalone review someone asked for is
+reported in the conversation and writes nothing.
+
+```markdown
+# Review — <feature> — <date>
+
+## Verdict
+<APPROVED | CHANGES REQUIRED>
+
+## Findings
+| Severity | file:line | Failure scenario | Fixed |
+|---|---|---|---|
+| BLOCKER | src/x.py:42 | empty list -> ZeroDivisionError | yes |
+
+## Left for the user
+<anything needing a decision you do not own>
+```
+
+## Next gate
+
+`/testing`.
+
+State this and stop — each gate is a separate approval.
+
+Record this gate before you stop:
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py set 6
+```

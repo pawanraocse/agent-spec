@@ -105,6 +105,31 @@ copy_skills() {
 }
 
 # ---------------------------------------------------------------------------
+# install_harness <claude-home>
+# Output style and SessionStart hook. These are the only two levers that survive a
+# new session: a skill has to be invoked, whereas settings.json is read by the
+# harness every time. Cursor has no equivalent, so this runs for .claude homes only.
+# ---------------------------------------------------------------------------
+install_harness() {
+  local home="$1"
+  mkdir -p "${home}/output-styles" "${home}/hooks"
+
+  cp "${AGENT_SPEC_HOME}/output-styles/agent-spec.md" "${home}/output-styles/agent-spec.md"
+  cp "${AGENT_SPEC_HOME}/hooks/session-start.sh" "${home}/hooks/agent-spec-session-start.sh"
+  cp "${AGENT_SPEC_HOME}/bin/agent-spec-digest.py" "${home}/hooks/agent-spec-digest.py"
+  chmod +x "${home}/hooks/agent-spec-session-start.sh" "${home}/hooks/agent-spec-digest.py"
+
+  if command -v python3 >/dev/null 2>&1; then
+    local msg
+    msg="$(python3 "${AGENT_SPEC_HOME}/bin/agent-spec-settings.py" \
+             "${home}/settings.json" "${home}/hooks/agent-spec-session-start.sh" 2>&1)" || true
+    echo -e "  ${GREEN}\u2713${NC} harness \u2192 ${home}   (${msg})"
+  else
+    echo -e "  \u26a0\ufe0f  python3 not found \u2014 settings.json not updated in ${home}"
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # 1. Machine-wide skills
 # ---------------------------------------------------------------------------
 if [ "$DO_SKILLS" = "true" ]; then
@@ -119,6 +144,9 @@ if [ "$DO_SKILLS" = "true" ]; then
 
   for h in "${HOMES[@]}"; do
     copy_skills "${h}/skills"
+    case "${h}" in
+      *.claude) install_harness "${h}" ;;
+    esac
   done
   echo ""
 fi
@@ -222,8 +250,10 @@ mkdir -p "${PROJECT_ROOT}/.agent-spec/bin"
 cp "${AGENT_SPEC_HOME}/bin/agent-spec-index.sh" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-index"
 cp "${AGENT_SPEC_HOME}/bin/graphify-build.py"   "${PROJECT_ROOT}/.agent-spec/bin/graphify-build.py"
 cp "${AGENT_SPEC_HOME}/bin/graphify-cli.py"     "${PROJECT_ROOT}/.agent-spec/bin/graphify-cli.py"
+cp "${AGENT_SPEC_HOME}/bin/agent-spec-digest.py" "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-digest.py"
+cp "${AGENT_SPEC_HOME}/bin/agent-spec-gate.py"   "${PROJECT_ROOT}/.agent-spec/bin/agent-spec-gate.py"
 chmod +x "${PROJECT_ROOT}/.agent-spec/bin/"*
-echo -e "  ${GREEN}✓${NC} .agent-spec/bin/ (agent-spec-index, graphify-cli.py, graphify-build.py)"
+echo -e "  ${GREEN}✓${NC} .agent-spec/bin/ (agent-spec-index, graphify-cli.py, graphify-build.py, agent-spec-digest.py, agent-spec-gate.py)"
 
 # New project: the raw-requirements stub and a git repo.
 if [ "$IS_NEW" = "true" ]; then

@@ -1,24 +1,29 @@
-# The 6-Gate Development Pipeline
+# The implementation gates
 
-> **Rule: The agent cannot write code until Gate 5.**
+> These six gates run **inside** SDLC gate 5. They are not a second pipeline.
 
-This pipeline governs the execution phase of development (Stage 6 of the SDLC). It is designed to physically block the AI agent from "vibe coding" — jumping straight into modifying files without understanding the context, architecture, or risks.
+The nine SDLC gates are the lifecycle: requirements through validation, one artifact each,
+state in `.agent-spec/sdlc/STATE.json`. The six below are the micro-process `/implement`
+follows while writing the code for gate 5.
 
----
+`skills/claude/implement/SKILL.md` is the executable definition. This file exists so the
+gates have a name in the documentation; **if the two ever disagree, the skill is right**.
+Six per-gate documents used to live here and drifted out of step with the skill three
+times, so they were removed rather than maintained twice.
 
-## The 6 Gates
+## The six
 
-1. **[DISCOVERY](GATE-1-DISCOVERY.md)**: Establish context. Load index, graph, and snapshot. Select persona.
-2. **[SPEC](GATE-2-SPEC.md)**: Review acceptance criteria. No code without a testable spec.
-3. **[ARCHITECTURE](GATE-3-ARCHITECTURE.md)**: SOLID check. Graph updates. No God objects.
-4. **[TASKS](GATE-4-TASKS.md)**: Atomic task breakdown (≤30 mins). Rollback plans.
-5. **[IMPLEMENTATION](GATE-5-IMPLEMENTATION.md)**: Test-First (TDD). Language style rules applied.
-6. **[VERIFICATION](GATE-6-VERIFICATION.md)**: Hallucination audit. Update docs. Write snapshot.
+| Gate | Name | What it settles |
+|---|---|---|
+| G1 | Placement | Which layer or module owns this. Spanning two means it is two changes; a new service or language means an ADR, not a commit. |
+| G2 | Tests first | The failing test before the fix, including the cases that must return "unknown" with a stated reason. A bug's red test is kept as the regression lock. |
+| G3 | Build it | Only what the task requires. Match the surrounding style; do not touch adjacent code. |
+| G4 | Verify the boundary | The tests that enforce architecture — layering, purity, import direction. A structural break fails here, not in production. |
+| G5 | Verify clean | Tests, linter, type checker. All green, and the real command output pasted. |
+| G6 | Self-review, then report | The `self-review` loop over the diff, then one honest report: what was built, what was skipped, what is unverified. |
 
----
+Do not proceed to the next gate until the current one's checklist is complete.
 
-## How Gates Work
-
-A Gate is a mandatory checkpoint. The agent MUST complete the checklist defined in the Gate's document before it is allowed to proceed to the next Gate.
-
-If the developer interrupts the agent or context is lost, the agent must re-verify the current Gate before continuing.
+Before G1, `/implement` also reads the project's hard rules, the coding standards, and the
+graph — `context --task` for the file list and `query --file` for the blast radius — and
+posts a Pre-Change Declaration. Confidence LOW or UNKNOWN stops the change and asks.

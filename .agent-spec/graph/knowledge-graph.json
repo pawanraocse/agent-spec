@@ -1,38 +1,47 @@
 {
-  "version": "3.0",
+  "version": "4.0",
   "project": "agent-spec",
-  "generated": "2026-08-25T13:23:13.567381",
+  "generated": "2026-08-30T10:57:00.431056",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
-    "files": 2,
+    "files": 4,
     "internal_edges": 0,
+    "integration_edges": 0,
     "external_packages": 7,
-    "test_files": 0,
+    "test_files": 2,
     "cycles": 0,
+    "services": 0,
+    "endpoints": 0,
+    "topics": 0,
+    "layer_violations": 0,
     "languages": {
-      "python": 2
+      "python": 4
+    },
+    "layers": {
+      "test": 2,
+      "unknown": 2
     },
     "most_depended": [],
     "top_external": [
+      [
+        "json",
+        4
+      ],
+      [
+        "os",
+        4
+      ],
+      [
+        "sys",
+        4
+      ],
       [
         "argparse",
         2
       ],
       [
         "collections",
-        2
-      ],
-      [
-        "json",
-        2
-      ],
-      [
-        "os",
-        2
-      ],
-      [
-        "sys",
         2
       ],
       [
@@ -45,41 +54,84 @@
       ]
     ]
   },
-  "orphan_count": 2,
+  "orphan_count": 4,
+  "services": {},
+  "layer_violations": [],
+  "topics": {},
+  "conventions": {
+    "dependency injection": [
+      [
+        "Spring annotations",
+        3
+      ]
+    ]
+  },
   "nodes": [
+    {
+      "id": "bin/agent-spec-digest.py",
+      "type": "test",
+      "path": "bin/agent-spec-digest.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-settings.py",
+      "type": "test",
+      "path": "bin/agent-spec-settings.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
     {
       "id": "bin/graphify-build.py",
       "type": "file",
       "path": "bin/graphify-build.py",
-      "lang": "python"
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     },
     {
       "id": "bin/graphify-cli.py",
       "type": "file",
       "path": "bin/graphify-cli.py",
-      "lang": "python"
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     }
   ],
   "edges": [],
   "external": [
+    [
+      "json",
+      4
+    ],
+    [
+      "os",
+      4
+    ],
+    [
+      "sys",
+      4
+    ],
     [
       "argparse",
       2
     ],
     [
       "collections",
-      2
-    ],
-    [
-      "json",
-      2
-    ],
-    [
-      "os",
-      2
-    ],
-    [
-      "sys",
       2
     ],
     [
@@ -91,5 +143,5 @@
       1
     ]
   ],
-  "note": "Edges are resolved to node ids. External packages are counted, not edged."
+  "note": "Edges are resolved to node ids. type=imports is a source dependency; type=http and type=message are integration edges recovered from call and broker signals, which no import graph can see."
 }
