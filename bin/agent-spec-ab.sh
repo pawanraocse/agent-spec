@@ -65,11 +65,16 @@ run_arm() {
   echo -e "${YELLOW}Arm ${label}${NC}  skill=/${skill}  model=${model}  session=${sid}"
   echo "  working in ${dir}"
 
-  # The mode is a skill, so it is invoked the way a user would invoke it: as the
-  # first line of the prompt. Appending it to the system prompt instead would
-  # change the cache prefix and make the two arms structurally different.
-  local prompt
-  prompt="$(printf '/%s\n\n%s' "${skill}" "${task}")"
+  # The skill body is injected, not invoked. Three runs were wasted discovering
+  # that a leading `/skill-name` line in a `-p` prompt is passed through as plain
+  # text: the transcripts contained no part of the skill body, so both arms ran
+  # identically and the delta between them was noise. Reading the file and
+  # appending it is the only way to have the mode actually in force.
+  local body
+  body="$(cat "${HOME_DIR}/skills/claude/${skill}/SKILL.md" 2>/dev/null)"
+  [ -n "${body}" ] || die "no skill body at ${HOME_DIR}/skills/claude/${skill}/SKILL.md
+  An arm with no mode in force measures nothing."
+  local prompt="${task}"
 
   local started; started="$(date +%s)"
   # CLAUDECODE is unset because Claude Code refuses to launch inside itself. If
@@ -81,6 +86,7 @@ run_arm() {
   # checked in an untouched clone and therefore always reported zero.
   ( cd "${dir}" && env -u CLAUDECODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT \
     claude -p "${prompt}" \
+      --append-system-prompt "${body}" \
       --output-format json \
       --session-id "${sid}" \
       --model "${model}" \
@@ -130,6 +136,16 @@ print('    ' + str(d.get('result'))[:300])"
     echo -e "  ${RED}!${NC} this arm ran OUTSIDE its clone — transcript filed at:"
     echo "      ${tpath}"
     echo "    Every number from it describes the wrong tree. Treat the run as void."
+  fi
+
+  # A distinctive phrase from the skill body must appear in the request. Without
+  # this check an arm silently running with no mode looks like a valid result.
+  if [ -n "${tpath}" ]; then
+    local marker; marker="$(printf '%s' "${body}" | grep -m1 -o 'Never compress' || true)"
+    if [ -n "${marker}" ] && ! grep -q "${marker}" "${tpath}" 2>/dev/null; then
+      echo -e "  ${RED}!${NC} the skill body is not present in this arm's transcript."
+      echo "    The mode was not in force. The run measures nothing."
+    fi
   fi
 
   local denials

@@ -325,6 +325,12 @@ grep -q 'cd "${dir}" && env -u CLAUDECODE' "${HOME_DIR}/bin/agent-spec-ab.sh" \
   && ok "each arm runs inside its own clone" || bad "arms run in the caller's directory"
 grep -q 'ran OUTSIDE its clone' "${HOME_DIR}/bin/agent-spec-ab.sh" \
   && ok "and the transcript location is checked, not assumed" || bad "no clone-location check"
+# A leading /skill-name line in a -p prompt is passed through as plain text: three
+# runs produced a delta between two arms that were running the same configuration.
+grep -q 'append-system-prompt' "${HOME_DIR}/bin/agent-spec-ab.sh" \
+  && ok "the skill body is injected, not slash-invoked" || bad "arms run with no mode in force"
+grep -q 'skill body is not present' "${HOME_DIR}/bin/agent-spec-ab.sh" \
+  && ok "and its presence is verified in the transcript" || bad "no mode-in-force check"
 
 echo ""
 echo "-----------------------------------------"
