@@ -5,33 +5,33 @@
 
 ---
 
-## 🧭 Session Start Protocol (MANDATORY)
+## 🧭 Session Start
 
-At the **start of every session**, before any other action:
+The `SessionStart` hook has already put a digest in your context: stack, graph size,
+current pipeline gate, and what the last session did. **Do not re-read
+`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those
+facts — you already have them.**
 
-```
-0. If .agent-spec/.onboarding-needed exists → run `onboard` FIRST.
-1. Read: .agent-spec/SESSION-SNAPSHOT.md    → Where were we?
-2. Read: .agent-spec/PROJECT-INDEX.md       → What is this project?
-3. Read: .agent-spec/CONSTITUTION.md        → Project-specific rules
-4. Confirm context loaded. Ask if current.
-```
+Two things the digest does not carry, because they are only needed sometimes:
 
-*Note: Do NOT load `KNOWLEDGE-GRAPH.md` by default. Use the `query-graph` skill to read specific parts of `knowledge-graph.json` only when needed.*
+- `.agent-spec/CONSTITUTION.md` — read before the first code edit of the session.
+- Structure — query it, do not read it:
+  `./.agent-spec/bin/graphify-cli.py query --file <path>`
 
-If `.agent-spec/` does not exist → instruct user to run `bin/install.sh`.
+If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
+If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
 
----
 
-## 🎭 Persona System
+## 🎭 Personas
 
-Default: **CODE-REVIEWER** — skeptical, precise, always cites source.
+Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-Activate with: `"Activate: @PERSONA_NAME"`
+`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
+**Absolute Rules** section is binding and does not relax on request.
 
-See `AGENTS.md` and `.agent-spec/personas/` for the full persona list and their hard rules.
+A persona changes the lens, not the task, and never overrides the rules in this file.
 
----
 
 ## 📊 Confidence Scoring (MANDATORY)
 
@@ -61,31 +61,6 @@ Before writing code, apply these filters:
 | **Style** | Am I matching the existing codebase style, or imposing my own? |
 
 **The Senior Engineer Test:** Would a senior engineer say this is overcomplicated? If yes, simplify before continuing.
-
----
-
-## ⚡ Available Skills
-
-These skills are available in the `.agents/skills/` directory:
-
-```
-/requirements  → Structure raw customer requirements
-/tech-spec     → Technical specification
-/prd           → Full PRD with user stories
-/hld           → High Level Design
-/lld           → Low Level Design
-/implement     → 6-Gate coding pipeline
-/review        → SOLID + security + performance review
-/index-project → Graphify scan → knowledge graph
-/query-graph   → Query knowledge-graph.json for specific dependencies
-/snapshot      → Save session state
-/solid-check   → SOLID gate on code
-/debt          → Analyze tech debt
-/raw-code      → Minimal output mode
-/trim-noise    → Remove verbosity
-/dense         → Maximum density mode
-/verbose       → Restore default mode
-```
 
 ---
 

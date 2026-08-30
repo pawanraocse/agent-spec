@@ -1,7 +1,7 @@
 # Technical Debt Register
 
 > **Location**: `.agent-spec/TECH-DEBT-REGISTER.md`
-> Technical debt is normal, but it must be documented. The `@REFACTOR` persona and the `/debt` skill interact with this file.
+> Technical debt is normal, but it must be documented. The `@REFACTOR` persona and the `/agent-spec-debt` skill interact with this file.
 
 ---
 

@@ -1,95 +1,185 @@
 {
-  "version": "3.0",
+  "version": "4.0",
   "project": "agent-spec",
-  "generated": "2026-08-25T13:23:13.567381",
+  "generated": "2026-08-30T11:19:37.549496",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
-    "files": 2,
+    "files": 6,
     "internal_edges": 0,
-    "external_packages": 7,
-    "test_files": 0,
+    "integration_edges": 0,
+    "external_packages": 9,
+    "test_files": 4,
     "cycles": 0,
+    "services": 0,
+    "endpoints": 0,
+    "topics": 0,
+    "layer_violations": 0,
     "languages": {
-      "python": 2
+      "python": 6
+    },
+    "layers": {
+      "test": 4,
+      "unknown": 2
     },
     "most_depended": [],
     "top_external": [
       [
+        "json",
+        6
+      ],
+      [
+        "os",
+        6
+      ],
+      [
+        "sys",
+        6
+      ],
+      [
         "argparse",
-        2
+        4
+      ],
+      [
+        "re",
+        4
+      ],
+      [
+        "datetime",
+        3
       ],
       [
         "collections",
         2
       ],
       [
-        "json",
-        2
-      ],
-      [
-        "os",
-        2
-      ],
-      [
-        "sys",
-        2
-      ],
-      [
-        "datetime",
+        "subprocess",
         1
       ],
       [
-        "re",
+        "hashlib",
         1
       ]
     ]
   },
-  "orphan_count": 2,
+  "orphan_count": 6,
+  "services": {},
+  "layer_violations": [],
+  "topics": {},
+  "conventions": {
+    "dependency injection": [
+      [
+        "Spring annotations",
+        3
+      ]
+    ]
+  },
   "nodes": [
+    {
+      "id": "bin/agent-spec-digest.py",
+      "type": "test",
+      "path": "bin/agent-spec-digest.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-gate.py",
+      "type": "test",
+      "path": "bin/agent-spec-gate.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-memory.py",
+      "type": "test",
+      "path": "bin/agent-spec-memory.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-settings.py",
+      "type": "test",
+      "path": "bin/agent-spec-settings.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
     {
       "id": "bin/graphify-build.py",
       "type": "file",
       "path": "bin/graphify-build.py",
-      "lang": "python"
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     },
     {
       "id": "bin/graphify-cli.py",
       "type": "file",
       "path": "bin/graphify-cli.py",
-      "lang": "python"
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     }
   ],
   "edges": [],
   "external": [
     [
+      "json",
+      6
+    ],
+    [
+      "os",
+      6
+    ],
+    [
+      "sys",
+      6
+    ],
+    [
       "argparse",
-      2
+      4
+    ],
+    [
+      "re",
+      4
+    ],
+    [
+      "datetime",
+      3
     ],
     [
       "collections",
       2
     ],
     [
-      "json",
-      2
-    ],
-    [
-      "os",
-      2
-    ],
-    [
-      "sys",
-      2
-    ],
-    [
-      "datetime",
+      "subprocess",
       1
     ],
     [
-      "re",
+      "hashlib",
       1
     ]
   ],
-  "note": "Edges are resolved to node ids. External packages are counted, not edged."
+  "note": "Edges are resolved to node ids. type=imports is a source dependency; type=http and type=message are integration edges recovered from call and broker signals, which no import graph can see."
 }

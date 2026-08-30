@@ -5,44 +5,33 @@
 
 ---
 
-## 🧭 Session Start Protocol (MANDATORY)
+## 🧭 Session Start
 
-At the **start of every session**, before any other action:
+The `SessionStart` hook has already put a digest in your context: stack, graph size,
+current pipeline gate, and what the last session did. **Do not re-read
+`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those
+facts — you already have them.**
 
-```
-0. If .agent-spec/.onboarding-needed exists → run /onboard FIRST, then continue.
-   → The project has never been learned. One pass now saves every later session.
-1. Read: .agent-spec/SESSION-SNAPSHOT.md
-   → What gate are we at? What was the last task?
-2. Read: .agent-spec/PROJECT-INDEX.md
-   → What is this project? What are its modules?
-3. Read: .agent-spec/graph/KNOWLEDGE-GRAPH.md
-   → How do components relate?
-4. Read: .agent-spec/CONSTITUTION.md
-   → Any project-specific constraints?
-5. Confirm: State what you've loaded. Ask if context is current.
-```
+Two things the digest does not carry, because they are only needed sometimes:
 
-If no `.agent-spec/` directory exists → tell the user to run `bin/install.sh`.
+- `.agent-spec/CONSTITUTION.md` — read before the first code edit of the session.
+- Structure — query it, do not read it:
+  `./.agent-spec/bin/graphify-cli.py query --file <path>`
 
----
+If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
+If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
 
-## 🎭 Persona Activation
 
-Default persona: **CODE-REVIEWER** (skeptical, precise, asks before assuming).
+## 🎭 Personas
 
-Switch on command:
-```
-"Activate: @ARCHITECT"  → load personas/ARCHITECT.md
-"Activate: @SECURITY"   → load personas/SECURITY-AUDITOR.md
-"Activate: @QA"         → load personas/QA-ENGINEER.md
-... (see AGENTS.md for full list)
-```
+Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-Personas have **hard rules** that Claude must not violate even if asked.  
-See `personas/` for full specifications.
+`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
+**Absolute Rules** section is binding and does not relax on request.
 
----
+A persona changes the lens, not the task, and never overrides the rules in this file.
+
 
 ## 🔍 Before Every Code Change
 
@@ -90,82 +79,31 @@ Before writing code, apply these filters:
 
 ---
 
-## ⚡ Available Slash Commands
+## ⚡ Skills
 
-Installed machine-wide in `~/.claude/skills/<name>/SKILL.md`, so they are available in every project. `bin/install.sh --project-skills` also commits them to `.claude/skills/` for team repos.
+Every skill is installed machine-wide in `~/.claude/skills/<name>/SKILL.md`, and the
+harness already lists each one with its description at session start. That list is the
+index — this file does not repeat it, because a second copy is one more thing to drift.
 
-**Pipeline & analysis**
+Reach for `/agent-spec-sdlc` to run a feature through the lifecycle, `/agent-spec-investigate` before fixing
+anything whose cause is unknown, and `/agent-spec-query-graph` instead of reading the tree.
 
-| Command | What Triggers |
-|---------|--------------|
-| `/onboard` | Learn this project once — fills PROJECT-INDEX + CONSTITUTION, then never runs again |
-| `/requirements $ARGUMENTS` | SDLC Gate 0: Structure raw requirements |
-| `/tech-spec` | SDLC Gate 1: Technical specification |
-| `/prd` | SDLC Gate 2: Full PRD with user stories |
-| `/hld` | SDLC Gate 3: High Level Design |
-| `/lld` | SDLC Gate 4: Low Level Design |
-| `/implement $ARGUMENTS` | 6-Gate coding pipeline |
-| `/investigate` | Diagnose before editing — names a cause with evidence, writes no fix |
-| `/review` | SOLID + security + performance review |
-| `/solid-check $ARGUMENTS` | SOLID gate on specified code |
-| `/debt` | Analyze and register tech debt |
-| `/index-project` | Graphify scan → update knowledge graph |
-| `/query-graph $ARGUMENTS` | Query the graph instead of loading all of it |
-| `/snapshot` | Save current session state |
-
-**Persona switches** — see `personas/` for each one's hard rules
-
-| Command | Activates |
-|---------|-----------|
-| `/architect` | @ARCHITECT — Principal Software Architect |
-| `/security` | @SECURITY — Security Auditor |
-| `/qa` | @QA — QA Engineer |
-| `/reviewer` | @REVIEWER — Code Reviewer (default) |
-| `/refactor` | @REFACTOR — Refactor Specialist |
-| `/api` | @API — API Designer |
-| `/data` | @DATA — Data Engineer |
-| `/devops` | @DEVOPS — DevOps Engineer |
-| `/perf` | @PERF — Performance Engineer |
-| `/writer` | @WRITER — Technical Writer |
-
-**Token reduction**
-
-| Command | What Triggers |
-|---------|--------------|
-| `/raw-code` | Code blocks only, no prose |
-| `/trim-noise` | Cut conversational filler |
-| `/dense` | Maximum information density mode |
-| `/verbose` | Restore default mode |
-
----
 
 ## 🪨 Token Management
 
 Claude must monitor context window usage:
-- When in `/raw-code` mode: code only, single-line answers, no preamble
-- When in `/trim-noise` mode: cut all filler phrases, reduce by 40-60%
-- When in `/dense` mode: use tables, bullets, abbreviations, no prose
-- When context is >70% full: **proactively run `/snapshot`** before continuing
+- When in `/agent-spec-raw-code` mode: code only, single-line answers, no preamble
+- When in `/agent-spec-trim-noise` mode: cut all filler phrases, reduce by 40-60%
+- When in `/agent-spec-dense` mode: use tables, bullets, abbreviations, no prose
+- When context is >70% full: **proactively run `/agent-spec-snapshot`** before continuing
 
 ---
 
-## 📝 Code Style Rules
+## 📝 Code Style
 
-Claude must apply these rules to all generated code:
+Language rules live in `.agent-spec/coding-standards/languages/`. Read the one for the
+language you are about to edit — not before, and not all of them.
 
-**Java (Spring Boot):**
-- See `coding-standards/languages/JAVA.md` for full rules
-- All service classes end in `Service`, repos end in `Repository`
-- No business logic in controllers — controllers delegate only
-- All exceptions are custom, typed, and documented
-
-**Angular:**
-- See `coding-standards/languages/ANGULAR.md` for full rules
-- Smart/dumb component split — no business logic in templates
-- All HTTP calls go through typed service classes
-- Observables unsubscribed in `ngOnDestroy`
-
----
 
 ## 🚧 Hard Stops (Non-Negotiable)
 

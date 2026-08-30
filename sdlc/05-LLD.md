@@ -1,6 +1,6 @@
 # Stage 5: Low Level Design (LLD)
 
-> **Skill**: `/lld`
+> **Skill**: `/agent-spec-lld`
 > **Input**: `.agent-spec/sdlc/04-hld.md`
 > **Output**: `.agent-spec/sdlc/05-lld.md`
 
@@ -9,7 +9,7 @@ Provide the exact blueprint for the code. The LLD translates the macro architect
 
 ## Process
 
-When the `/lld` skill is invoked, the agent must:
+When the `/agent-spec-lld` skill is invoked, the agent must:
 
 1. **Load Context**: Read the HLD and `KNOWLEDGE-GRAPH.md`.
 2. **Class Design**: Define the exact class names, member variables, and method signatures required.

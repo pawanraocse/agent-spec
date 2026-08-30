@@ -34,4 +34,4 @@ The agent must immediately:
 | **Performance Engineer**| `@PERF` | Memory leaks, slow queries, algorithmic efficiency. |
 
 ## The Default Persona
-If no persona is explicitly activated, the agent defaults to **@CODE-REVIEWER**.
+If no persona is explicitly activated, the agent defaults to **@REVIEWER**.

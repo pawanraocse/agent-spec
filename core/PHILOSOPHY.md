@@ -26,7 +26,7 @@ Language models have no memory between sessions. If you don't explicitly feed th
 
 A generic "helpful AI assistant" will try to please you, even if that means writing terrible, tightly-coupled code to get a feature out faster.
 
-By forcing the agent into strict personas (`@ARCHITECT`, `@SECURITY-AUDITOR`), we impose artificial constraints. The `@ARCHITECT` is instructed to *refuse* to write code if it violates SOLID principles. Discipline is achieved through persona boundaries.
+By forcing the agent into strict personas (`@ARCHITECT`, `@SECURITY`), we impose artificial constraints. The `@ARCHITECT` is instructed to *refuse* to write code if it violates SOLID principles. Discipline is achieved through persona boundaries.
 
 ## 4. Confidence or Silence
 
@@ -38,7 +38,7 @@ The **Anti-Hallucination Protocol** forces the agent to attach a `[CONFIDENCE]` 
 
 Context windows are large, but they are not infinite. Flooding the context window with irrelevant files dilutes the agent's attention (the "needle in a haystack" problem).
 
-We use token-reduction skills (`/caveman`, `/defluffer`, `/dense`) to strip away conversational fluff, keeping the context window dense with actual signal.
+We use token-reduction skills (`/caveman`, `/defluffer`, `/agent-spec-dense`) to strip away conversational fluff, keeping the context window dense with actual signal.
 
 ## 6. Full SDLC Lineage
 

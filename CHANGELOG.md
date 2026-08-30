@@ -10,18 +10,107 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
-- **`sdlc-team/` — a standalone Claude Code plugin** providing a gated SDLC pipeline: 9 subagents
-  (PRD → HLD → LLD → implementation → review → test → QA → deployment), 11 skills and 10 slash
-  commands. Drops into any repo with no other setup. Orchestration runs in the main conversation
-  rather than a subagent, because subagents cannot pause to ask the user anything — putting the
-  pipeline inside one would silently discard the confirmation gates. Stages hand off through files
-  in `docs/sdlc/<slug>/`, and every stage reconciles its output against the previous artifact,
-  halting on anything `MISSING` or `CONTRADICTS`.
-- **`sdlc-team/install.sh` and `install.ps1`** — installers for the plugin. They copy it to
-  `<project>/.claude/skills/sdlc-team/` so Claude Code auto-discovers it with no `--plugin-dir`
-  flag, verify the result, run `claude plugin validate` when the CLI is on PATH, and warn when
-  `.gitignore` would hide the install from teammates. `--force`/`-Force` overwrites;
-  `--dev`/`-Dev` skips copying and prints the session-only command instead.
+- **`/agent-spec` — the router.** Choosing between 25 skills is itself a decision, and
+  choosing wrong is expensive: `/agent-spec-implement` on a defect whose cause is unknown
+  burns a session on edit-test-edit. The router reads the pipeline state, matches the
+  request against an ordered table whose top rows exist to prevent exactly those mistakes,
+  fetches the file list from the graph, and hands off to one skill. It never does the work
+  itself and never chains two skills on one request.
+- **Project memory** — `.agent-spec/memory/facts/`, one fact per file, typed `constraint`,
+  `decision`, `gotcha` or `reference`, each dated and sourced. `bin/agent-spec-memory.py`
+  adds, lists, searches, shows and prunes them, and the `SessionStart` hook prints them
+  all — constraints first, under a byte cap — so a fact recorded once is known by every
+  later session without anyone opening a file. Capped at forty and pruned deliberately;
+  memory that grows without limit becomes the problem it was meant to solve. The skill is
+  `/agent-spec-remember`, and it is explicit about what does not belong: anything the
+  repository already answers.
+- **Snapshot rotation.** `SESSION-SNAPSHOT.md` is append-only by design, but append-only
+  is not unbounded — past about 12 KB whatever loads it truncates, silently, oldest first.
+  `agent-spec-memory.py rotate` moves the older sections into `memory/snapshots/` where
+  they stay readable on purpose. Nothing is deleted. `/agent-spec-snapshot` runs it.
+- **Legacy skill pruning on upgrade.** An install that only copied the new prefixed names
+  would leave the old ones beside them — 22 duplicate commands, two of every pipeline
+  gate, no way to tell which ran. The installer now removes them by name, and only when
+  the directory carries a `SKILL.md` whose frontmatter matches, so a skill the user wrote
+  is never touched.
+- **Indexer limits for real repositories** — `.gitignore` directories excluded on top of
+  the built-in list, files over 1 MB and minified or generated ones skipped as written by
+  a tool rather than a person, symlink loops terminated, and hitting the file ceiling
+  reported rather than silently producing a partial graph.
+
+### Changed
+- **Every skill is now prefixed `agent-spec-`**, so a transcript shows which tool ran and
+  where it came from. `/prd` is `/agent-spec-prd`, and so on throughout.
+- **The ten persona skills are one skill.** `/agent-spec-persona <role>` covers architect,
+  security, qa, data, devops, perf, refactor, api, writer and reviewer. Each role's
+  Absolute Rules live in `.agent-spec/personas/<ROLE>.md`, which was always the source of
+  truth — the ten skills were lifting it verbatim, which is a second copy and therefore a
+  second thing to drift.
+- Persona references across `CLAUDE.md`, `AGENTS.md`, `CURSOR.md`, `GEMINI.md` and
+  `core/` pointed at `SECURITY-AUDITOR.md`, `QA-ENGINEER.md` and `CODE-REVIEWER` — three
+  filenames that have never existed in `personas/`. All corrected.
+- `--lean` now holds back five SDLC-design skills rather than eight; the list it named
+  included two skills that no longer exist under those names.
+- The self-test covers the skill naming contract, memory, rotation, indexer limits and the
+  upgrade path: **29 assertions, all passing**, up from 16.
+
+- **`/sdlc` orchestrator and `bin/agent-spec-gate.py`** — the nine SDLC gates now have state
+  on disk (`.agent-spec/sdlc/STATE.json`) instead of in whichever context window is open.
+  `status` says where the pipeline is, `check <n>` exits 1 with the missing artifact named,
+  `set <n>` records a pass, and `trace` follows every `REQ-`/`NFR-`/`US-` identifier from
+  gate 0 through every downstream artifact and exits 1 on a requirement that reached
+  nothing. Every existing gate skill now calls `check` instead of its own `test -f`, and
+  records itself before stopping.
+- **`/testing` (gate 7) and `/validation` (gate 8)** — the two gates the pipeline never had.
+  `/testing` runs the whole suite and reports failures verbatim into `07-TEST-REPORT.md`;
+  `/validation` gives one verdict per requirement — PASS, FAIL, NOT-TESTED or DEFERRED,
+  with evidence — into `08-VALIDATION.md`, and never writes SHIP over a FAIL.
+- **Graphify v2: services, integration edges, layers, conventions.** The graph now detects
+  one service per manifest below the root, classifies every file into a layer and reports
+  the edges that point the wrong way through it, and recovers the coupling no import graph
+  can see: HTTP calls matched to service names, and Kafka/Rabbit/SQS topics matched from
+  producer to consumer. It also writes `graph/CONVENTIONS.md` — test framework, injection
+  style, error handling and logging, counted across the tree rather than inferred from
+  whichever files someone happened to open.
+- **New graph queries** — `context --task "<description>"` returns the file list a task
+  needs and nothing else; `flow --from <file>` follows the call chain; `services` prints the
+  service map and what talks to what; `endpoints` prints the HTTP surface; `layers` prints
+  the census and every violation.
+- **Incremental indexing.** Only files whose mtime or size moved are re-parsed. The cache is
+  keyed by parser version, so changing an extraction pattern invalidates it rather than
+  silently serving stale results.
+- **Harness-level token reduction.** `bin/install.sh` now writes an `agent-spec` output style
+  and a `SessionStart` hook into every `.claude` home, merging non-destructively into an
+  existing `settings.json`. The hook emits a ~600-byte project digest — stack, graph size,
+  current gate, last session — which replaces the old "read these four files" protocol.
+  Measured on this repository: 12,093 bytes of file reads become 605 bytes of digest.
+- **`bin/agent-spec-selftest.sh`** — builds Python, Java-multiservice and Node fixtures,
+  installs into each, and asserts the failures that have actually shipped here before:
+  edges resolving to nothing, the wrapper overwriting the builder's output, gate ordering
+  that lets a gate run without its predecessor, and a settings merge that stacks duplicates.
+  16 assertions, all passing.
+- **`bin/agent-spec-bench.sh`** — prints the always-on context cost and per-skill body cost,
+  so "more efficient" can be checked rather than asserted.
+
+### Changed
+- `AGENTS.md`, `CLAUDE.md`, `CURSOR.md` and `GEMINI.md` no longer repeat the skill list the
+  harness already enumerates, and the session-start protocol is now three lines pointing at
+  the digest rather than four file reads. Always-on context for Claude: 6,863 → 4,875 bytes.
+- `AGENTS.md`'s "6-Gate Pipeline" described a third pipeline matching neither the SDLC gates
+  nor `/implement`'s internal gates. Replaced with the real nine-gate table.
+- Skill descriptions dropped the repeated "Carries its absolute rules inline." tail.
+- `sdlc/` stage documents realigned to the nine gates: `06-IMPLEMENTATION.md` renamed to
+  `06-DEVELOPMENT.md`, and `07-REVIEW.md`, `08-TESTING.md` and `09-VALIDATION.md` added.
+- `/review`, `/investigate` and `/onboard` now say to send broad "where does this live"
+  sweeps to a subagent, so those reads never enter the main conversation.
+
+### Removed
+- **`pipeline/GATE-1..6-*.md`** — a third description of the implementation gates, whose
+  names matched neither `/implement` nor `AGENTS.md`. `pipeline/README.md` now summarises
+  the six gates and defers to the skill, which is the definition that actually runs.
+- **`sdlc-team/`** — a second copy of the same pipeline, never loaded by anything, and a
+  standing source of drift. The pipeline lives in `skills/claude/` alone. Recoverable from
+  git history if the portable-plugin shape is ever wanted again.
 
 ### Fixed
 - **`/index-project` pointed at a path that never exists in an installed project.** The skill said to

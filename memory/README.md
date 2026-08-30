@@ -1,23 +1,39 @@
-# Agent Memory System
+# Memory
 
-> **A stateless agent is a hallucinating agent.**
+Two kinds, deliberately separate.
 
-The `agent-spec` memory system solves the "amnesia" problem where language models lose the context of the project between chat sessions. By maintaining a strict set of explicit state files, the agent can always reconstruct its understanding of the codebase.
+## Facts — `.agent-spec/memory/facts/`
 
----
+One fact per file, typed `constraint`, `decision`, `gotcha` or `reference`, each with a
+date and a source. The `SessionStart` hook prints them all — constraints first, then by
+recency, under a byte cap — so a fact recorded once is known by every later session
+without anyone opening a file.
 
-## Core Components
+```bash
+./.agent-spec/bin/agent-spec-memory.py add --type gotcha --subject "..." --source "..." "..."
+./.agent-spec/bin/agent-spec-memory.py list
+./.agent-spec/bin/agent-spec-memory.py search <keyword>
+./.agent-spec/bin/agent-spec-memory.py prune --older-than 180 --dry-run
+```
 
-1. **`../PROJECT-INDEX.md`**: The human-readable narrative of the project. Tells the agent *what* the project is, what the modules do, and what the major architectural decisions are. (Auto-generated during initialization).
-2. **`../graph/KNOWLEDGE-GRAPH.md`**: The machine-readable dependency map (Graphify). Tells the agent *how* components interact, preventing circular dependencies and incorrect assumptions about structure.
-3. **`../SESSION-SNAPSHOT.md`**: The point-in-time capture of current work. Tells the agent *where* we left off in the previous session.
+Forty facts is the cap. Bounded on purpose: memory that grows without limit becomes the
+problem it was meant to solve, because past a point every session pays for facts nobody
+reads. Constraints are never pruned by age.
 
-## Context Budgeting
+The skill is `/agent-spec-remember`, and it says what does **not** belong here — anything
+the repository already answers. A copy of something the graph knows goes stale silently.
 
-Loading the entire project into the context window for every prompt is inefficient and degrades performance (the "needle in a haystack" problem).
+## Narrative — `.agent-spec/SESSION-SNAPSHOT.md`
 
-See **[CONTEXT-BUDGET.md](CONTEXT-BUDGET.md)** for rules on how the agent must select which files to read based on the `KNOWLEDGE-GRAPH.md`, rather than reading everything.
+Append-only, one dated section per session: what was built, what broke, what was decided,
+and what was corrected. Written by `/agent-spec-snapshot`.
 
-## RAG Integration
+Append-only is not unbounded. Past about 12 KB the file stops being loadable in full and
+whatever loads it truncates, oldest first, silently. `agent-spec-memory.py rotate` moves
+the older sections into `memory/snapshots/`, where they are still readable on purpose.
+Nothing is ever deleted.
 
-For very large codebases (>1000 files), explicit indexing is not enough. See **[RAG-SPEC.md](RAG-SPEC.md)** for integrating vector search (e.g., via MCP servers) into the agent's memory retrieval process.
+## Context budget
+
+See [CONTEXT-BUDGET.md](CONTEXT-BUDGET.md) for what a session is allowed to load, and
+[RAG-SPEC.md](RAG-SPEC.md) for how the graph decides what is relevant.

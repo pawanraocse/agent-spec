@@ -19,7 +19,7 @@ To ensure precise communication between human developers and AI agents, `agent-s
 | Term | Meaning in agent-spec |
 |------|------------------------|
 | **Gate** | A mandatory checkpoint in the development pipeline. An agent cannot proceed past a gate without satisfying its exit checklist. |
-| **Skill** | An executable slash command (e.g., `/prd`, `/review`) installed in the agent's native directory that triggers a specific workflow. |
+| **Skill** | An executable slash command (e.g., `/agent-spec-prd`, `/agent-spec-review`) installed in the agent's native directory that triggers a specific workflow. |
 | **Rule** | An always-on behavioral constraint (e.g., "Never delete files without confirmation") defined in `AGENTS.md` or persona files. |
 | **Persona** | A strict behavioral profile (e.g., `@ARCHITECT`) that the agent adopts, which carries specific rules and responsibilities. |
 | **Graphify** | The indexing method that scans a codebase and produces a structured JSON/Mermaid knowledge graph of dependencies. |

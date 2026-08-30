@@ -5,59 +5,65 @@
 
 ---
 
-## 🧭 Project Context Loading (MANDATORY FIRST STEP)
+## 🧭 Session Start
 
-Before doing ANYTHING, every agent MUST load:
+The `SessionStart` hook has already put a digest in your context: stack, graph size,
+current pipeline gate, and what the last session did. **Do not re-read
+`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those
+facts — you already have them.**
 
+Two things the digest does not carry, because they are only needed sometimes:
+
+- `.agent-spec/CONSTITUTION.md` — read before the first code edit of the session.
+- Structure — query it, do not read it:
+  `./.agent-spec/bin/graphify-cli.py query --file <path>`
+
+If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
+If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
+
+
+## 🚦 The SDLC Pipeline
+
+Nine gates. State lives in `.agent-spec/sdlc/STATE.json`, not in anyone's memory:
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py status      # where are we
+./.agent-spec/bin/agent-spec-gate.py check <n>   # may this gate run yet
+./.agent-spec/bin/agent-spec-gate.py set <n>     # record a gate as passed
+./.agent-spec/bin/agent-spec-gate.py trace       # did every requirement survive
 ```
-1. .agent-spec/PROJECT-INDEX.md          ← What this project is
-2. .agent-spec/SESSION-SNAPSHOT.md       ← Where we left off
-3. .agent-spec/CONSTITUTION.md           ← Project-specific rules
-```
 
-*Note: Do NOT load `KNOWLEDGE-GRAPH.md` by default as it consumes too many tokens. Use the `query-graph` skill to lazy-load specific dependencies from `knowledge-graph.json` only when required.*
+| Gate | Skill | Produces |
+|---|---|---|
+| 0 REQUIREMENTS | `/agent-spec-requirements` | `01-REQUIREMENTS.md` — assigns the `REQ-` identifiers |
+| 1 TECH-SPEC | `/agent-spec-tech-spec` | `02-TECH-SPEC.md` |
+| 2 PRD | `/agent-spec-prd` | `03-PRD.md` |
+| 3 HLD | `/agent-spec-hld` | `04-HLD.md` |
+| 4 LLD | `/agent-spec-lld` | `05-LLD.md`, one per service |
+| 5 DEVELOPMENT | `/agent-spec-implement` | code + tests |
+| 6 REVIEW | `/agent-spec-review` | `06-REVIEW.md` |
+| 7 TESTING | `/agent-spec-testing` | `07-TEST-REPORT.md` |
+| 8 VALIDATION | `/agent-spec-validation` | `08-VALIDATION.md` |
 
-If any of these files do not exist → run `/index-project` before proceeding.
+`/agent-spec-sdlc` routes: it reads the state, runs the one gate that is due, and stops.
 
----
+**One gate per approval. Never chain two.** A change too small for a design pass runs in
+small-change mode — `/agent-spec-implement` directly, said out loud, with no gate recorded.
 
-## 🚦 The 6-Gate Pipeline (ALWAYS FOLLOW)
+`/agent-spec-implement` has its own internal six gates (placement, tests first, build, boundary,
+clean, self-review). Those are inside gate 5, not a second pipeline.
 
-All coding work follows this pipeline. **Gates cannot be skipped.**
 
-```
-GATE 1: DISCOVERY    → Load context. Select persona. Confirm scope.
-GATE 2: SPEC         → Write spec. Define acceptance criteria.
-GATE 3: ARCHITECTURE → SOLID check. Update knowledge graph.
-GATE 4: TASKS        → Break into atomic tasks ≤30 min each.
-GATE 5: IMPLEMENTATION → Test-first (TDD). Apply coding standards.
-GATE 6: VERIFICATION → Audit. Update PROJECT-INDEX. Write snapshot.
-```
+## 🎭 Personas
 
-See `.agent-spec/pipeline/` directory for the full gate specifications.
+Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
----
+`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
+**Absolute Rules** section is binding and does not relax on request.
 
-## 🎭 Active Personas
+A persona changes the lens, not the task, and never overrides the rules in this file.
 
-Select the appropriate persona for the task. Personas cannot be mixed mid-task.
-
-| Command | Persona | Use When |
-|---------|---------|----------|
-| `Activate: @ARCHITECT` | Architect | System design, new module, refactor |
-| `Activate: @SECURITY` | Security Auditor | Auth, APIs, data handling |
-| `Activate: @PERF` | Performance Engineer | Slow queries, scale, memory |
-| `Activate: @QA` | QA Engineer | Writing tests, coverage |
-| `Activate: @REVIEWER` | Code Reviewer | PR review, code quality |
-| `Activate: @WRITER` | Tech Writer | Docs, ADRs, changelogs |
-| `Activate: @REFACTOR` | Refactor Specialist | Tech debt, legacy cleanup |
-| `Activate: @API` | API Designer | New endpoints, contracts |
-| `Activate: @DATA` | Data Engineer | Schema, migrations |
-| `Activate: @DEVOPS` | DevOps Engineer | CI/CD, Docker, config |
-
-See `.agent-spec/personas/` directory for each persona's full specification.
-
----
 
 ## 🛡️ Anti-Hallucination Protocol
 
@@ -81,40 +87,15 @@ See `.agent-spec/anti-hallucination/` for the full protocol.
 
 ---
 
-## ⚡ Available Skills
+## ⚡ Skills
 
-Type these slash commands in your agent:
+Every skill is installed machine-wide in `~/.claude/skills/<name>/SKILL.md`, and the
+harness already lists each one with its description at session start. That list is the
+index — this file does not repeat it, because a second copy is one more thing to drift.
 
-```
-/onboard         Learn this project once → PROJECT-INDEX + CONSTITUTION
-/investigate     Diagnose before editing — cause with evidence, no fix
-/requirements    SDLC gate 1: structure customer requirements
-/tech-spec       SDLC gate 2: feasibility, stack, NFRs
-/prd             SDLC gate 3: user stories and MoSCoW
-/hld             SDLC gate 4: service boundaries and data model
-/lld             SDLC gate 5: classes, schemas, sequence flows
-/implement       6-gate coding pipeline
-/review          Deep code review, blockers first, fixes applied
-/self-review     Bounded repair loop, runs inside artifact-producing skills
-/solid-check     SOLID audit of one file (audit-only, cannot edit)
-/debt            Register technical debt found outside scope
-/index-project   Rebuild the dependency graph
-/query-graph     Blast radius, coupling, cycles — without reading files
-/snapshot        Append session state to SESSION-SNAPSHOT.md
-/raw-code        Terse: code blocks only
-/dense           Terse: tables and bullets
-/trim-noise      Terse: filler out, sentences kept
-/verbose         Turn the terse modes off
-```
+Reach for `/agent-spec-sdlc` to run a feature through the lifecycle, `/agent-spec-investigate` before fixing
+anything whose cause is unknown, and `/agent-spec-query-graph` instead of reading the tree.
 
-Personas, each carrying its absolute rules inline:
-
-```
-/architect  /security  /qa  /reviewer  /refactor
-/api        /data      /devops  /perf   /writer
-```
-
----
 
 ## 📏 Absolute Rules (Non-Negotiable)
 

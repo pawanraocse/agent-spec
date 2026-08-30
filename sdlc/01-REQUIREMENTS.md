@@ -1,6 +1,6 @@
 # Stage 1: Requirements Elicitation
 
-> **Skill**: `/requirements`
+> **Skill**: `/agent-spec-requirements`
 > **Input**: Raw text, meeting notes, slack messages, or a rough idea.
 > **Output**: `.agent-spec/sdlc/01-requirements.md`
 
@@ -9,7 +9,7 @@ Convert human brain-dumps into a structured format that highlights missing infor
 
 ## Process
 
-When the `/requirements` skill is invoked, the agent must:
+When the `/agent-spec-requirements` skill is invoked, the agent must:
 
 1. **Read** the raw input provided by the user.
 2. **Structure** the input into standard categories:
