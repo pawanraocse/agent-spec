@@ -22,3 +22,7 @@ __pycache__/
 
 # Graphify incremental cache — regenerated on every index run
 .agent-spec/graph/.cache.json
+
+# Benchmark and A/B working state — regenerated per run
+.agent-spec/benchmark/
+.agent-spec/ab/

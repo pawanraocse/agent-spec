@@ -155,7 +155,33 @@ subagent on a cheaper model — is in `/agent-spec-raw-code-full` §2.
 did the same work; a shorter session on a smaller task is not an efficiency gain, and
 reporting it as one is how a 60–90% claim gets made.
 
-`bin/agent-spec-ab.sh run "<task>"` runs it properly and automatically: both arms via
+### Use the benchmark, not the A/B
+
+`bin/agent-spec-ab.sh` compares one task once per arm, and that is not enough to say
+anything. Three successive runs of two *identical* configurations — the skill body was
+never loaded, so both arms were the same — produced deltas of −47.8%, −19.6% and −0.5%.
+That spread is the noise floor. Any real difference has to be bigger than it.
+
+```bash
+bin/agent-spec-benchmark.sh --repeats 3
+```
+
+What makes it stable rather than merely automated:
+
+| | |
+|---|---|
+| **A fixed task suite** | `benchmarks/tasks/*.task`, each paired with a `*.verify` script. Savings depend on task shape, so one task is one opinion. |
+| **Verified completion** | The verify script is the arbiter, not the model's own report. A mode that is cheap because it half-finishes would otherwise win every time. |
+| **Cost per verified task** | Never cost per run. A failed run is not a cheap run. |
+| **Repeats, interleaved** | N runs per arm per task, arms alternating, so latency drift lands on both. |
+| **Median and range** | Overlapping ranges are reported as overlapping. A delta smaller than the spread that produced it is not a result. |
+| **n≥2 before any delta** | A median of one run is that run. |
+| **Fresh clone per run** | No run sees another's edits; the working tree is never touched. |
+
+Every verify script must fail on an unmodified tree — otherwise doing nothing scores as
+success. The self-test asserts that for all of them.
+
+`bin/agent-spec-ab.sh run "<task>"` remains for a single ad-hoc comparison. It runs: both arms via
 `claude -p`, each with its own session id and its own throwaway clone at the same commit,
 so the only variable is the mode. It reports the token buckets and the real dollar cost
 per arm, and it refuses to count an arm that errored. Run it from a plain terminal —

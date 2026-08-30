@@ -333,6 +333,37 @@ grep -q 'skill body is not present' "${HOME_DIR}/bin/agent-spec-ab.sh" \
   && ok "and its presence is verified in the transcript" || bad "no mode-in-force check"
 
 echo ""
+echo "[16] benchmark suite"
+TD="${HOME_DIR}/benchmarks/tasks"
+NT="$(ls "$TD"/*.task 2>/dev/null | wc -l | tr -d ' ')"
+at_least "tasks exist" 3 "$NT"
+MISSING=0
+for f in "$TD"/*.task; do [ -f "${f%.task}.verify" ] || MISSING=$((MISSING+1)); done
+want "every task has a verify script" 0 "$MISSING"
+# A verifier that passes on an untouched tree scores not doing the work as success.
+FALSEPASS=0
+for f in "$TD"/*.verify; do
+  ( cd "$P" && bash "$f" >/dev/null 2>&1 ) && FALSEPASS=$((FALSEPASS+1))
+done
+want "no verifier passes on an unmodified tree" 0 "$FALSEPASS"
+# The reporter must expose a cheap-but-failing arm rather than crowning it.
+mkdir -p "${WORK}/bm/.agent-spec/benchmark"
+python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
+import json
+for r in range(3):
+    print(json.dumps({"arm":"A","skill":"agent-spec-raw-code","task":"t1","repeat":r,
+        "verdict":"PASS","cost":0.15,"turns":7,"seconds":9,"session":"x",
+        "in":1,"write":1,"read":1,"out":1,"is_error":False}))
+    print(json.dumps({"arm":"B","skill":"agent-spec-raw-code-full","task":"t1","repeat":r,
+        "verdict":"PASS" if r==0 else "FAIL","cost":0.02,"turns":2,"seconds":3,"session":"y",
+        "in":1,"write":1,"read":1,"out":1,"is_error":False}))
+JSON
+OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
+case "$OUT" in *"33%"*|*"1 (33%)"*) ok "a failing arm's completion rate is exposed" ;; *) bad "completion rate not reported" ;; esac
+case "$OUT" in *"too few"*) ok "a delta from one verified run is refused" ;; *) bad "quoted a delta from n=1" ;; esac
+case "$OUT" in *"NO MEASURABLE DIFFERENCE"*) ok "and a noise-dominated suite says so" ;; *) bad "no noise verdict" ;; esac
+
+echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
 [ "$FAIL" -eq 0 ] || exit 1

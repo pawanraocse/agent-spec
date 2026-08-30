@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# A read-only search task. Rewards finding the answer without dragging the tree
+# into context; the answer itself is one line and unambiguous.
+set -uo pipefail
+[ -f ANSWER.txt ] || { echo "no ANSWER.txt"; exit 1; }
+A="$(tr -d ' \n' < ANSWER.txt)"
+case "$A" in
+  *graphify-build.py:resolve*) echo "ok: $A"; exit 0 ;;
+  *) echo "wrong answer: $A (expected bin/graphify-build.py:resolve)"; exit 1 ;;
+esac

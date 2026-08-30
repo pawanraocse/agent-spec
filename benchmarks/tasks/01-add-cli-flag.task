@@ -1,0 +1,2 @@
+Add a --count flag to bin/graphify-cli.py search that limits how many results are
+printed. Default 40, same as now. Do not change anything else.

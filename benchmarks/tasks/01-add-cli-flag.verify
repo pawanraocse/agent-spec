@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Exit 0 only if the flag exists, is wired up, and actually limits output.
+set -uo pipefail
+grep -q '"--count"' bin/graphify-cli.py || { echo "no --count argument"; exit 1; }
+python3 bin/graphify-cli.py search py --count 2 >/dev/null 2>&1 || { echo "--count not accepted"; exit 1; }
+FULL=$(python3 bin/graphify-cli.py search py 2>/dev/null | grep -c '^  ')
+LIM=$(python3 bin/graphify-cli.py search py --count 1 2>/dev/null | grep -c '^  ')
+[ "$LIM" -le 1 ] || { echo "--count 1 printed $LIM rows"; exit 1; }
+[ "$FULL" -ge "$LIM" ] || { echo "limited output exceeded full output"; exit 1; }
+echo "ok: --count limits $FULL rows to $LIM"

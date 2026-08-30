@@ -1,0 +1,3 @@
+Which file in this repository resolves an import token to a node in the dependency
+graph, and what is the name of the function that does it? Write the answer to
+ANSWER.txt as a single line: <path>:<function name>. Change nothing else.

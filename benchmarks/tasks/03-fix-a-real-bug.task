@@ -1,0 +1,4 @@
+bin/agent-spec-memory.py refuses to add a fact shorter than 10 characters, but the
+error message it prints does not say what the minimum is. Change the message so it
+states the actual minimum length and the length that was given. Do not change the
+limit itself or anything else.
