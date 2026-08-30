@@ -69,9 +69,8 @@ Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` arti
 memory files.
 
 <!-- Ordering is by measured share of cost: cache re-reads 56-69%, cache writes 13-30%,
-     output 13-21%, tool results under 1%. Sections 1-2 exist because turn count times
-     context size dominates everything else. The benchmark, the published figures this
-     contradicts, and the reason section 5 is last: docs/token-efficiency.md. All of it
-     is kept out of this file because a skill body is re-read every turn — the first
-     version of this skill was 6,770 bytes and lost its own benchmark by 5% because of
-     exactly that. -->
+     output 13-21%, tool results under 1%. Sections 1-2 dominate on long sessions and
+     cannot fire on short ones: over 18 verified benchmark runs this mode showed no
+     measurable difference from agent-spec-raw-code and cost 9.9% more on the median,
+     because turn count was identical and this body was re-read every turn. Evidence,
+     and why rationale lives in docs rather than here: docs/token-efficiency.md. -->

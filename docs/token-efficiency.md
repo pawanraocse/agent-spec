@@ -129,35 +129,56 @@ re-read on every remaining turn.
 
 ## The measured result: no difference between the two modes
 
-18 runs, 3 tasks, 3 repeats per arm, interleaved, `claude-sonnet-5`, each in a fresh clone.
+18 runs, 3 tasks, 3 repeats per arm, interleaved, `claude-sonnet-5`, each in a fresh clone,
+at commit `a05e75f`. Every run verified.
 
 | | `/agent-spec-raw-code` | `/agent-spec-raw-code-full` |
 |---|---|---|
-| Verified completion | 6 of 9 | 6 of 9 |
-| Median cost per verified task | **$0.0811** | **$0.0852** |
-| Range | $0.0634 – $0.1136 | $0.0690 – $0.1098 |
-| Tasks won | 1 | 0 |
-| Tasks indistinguishable | 2 | 2 |
+| Verified completion | 9 of 9 | 9 of 9 |
+| Median cost per verified task | **$0.0820** | **$0.0901** |
+| Range | $0.0624 – $0.0996 | $0.0654 – $0.0948 |
+| Tasks won | 0 | 0 |
+| Tasks indistinguishable | 3 | 3 |
 
-**`raw-code-full` was 5.0% more expensive, not cheaper**, and on two of three tasks the
-ranges overlap. The honest headline is *no measurable difference*.
+Per task, median cost, all three overlapping:
 
-The mechanism is visible in the buckets and is the framework's own lesson turned back on
-it. `agent-spec-raw-code-full/SKILL.md` is 6,770 bytes against `raw-code`'s 2,523 — about
-**1,062 extra tokens sitting in the system prompt, re-read on every turn**. On the
-five-turn search task that predicts roughly 5,300 extra cache-read tokens; the measured
-difference was +4,570. The caveman prose it exists to enable saved **−2 output tokens** on
-that same task.
+| task | `raw-code` | `raw-code-full` | delta |
+|---|---|---|---|
+| `01-add-cli-flag` | $0.0975 | $0.0945 | −3.1% (overlaps) |
+| `02-find-and-explain` | $0.0624 | $0.0659 | +5.5% (overlaps) |
+| `03-fix-a-real-bug` | $0.0820 | $0.0910 | +11.0% (overlaps) |
 
-A skill body is context. A mode that spends 1,062 tokens per turn telling the agent to
-spend fewer tokens has to save more than 1,062 tokens per turn, and on short tasks it does
-not. The advice inside `raw-code-full` is still correct — turns and context dominate, which
-is exactly *why* its own size defeats it — but it earns its keep only on long sessions,
-and the suite above is made of short ones.
+**No measurable difference.** The overall median is 9.9% higher for `raw-code-full`, and a
+number smaller than the spread that produced it is not a result.
 
-Task `03-fix-a-real-bug` failed in all six runs, both arms, on a verifier that counted
-generated files under `.agent-spec/` as scope creep. That is a broken verifier, not a
-finding about either mode; it has been scoped to source files and needs re-running.
+### Why the extra machinery bought nothing here
+
+The buckets say exactly where the difference went. Medians across all nine runs per arm:
+
+| | turns | output | cache write | cache read |
+|---|---|---|---|---|
+| `raw-code` | 7.0 | 840 | 13,068 | 67,754 |
+| `raw-code-full` | 7.0 | 973 | 13,733 | 72,958 |
+| difference | **0** | +133 | +665 | **+5,204** |
+
+- **Turn count is identical.** Section 1 of `raw-code-full` is about batching calls and
+  never polling. On a 5–8 turn task there is nothing to batch: the turns are sequential
+  by necessity, not by habit.
+- **Output went up, not down.** Caveman prose produced +133 median tokens, and the
+  per-task ranges overlap on all three tasks — `01` [1119, 1264, 1328] against
+  [1084, 1170, 1197], `03` [784, 840, 960] against [869, 973, 1025]. Telegraphic style
+  did not measurably shrink output.
+- **Cache read is where the money went**: +5,204 tokens. That is the mode's own larger
+  body, re-read on each of seven turns, plus the knock-on in cache writes.
+
+Sections 2 and 3 — reset at task boundaries, graph before files, subagents for broad
+sweeps — cannot fire in a task that lasts eight turns and never grows a large context.
+They are not disproved by this suite; they are untested by it, because the suite is made
+of short tasks and they only act on long ones.
+
+**So the honest statement is: on short tasks `raw-code-full` is not cheaper, and it
+carries a body the session pays for on every turn. Use it on long sessions.** Proving it
+wins there needs a long-session task in `benchmarks/tasks/`, which does not exist yet.
 
 ## A skill body is context
 
@@ -252,7 +273,8 @@ anyway, which is the variable under test.
 
 The manual `start`/`end`/`report` path — it records the transcript
 boundary around each arm, refuses an arm where no new transcript appeared, and warns when
-the two arms were given different tasks. **The suite has now been run: no measurable
-difference, and `raw-code-full` 5.0% more expensive per verified task.** See the section
+the two arms were given different tasks. **The suite has now been run twice, most recently
+18 for 18 verified: no measurable difference, all three tasks overlapping, and
+`raw-code-full` 9.9% higher on the overall median.** See the section
 above. What each can still be said to *address* is 13.2% and roughly 99.5% of the bill
 respectively — reach is not the same as saving, and this is the difference between them.

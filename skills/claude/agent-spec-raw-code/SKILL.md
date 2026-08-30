@@ -40,6 +40,6 @@ question asked twice.
 Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` artifacts,
 memory files.
 
-<!-- Scope is output only, ~18% of the bill. Why that is, what the other 82% costs, and
-     the benchmark showing this mode beat raw-code-full: docs/token-efficiency.md.
-     Kept as a comment because a skill body is re-read every turn. -->
+<!-- Scope is output only, ~13-21% of the bill. What the other 80% costs, and the
+     18-run benchmark against agent-spec-raw-code-full (no measurable difference):
+     docs/token-efficiency.md. Kept as a comment because a body is re-read every turn. -->
