@@ -375,6 +375,18 @@ JSON
 OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
 case "$OUT" in *"Both arms failed the same"*) ok "a task both arms fail is called a broken task" ;; *) bad "misreported equal completion as differing" ;; esac
 case "$OUT" in *"rates differ"*) bad "claimed rates differ when they are equal" ;; *) ok "and equal rates are not reported as differing" ;; esac
+# A skill body is re-read every turn. raw-code-full lost its own benchmark by 5%
+# because 4,247 bytes of rationale sat in the prompt prefix. Rationale belongs in
+# docs; the body holds imperatives.
+for f in agent-spec-raw-code agent-spec-raw-code-full; do
+  SZ="$(wc -c < "${HOME_DIR}/skills/claude/$f/SKILL.md" | tr -d ' ')"
+  if [ "$SZ" -le 3000 ]; then ok "$f body is $SZ B (cap 3000)"; else bad "$f body is $SZ B, over the 3000 B cap"; fi
+  for clause in "Never compress" "Break style for" "Always normal prose"; do
+    grep -q "$clause" "${HOME_DIR}/skills/claude/$f/SKILL.md" \
+      || bad "$f lost its '$clause' section while being shrunk"
+  done
+done
+ok "both modes kept every safety clause through the shrink"
 
 echo ""
 echo "-----------------------------------------"

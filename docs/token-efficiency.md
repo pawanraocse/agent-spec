@@ -159,6 +159,36 @@ Task `03-fix-a-real-bug` failed in all six runs, both arms, on a verifier that c
 generated files under `.agent-spec/` as scope creep. That is a broken verifier, not a
 finding about either mode; it has been scoped to source files and needs re-running.
 
+## A skill body is context
+
+This is the finding the benchmark produced, and it applies to every skill in the
+framework, not just these two.
+
+Once a skill is invoked its body sits in the prompt prefix and is **re-read on every
+turn**, exactly like `CLAUDE.md`. The first `agent-spec-raw-code-full` was 6,770 bytes, of
+which roughly 4,247 were evidence, citations and rationale — all true, all correct, and
+all paid at about 1,062 tokens per turn to say. On a five-turn task that is 5,310 tokens
+spent to save 2. The skill whose first line is "context is re-read every turn" was the
+context.
+
+Both modes were rewritten to hold imperatives only. Everything explaining *why* moved
+here, to a file a human reads once and no prompt ever loads.
+
+| | Before | After |
+|---|---|---|
+| `agent-spec-raw-code` | 2,523 B (~630 tok) | **1,573 B (~393 tok)** |
+| `agent-spec-raw-code-full` | 6,770 B (~1,692 tok) | **2,928 B (~732 tok)** |
+| Gap between the two modes | 4,247 B (~1,062 tok/turn) | **1,355 B (~338 tok/turn)** |
+
+Every safety clause survived — never-compress, break-style-for, always-normal-prose — and
+the self-test now asserts both bodies stay under 3,000 bytes and keep all three sections,
+so the next person to add a paragraph of justification is stopped by a failing test rather
+than by a benchmark six months later.
+
+**The rule this generalises to: put imperatives in the skill, evidence in the docs.** A
+line of rationale in a `SKILL.md` is charged every turn for the whole session. The same
+line in `docs/` is free.
+
 ## The resulting order of leverage
 
 1. **Fewer turns.** Batch independent calls; never poll; do not split one edit across three
