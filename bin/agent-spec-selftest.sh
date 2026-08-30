@@ -310,6 +310,15 @@ echo '{"claudeAiOauth":{"accessToken":"","refreshToken":"","expiresAt":0}}' > "$
 OUT="$( cd "$P" && HOME="$FAKEHOME" CLAUDECODE= bash "${HOME_DIR}/bin/agent-spec-ab.sh" run "x" 2>&1 )"
 case "$OUT" in *"not logged in"*) ok "an empty credential stub is caught before any arm runs" ;; *) bad "no login preflight" ;; esac
 case "$OUT" in *"work-A"*) bad "it cloned before checking the login" ;; *) ok "and nothing is cloned first" ;; esac
+# The first real run produced a -47.8% delta from two arms that changed nothing.
+# The void guard exists so that never gets published.
+VOID="$(bash -c 'CHANGED_A=0; CHANGED_B=0; RED=""; NC=""
+if [ "${CHANGED_A}" = "0" ] || [ "${CHANGED_B}" = "0" ]; then echo "THIS RESULT IS VOID"; fi')"
+want "a run where an arm changed nothing is voided" "THIS RESULT IS VOID" "$VOID"
+grep -q 'THIS RESULT IS VOID' "${HOME_DIR}/bin/agent-spec-ab.sh" \
+  && ok "the void guard is wired into the runner" || bad "void guard missing from ab.sh"
+grep -q 'allowed-tools' "${HOME_DIR}/bin/agent-spec-ab.sh" \
+  && ok "arms are allowed the tools the task needs" || bad "arms cannot run Bash"
 
 echo ""
 echo "-----------------------------------------"

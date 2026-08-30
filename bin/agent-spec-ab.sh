@@ -81,6 +81,7 @@ run_arm() {
       --session-id "${sid}" \
       --model "${model}" \
       --permission-mode acceptEdits \
+      --allowed-tools "Bash Read Write Edit MultiEdit Glob Grep" \
       --max-budget-usd "${budget}" \
       > "${STATE_DIR}/result-${label}.json" 2> "${STATE_DIR}/stderr-${label}.txt"
   local rc=$?
@@ -106,7 +107,36 @@ print('    ' + str(d.get('result'))[:300])"
   fi
 
   printf '%s\n' "${sid}" > "${STATE_DIR}/session-${label}.txt"
-  echo -e "  ${GREEN}✓${NC} finished in ${elapsed}s"
+
+  # Did it actually do the work? `is_error: false` only means the session ended
+  # cleanly. An arm that changed nothing and reported success is not a cheap arm,
+  # it is a failed one — and it is the cheapest possible arm, so counting it would
+  # invert the result. This is the check the first real run needed and did not have.
+  local changed
+  changed="$(cd "${dir}" && git status --porcelain | wc -l | tr -d ' ')"
+  printf '%s\n' "${changed}" > "${STATE_DIR}/changed-${label}.txt"
+  ( cd "${dir}" && git status --porcelain > "${STATE_DIR}/changes-${label}.txt" )
+
+  local denials
+  denials="$(python3 -c "
+import json
+d=json.load(open('${STATE_DIR}/result-${label}.json'))
+print(len(d.get('permission_denials') or []))" 2>/dev/null || echo 0)"
+
+  echo -e "  ${GREEN}✓${NC} finished in ${elapsed}s   files changed: ${changed}   permission denials: ${denials}"
+  if [ "${denials}" != "0" ]; then
+    echo -e "  ${YELLOW}!${NC} the arm was blocked from a tool it wanted:"
+    python3 -c "
+import json
+d=json.load(open('${STATE_DIR}/result-${label}.json'))
+for x in (d.get('permission_denials') or [])[:3]:
+    inp = x.get('tool_input') or {}
+    print('      %s: %s' % (x.get('tool_name'), str(inp.get('command') or inp.get('file_path') or inp)[:90]))"
+  fi
+  if [ "${changed}" = "0" ]; then
+    echo -e "  ${RED}!${NC} this arm changed NOTHING. Its cost is not comparable — it is the"
+    echo    "    cost of not doing the task."
+  fi
   return 0
 }
 
@@ -246,25 +276,44 @@ PY
     echo ""
     run_arm B "${ARM_B}" "${TASK}" "${MODEL}" "${BUDGET}" || die "arm B did not complete"
 
+    CHANGED_A="$(cat "${STATE_DIR}/changed-A.txt" 2>/dev/null || echo 0)"
+    CHANGED_B="$(cat "${STATE_DIR}/changed-B.txt" 2>/dev/null || echo 0)"
+
     report_json "${STATE_DIR}/result-A.json" "${STATE_DIR}/result-B.json" \
                 "/${ARM_A}" "/${ARM_B}"
 
+    # The comparison is only a comparison if both arms did the work. Refusing here
+    # is the entire discipline this repository is built on: a cheaper arm that did
+    # less is not a saving, and publishing it as one is the failure being studied.
+    if [ "${CHANGED_A}" = "0" ] || [ "${CHANGED_B}" = "0" ]; then
+      echo ""
+      echo -e "${RED}=== THIS RESULT IS VOID ===${NC}"
+      echo "  arm A changed ${CHANGED_A} files, arm B changed ${CHANGED_B}."
+      echo "  An arm that changed nothing did not do the task, and doing nothing is"
+      echo "  always cheapest. Quote no percentage from this run."
+      echo ""
+      echo "  Read what each arm claimed it did before assuming it failed honestly:"
+      echo "    python3 -c \"import json;print(json.load(open('${STATE_DIR}/result-A.json'))['result'])\""
+      echo "    python3 -c \"import json;print(json.load(open('${STATE_DIR}/result-B.json'))['result'])\""
+    else
+      echo ""
+      echo "Both arms changed files, so the delta above is a like-for-like comparison"
+      echo "of cost. It is still not a comparison of quality — read both diffs:"
+      for arm in A B; do
+        echo "  arm ${arm}:"
+        sed 's/^/      /' "${STATE_DIR}/changes-${arm}.txt" 2>/dev/null | head -8
+      done
+    fi
+
     echo ""
-    echo "Per-turn detail. Each arm ran in its own clone, so its transcript is filed"
-    echo "under that clone's path, not this repository's:"
+    echo "Transcripts, located rather than predicted:"
     for arm in A B; do
       sid="$(cat "${STATE_DIR}/session-${arm}.txt" 2>/dev/null)"
-      tdir="${HOME}/.claude/projects/$(echo "${STATE_DIR}/work-${arm}" | tr '/' '-')"
-      echo "  arm ${arm}:  ${tdir}/${sid}.jsonl"
+      found="$(find "${HOME}/.claude/projects" -name "${sid}.jsonl" 2>/dev/null | head -1)"
+      echo "  arm ${arm}:  ${found:-not filed under ~/.claude/projects}"
     done
     echo ""
-    echo "  python3 ${HOME_DIR}/bin/agent-spec-tokens.py compare <A.jsonl> <B.jsonl>"
     echo "  ${STATE_DIR}/result-*.json holds the authoritative totals and the real cost."
-    echo ""
-    echo "Diffs produced by each arm (they ran in clones; your tree is untouched):"
-    for arm in A B; do
-      echo "  arm ${arm}: $(cd "${STATE_DIR}/work-${arm}" 2>/dev/null && git diff --stat HEAD | tail -1)"
-    done
     ;;
 
   start)

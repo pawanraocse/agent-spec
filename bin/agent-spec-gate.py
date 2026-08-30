@@ -81,6 +81,25 @@ def cmd_status(args):
     state = load_state()
     gate = state.get("gate", 0)
     name, skill, produces, requires = GATES[min(gate, len(GATES) - 1)]
+
+    if getattr(args, "output_json", False):
+        artifacts = []
+        for i, (gname, gskill, produced, _) in enumerate(GATES):
+            if produced is None:
+                status = "n/a (code)"
+            else:
+                status = "present" if has_artifact(produced) else "MISSING"
+            artifacts.append({"name": produced or gname, "gate": i, "status": status})
+        doc = {
+            "feature": state.get("feature") or None,
+            "gate": gate,
+            "gate_name": name,
+            "next_command": skill,
+            "artifacts": artifacts,
+        }
+        print(json.dumps(doc, indent=2))
+        return 0
+
     print("feature: %s" % (state.get("feature") or "[unnamed — run reset --feature]"))
     print("gate:    %d %s   next command: %s" % (gate, name, skill))
     print("")
@@ -193,7 +212,10 @@ def main():
     parser = argparse.ArgumentParser(description="agent-spec pipeline state")
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("status").set_defaults(func=cmd_status)
+    p = sub.add_parser("status")
+    p.add_argument("--json", dest="output_json", action="store_true",
+                   help="print status as machine-readable JSON")
+    p.set_defaults(func=cmd_status)
 
     p = sub.add_parser("check")
     p.add_argument("gate", type=int)
