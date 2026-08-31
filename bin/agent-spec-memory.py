@@ -21,6 +21,7 @@ rather than discovering it as a truncation.
 import argparse
 import hashlib
 import json
+import glob
 import os
 import re
 import sys
@@ -196,6 +197,50 @@ def cmd_prune(args):
     return 0
 
 
+def _sections(text):
+    """Split a snapshot file into (heading, body) pairs."""
+    parts = re.split(r"(?m)^# Session Snapshot", text)
+    return [("# Session Snapshot" + p).split("\n", 1) for p in parts[1:]]
+
+
+def _summary_line(body):
+    """The first real sentence under '## Session Summary', for an index line."""
+    m = re.search(r"(?ms)^## Session Summary\s*\n+(.+?)(?:\n\s*\n|\Z)", body)
+    if not m:
+        return ""
+    return " ".join(m.group(1).split())
+
+
+def cmd_snapshots(args):
+    """Every snapshot section, live and archived, so the record can be reviewed
+    without opening a 29 KB file to find out what is in it.
+    """
+    rows = []
+    if os.path.exists(SNAPSHOT):
+        text = open(SNAPSHOT, encoding="utf-8").read()
+        for head, body in _sections(text):
+            rows.append(("live", head.replace("# Session Snapshot", "").strip(" —"),
+                         len(body.encode("utf-8")), _summary_line(body)))
+    for f in sorted(glob.glob(os.path.join(ARCHIVE, "*.md"))):
+        text = open(f, encoding="utf-8").read()
+        for head, body in _sections(text):
+            rows.append((os.path.basename(f)[:28],
+                         head.replace("# Session Snapshot", "").strip(" —"),
+                         len(body.encode("utf-8")), _summary_line(body)))
+    if not rows:
+        print("no snapshot sections")
+        return 0
+    total = sum(r[2] for r in rows)
+    print("%-30s %-24s %8s  %s" % ("where", "section", "bytes", "summary"))
+    for where, name, size, summary in rows:
+        print("%-30s %-24s %8d  %s" % (where, name[:24], size, summary[:70]))
+    print("\n%d sections, %d B total. Live file: %d B (rotate above %d B)."
+          % (len(rows), total,
+             os.path.getsize(SNAPSHOT) if os.path.exists(SNAPSHOT) else 0,
+             SNAPSHOT_BYTES))
+    return 0
+
+
 def cmd_rotate(args):
     """Archive old snapshot sections so the live file stays small enough to read.
 
@@ -229,8 +274,18 @@ def cmd_rotate(args):
                  "> it is moved so the live file stays small enough to load in full.\n\n"
                  % datetime.now().strftime("%Y-%m-%d"))
         fh.write("\n".join(archived))
+    # Moving sections out without saying so is how a record quietly stops being
+    # one. The live file keeps a one-line index of everything that left.
+    index = ["\n## Archived sections\n",
+             "> Moved to `%s`. Nothing is deleted.\n"
+             % os.path.relpath(target, ROOT)]
+    for sec in archived:
+        h, _, body = sec.partition("\n")
+        index.append("- **%s** — %s\n"
+                     % (h.replace("# Session Snapshot", "").strip(" —"),
+                        (_summary_line(body) or "no summary")[:110]))
     with open(SNAPSHOT, "w", encoding="utf-8") as fh:
-        fh.write(head + "\n".join(sections[-SNAPSHOT_KEEP:]))
+        fh.write(head + "\n".join(sections[-SNAPSHOT_KEEP:]) + "".join(index))
     print("archived %d sections to %s; %d kept."
           % (len(archived), os.path.relpath(target, ROOT), SNAPSHOT_KEEP))
     return 0
@@ -261,6 +316,7 @@ def main():
     p.set_defaults(func=cmd_show)
 
     sub.add_parser("digest").set_defaults(func=cmd_digest)
+    sub.add_parser("snapshots").set_defaults(func=cmd_snapshots)
 
     p = sub.add_parser("prune")
     p.add_argument("--older-than", type=int, default=180, help="days")

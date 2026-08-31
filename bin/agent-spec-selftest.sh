@@ -200,6 +200,16 @@ KEPT="$(grep -c '^# Session Snapshot' "$SNAP")"
 want "rotation keeps the two newest sections" 2 "$KEPT"
 ARCHIVED="$(cat "$P"/.agent-spec/memory/snapshots/*.md 2>/dev/null | grep -c '^# Session Snapshot')"
 want "and archives the other three" 3 "$ARCHIVED"
+# Moving sections out without saying so is how a record quietly stops being one.
+grep -q '## Archived sections' "$SNAP" \
+  && ok "the live file keeps an index of what was archived" \
+  || bad "rotation moved sections out leaving no trace in the live file"
+INDEXED="$(grep -c '^- \*\*day ' "$SNAP")"
+want "one index line per archived section" 3 "$INDEXED"
+# Reviewing the record must not mean opening a 29 KB file to find out what is in it.
+OUT="$( cd "$P" && python3 "$MEM" snapshots 2>&1 )"
+case "$OUT" in *"sections,"*) ok "snapshots lists every section, live and archived" ;; *) bad "no snapshots listing" ;; esac
+case "$OUT" in *"filler 1"*) ok "and carries each section's summary line" ;; *) bad "listing has no summaries — it is just filenames" ;; esac
 
 echo ""
 echo "[10] indexer limits"

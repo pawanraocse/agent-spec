@@ -35,7 +35,21 @@ Then promote the durable facts, one per call:
 A snapshot section is for a human catching up. A fact is injected into every future
 session, so it must be worth that.
 
-## 3. Start the new session
+## 3. Keep the record itself small
+
+An append-only file is not the same as an unbounded one. Past about 12 KB whatever loads
+`SESSION-SNAPSHOT.md` truncates it silently, oldest first.
+
+```bash
+./.agent-spec/bin/agent-spec-memory.py snapshots   # every section, live and archived
+./.agent-spec/bin/agent-spec-memory.py rotate      # archive the old ones, keep an index
+```
+
+`rotate` leaves a one-line index in the live file for everything it moved, so the record
+still says what happened even after it is no longer carrying the full text. Nothing is
+deleted.
+
+## 4. Start the new session
 
 Tell the user, in one line, to open a fresh session. In Claude Code the `SessionStart`
 hook re-injects the digest — snapshot summary, remembered facts, gate, graph size — for
