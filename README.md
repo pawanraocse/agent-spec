@@ -8,7 +8,7 @@
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-project memory that survives a new chat, strict confidence scoring, and 24 prefixed skills
+project memory that survives a new chat, strict confidence scoring, and 25 prefixed skills
 that work in Claude Code, Cursor and Antigravity.
 
 ---
@@ -100,10 +100,80 @@ and where it came from.
 
 25 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
+## Token efficiency, measured
+
+![Where the tokens actually go](docs/images/agent-spec-impact.png)
+
+This framework had a skill that made the model answer in terse code blocks, on the
+assumption that it saved tokens. Twenty-six verified benchmark runs against plain Claude
+Code — same tasks, same model, interleaved, each in a fresh clone — showed it was **1.4%
+more expensive**. That result is why everything below is a measurement rather than a claim.
+
+Across **138 session transcripts and 7,648 assistant turns**, here is what a conversation
+actually accumulates:
+
+| | Bytes | Share |
+|---|---|---|
+| Tool results — what commands returned | 5,591,224 | **46.1%** |
+| Tool call inputs — file bodies written, commands issued | 5,546,195 | **45.7%** |
+| Assistant prose — the model talking | 988,456 | **8.2%** |
+
+**92% of a conversation is tool traffic. 8% is the model talking.** A single turn is
+95,190 bytes on the wire before any conversation exists, and **83.6% of that is tool
+schemas** belonging to Claude Code, which no skill can reduce.
+
+### What each skill saves, and what it can reach
+
+Two numbers, because one alone misleads: a 99% saving on 1% of the bill is a 1% saving.
+
+| Skill or method | Use it when | Before → After | Saving | Reach |
+|---|---|---|---|---|
+| `/agent-spec-compact` | A task boundary in a long session | 480,083 → 53,191 tok | **−88.9%** | Up to **85.6%** — the conversation |
+| Session digest (`SessionStart` hook) | Automatic, every session | 30,560 → 1,597 B | **−94.8%** | All of session startup |
+| `/agent-spec-query-graph` | Before opening a file to learn structure | 35,966 → 152 B | **−99.6%**, −286 KB with re-sends | Part of the **45.7%** |
+| Batch independent tool calls | Calls that do not depend on each other | 95,190 → 0 B | **−100%** of one turn | Every avoided turn |
+| Targeted `Edit`, never a rewrite | Any file change | whole file → the diff | varies | **45.7%** — tool call inputs |
+| `grep -n`, then a 50-line range | You need 20 lines, not 4,000 | 35,966 → 2,071 B | **−94.2%** | File read volume |
+| `git diff --stat` first | Before any full diff | 33,830 → 427 B | **−98.7%** | Review turns |
+| Cap what commands return | Tests, builds, logs | 5,117 → 107 B | **−97.9%** | **46.1%** — tool results |
+| `/agent-spec-raw-code` | You want replies you can act on | 991 → 966 tok | **0** (+1.4%, noise) | **8.2%** ceiling |
+| `/agent-spec-snapshot`, `/agent-spec-remember` | Session boundaries | — | **0 alone** | Enables the −88.9% |
+
+### What measured nothing
+
+| | Advertised | Measured |
+|---|---|---|
+| Terse output discipline | saves tokens | **+1.4%**, inside the noise |
+| Caveman prose | −65% | **0** — output went *up* 133 tokens |
+| RTK-style tool-result rewriting | 60–90% | **+7.6% more expensive** ([JetBrains, 425 trials](https://blog.jetbrains.com/ai/2026/07/rtk-claude-code-token-savings/)) |
+| Restricting `--allowed-tools` | smaller prompt | **0 bytes** — 95,190 either way |
+
+Caveman prose was deleted from this framework the day it was measured.
+
+### Five rules this produced
+
+1. **Not reading beats not talking, by about 20×.** Every large saving is "do not put it
+   in context at all".
+2. **A turn is the most expensive unit you have.** One avoided turn beats any single
+   filtering decision, because the whole 95,190 bytes goes again.
+3. **Watch what the agent writes, not only what it reads.** In the longest session
+   measured, 61.3% of the conversation was tool call inputs — mostly file bodies.
+4. **A skill body is charged every turn.** It sits in the prompt prefix and is re-read
+   like `CLAUDE.md`. Imperatives belong in the skill, evidence in the docs.
+5. **Verify the instrument before trusting it.** Claude Code reports a constant
+   `input_tokens` of 8,194 through a local proxy — for a 200-token prompt and for a
+   9,000-token one alike. `bin/agent-spec-wire-recorder.py` exists because of that.
+
+Method, raw numbers and the open questions: [docs/token-checklist.md](docs/token-checklist.md),
+[docs/token-experiments.md](docs/token-experiments.md),
+[docs/token-efficiency.md](docs/token-efficiency.md).
+
 ## Docs
 
 - [What it actually does](docs/features.md) — Graphify, personas, the nine gates, context budgeting
 - [Token efficiency](docs/token-efficiency.md) — where the tokens actually go, measured, and why the popular savings claims do not hold
+- [Token checklist](docs/token-checklist.md) — all 22 methods with status and evidence
+- [Experiment queue](docs/token-experiments.md) — what is still unmeasured, and the local measurement rig
 - [Daily workflow](docs/workflow.md) — starting a feature, managing tokens, ending a session
 - [Agent compatibility](docs/agents.md) — where files land, the WSL two-homes problem
 - [Why this exists](docs/why.md)
