@@ -8,7 +8,8 @@ description: >-
 
 Terse mode off.
 
-Clears whichever of `/agent-spec-raw-code` or `/agent-spec-raw-code-full` is active.
+Clears whichever of `/agent-spec-raw-code` or `/agent-spec-raw-code-full` is active,
+including the level `raw-code` was at.
 Resume normal explanatory output: full sentences, prose or tables as the content warrants,
 explanation where it earns its place.
 

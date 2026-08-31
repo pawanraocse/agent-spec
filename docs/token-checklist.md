@@ -41,6 +41,10 @@ Corpus: 20 sessions, 4 projects, 6,377 turns, 252,494,557 weighted tokens.
 | fresh input | ~0% |
 | **everything tools returned** | **0.51%** |
 
+Summed the other way: **input is 86.7% of the bill and output is 13.2%.** Output shaping
+is the smaller half of a two-part problem, and it is the half that terse-mode skills
+address. Everything that decides what enters context in the first place is the other 86.7%.
+
 ---
 
 ## Every method, measured, in one table
@@ -118,10 +122,11 @@ cached. Neither figure alone is the answer.
 | 1 | Prompt caching is on and the prefix is stable | **MEASURED, DONE** | cache reads are 56–69% of the bill, which only happens when caching works |
 | 2 | Keep the session warm; do not restart for no reason | **UNKNOWN** | cache TTL reported as ~1h; never measured here |
 | 3 | Do not switch model or effort mid-session | **DONE** | `claude-opus-5`, `CLAUDE_EFFORT=high`, no auto-switching mode in use |
+| 3b | Enforce input discipline rather than asking for it | **SHIPPED, EFFECT UNKNOWN** | `hooks/pre-tool-use.py` refuses a rangeless `Read`, a `Write` over an existing file, `git diff` without `--stat` and `cat` of a large file — once per target per session, so the retry always passes |
 | 4 | Compact or reset a long session | **MEASURED, LARGEST** | 480,083 → 53,191 (−88.9%); 308,223 → 46,101 (−85.0%) |
 | 4b | Whether compact beats a clean reset | **UNKNOWN** | the summary's own output cost has never been isolated |
 | 5 | Filter tool output at source (`head`, `--stat`, `-q`) | **MEASURED, NOT WORTH IT HERE** | tool results are 0.51% of the corpus, 0.05% of this session |
-| 6 | Never read a whole file when a range will do | **PARTLY** | in `raw-code-full`; untested — every benchmark task is too short to punish it |
+| 6 | Never read a whole file when a range will do | **ENFORCED, EFFECT UNKNOWN** | asked for in `raw-code-full`, enforced by `hooks/pre-tool-use.py`; still untested — every benchmark task is too short to punish it |
 | 7 | Do not let the agent loop; set a done condition | **DONE** | `--max-budget-usd`, verify script as arbiter |
 | 8 | Do not ask the model what code can answer | **DONE** | graphify, `agent-spec-tokens.py`, the SessionStart digest |
 
@@ -132,7 +137,8 @@ cached. Neither figure alone is the answer.
 | 9 | Keep the always-on prompt small | **MEASURED, DONE** | 12,760 B ≈ 3,190 tok: CLAUDE.md 4,912, output style 2,267, 24 skill frontmatters 3,836, digest 1,745 |
 | 9b | A skill body is charged every turn once invoked | **MEASURED** | `raw-code-full` was 6,770 B and lost its own benchmark; now 2,855 B, capped by test |
 | 10 | Route cheap work to a cheap model | **DONE, UNMEASURED** | both subagents pinned `haiku`/`effort: low`; never benchmarked against not using them |
-| 11 | Control reasoning effort per task | **NOT REACHABLE** | a skill cannot set effort for the session it runs in |
+| 11a | Set reasoning effort programmatically | **NOT REACHABLE** | a skill cannot set effort for the session it runs in |
+| 11b | Ask for reasoning discipline in prose | **SHIPPED, UNKNOWN** | "minimum sufficient reasoning" in `raw-code`, "carry conclusions forward, do not re-plan after every tool call" in `raw-code-full`; adopted from algosec-lean, never measured by either project |
 | 12 | Retrieve relevant context, not maximum context | **DONE** | graphify `context --task`, 225/225 edges resolving |
 | 13 | Structured output; return IDs, not objects | **DONE** | `--output-format json`, `agent-spec-tokens.py`, gate `--json` |
 | 14 | Hard iteration and token budgets | **DONE** | `--max-budget-usd 5` per benchmark run |
@@ -152,9 +158,22 @@ cached. Neither figure alone is the answer.
 
 ---
 
+## Why a hook and not a skill
+
+Items 3b and 6 moved from a skill body to `hooks/pre-tool-use.py` for a reason that the
+rest of this document makes unavoidable. A skill is text the model reads and may or may
+not act on; every reading rule in `raw-code-full` has always been a request. A hook runs
+in the harness before the tool call happens, so it is the only mechanism that can decline
+one. Both skill bodies are also at their 3,000 byte cap, which means any further input
+discipline had nowhere else to go.
+
+It refuses each target once per session and lets the retry through. A genuine full read or
+a genuine full rewrite stays possible; the cheap path simply becomes the default one. What
+this buys in practice is unmeasured, and the row above says so.
+
 ## What is actually left
 
-Three items, in order of how much they could still be worth.
+Four items, in order of how much they could still be worth.
 
 1. **Item 4b — is compact better than a clean reset?** The largest measured lever is
    sitting next to an unanswered question about its own cost.
@@ -164,6 +183,14 @@ Three items, in order of how much they could still be worth.
 3. **Items 6 and 10 — reading discipline and cheap subagents.** Both are untested because
    every benchmark task runs eight turns against a small context.
    `04-long-session.task` exists for exactly this and has never completed a run.
+
+4. **Input quality, which nothing here addresses.** Every item above makes the input
+   smaller. None of them makes it better, and the rule at the foot of this document says
+   the two are not the same: a shorter prompt that causes one retry is a loss. The
+   benchmark harness already records completion rate per arm, so the instrument exists —
+   what is missing is an arm that varies the *quality* of the task statement rather than
+   the verbosity of the reply, and measures cost per verified task across the two. Until
+   that runs, "better input" is an argument, not a finding.
 
 Everything else is either done, measured to be worthless, or unreachable from a skill.
 

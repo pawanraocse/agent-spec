@@ -7,6 +7,9 @@ be idempotent, so every insertion is guarded by an identity check rather than by
 appending blindly.
 
 Usage: agent-spec-settings.py <path-to-settings.json> <path-to-session-start-hook>
+                              [<path-to-pre-tool-use-hook>]
+
+The third argument is optional so that an older caller keeps working unchanged.
 """
 import json
 import os
@@ -16,11 +19,13 @@ MARKER = "agent-spec"
 
 
 def main():
-    if len(sys.argv) != 3:
-        print("usage: agent-spec-settings.py <settings.json> <hook-path>", file=sys.stderr)
+    if len(sys.argv) not in (3, 4):
+        print("usage: agent-spec-settings.py <settings.json> <session-hook> "
+              "[<pre-tool-use-hook>]", file=sys.stderr)
         return 2
 
     settings_path, hook_path = sys.argv[1], sys.argv[2]
+    pre_tool_path = sys.argv[3] if len(sys.argv) == 4 else None
     changed = []
 
     settings = {}
@@ -58,6 +63,25 @@ def main():
             "hooks": [{"type": "command", "command": hook_path, "timeout": 10}]
         })
         changed.append("SessionStart hook")
+
+    # PreToolUse hook: input is 86.7% of the bill, and a skill body can only ask for
+    # reading discipline. This is the only place it can be enforced. Matched the same
+    # way as SessionStart so a re-run never stacks a second copy.
+    if pre_tool_path:
+        pre_tool = hooks.setdefault("PreToolUse", [])
+        existing_pre = [
+            h.get("command", "")
+            for group in pre_tool
+            if isinstance(group, dict)
+            for h in group.get("hooks", [])
+            if isinstance(h, dict)
+        ]
+        if not any(cmd == pre_tool_path or MARKER in cmd for cmd in existing_pre):
+            pre_tool.append({
+                "matcher": "Read|Write|Bash",
+                "hooks": [{"type": "command", "command": pre_tool_path, "timeout": 5}],
+            })
+            changed.append("PreToolUse hook")
 
     if not changed:
         print("settings.json already current")

@@ -1,7 +1,7 @@
 ---
 name: "agent-spec-raw-code-full"
 description: >-
-  Fewer turns, less context, cheaper writes, capped tool output. The 92% of a conversation that is tool traffic. Persists until /agent-spec-verbose.
+  Fewer turns, less context, cheaper writes, capped tool output, stable prefix. The 92% of a conversation that is tool traffic. Persists until /agent-spec-verbose.
 ---
 
 # agent-spec-raw-code-full
@@ -16,6 +16,7 @@ Anything put into context is re-sent on **every** turn after it. Ordered by meas
 - Never poll. Background long commands and collect once.
 - Never split one edit across three calls.
 - Never re-read a file to confirm an edit landed. `Edit` fails loudly.
+- Carry conclusions forward. Do not re-plan after every tool call.
 
 ## 2. Do not read what you can query — 35,814 B per file avoided
 
@@ -38,9 +39,14 @@ Tool call inputs are mostly file bodies going back out.
 `| head -50`. `-q` on builds. `2>/dev/null` on expected failures. A test run is 5,117 B
 raw and 107 B as a verdict plus failures.
 
-## 5. Reset — the largest single move
+## 5. Keep the prefix stable — cache reads are 56.7% of the bill
 
-Context cannot be compressed; a cache read is cheap *because* the bytes are unchanged.
+A cache read bills at 0.1x only while the bytes are unchanged. Do not edit an always-on
+file — `CLAUDE.md`, the output style, a skill body — mid-session unless that edit is the
+task. It invalidates the prefix and re-writes it at 1.25x.
+
+## 6. Reset — the largest single move
+
 `/agent-spec-snapshot`, then a new session, at each task boundary. `/compact` keeps the
 thread and is usually the better trade mid-task — measured 480,083 to 53,191 tokens.
 
@@ -65,5 +71,4 @@ question asked twice.
 Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` artifacts,
 memory files.
 
-<!-- Caveman prose was section 5 and is gone: measured 0 across 26 verified runs, while
-     the body carrying it is charged every turn. Every figure above: docs/token-checklist.md. -->
+<!-- Figures: docs/token-checklist.md. Caveman prose measured 0 and was removed. -->

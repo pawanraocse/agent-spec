@@ -486,6 +486,95 @@ for f in agent-spec-raw-code agent-spec-raw-code-full; do
 done
 ok "both modes kept every safety clause through the shrink"
 
+# Levels came from algosec-lean; ultra did not. Ultra is plain-text-no-markdown, which is
+# caveman prose under another name, and caveman measured 0 across 26 verified runs.
+RC="${HOME_DIR}/skills/claude/agent-spec-raw-code/SKILL.md"
+for lvl in lite full; do
+  grep -q "agent-spec-raw-code $lvl" "$RC" \
+    && ok "raw-code documents the $lvl level and how to switch to it" \
+    || bad "raw-code does not document the $lvl level"
+done
+grep -qi 'ultra' "$RC" \
+  && bad "raw-code declares an ultra level — that is caveman prose, which measured 0" \
+  || ok "and declares no ultra level"
+grep -q '^| Debug | Issue. Cause. Fix. Verify. |' "$RC" \
+  && ok "raw-code carries the task-shapes table" \
+  || bad "raw-code lost the task-shapes table"
+grep -qi 'not for saving tokens' "$RC" \
+  && ok "raw-code still refuses to claim a token saving" \
+  || bad "raw-code claims a saving that 26 runs measured at +1.4% cost"
+grep -q 'cache read bills at 0.1x only while the bytes are unchanged' \
+  "${HOME_DIR}/skills/claude/agent-spec-raw-code-full/SKILL.md" \
+  && ok "raw-code-full states why the always-on prefix must not be edited mid-session" \
+  || bad "raw-code-full lost the cache-stability rule"
+
+echo ""
+echo "[14] input discipline (PreToolUse hook)"
+# Input is 86.7% of the bill against 13.2% for output. A skill body can only ask for
+# reading discipline; this hook is the only place it is enforced. Every case below
+# drives the hook directly, because a hook that blocks wrongly breaks every session
+# on the machine.
+PTU="${HOME_DIR}/hooks/pre-tool-use.py"
+[ -f "$PTU" ] && ok "the PreToolUse hook ships" || bad "hooks/pre-tool-use.py is missing"
+
+HK="${WORK}/hookproj"
+mkdir -p "${HK}/.agent-spec"
+python3 -c "open('${HK}/big.py','w').write('x = 1\n' * 5000)"
+printf 'small\n' > "${HK}/small.py"
+
+# fire <session> <json> -> exit code, run from inside the fixture project
+fire() { ( cd "$HK" && printf '%s' "$2" | python3 "$PTU" >/dev/null 2>&1; echo $? ); }
+# Session ids must be unique per run: the hook remembers what it has already said, and
+# WORK can be pinned by the caller, so fixed ids would make the second run a false pass.
+S="ptu$$"
+
+R_NOLIMIT='{"session_id":"'"${S}1"'","tool_name":"Read","tool_input":{"file_path":"'"${HK}"'/big.py"}}'
+want "a whole-file Read of a 35 kB file is refused once" 2 "$(fire "${S}1" "$R_NOLIMIT")"
+want "and the immediate retry goes through" 0 "$(fire "${S}1" "$R_NOLIMIT")"
+want "a Read with a limit is never refused" 0 \
+  "$(fire "${S}2" '{"session_id":"'"${S}2"'","tool_name":"Read","tool_input":{"file_path":"'"${HK}"'/big.py","limit":50}}')"
+want "a small file is never refused" 0 \
+  "$(fire "${S}2" '{"session_id":"'"${S}2"'","tool_name":"Read","tool_input":{"file_path":"'"${HK}"'/small.py"}}')"
+want "a Write over an existing file is refused once" 2 \
+  "$(fire "${S}3" '{"session_id":"'"${S}3"'","tool_name":"Write","tool_input":{"file_path":"'"${HK}"'/big.py","content":"x"}}')"
+want "a Write creating a new file is never refused" 0 \
+  "$(fire "${S}3" '{"session_id":"'"${S}3"'","tool_name":"Write","tool_input":{"file_path":"'"${HK}"'/new.py","content":"x"}}')"
+want "git diff without --stat is refused once" 2 \
+  "$(fire "${S}4" '{"session_id":"'"${S}4"'","tool_name":"Bash","tool_input":{"command":"git diff"}}')"
+want "git diff --stat is never refused" 0 \
+  "$(fire "${S}5" '{"session_id":"'"${S}5"'","tool_name":"Bash","tool_input":{"command":"git diff --stat"}}')"
+want "cat of a large file is refused once" 2 \
+  "$(fire "${S}6" '{"session_id":"'"${S}6"'","tool_name":"Bash","tool_input":{"command":"cat '"${HK}"'/big.py"}}')"
+want "cat piped through head is never refused" 0 \
+  "$(fire "${S}7" '{"session_id":"'"${S}7"'","tool_name":"Bash","tool_input":{"command":"cat '"${HK}"'/big.py | head -50"}}')"
+want "malformed stdin never blocks a tool call" 0 "$(fire "${S}8" 'not json at all')"
+
+OUTSIDE="${WORK}/notaproject"
+mkdir -p "$OUTSIDE"
+CODE="$( cd "$OUTSIDE" && printf '%s' "$R_NOLIMIT" | python3 "$PTU" >/dev/null 2>&1; echo $? )"
+want "silent outside an agent-spec project, so it is safe machine-wide" 0 "$CODE"
+
+SET2="${WORK}/settings-ptu.json"
+python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET2" /x/hook.sh /x/ptu.py >/dev/null
+python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET2" /x/hook.sh /x/ptu.py >/dev/null
+want "one PreToolUse entry after two installs" 1 \
+  "$(python3 -c "import json;print(len(json.load(open('$SET2'))['hooks']['PreToolUse']))")"
+want "and it is matched against Read, Write and Bash" "Read|Write|Bash" \
+  "$(python3 -c "import json;print(json.load(open('$SET2'))['hooks']['PreToolUse'][0]['matcher'])")"
+grep -q 'agent-spec-pre-tool-use.py' "${HOME_DIR}/bin/install.sh" \
+  && ok "the installer deploys it to every .claude home" \
+  || bad "install.sh does not install the PreToolUse hook"
+
+# CLAUDE.md is always-on, on every turn of every session. It named two skills the
+# installer prunes, so the model was carrying instructions it could not follow.
+MISSING=""
+for m in $(grep -oE '/agent-spec-[a-z-]+' "${HOME_DIR}/CLAUDE.md" | sort -u); do
+  [ -d "${HOME_DIR}/skills/claude/${m#/}" ] || MISSING="$MISSING ${m}"
+done
+[ -z "$MISSING" ] \
+  && ok "every skill CLAUDE.md names is actually shipped" \
+  || bad "CLAUDE.md names skills that do not exist:${MISSING}"
+
 echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"

@@ -92,9 +92,8 @@ anything whose cause is unknown, and `/agent-spec-query-graph` instead of readin
 ## 🪨 Token Management
 
 Claude must monitor context window usage:
-- When in `/agent-spec-raw-code` mode: code only, single-line answers, no preamble
-- When in `/agent-spec-trim-noise` mode: cut all filler phrases, reduce by 40-60%
-- When in `/agent-spec-dense` mode: use tables, bullets, abbreviations, no prose
+- `/agent-spec-raw-code` shapes replies, at level `full` or `lite`
+- `/agent-spec-raw-code-full` adds the tool-traffic discipline, which is the 92%
 - When context is >70% full: **proactively run `/agent-spec-snapshot`** before continuing
 
 ---

@@ -24,7 +24,7 @@ Unreleased work on `main`, on top of 1.0.0. What is in place today:
 | **Pipeline** | nine gates with state on disk, and requirement traceability from gate 0 to gate 8 |
 | **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
 | **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
-| **Tests** | `bin/agent-spec-selftest.sh` — 94 assertions across Python, Java-microservice and Node fixtures |
+| **Tests** | `bin/agent-spec-selftest.sh` — 117 assertions across Python, Java-microservice and Node fixtures |
 | **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript — measured buckets, not bytes ÷ 4 |
 | **Subagents** | `agent-spec-search` and `agent-spec-verify`, pinned to a cheap model, so broad sweeps and noisy test output never enter the main context |
 
@@ -56,10 +56,13 @@ project, git and all.
 
 **Update:** re-run the exact same command.
 
-Installing also writes an output style, two cheap-model subagents and a `SessionStart`
-hook into each `.claude` home, merged into any existing `settings.json` without touching what is already there.
-The hook puts a short project digest — stack, graph size, current gate, last session — in
-front of every session, so no session begins by reading four files to work out where it is.
+Installing also writes an output style, two cheap-model subagents and two hooks into
+each `.claude` home, merged into any existing `settings.json` without touching what is already there.
+`SessionStart` puts a short project digest — stack, graph size, current gate, last
+session — in front of every session, so no session begins by reading four files to work
+out where it is. `PreToolUse` declines a whole-file read, a rewrite of a file that already
+exists, or an unfiltered diff, once per target per session, so the retry always goes
+through when the expensive form is genuinely what you want.
 
 Then restart your agent (skills are read at session start) and type **`/agent-spec-onboard`**. It
 reads the graph and the manifest, writes `PROJECT-INDEX.md` and `CONSTITUTION.md` from
@@ -96,7 +99,7 @@ and where it came from.
 | **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
 | **Memory** | `/agent-spec-remember` `/agent-spec-snapshot` |
 | **Personas** | `/agent-spec-persona <role>` — architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
-| **Token budget** | `/agent-spec-raw-code` (output only) `-raw-code-full` (everything) `-verbose` |
+| **Token budget** | `/agent-spec-raw-code [lite\|full]` (output only) `-raw-code-full` (everything) `-verbose` |
 
 25 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
@@ -122,6 +125,12 @@ actually accumulates:
 95,190 bytes on the wire before any conversation exists, and **83.6% of that is tool
 schemas** belonging to Claude Code, which no skill can reduce.
 
+Weighted by what each token actually costs, the same conclusion arrives from the other
+direction: cache re-reads are 56.7% of the bill and cache writes are 30.0%, so **input is
+86.7% and output is 13.2%**. Shaping what the model says is the smaller half of the
+problem. Deciding what enters context in the first place is the larger one, and it is the
+half a skill can only ask for — which is why there is now a hook.
+
 ### What each skill saves, and what it can reach
 
 Two numbers, because one alone misleads: a 99% saving on 1% of the bill is a 1% saving.
@@ -137,6 +146,7 @@ Two numbers, because one alone misleads: a 99% saving on 1% of the bill is a 1% 
 | `git diff --stat` first | Before any full diff | 33,830 → 427 B | **−98.7%** | Review turns |
 | Cap what commands return | Tests, builds, logs | 5,117 → 107 B | **−97.9%** | **46.1%** — tool results |
 | `/agent-spec-raw-code` | You want replies you can act on | 991 → 966 tok | **0** (+1.4%, noise) | **8.2%** ceiling |
+| Input discipline (`PreToolUse` hook) | Automatic, every tool call | declines the four rows above, once per target | **effect unmeasured** | **86.7%** — the input half |
 | `/agent-spec-snapshot`, `/agent-spec-remember` | Session boundaries | — | **0 alone** | Enables the −88.9% |
 
 ### What measured nothing
@@ -181,7 +191,7 @@ Method, raw numbers and the open questions: [docs/token-checklist.md](docs/token
 ## Maintaining
 
 ```bash
-bin/agent-spec-selftest.sh   # 94 assertions: three language fixtures, gates, memory, upgrade path
+bin/agent-spec-selftest.sh   # 117 assertions: three language fixtures, gates, memory, hooks, upgrade path
 bin/agent-spec-bench.sh      # always-on and per-skill cost, estimated at 4 bytes per token
 bin/agent-spec-bench.sh --session   # measured, from the real session transcript
 bin/agent-spec-benchmark.sh --repeats 3   # compare two modes over a verified task suite
