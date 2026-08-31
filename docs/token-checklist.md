@@ -82,6 +82,35 @@ deferral, so it is an upper bound on the per-turn constant. Every row is affecte
 so the ranking holds; the absolute savings for the turn-avoidance row would shrink if
 deferral is doing work at Anthropic. That is EXP-10.
 
+## What actually accumulates in a conversation
+
+Measured across **138 transcripts, 7,648 assistant turns** on this machine. This counts
+the conversation body only — not the system prompt, not the tool schemas — because this is
+the part that grows and gets re-sent.
+
+| what accumulates | bytes | share |
+|---|---|---|
+| tool results (what commands returned) | 5,591,224 | **46.1%** |
+| tool call inputs (file bodies written, commands issued) | 5,546,195 | **45.7%** |
+| assistant prose (the reply text) | 988,456 | **8.2%** |
+
+**92% of a conversation is tool traffic. 8% is the assistant talking.**
+
+That settles the split between the two modes. Shortening replies can reach 8.2% of what
+accumulates; filtering what tools return and not rewriting whole files reaches the other
+92%. Reply discipline is worth keeping — but for readability, which is a real benefit, not
+for tokens.
+
+The 45.7% for tool call *inputs* is the one nobody expects: it is mostly file bodies going
+back out, which is `Write` where `Edit` would do. A rewrite generates every unchanged line
+and then carries it in context for the rest of the session.
+
+This is a different denominator from the 0.51% figure quoted further down. That number is
+tool results as a share of the whole *weighted bill*, which includes the always-on prompt
+and the 0.1× cache-read discount. Both are correct: tool traffic dominates what a
+conversation accumulates, and the accumulated conversation is itself discounted once
+cached. Neither figure alone is the answer.
+
 ## Tier 1 — the buckets that hold the money
 
 | # | Item | Status | Evidence |
