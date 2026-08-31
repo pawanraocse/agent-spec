@@ -446,6 +446,23 @@ N="$(ls "${HARNESS}/.agent-spec/benchmark/failed" 2>/dev/null | wc -l | tr -d ' 
 want "each arm gets its own clone" 3 "$N"
 case "$OUT" in *"plain (no skill)"*) ok "the control arm is named in the report" ;; *) bad "control arm missing from report" ;; esac
 
+# Cutting a long session is the largest saving measured anywhere, and Claude
+# Code's /compact cannot be reached from a skill or from Cursor at all. The
+# portable version has to exist, and Cursor has to be told to pull the digest
+# that Claude Code's hook pushes.
+grep -q 'name: "agent-spec-compact"' "${HOME_DIR}/skills/claude/agent-spec-compact/SKILL.md" 2>/dev/null \
+  && ok "the portable context cut ships as a skill" \
+  || bad "no agent-spec-compact skill — the biggest measured saving is unreachable in Cursor"
+grep -q 'agent-spec-digest.py' "${HOME_DIR}/CURSOR.md" \
+  && ok "Cursor is told to run the digest itself" \
+  || bad "CURSOR.md does not tell Cursor to fetch the digest, and Cursor has no hook"
+grep -q 'SessionStart. hook has already' "${HOME_DIR}/CURSOR.md" \
+  && bad "CURSOR.md still claims a SessionStart hook that Cursor does not have" \
+  || ok "and no longer claims a hook Cursor does not have"
+grep -q 'agent-spec-compact' "${HOME_DIR}/skills/claude/agent-spec/SKILL.md" \
+  && ok "the router points at it" \
+  || bad "router does not mention agent-spec-compact"
+
 # A skill body is re-read every turn. raw-code-full lost its own benchmark by 5%
 # because 4,247 bytes of rationale sat in the prompt prefix. Rationale belongs in
 # docs; the body holds imperatives.

@@ -46,6 +46,7 @@ expensive mistakes.
 | A defect found outside the current task's scope | `/agent-spec-debt` | Log it; do not widen the task |
 | A fact worth keeping — a decision, a constraint, a gotcha | `/agent-spec-remember` | |
 | End of session, or context past 70% | `/agent-spec-snapshot` | |
+| Long session, at a task boundary | `/agent-spec-compact` | Writes state to disk, then a fresh session. Works in Cursor. |
 | A specific lens is wanted — security, architecture, data | `/agent-spec-persona <role>` | Then continue with the skill that was already running |
 | Output is too long, or too terse | `/agent-spec-raw-code` (output only), `/agent-spec-raw-code-full` (everything), `/agent-spec-verbose` | |
 | "what is this session costing" | `./.agent-spec/bin/agent-spec-tokens.py session` | Measured, not estimated |
