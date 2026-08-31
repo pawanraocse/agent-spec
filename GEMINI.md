@@ -7,10 +7,18 @@
 
 ## 🧭 Session Start
 
-The `SessionStart` hook has already put a digest in your context: stack, graph size,
-current pipeline gate, and what the last session did. **Do not re-read
-`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those
-facts — you already have them.**
+**Gemini CLI has no session hook, so your first action in a new session is to run the
+digest yourself:**
+
+```bash
+./.agent-spec/bin/agent-spec-digest.py
+```
+
+It prints about 1,700 bytes: stack, graph size, current pipeline gate, what the last
+session did, and the remembered constraints. **Once you have it, do not re-read
+`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those facts —
+you already have them.** Reading those three costs 30,560 bytes to learn what the digest
+gave you for 1,700.
 
 Two things the digest does not carry, because they are only needed sometimes:
 
@@ -84,7 +92,7 @@ Gemini will REFUSE if asked to:
 Always write `.agent-spec/SESSION-SNAPSHOT.md` at session end.
 Always update `.agent-spec/PROJECT-INDEX.md` if files were changed.
 
-See `.agent-spec/memory/SESSION-SNAPSHOT.md` for the snapshot template.
+Run `/agent-spec-snapshot`, which writes it in the shape the next session's digest reads.
 
 ---
 

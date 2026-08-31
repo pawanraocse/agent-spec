@@ -30,7 +30,7 @@ and what was corrected. Written by `/agent-spec-snapshot`.
 
 Append-only is not unbounded. Past about 12 KB the file stops being loadable in full and
 whatever loads it truncates, oldest first, silently. `agent-spec-memory.py rotate` moves
-the older sections into `memory/snapshots/`, where they are still readable on purpose.
+the older sections into `.agent-spec/memory/snapshots/`, where they are still readable on purpose.
 Nothing is ever deleted.
 
 ## Context budget

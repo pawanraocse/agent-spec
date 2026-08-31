@@ -34,4 +34,4 @@ If you are building a custom RAG index for an `agent-spec` project, index the fo
 2. `.agent-spec/CONSTITUTION.md` (Captures the rules).
 3. `src/**` (The actual code).
 
-By embedding the SDLC documents alongside the code, the vector search can connect a developer's vague query ("fix the password bug") to the exact business requirement defined in `03-prd.md` and the resulting code in `PasswordResetService.java`.
+By embedding the SDLC documents alongside the code, the vector search can connect a developer's vague query ("fix the password bug") to the exact business requirement defined in `03-PRD.md` and the resulting code in `PasswordResetService.java`.

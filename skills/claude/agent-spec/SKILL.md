@@ -69,7 +69,9 @@ the next skill find it by walking the tree:
 ./.agent-spec/bin/graphify-cli.py context --task "<the request, verbatim>"
 ```
 
-Pass that list on. It is the single largest token saving in the framework.
+Pass that list on. Measured, it avoids 35,814 B per file that would otherwise be
+re-sent on every later turn. It is not the largest saving in the framework — cutting
+the session is, at 480,083 to 53,191 tokens — but it is the one a handoff can make.
 
 ## Hard stops
 

@@ -2,7 +2,7 @@
 
 > **Skill**: `/agent-spec-requirements`
 > **Input**: Raw text, meeting notes, slack messages, or a rough idea.
-> **Output**: `.agent-spec/sdlc/01-requirements.md`
+> **Output**: `.agent-spec/sdlc/01-REQUIREMENTS.md`
 
 ## The Goal
 Convert human brain-dumps into a structured format that highlights missing information. Agents often hallucinate missing business requirements if they aren't explicitly provided. This stage forces clarification.

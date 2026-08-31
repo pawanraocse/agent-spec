@@ -1,8 +1,8 @@
 # Stage 5: Low Level Design (LLD)
 
 > **Skill**: `/agent-spec-lld`
-> **Input**: `.agent-spec/sdlc/04-hld.md`
-> **Output**: `.agent-spec/sdlc/05-lld.md`
+> **Input**: `.agent-spec/sdlc/04-HLD.md`
+> **Output**: `.agent-spec/sdlc/05-LLD.md`
 
 ## The Goal
 Provide the exact blueprint for the code. The LLD translates the macro architecture into specific classes, interfaces, database schemas, and JSON API payloads. **This is the final step before coding begins.**

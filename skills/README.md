@@ -29,8 +29,8 @@ While personas define *how* an agent behaves (rules and tone), skills define *wh
 
 ### Context Management (Token Savers)
 - `/agent-spec-raw-code`: Minimal output. Code only. No pleasantries.
-- `/agent-spec-trim-noise`: Removes conversational filler (reduces output by ~40%).
-- `/agent-spec-dense`: Maximum information density (tables, bullet points, abbreviations).
+- `/agent-spec-raw-code`: Short, actionable replies at two levels, `full` and `lite`.
+- `/agent-spec-raw-code-full`: Adds the tool-traffic discipline, which is 92% of what a conversation accumulates.
 - `/agent-spec-verbose`: Restores default chatty behavior.
 
 ---

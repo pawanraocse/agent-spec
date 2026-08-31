@@ -42,7 +42,7 @@ When collaborating with AI agents, certain approaches consistently lead to failu
 
 **Why it fails**: "Needle in a haystack" degradation. When the context window is flooded with irrelevant data, the agent's attention mechanism gets diluted. It will miss critical instructions and generate lower-quality logic.
 
-**The agent-spec Fix**: Token-reduction skills (`/caveman`, `/agent-spec-dense`) and Graphify memory. The agent queries `KNOWLEDGE-GRAPH.md` to find *exactly* which files it needs, rather than loading everything.
+**The agent-spec Fix**: Graphify memory. The agent queries `KNOWLEDGE-GRAPH.md` to find *exactly* which files it needs, rather than loading everything. Output-compression skills were tried and measured: they change 8.2% of what a conversation accumulates, and none of them lowered cost per verified task.
 
 ## 6. The "Yes Man" Anti-Pattern
 

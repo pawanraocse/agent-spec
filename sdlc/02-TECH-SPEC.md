@@ -1,8 +1,8 @@
 # Stage 2: Technical Specification
 
 > **Skill**: `/agent-spec-tech-spec`
-> **Input**: `.agent-spec/sdlc/01-requirements.md`
-> **Output**: `.agent-spec/sdlc/02-tech-spec.md`
+> **Input**: `.agent-spec/sdlc/01-REQUIREMENTS.md`
+> **Output**: `.agent-spec/sdlc/02-TECH-SPEC.md`
 
 ## The Goal
 Assess the technical feasibility of the requirements, choose the appropriate technology stack, and define non-functional requirements (NFRs) before writing detailed product stories.

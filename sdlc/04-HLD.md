@@ -1,8 +1,8 @@
 # Stage 4: High Level Design (HLD)
 
 > **Skill**: `/agent-spec-hld`
-> **Input**: `.agent-spec/sdlc/03-prd.md` & `02-tech-spec.md`
-> **Output**: `.agent-spec/sdlc/04-hld.md`
+> **Input**: `.agent-spec/sdlc/03-PRD.md` & `02-TECH-SPEC.md`
+> **Output**: `.agent-spec/sdlc/04-HLD.md`
 
 ## The Goal
 Translate the Product Requirements (WHAT) into a System Architecture (HOW at a macro level). The HLD defines the components, data flows, and major technical decisions required to satisfy the PRD.

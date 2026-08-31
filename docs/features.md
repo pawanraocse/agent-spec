@@ -66,7 +66,7 @@ that grows without limit becomes the problem it was meant to solve.
 **Narrative** — `SESSION-SNAPSHOT.md`, append-only, one dated section per session, holding
 the corrections and reversed decisions that are its most valuable content. Append-only is
 not unbounded: past about 12 KB whatever loads it truncates, silently, oldest first.
-`agent-spec-memory.py rotate` moves the older sections into `memory/snapshots/` where they
+`agent-spec-memory.py rotate` moves the older sections into `.agent-spec/memory/snapshots/` where they
 remain readable on purpose. Nothing is deleted.
 
 `/agent-spec-remember` says what does **not** belong in memory: anything the repository

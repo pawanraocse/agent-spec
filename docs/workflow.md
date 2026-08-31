@@ -89,7 +89,7 @@ know the code; a copy of that in memory goes stale silently.
 2. `/agent-spec-snapshot` — appends a dated section to `.agent-spec/SESSION-SNAPSHOT.md` with what
    was built, what broke, and what to load next time. It never overwrites; the running
    record of corrections and reversed decisions is the point. It also rotates the older
-   sections into `memory/snapshots/` so the live file stays loadable in full, and promotes
+   sections into `.agent-spec/memory/snapshots/` so the live file stays loadable in full, and promotes
    anything durable to a fact.
 
 Next session opens with *"read the session snapshot and let's resume."*

@@ -1,8 +1,8 @@
 # Stage 3: Product Requirements Document (PRD)
 
 > **Skill**: `/agent-spec-prd`
-> **Input**: `.agent-spec/sdlc/01-requirements.md` & `02-tech-spec.md`
-> **Output**: `.agent-spec/sdlc/03-prd.md`
+> **Input**: `.agent-spec/sdlc/01-REQUIREMENTS.md` & `02-TECH-SPEC.md`
+> **Output**: `.agent-spec/sdlc/03-PRD.md`
 
 ## The Goal
 Convert approved requirements into a formal Product Requirements Document. A PRD defines exactly *what* is being built, for *whom*, and *why*, with strict acceptance criteria. **It contains NO technical implementation details.**

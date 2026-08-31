@@ -12,7 +12,7 @@ Translate the Low Level Design into production-ready, test-backed code. This sta
 `/agent-spec-implement` runs six gates inside this stage: **placement, tests first, build, verify the
 boundary, verify clean, self-review**. It cannot jump straight to writing code.
 
-The executable definition is `skills/claude/implement/SKILL.md`; `pipeline/README.md`
+The executable definition is `skills/claude/agent-spec-implement/SKILL.md`; `pipeline/README.md`
 summarises it. Where they disagree, the skill is right.
 
 > **The gate checklists live in the skill itself — see `/agent-spec-implement`.**

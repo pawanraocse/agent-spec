@@ -466,9 +466,20 @@ grep -q 'name: "agent-spec-compact"' "${HOME_DIR}/skills/claude/agent-spec-compa
 grep -q 'agent-spec-digest.py' "${HOME_DIR}/CURSOR.md" \
   && ok "Cursor is told to run the digest itself" \
   || bad "CURSOR.md does not tell Cursor to fetch the digest, and Cursor has no hook"
-grep -q 'SessionStart. hook has already' "${HOME_DIR}/CURSOR.md" \
-  && bad "CURSOR.md still claims a SessionStart hook that Cursor does not have" \
-  || ok "and no longer claims a hook Cursor does not have"
+# Only Claude Code runs a SessionStart hook. Every other harness file that promises one
+# is telling its reader not to load three files on the strength of a digest it will never
+# receive. This was fixed once in CURSOR.md and the assertion was written for that file
+# alone, so the same claim survived in AGENTS.md and GEMINI.md until it was found again.
+for f in CURSOR.md GEMINI.md; do
+  grep -q 'SessionStart. hook has already' "${HOME_DIR}/$f" \
+    && bad "$f claims a SessionStart hook its harness does not have" \
+    || ok "$f does not claim a hook its harness does not have"
+  grep -q 'agent-spec-digest.py' "${HOME_DIR}/$f" \
+    || bad "$f does not tell its reader to run the digest itself"
+done
+grep -q 'Every other\n*.*agent has no session hook\|agent has no session hook' "${HOME_DIR}/AGENTS.md" \
+  && ok "AGENTS.md separates Claude Code from the harnesses with no hook" \
+  || bad "AGENTS.md promises every agent a hook only Claude Code has"
 grep -q 'agent-spec-compact' "${HOME_DIR}/skills/claude/agent-spec/SKILL.md" \
   && ok "the router points at it" \
   || bad "router does not mention agent-spec-compact"
@@ -565,15 +576,19 @@ grep -q 'agent-spec-pre-tool-use.py' "${HOME_DIR}/bin/install.sh" \
   && ok "the installer deploys it to every .claude home" \
   || bad "install.sh does not install the PreToolUse hook"
 
-# CLAUDE.md is always-on, on every turn of every session. It named two skills the
-# installer prunes, so the model was carrying instructions it could not follow.
-MISSING=""
-for m in $(grep -oE '/agent-spec-[a-z-]+' "${HOME_DIR}/CLAUDE.md" | sort -u); do
-  [ -d "${HOME_DIR}/skills/claude/${m#/}" ] || MISSING="$MISSING ${m}"
-done
-[ -z "$MISSING" ] \
-  && ok "every skill CLAUDE.md names is actually shipped" \
-  || bad "CLAUDE.md names skills that do not exist:${MISSING}"
+# An instruction the model cannot follow is charged on every turn like any other, and
+# then wastes a tool call proving itself wrong. Four separate defects of that kind
+# reached main, each found by accident. This checks every file at once instead.
+LINT="$(python3 "${HOME_DIR}/bin/agent-spec-lint-refs.py" "${HOME_DIR}" 2>&1)"
+if [ $? -eq 0 ]; then
+  ok "every path and skill name the framework prints actually exists"
+else
+  bad "dangling references: $(echo "$LINT" | tail -1)"
+  echo "$LINT" | head -12 | sed 's/^/      /'
+fi
+grep -q 'agent-spec-lint-refs.py' "${HOME_DIR}/bin/agent-spec-selftest.sh" \
+  && ok "and the check runs on every suite, not once by hand" \
+  || bad "the reference linter is not wired in"
 
 echo ""
 echo "-----------------------------------------"

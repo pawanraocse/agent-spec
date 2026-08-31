@@ -20,7 +20,7 @@ When discussing architectural plans or reviewing large codebases, the agent shou
 
 - `/caveman`: Emits code only. Zero explanation. Good for rapid iterations where the developer already knows the "why".
 - `/defluffer`: Removes conversational filler ("Certainly!", "I'd be happy to!"). Reduces output tokens by 40%.
-- `/agent-spec-dense`: Uses abbreviations, tables, and bullet points.
+- `/agent-spec-raw-code`: Short, actionable replies at two levels, `full` and `lite`.
 
 ## 4. The 70% Warning
 If the agent detects that the conversation has consumed >70% of the available context window, it must autonomously issue a warning:

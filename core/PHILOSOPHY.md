@@ -38,7 +38,7 @@ The **Anti-Hallucination Protocol** forces the agent to attach a `[CONFIDENCE]` 
 
 Context windows are large, but they are not infinite. Flooding the context window with irrelevant files dilutes the agent's attention (the "needle in a haystack" problem).
 
-We use token-reduction skills (`/caveman`, `/defluffer`, `/agent-spec-dense`) to strip away conversational fluff, keeping the context window dense with actual signal.
+We keep the context window dense with actual signal by not loading what we do not need — the graph before the file, a line range before the file, a subagent for a broad sweep. Compressing the assistant's own prose was measured and reaches 8.2% of what accumulates; deciding what enters context reaches the other 92%.
 
 ## 6. Full SDLC Lineage
 

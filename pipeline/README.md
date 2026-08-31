@@ -6,7 +6,7 @@ The nine SDLC gates are the lifecycle: requirements through validation, one arti
 state in `.agent-spec/sdlc/STATE.json`. The six below are the micro-process `/agent-spec-implement`
 follows while writing the code for gate 5.
 
-`skills/claude/implement/SKILL.md` is the executable definition. This file exists so the
+`skills/claude/agent-spec-implement/SKILL.md` is the executable definition. This file exists so the
 gates have a name in the documentation; **if the two ever disagree, the skill is right**.
 Six per-gate documents used to live here and drifted out of step with the skill three
 times, so they were removed rather than maintained twice.
