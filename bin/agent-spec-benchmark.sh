@@ -16,6 +16,7 @@
 #   bin/agent-spec-benchmark.sh --repeats 5 --tasks 01-add-cli-flag --model sonnet
 #   bin/agent-spec-benchmark.sh --report            # re-print from saved results
 #   bin/agent-spec-benchmark.sh --metric tokens     # rank by tokens, not dollars
+#   bin/agent-spec-benchmark.sh --max-turns 20 --timeout 300
 #
 # --metric tokens is for a local model, which bills nothing and has no prompt
 # cache: context that Anthropic discounts to 0.1x is charged there in full, so
@@ -51,7 +52,9 @@ BUDGET="5"
 REPEATS="3"
 TASKS=""
 REPORT_ONLY="false"
-METRIC="cost"          # cost | tokens
+METRIC="cost"          # cost | tokens | bytes
+MAX_TURNS="30"
+RUN_TIMEOUT="600"      # seconds, per run
 CONSEC_ERRORS=0
 ABORT_AFTER=3
 
@@ -67,6 +70,8 @@ while [ $# -gt 0 ]; do
     --repeats) REPEATS="$2"; shift 2 ;;
     --tasks)   TASKS="$2"; shift 2 ;;
     --metric)  METRIC="$2"; shift 2 ;;
+    --max-turns) MAX_TURNS="$2"; shift 2 ;;
+    --timeout) RUN_TIMEOUT="$2"; shift 2 ;;
     --report)  REPORT_ONLY="true"; shift ;;
     -h|--help) sed -n '3,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
@@ -75,7 +80,11 @@ done
 
 case "${METRIC}" in
   cost|tokens) ;;
-  *) die "--metric takes cost or tokens, not '${METRIC}'" ;;
+  bytes) [ -n "${AGENT_SPEC_WIRE_LOG:-}" ] || die "--metric bytes needs AGENT_SPEC_WIRE_LOG
+  pointing at the context recorder's JSONL. Claude Code's own input_tokens is a
+  constant through a local proxy — 8194 whether the prompt is 200 tokens or 9,000 —
+  so prompt size has to be measured on the wire." ;;
+  *) die "--metric takes cost, tokens or bytes, not '${METRIC}'" ;;
 esac
 
 uuid() {
@@ -117,17 +126,30 @@ one_run() {
   local -a sysargs=()
   [ -n "${body}" ] && sysargs=(--append-system-prompt "${body}")
 
+  # --max-budget-usd is the only loop guard the harness had, and a local model
+  # costs nothing, so it never fires. One run of llama3.1:8b made 39 requests in
+  # 11 minutes without converging. Turns and wall clock are the guards that work
+  # whatever the model costs.
   local started; started="$(date +%s)"
+  local rc=0
   ( cd "${dir}" && env -u CLAUDECODE -u CLAUDE_CODE_SESSION_ID -u CLAUDE_CODE_ENTRYPOINT \
-    claude -p "${prompt}" ${sysargs[@]+"${sysargs[@]}"} \
+    timeout "${RUN_TIMEOUT}" claude -p "${prompt}" ${sysargs[@]+"${sysargs[@]}"} \
       --output-format json \
       --session-id "${sid}" \
       --model "${MODEL}" \
       --permission-mode acceptEdits \
       --allowed-tools "Bash Read Write Edit MultiEdit Glob Grep Task" \
       --max-budget-usd "${BUDGET}" \
+      --max-turns "${MAX_TURNS}" \
       > "${dir}/.result.json" 2> "${dir}/.stderr.txt" )
+  rc=$?
   local elapsed=$(( $(date +%s) - started ))
+  # A run killed by the clock left no result JSON, and "no result json" would
+  # hide why. Say it was the timeout.
+  if [ "${rc}" -eq 124 ]; then
+    echo "timed out after ${RUN_TIMEOUT}s (--timeout), ${MAX_TURNS} turn cap not reached" \
+      >> "${dir}/.stderr.txt"
+  fi
 
   # A run that billed nothing never reached the model — a usage limit, an auth
   # expiry, a network error. Its clone is untouched, so the verify script then
@@ -169,14 +191,33 @@ PY
   fi
 
   python3 - "${dir}/.result.json" "${label}" "${skill}" "${task}" "${rep}" \
-             "${verdict}" "${elapsed}" "${sid}" >> "${OUT_DIR}/results.jsonl" <<'PY'
+             "${verdict}" "${elapsed}" "${sid}" "${started}" "${AGENT_SPEC_WIRE_LOG:-}" \
+             >> "${OUT_DIR}/results.jsonl" <<'PY'
 import json, sys
-path, label, skill, task, rep, verdict, elapsed, sid = sys.argv[1:9]
+path, label, skill, task, rep, verdict, elapsed, sid, started, wire = sys.argv[1:11]
 try:
     d = json.load(open(path))
 except Exception:
     d = {}
 u = d.get("usage") or {}
+
+# What actually went over the wire, from the context recorder. Runs are
+# sequential, so the time window between this run's start and now belongs to it
+# and to nothing else.
+req_bytes = sys_bytes = requests = 0
+if wire:
+    lo, hi = float(started) - 1, __import__("time").time() + 1
+    try:
+        for line in open(wire):
+            try: w = json.loads(line)
+            except ValueError: continue
+            if lo <= w.get("t", 0) <= hi:
+                requests += 1
+                req_bytes += w.get("request_bytes", 0)
+                sys_bytes = max(sys_bytes, w.get("system_bytes", 0))
+    except OSError:
+        pass
+
 print(json.dumps({
     "arm": label, "skill": skill, "task": task, "repeat": int(rep),
     "verdict": verdict, "seconds": int(elapsed), "session": sid,
@@ -187,6 +228,7 @@ print(json.dumps({
     "read": u.get("cache_read_input_tokens", 0) or 0,
     "out": u.get("output_tokens", 0) or 0,
     "is_error": bool(d.get("is_error")),
+    "requests": requests, "req_bytes": req_bytes, "sys_bytes": sys_bytes,
 }))
 PY
 
@@ -240,6 +282,7 @@ if not rows:
 # either way is that it produced no output and took no more than one turn.
 def never_ran(r):
     if r.get("verdict") == "ERROR": return True
+    if metric == "bytes":  return not r.get("requests")
     if metric == "tokens": return not r.get("out") and r.get("turns", 0) <= 1
     return not r.get("cost") and not r.get("out")
 
@@ -270,15 +313,17 @@ def med(v): return st.median(v) if v else 0.0
 # The ranked quantity. Cost against Anthropic; total tokens moved against a local
 # model, where the whole point is that context is not discounted at 0.1x.
 def value(r):
+    if metric == "bytes":
+        return r.get("req_bytes", 0)
     if metric == "tokens":
         return (r.get("in", 0) + r.get("write", 0) + r.get("read", 0) + r.get("out", 0))
     return r.get("cost", 0.0)
-UNIT  = "tok" if metric == "tokens" else "$"
-NOUN  = "tokens" if metric == "tokens" else "cost"
-NUMF  = "%11.0f" if metric == "tokens" else "%11.4f"
-CELLF = "%13.0f" if metric == "tokens" else "%13.4f"
-CHEAP = "fewer tokens" if metric == "tokens" else "cheaper"
-DEAR  = "more tokens" if metric == "tokens" else "more expensive"
+UNIT  = {"tokens": "tok", "bytes": "B"}.get(metric, "$")
+NOUN  = {"tokens": "tokens", "bytes": "prompt bytes"}.get(metric, "cost")
+NUMF  = "%11.4f" if metric == "cost" else "%11.0f"
+CELLF = "%13.4f" if metric == "cost" else "%13.0f"
+CHEAP = "cheaper" if metric == "cost" else "less"
+DEAR  = "more expensive" if metric == "cost" else "more"
 def ok_rows(a, t=None):
     return [r for r in rows if r["skill"] == a and r["verdict"] == "PASS"
             and (t is None or r["task"] == t)]
@@ -383,7 +428,11 @@ if base in cost:
             print("%s: %.1f%% %s than %s, and %+.0f tokens per run"
                   % (label(a), abs(d), CHEAP if d < 0 else DEAR, label(base),
                      toks.get(a, 0) - toks.get(base, 0)))
-if metric == "tokens":
+if metric == "bytes":
+    print("\nRanked by prompt bytes on the wire, measured by the context recorder, because")
+    print("Claude Code's own input_tokens is a constant through a local proxy. Bytes are")
+    print("exact and comparable between arms on the same tasks; they are not a price.")
+elif metric == "tokens":
     print("\nRanked by tokens moved, not by cost. A local model has no prompt cache, so")
     print("context that Anthropic bills at 0.1x is charged here in full. This ranking is")
     print("valid for context volume; it cannot be quoted as a saving in money.")
