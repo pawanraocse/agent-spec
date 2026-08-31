@@ -15,6 +15,12 @@
 #   bin/agent-spec-benchmark.sh --repeats 3
 #   bin/agent-spec-benchmark.sh --repeats 5 --tasks 01-add-cli-flag --model sonnet
 #   bin/agent-spec-benchmark.sh --report            # re-print from saved results
+#   bin/agent-spec-benchmark.sh --metric tokens     # rank by tokens, not dollars
+#
+# --metric tokens is for a local model, which bills nothing and has no prompt
+# cache: context that Anthropic discounts to 0.1x is charged there in full, so
+# context-volume effects that vanish into the noise here become the whole signal.
+# It ranks; it does not price. The default stays cost.
 #   bin/agent-spec-benchmark.sh --arm-b none        # a mode against no mode at all
 #   bin/agent-spec-benchmark.sh --arms none,agent-spec-raw-code,agent-spec-raw-code-full
 #
@@ -45,6 +51,7 @@ BUDGET="5"
 REPEATS="3"
 TASKS=""
 REPORT_ONLY="false"
+METRIC="cost"          # cost | tokens
 CONSEC_ERRORS=0
 ABORT_AFTER=3
 
@@ -59,11 +66,17 @@ while [ $# -gt 0 ]; do
     --budget)  BUDGET="$2"; shift 2 ;;
     --repeats) REPEATS="$2"; shift 2 ;;
     --tasks)   TASKS="$2"; shift 2 ;;
+    --metric)  METRIC="$2"; shift 2 ;;
     --report)  REPORT_ONLY="true"; shift ;;
     -h|--help) sed -n '3,26p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
 done
+
+case "${METRIC}" in
+  cost|tokens) ;;
+  *) die "--metric takes cost or tokens, not '${METRIC}'" ;;
+esac
 
 uuid() {
   if [ -r /proc/sys/kernel/random/uuid ]; then cat /proc/sys/kernel/random/uuid
@@ -208,10 +221,10 @@ except Exception: print('0.0000')")"
 # ---------------------------------------------------------------------------
 
 report() {
-  python3 - "${OUT_DIR}/results.jsonl" <<'PY'
+  python3 - "${OUT_DIR}/results.jsonl" "${METRIC}" <<'PY'
 import json, sys, statistics as st
 
-path = sys.argv[1]
+path, metric = sys.argv[1], sys.argv[2]
 rows = []
 for line in open(path):
     try: rows.append(json.loads(line))
@@ -222,8 +235,13 @@ if not rows:
 # A run that billed nothing never reached the model. Counting it as a failed task
 # turns an account problem into a false finding about a mode, so it is reported
 # separately and excluded from every rate and every median below.
+# Under --metric tokens the model is local and bills nothing by design, so cost
+# cannot be the liveness test. What a run that never happened has in common
+# either way is that it produced no output and took no more than one turn.
 def never_ran(r):
-    return r.get("verdict") == "ERROR" or (not r.get("cost") and not r.get("out"))
+    if r.get("verdict") == "ERROR": return True
+    if metric == "tokens": return not r.get("out") and r.get("turns", 0) <= 1
+    return not r.get("cost") and not r.get("out")
 
 errors = [r for r in rows if never_ran(r)]
 rows   = [r for r in rows if not never_ran(r)]
@@ -248,6 +266,19 @@ label = lambda a: "plain (no skill)" if a == "none" else "/" + a
 W = max(len(label(a)) for a in arms) + 2
 
 def med(v): return st.median(v) if v else 0.0
+
+# The ranked quantity. Cost against Anthropic; total tokens moved against a local
+# model, where the whole point is that context is not discounted at 0.1x.
+def value(r):
+    if metric == "tokens":
+        return (r.get("in", 0) + r.get("write", 0) + r.get("read", 0) + r.get("out", 0))
+    return r.get("cost", 0.0)
+UNIT  = "tok" if metric == "tokens" else "$"
+NOUN  = "tokens" if metric == "tokens" else "cost"
+NUMF  = "%11.0f" if metric == "tokens" else "%11.4f"
+CELLF = "%13.0f" if metric == "tokens" else "%13.4f"
+CHEAP = "fewer tokens" if metric == "tokens" else "cheaper"
+DEAR  = "more tokens" if metric == "tokens" else "more expensive"
 def ok_rows(a, t=None):
     return [r for r in rows if r["skill"] == a and r["verdict"] == "PASS"
             and (t is None or r["task"] == t)]
@@ -275,11 +306,12 @@ for a in arms:
     print("%-*s %9.1f %9.0f %11.0f %11.0f %11.0f"
           % (W, label(a), m["turns"], m["out"], m["write"], m["read"], total))
 
-print("\n=== cost per VERIFIED task ===")
-print("%-*s %11s %11s %11s %12s" % (W, "", "median $", "min $", "max $", "vs " + ("control" if base == "none" else "first")))
+print("\n=== %s per VERIFIED task ===" % NOUN)
+print("%-*s %11s %11s %11s %12s" % (W, "", "median " + UNIT, "min " + UNIT, "max " + UNIT,
+                                    "vs " + ("control" if base == "none" else "first")))
 cost = {}
 for a in arms:
-    c = [r["cost"] for r in ok_rows(a)]
+    c = [value(r) for r in ok_rows(a)]
     if not c:
         print("%-*s %11s" % (W, label(a), "no verified runs")); continue
     cost[a] = med(c)
@@ -288,9 +320,10 @@ for a in arms:
     else:
         d = 100.0 * (cost[a] - cost[base]) / cost[base]
         delta = "%+.1f%%" % d
-    print("%-*s %11.4f %11.4f %11.4f %12s" % (W, label(a), med(c), min(c), max(c), delta))
+    print(("%-*s " + NUMF + " " + NUMF + " " + NUMF + " %12s")
+          % (W, label(a), med(c), min(c), max(c), delta))
 
-print("\n=== per task, median cost of verified runs ===")
+print("\n=== per task, median %s of verified runs ===" % NOUN)
 hdr = "%-22s" % "task"
 for a in arms: hdr += " %13s" % (("plain" if a == "none" else a.replace("agent-spec-", ""))[:13])
 print(hdr)
@@ -299,9 +332,9 @@ for t in tasks:
     line = "%-22s" % t
     per = {}
     for a in arms:
-        c = [r["cost"] for r in ok_rows(a, t)]
+        c = [value(r) for r in ok_rows(a, t)]
         per[a] = c
-        line += " %13s" % ("%.4f" % med(c) if c else "—")
+        line += " %13s" % ((CELLF.strip() % med(c)).strip() if c else "—")
     print(line)
     # A delta needs more than one verified run per arm, and ranges that do not
     # overlap. Anything else is the noise this script exists to get above.
@@ -332,8 +365,8 @@ if len(runs_seen) > 1:
     print("comparison. Re-run the suite when it can finish.")
 rates = {round(rate[a][1] / rate[a][0], 6) if rate[a][0] else 0 for a in arms}
 if len(rates) > 1:
-    print("Completion rates differ (%s). Cost per verified task accounts for that, but"
-          % ", ".join("%d/%d" % (rate[a][1], rate[a][0]) for a in arms))
+    print("Completion rates differ (%s). %s per verified task accounts for that, but"
+          % (", ".join("%d/%d" % (rate[a][1], rate[a][0]) for a in arms), NOUN.capitalize()))
     print("a mode that fails more often is worse even when cheaper.")
 elif any(rate[a][1] != rate[a][0] for a in arms):
     print("Every arm failed the same runs. A task all arms fail is a broken task or a")
@@ -342,9 +375,18 @@ if base in cost:
     for a in arms:
         if a == base or a not in cost: continue
         d = 100.0 * (cost[a] - cost[base]) / cost[base]
-        print("%s: %.1f%% %s than %s, and %+.0f tokens per run"
-              % (label(a), abs(d), "cheaper" if d < 0 else "more expensive", label(base),
-                 toks.get(a, 0) - toks.get(base, 0)))
+        if metric == "tokens":
+            print("%s: %.1f%% %s than %s (%+.0f per run)"
+                  % (label(a), abs(d), CHEAP if d < 0 else DEAR, label(base),
+                     cost[a] - cost[base]))
+        else:
+            print("%s: %.1f%% %s than %s, and %+.0f tokens per run"
+                  % (label(a), abs(d), CHEAP if d < 0 else DEAR, label(base),
+                     toks.get(a, 0) - toks.get(base, 0)))
+if metric == "tokens":
+    print("\nRanked by tokens moved, not by cost. A local model has no prompt cache, so")
+    print("context that Anthropic bills at 0.1x is charged here in full. This ranking is")
+    print("valid for context volume; it cannot be quoted as a saving in money.")
 decided = sum(v for k, v in wins.items() if k != "tie")
 if wins["tie"] >= decided:
     print("\nMost comparisons are inside the noise. Report NO MEASURABLE DIFFERENCE, not")

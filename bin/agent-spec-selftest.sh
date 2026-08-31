@@ -406,6 +406,24 @@ grep -q 'if \[ "${skill}" != "none" \]' "${HOME_DIR}/bin/agent-spec-benchmark.sh
   && ok "the suite has a long-session task" \
   || bad "no long-session task — raw-code-full's reading rules are untestable"
 
+# A local model bills nothing, so cost cannot be the metric or the liveness test.
+# --metric tokens ranks on tokens moved and must not discard runs as "never
+# reached the model" just because they cost zero.
+python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
+import json
+for r in range(3):
+    for arm, skill, read in (("A", "none", 40000), ("B", "agent-spec-raw-code", 30000)):
+        print(json.dumps({"arm": arm, "skill": skill, "task": "t1", "repeat": r,
+            "verdict": "PASS", "cost": 0.0, "turns": 6, "seconds": 9, "session": "s",
+            "in": 5, "write": 1000, "read": read + r, "out": 500, "is_error": False}))
+JSON
+OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report --metric tokens 2>&1 )"
+case "$OUT" in *"never reached the model"*) bad "zero-cost local runs discarded under --metric tokens" ;; *) ok "a zero-cost run counts when the metric is tokens" ;; esac
+case "$OUT" in *"tokens per VERIFIED task"*) ok "the headline table is ranked in tokens" ;; *) bad "still ranking on cost under --metric tokens" ;; esac
+case "$OUT" in *"cannot be quoted as a saving in money"*) ok "and the report says a token ranking is not a cost result" ;; *) bad "a local ranking is presented without its caveat" ;; esac
+OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
+case "$OUT" in *"cost per VERIFIED task"*) ok "and the default metric is still cost" ;; *) bad "--metric tokens leaked into the default" ;; esac
+
 # The harness end to end, with a stubbed claude so it costs nothing. The label
 # is used as a directory name: when it was computed with printf escapes every
 # arm resolved to the literal "\000", shared one clone, and claude exited on a
