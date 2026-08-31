@@ -497,7 +497,8 @@ for f in agent-spec-raw-code agent-spec-raw-code-full; do
 done
 ok "both modes kept every safety clause through the shrink"
 
-# Levels came from algosec-lean; ultra did not. Ultra is plain-text-no-markdown, which is
+# Levels came from an external lean-output framework; its ultra level did not. Ultra is
+# plain text with no markdown, which is
 # caveman prose under another name, and caveman measured 0 across 26 verified runs.
 RC="${HOME_DIR}/skills/claude/agent-spec-raw-code/SKILL.md"
 for lvl in lite full; do

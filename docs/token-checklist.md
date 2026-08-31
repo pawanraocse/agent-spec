@@ -138,7 +138,7 @@ cached. Neither figure alone is the answer.
 | 9b | A skill body is charged every turn once invoked | **MEASURED** | `raw-code-full` was 6,770 B and lost its own benchmark; now 2,855 B, capped by test |
 | 10 | Route cheap work to a cheap model | **DONE, UNMEASURED** | both subagents pinned `haiku`/`effort: low`; never benchmarked against not using them |
 | 11a | Set reasoning effort programmatically | **NOT REACHABLE** | a skill cannot set effort for the session it runs in |
-| 11b | Ask for reasoning discipline in prose | **SHIPPED, UNKNOWN** | "minimum sufficient reasoning" in `raw-code`, "carry conclusions forward, do not re-plan after every tool call" in `raw-code-full`; adopted from algosec-lean, never measured by either project |
+| 11b | Ask for reasoning discipline in prose | **SHIPPED, UNKNOWN** | "minimum sufficient reasoning" in `raw-code`, "carry conclusions forward, do not re-plan after every tool call" in `raw-code-full`; adopted from an external lean-output framework, never measured there or here |
 | 12 | Retrieve relevant context, not maximum context | **DONE** | graphify `context --task`, 225/225 edges resolving |
 | 13 | Structured output; return IDs, not objects | **DONE** | `--output-format json`, `agent-spec-tokens.py`, gate `--json` |
 | 14 | Hard iteration and token budgets | **DONE** | `--max-budget-usd 5` per benchmark run |
