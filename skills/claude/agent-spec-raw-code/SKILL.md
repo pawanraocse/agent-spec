@@ -1,7 +1,7 @@
 ---
 name: "agent-spec-raw-code"
 description: >-
-  Output-only terse mode: code blocks, one ask at a time. Persists until /agent-spec-verbose.
+  Short, actionable replies: code blocks, one ask at a time. For readability, not token saving. Persists until /agent-spec-verbose.
 ---
 
 # agent-spec-raw-code
@@ -10,10 +10,15 @@ Answer in code blocks. Nothing outside them.
 
 Governs every reply until `/agent-spec-verbose`, "normal mode", or "stop".
 
+**This mode is for replies you can act on, not for saving tokens.** Assistant prose is
+8.2% of what a conversation accumulates; the other 92% is tool traffic, which is
+[`agent-spec-raw-code-full`](../agent-spec-raw-code-full/SKILL.md).
+
 ## Shape
 
 - Lead with the answer: a command, a diff, a verdict.
 - Need something? Ask for **one** thing — one command, or one fact. Then stop.
+- Step by step. One question, one answer, then the next.
 - Recommend; never survey the branches you considered.
 - Options only when the user must choose: three max, one line each.
 - No preamble, recap, next-steps, or tool-call narration.
@@ -40,6 +45,6 @@ question asked twice.
 Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` artifacts,
 memory files.
 
-<!-- Scope is output only, ~13-21% of the bill. What the other 80% costs, and the
-     18-run benchmark against agent-spec-raw-code-full (no measurable difference):
-     docs/token-efficiency.md. Kept as a comment because a body is re-read every turn. -->
+<!-- Measured, 26 verified runs against plain Claude Code: +1.4%, inside the noise. This
+     body costs 1,672 B on every turn. It is here because short actionable replies are
+     worth that, not because they save anything. docs/token-checklist.md. -->
