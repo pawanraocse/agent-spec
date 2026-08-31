@@ -43,6 +43,45 @@ Corpus: 20 sessions, 4 projects, 6,377 turns, 252,494,557 weighted tokens.
 
 ---
 
+## Every method, measured, in one table
+
+The per-turn prompt is **95,190 bytes** on the wire (EXP-1). Anything put into context is
+re-sent on every turn after it, so a thing read at turn 2 of a ten-turn session is paid
+for **nine times**. That single fact is what ranks this table.
+
+Payload sizes are measured against real files in this repository. The "×8 turns" column is
+arithmetic on those measurements, not a separate experiment, and it is labelled as such.
+
+| method | before B | after B | saved once | saved ×8 turns |
+|---|---|---|---|---|
+| batch 2 tool calls into 1 turn | 95,190 | 0 | **95,190** | 95,190 (once) |
+| graph query instead of reading the file | 35,966 | 152 | 35,814 | **286,512** |
+| `grep -n` instead of `cat` | 35,966 | 1,178 | 34,788 | **278,304** |
+| read a 50-line range, not the file | 35,966 | 2,071 | 33,895 | **271,160** |
+| `git diff --stat` before the full diff | 33,830 | 427 | 33,403 | **267,224** |
+| filter test output | 5,117 | 107 | 5,010 | 40,080 |
+| shorter skill body (`-full` → lean) | 2,975 | 1,672 | 1,303 | 10,424 |
+| caveman prose | ~100 | ~100 | **0** | **0** |
+| `--allowed-tools` | 95,190 | 95,190 | **0** | **0** |
+
+Reading conclusions off it:
+
+- **Not reading things is worth 20× more than saying things briefly.** The top five rows
+  are all "do not put it in context in the first place". The bottom two are the two ideas
+  this project started with.
+- **A turn is the most expensive unit there is.** One avoided turn saves more than any
+  single filtering decision, because the whole 95,190 bytes goes again.
+- **Caveman prose earns nothing and costs body bytes.** It is in `raw-code-full` today,
+  it measured zero across 26 verified runs, and the body that carries it is charged on
+  every turn. Removing it is a strict improvement.
+- **The skill body is real but small.** 1,303 bytes per turn between the two modes — worth
+  keeping lean, not worth another day.
+
+One caveat carried from EXP-2: 95,190 B was measured through a proxy, which disables tool
+deferral, so it is an upper bound on the per-turn constant. Every row is affected equally,
+so the ranking holds; the absolute savings for the turn-avoidance row would shrink if
+deferral is doing work at Anthropic. That is EXP-10.
+
 ## Tier 1 — the buckets that hold the money
 
 | # | Item | Status | Evidence |
