@@ -44,17 +44,23 @@ See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
 ## Install
 
-One command. No Python or Node dependencies.
+`agent-spec` uses a **hybrid architecture**. Running the install command does two things simultaneously:
+1. **Machine-wide (Global):** Installs the 25 skills into your home directory so every project on your machine can access the tools.
+2. **Project-specific (Local):** Initializes `.agent-spec/` (knowledge graph, pipeline) and `.cursor/rules/` strictly in your current working directory.
 
+**Option A: Install from the web (Standard)**
+Navigate to your target project folder and run:
 ```bash
 curl -sSL https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/install.sh | bash
 ```
 
-It installs skills **machine-wide** — every project on the box gets them — and sets up
-`.agent-spec/` in the current directory. Run it in an empty directory and you get a new
-project, git and all.
+**Option B: Install from a local clone (Faster for multiple projects)**
+If you already have `agent-spec` cloned on your machine, navigate to your target project folder and run your local script:
+```bash
+/path/to/your/clone/agent-spec/bin/install.sh
+```
 
-**Update:** re-run the exact same command.
+**Update:** re-run the exact same command. Run it in an empty directory and you get a new project, git and all.
 
 Installing also writes an output style, two cheap-model subagents and two hooks into
 each `.claude` home, merged into any existing `settings.json` without touching what is already there.
