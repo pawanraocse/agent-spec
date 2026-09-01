@@ -1,44 +1,44 @@
 {
   "version": "4.0",
   "project": "agent-spec",
-  "generated": "2026-08-30T11:19:37.549496",
+  "generated": "2026-08-31T16:53:15.054243",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
-    "files": 6,
+    "files": 9,
     "internal_edges": 0,
     "integration_edges": 0,
-    "external_packages": 9,
-    "test_files": 4,
+    "external_packages": 13,
+    "test_files": 7,
     "cycles": 0,
     "services": 0,
     "endpoints": 0,
     "topics": 0,
     "layer_violations": 0,
     "languages": {
-      "python": 6
+      "python": 9
     },
     "layers": {
-      "test": 4,
+      "test": 7,
       "unknown": 2
     },
     "most_depended": [],
     "top_external": [
       [
         "json",
-        6
+        8
       ],
       [
         "os",
-        6
+        8
       ],
       [
         "sys",
-        6
+        8
       ],
       [
         "argparse",
-        4
+        6
       ],
       [
         "re",
@@ -50,19 +50,23 @@
       ],
       [
         "collections",
-        2
+        3
+      ],
+      [
+        "starlette",
+        3
       ],
       [
         "subprocess",
-        1
+        2
       ],
       [
-        "hashlib",
+        "glob",
         1
       ]
     ]
   },
-  "orphan_count": 6,
+  "orphan_count": 9,
   "services": {},
   "layer_violations": [],
   "topics": {},
@@ -120,6 +124,28 @@
       "consumes": []
     },
     {
+      "id": "bin/agent-spec-tokens.py",
+      "type": "test",
+      "path": "bin/agent-spec-tokens.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-wire-recorder.py",
+      "type": "test",
+      "path": "bin/agent-spec-wire-recorder.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "bin/graphify-build.py",
       "type": "file",
       "path": "bin/graphify-build.py",
@@ -140,25 +166,36 @@
       "endpoints": [],
       "produces": [],
       "consumes": []
+    },
+    {
+      "id": "bin/test_gate_status_json.py",
+      "type": "test",
+      "path": "bin/test_gate_status_json.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     }
   ],
   "edges": [],
   "external": [
     [
       "json",
-      6
+      8
     ],
     [
       "os",
-      6
+      8
     ],
     [
       "sys",
-      6
+      8
     ],
     [
       "argparse",
-      4
+      6
     ],
     [
       "re",
@@ -170,14 +207,30 @@
     ],
     [
       "collections",
-      2
+      3
+    ],
+    [
+      "starlette",
+      3
     ],
     [
       "subprocess",
+      2
+    ],
+    [
+      "glob",
       1
     ],
     [
       "hashlib",
+      1
+    ],
+    [
+      "httpx",
+      1
+    ],
+    [
+      "uvicorn",
       1
     ]
   ],

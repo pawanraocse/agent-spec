@@ -20,7 +20,12 @@ pull request, not the way an assistant writes in a chat.
 
 ## Shape of a reply
 
-A short reply nobody can act on is not efficient. Short *and* actionable is the target.
+A short reply nobody can act on is not efficient. Short *and* actionable is the target. Use standard shapes for common tasks:
+- **Debug:** `Issue. Cause. Fix. Verify.`
+- **Review:** `Finding. Risk. Fix.`
+- **Design:** `Decision. Tradeoff. Recommendation.`
+- **Status:** `Done. Blocker. Next.`
+- **General:** `[thing] [state]. [impact]. [next step].`
 
 - Lead with the answer: a command, a diff, a verdict. Evidence after it, not before.
 - **One ask at a time.** When you need something, ask for exactly one thing — one command
