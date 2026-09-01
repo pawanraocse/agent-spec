@@ -1,40 +1,40 @@
 {
   "version": "4.0",
   "project": "agent-spec",
-  "generated": "2026-08-31T16:53:15.054243",
+  "generated": "2026-09-01T16:17:45.128523",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
-    "files": 9,
+    "files": 11,
     "internal_edges": 0,
     "integration_edges": 0,
-    "external_packages": 13,
-    "test_files": 7,
+    "external_packages": 16,
+    "test_files": 8,
     "cycles": 0,
     "services": 0,
     "endpoints": 0,
     "topics": 0,
     "layer_violations": 0,
     "languages": {
-      "python": 9
+      "python": 11
     },
     "layers": {
-      "test": 7,
-      "unknown": 2
+      "test": 8,
+      "unknown": 3
     },
     "most_depended": [],
     "top_external": [
       [
-        "json",
-        8
-      ],
-      [
         "os",
-        8
+        10
       ],
       [
         "sys",
-        8
+        10
+      ],
+      [
+        "json",
+        9
       ],
       [
         "argparse",
@@ -42,7 +42,7 @@
       ],
       [
         "re",
-        4
+        5
       ],
       [
         "datetime",
@@ -61,12 +61,12 @@
         2
       ],
       [
-        "glob",
-        1
+        "hashlib",
+        2
       ]
     ]
   },
-  "orphan_count": 9,
+  "orphan_count": 11,
   "services": {},
   "layer_violations": [],
   "topics": {},
@@ -94,6 +94,17 @@
       "id": "bin/agent-spec-gate.py",
       "type": "test",
       "path": "bin/agent-spec-gate.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-lint-refs.py",
+      "type": "test",
+      "path": "bin/agent-spec-lint-refs.py",
       "lang": "python",
       "layer": "test",
       "service": null,
@@ -177,21 +188,32 @@
       "endpoints": [],
       "produces": [],
       "consumes": []
+    },
+    {
+      "id": "hooks/pre-tool-use.py",
+      "type": "file",
+      "path": "hooks/pre-tool-use.py",
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     }
   ],
   "edges": [],
   "external": [
     [
-      "json",
-      8
-    ],
-    [
       "os",
-      8
+      10
     ],
     [
       "sys",
-      8
+      10
+    ],
+    [
+      "json",
+      9
     ],
     [
       "argparse",
@@ -199,7 +221,7 @@
     ],
     [
       "re",
-      4
+      5
     ],
     [
       "datetime",
@@ -218,11 +240,11 @@
       2
     ],
     [
-      "glob",
-      1
+      "hashlib",
+      2
     ],
     [
-      "hashlib",
+      "glob",
       1
     ],
     [
@@ -231,6 +253,18 @@
     ],
     [
       "uvicorn",
+      1
+    ],
+    [
+      "shlex",
+      1
+    ],
+    [
+      "tempfile",
+      1
+    ],
+    [
+      "time",
       1
     ]
   ],

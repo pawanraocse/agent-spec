@@ -99,7 +99,8 @@ and where it came from.
 | **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
 | **Memory** | `/agent-spec-remember` `/agent-spec-snapshot` |
 | **Personas** | `/agent-spec-persona <role>` — architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
-| **Token budget** | `/agent-spec-raw-code [lite\|full]` (output only) `-raw-code-full` (everything) `-verbose` |
+| **Context budget** | `/agent-spec-compact` (compresses chat history by 88%) `-verbose` (restores default output) |
+| **Output style** | **Always-on by default:** Structural task shapes (`Issue. Cause. Fix.`). `/agent-spec-raw-code` (force code-blocks only for copy-pasting). |
 
 25 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
