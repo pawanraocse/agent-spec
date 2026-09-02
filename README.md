@@ -99,7 +99,7 @@ and where it came from.
 |---|---|
 | **Router** | `/agent-spec` — picks the right skill for the job when you are not sure |
 | **Onboarding** | `/agent-spec-onboard` |
-| **SDLC pipeline** | `/agent-spec-sdlc` routes; `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-validation` |
+| **SDLC pipeline** | `/agent-spec-sdlc` routes; `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-webapp-testing` (Playwright automation) `-validation` `-doc-coauthoring` (Zero-context verification) |
 | **Diagnosis** | `/agent-spec-investigate` |
 | **Review** | `/agent-spec-review` `-self-review` `-solid-check` `-debt` |
 | **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
@@ -107,8 +107,9 @@ and where it came from.
 | **Personas** | `/agent-spec-persona <role>` — architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
 | **Context budget** | `/agent-spec-compact` (compresses chat history by 88%) `-verbose` (restores default output) |
 | **Output style** | **Always-on by default:** Structural task shapes (`Issue. Cause. Fix.`). `/agent-spec-raw-code` (force code-blocks only for copy-pasting). |
+| **Extensions** | `/agent-spec-skill-creator` (Test-driven meta-skill creation) `/agent-spec-mcp-builder` (Build MCP servers for external APIs) |
 
-25 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
+29 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
 ## Token efficiency, measured
 
