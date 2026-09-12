@@ -8,7 +8,7 @@
 
 A framework that installs into your repo and turns a hallucination-prone coding assistant
 into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-project memory that survives a new chat, strict confidence scoring, and 25 prefixed skills
+project memory that survives a new chat, strict confidence scoring, and 30 prefixed skills
 that work in Claude Code, Cursor and Antigravity.
 
 ---
@@ -45,7 +45,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full list.
 ## Install
 
 `agent-spec` uses a **hybrid architecture**. Running the install command does two things simultaneously:
-1. **Machine-wide (Global):** Installs the 25 skills into your home directory so every project on your machine can access the tools.
+1. **Machine-wide (Global):** Installs the 30 skills into your home directory so every project on your machine can access the tools.
 2. **Project-specific (Local):** Initializes `.agent-spec/` (knowledge graph, pipeline) and `.cursor/rules/` strictly in your current working directory.
 
 **Option A: Install from the web (Standard)**
@@ -102,14 +102,15 @@ and where it came from.
 | **SDLC pipeline** | `/agent-spec-sdlc` routes; `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-webapp-testing` (Playwright automation) `-validation` `-doc-coauthoring` (Zero-context verification) |
 | **Diagnosis** | `/agent-spec-investigate` |
 | **Review** | `/agent-spec-review` `-self-review` `-solid-check` `-debt` |
+| **Prompt quality** | `/agent-spec-prompt-audit` — audits any body an agent re-reads every turn for dead references, bloat and rules a skill cannot enforce |
 | **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
 | **Memory** | `/agent-spec-remember` `/agent-spec-snapshot` |
-| **Personas** | `/agent-spec-persona <role>` — architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
+| **Personas** | `/agent-spec-persona <role>` — architect, ai-architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
 | **Context budget** | `/agent-spec-compact` (compresses chat history by 88%) `-verbose` (restores default output) |
 | **Output style** | **Always-on by default:** Structural task shapes (`Issue. Cause. Fix.`). `/agent-spec-raw-code` (force code-blocks only for copy-pasting). |
 | **Extensions** | `/agent-spec-skill-creator` (Test-driven meta-skill creation) `/agent-spec-mcp-builder` (Build MCP servers for external APIs) |
 
-29 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
+30 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
 
 ## Token efficiency, measured
 

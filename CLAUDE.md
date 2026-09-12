@@ -26,7 +26,7 @@ If there is no digest and no `.agent-spec/` directory, tell the user to run `bin
 
 Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
+`/agent-spec-persona <role>` switches: `architect` `ai-architect` `security` `qa` `data` `devops` `perf`
 `refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
 **Absolute Rules** section is binding and does not relax on request.
 

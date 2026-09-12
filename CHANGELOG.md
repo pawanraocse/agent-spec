@@ -10,6 +10,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **`personas/AI-ARCHITECT.md`** — an eleventh persona, `@AI-ARCHITECT`, for the decision
+  this framework makes most often and had no lens for: whether a piece of work should be a
+  skill, a hook, a subagent or a plain Python script. The ten existing personas all reason
+  about software structure; none of them reasons about the cost of a model call. Its
+  Absolute Rules encode what this repository paid to learn — route nothing to a model that a
+  deterministic script can decide, put a rule that must hold in a hook rather than in a
+  skill body the model may ignore, keep rationale out of any prose that is re-read every
+  turn, and never claim an efficiency gain without a measured control arm.
+- **`/agent-spec-prompt-audit`** — audits one prompt body at a time: a `SKILL.md`,
+  `CLAUDE.md`, `AGENTS.md` or a persona. A prompt body is charged on every turn rather than
+  once, so it checks that every path, command and skill name resolves, measures the body in
+  bytes, separates the imperatives from the rationale that belongs in `docs/`, and names the
+  rules that are unenforceable as prose and need the `PreToolUse` hook instead. It performs
+  its own reference check rather than calling `bin/agent-spec-lint-refs.py`, because the
+  installer does not copy that linter into a project and naming it as a runtime command
+  would have been exactly the dangling-reference defect the skill exists to find.
+
 - **`bin/agent-spec-ab.sh run "<task>"`** — the A/B now runs itself. Both arms are launched
   with `claude -p`, each with its own `--session-id` and its own throwaway clone of the
   repository, so neither arm ever sees the other's edits and neither touches the working
@@ -22,8 +39,18 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   cheap arm. The report ends by saying that one task is one data point.
 
 ### Changed
-- Self-test: **53 assertions**, all passing, up from 50. The new ones cover the nesting
-  guard, the signed cost delta, and the single-sample caveat.
+- Self-test: **125 assertions**, all passing, up from 120. Section `[16]` checks that every
+  role named in the persona table has a matching uppercase persona file — the whole table,
+  not only the new row, because a role token that does not resolve to a file is a persona
+  nobody can load. It also asserts that the two directives the hybrid boundary rests on
+  stay in `AI-ARCHITECT.md`, that `/agent-spec-prompt-audit` names no binary the installer
+  does not ship, and that its prohibition on cutting a safety clause for bytes survives.
+- Persona count is eleven: `personas/README.md`, `skills/claude/agent-spec-persona/SKILL.md`
+  and `CLAUDE.md` all list `ai-architect`. Skill count is 30 throughout `README.md`, which
+  now matches `ls skills/claude` rather than asserting a number.
+- Self-test: **53 assertions at this point**, all passing, up from 50. The new ones cover
+  the nesting guard, the signed cost delta, and the single-sample caveat. The suite has
+  grown several times since within this same unreleased block; 125 is the current count.
 
 - **`agent-spec-tokens.py corpus`** — the same buckets aggregated across every session on
   the machine. One session proves nothing about the shape of the bill; it could be an

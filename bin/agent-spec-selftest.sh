@@ -162,7 +162,9 @@ for d in "${HOME_DIR}/skills/claude"/*/; do
   n="$(basename "$d")"
   case "$n" in agent-spec*) ;; *) BAD=$((BAD+1)); echo "     unprefixed: $n" ;; esac
   # the frontmatter name must equal the directory, or the harness lists a skill nobody can invoke
-  FM="$(sed -n 's/^name: "\(.*\)"$/\1/p' "${d}SKILL.md" | head -1)"
+  # Quoted and unquoted are both valid YAML; the contract is that the value equals the
+  # directory, so the extractor must not report a style difference as a name mismatch.
+  FM="$(sed -n 's/^name:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "${d}SKILL.md" | head -1)"
   [ "$FM" = "$n" ] || { BAD=$((BAD+1)); echo "     name mismatch: $n vs $FM"; }
 done
 want "every skill prefixed and self-consistent" 0 "$BAD"
@@ -590,6 +592,43 @@ fi
 grep -q 'agent-spec-lint-refs.py' "${HOME_DIR}/bin/agent-spec-selftest.sh" \
   && ok "and the check runs on every suite, not once by hand" \
   || bad "the reference linter is not wired in"
+
+echo ""
+echo "[16] agentic design guidance"
+# Eleven personas covered software structure and none covered the decision that gets
+# made most often here: skill, hook, subagent or plain script. A persona file is only
+# reachable if the role token in the skill table matches an uppercase filename, so the
+# whole table is checked, not just the new row.
+BAD=0
+for role in $(sed -n 's/^| `\([a-z-]*\)` |.*/\1/p' "${HOME_DIR}/skills/claude/agent-spec-persona/SKILL.md"); do
+  UP="$(echo "$role" | tr '[:lower:]' '[:upper:]')"
+  [ "$role" = "reviewer" ] && continue   # the default, listed first, has a file like the rest
+  [ -f "${HOME_DIR}/personas/${UP}.md" ] || { BAD=$((BAD+1)); echo "     no persona file for role: $role"; }
+done
+want "every role in the table has a persona file" 0 "$BAD"
+
+grep -q '^## Absolute Rules' "${HOME_DIR}/personas/AI-ARCHITECT.md" \
+  && ok "the AI architect carries binding rules, not only a lens" \
+  || bad "personas/AI-ARCHITECT.md has no Absolute Rules section"
+
+# The two rules this repository paid to learn. If either leaves the persona, the persona
+# is decoration: a skill body cannot enforce anything, and a model call is charged per turn.
+for clause in "Deterministic First" "Enforcement Belongs in Hooks"; do
+  grep -q "$clause" "${HOME_DIR}/personas/AI-ARCHITECT.md" \
+    || bad "AI-ARCHITECT lost its '$clause' directive"
+done
+ok "the hybrid boundary survived as an absolute rule"
+
+# The audit skill must not tell an installed project to run a binary install.sh does not
+# copy. agent-spec-lint-refs.py stays in this repository only, so naming it as a runtime
+# command would be exactly the dangling-reference defect the skill exists to catch.
+grep -q 'agent-spec-lint-refs.py' "${HOME_DIR}/skills/claude/agent-spec-prompt-audit/SKILL.md" \
+  && bad "prompt-audit names a linter install.sh never copies into a project" \
+  || ok "prompt-audit names no binary the installer does not ship"
+
+grep -q 'Never delete a safety clause' "${HOME_DIR}/skills/claude/agent-spec-prompt-audit/SKILL.md" \
+  && ok "shrinking a prompt cannot cut a hard stop" \
+  || bad "prompt-audit would let a safety clause be cut for bytes"
 
 echo ""
 echo "-----------------------------------------"

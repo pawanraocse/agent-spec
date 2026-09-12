@@ -65,8 +65,15 @@ def check(root):
             # Prose that trails off mid-path ("skills/claude/agent-spec-") is not a claim.
             if raw.endswith(("-", "/", ".")):
                 continue
-            if not os.path.exists(os.path.join(root, raw.rstrip(".,;:)"))):
-                problems.append("%s names %s, which does not exist" % (rel, raw))
+            target = raw.rstrip(".,;:)")
+            # A skill that ships its own subagents and scripts names them relative to its
+            # own directory, not to the repository root. Both spellings are legitimate, so
+            # a path is dangling only when neither resolves.
+            if os.path.exists(os.path.join(root, target)):
+                continue
+            if os.path.exists(os.path.join(os.path.dirname(path), target)):
+                continue
+            problems.append("%s names %s, which does not exist" % (rel, raw))
 
         for name in set(SKILL_RE.findall(text)):
             if name in ("agent-spec",) and "skills/claude/agent-spec" not in text:

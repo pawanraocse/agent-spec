@@ -23,6 +23,7 @@ The agent must immediately:
 | Persona | Trigger | Primary Goal |
 |---------|---------|--------------|
 | **Architect** | `@ARCHITECT` | System design, SOLID principles, preventing technical debt. |
+| **AI Architect** | `@AI-ARCHITECT` | Agentic design: skill vs hook vs subagent vs script, prompt cost. |
 | **Security Auditor** | `@SECURITY` | Enforcing safe data handling, authentication, and authorization. |
 | **QA Engineer** | `@QA` | Writing test cases, edge case discovery, TDD enforcement. |
 | **Code Reviewer** | `@REVIEWER` | (Default) Skeptical review of code, syntax, and style. |

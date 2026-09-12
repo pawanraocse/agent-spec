@@ -64,7 +64,7 @@ Determine what made the winner better:
 - More comprehensive examples that guided edge cases?
 - Better error handling guidance?
 
-Be specific. Quote from skills/transcripts where relevant.
+Be specific. Quote from the skills and the transcripts where relevant.
 
 ### Step 6: Identify Loser Weaknesses
 
