@@ -1,72 +1,97 @@
 {
   "version": "4.0",
   "project": "agent-spec",
-  "generated": "2026-09-02T15:55:13.871341",
+  "generated": "2026-09-12T14:44:20.041318",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
-    "files": 11,
-    "internal_edges": 0,
+    "files": 27,
+    "internal_edges": 8,
     "integration_edges": 0,
-    "external_packages": 16,
-    "test_files": 8,
+    "external_packages": 42,
+    "test_files": 24,
     "cycles": 0,
     "services": 0,
     "endpoints": 0,
     "topics": 0,
     "layer_violations": 0,
     "languages": {
-      "python": 11
+      "python": 27
     },
     "layers": {
-      "test": 8,
+      "test": 24,
       "unknown": 3
     },
-    "most_depended": [],
-    "top_external": [
+    "most_depended": [
       [
-        "os",
-        10
+        "skills/claude/agent-spec-skill-creator/scripts/utils.py",
+        3
       ],
       [
+        "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
+        1
+      ],
+      [
+        "skills/claude/agent-spec-skill-creator/scripts/quick_validate.py",
+        1
+      ],
+      [
+        "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
+        1
+      ],
+      [
+        "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+        1
+      ],
+      [
+        "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+        1
+      ]
+    ],
+    "top_external": [
+      [
         "sys",
-        10
+        20
       ],
       [
         "json",
-        9
+        16
+      ],
+      [
+        "os",
+        15
       ],
       [
         "argparse",
-        6
+        14
+      ],
+      [
+        "pathlib",
+        10
       ],
       [
         "re",
-        5
-      ],
-      [
-        "datetime",
-        3
-      ],
-      [
-        "collections",
-        3
-      ],
-      [
-        "starlette",
-        3
+        9
       ],
       [
         "subprocess",
-        2
+        6
       ],
       [
-        "hashlib",
-        2
+        "time",
+        6
+      ],
+      [
+        "datetime",
+        4
+      ],
+      [
+        "mcp",
+        4
       ]
     ]
   },
-  "orphan_count": 11,
+  "orphan_count": 18,
   "services": {},
   "layer_violations": [],
   "topics": {},
@@ -75,6 +100,18 @@
       [
         "Spring annotations",
         3
+      ]
+    ],
+    "typing": [
+      [
+        "type hints",
+        38
+      ]
+    ],
+    "logging": [
+      [
+        "console",
+        2
       ]
     ]
   },
@@ -199,33 +236,266 @@
       "endpoints": [],
       "produces": [],
       "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-mcp-builder/scripts/evaluation.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-mcp-builder/scripts/evaluation.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/eval-viewer/generate_review.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/eval-viewer/generate_review.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/__init__.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/__init__.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/aggregate_benchmark.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/aggregate_benchmark.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/package_skill.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/package_skill.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/quick_validate.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/quick_validate.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-webapp-testing/examples/console_logging.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-webapp-testing/examples/console_logging.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-webapp-testing/examples/element_discovery.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-webapp-testing/examples/element_discovery.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-webapp-testing/examples/static_html_automation.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-webapp-testing/examples/static_html_automation.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "skills/claude/agent-spec-webapp-testing/scripts/with_server.py",
+      "type": "test",
+      "path": "skills/claude/agent-spec-webapp-testing/scripts/with_server.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
     }
   ],
-  "edges": [],
+  "edges": [
+    {
+      "source": "skills/claude/agent-spec-mcp-builder/scripts/evaluation.py",
+      "target": "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/package_skill.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/quick_validate.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
+      "type": "imports"
+    }
+  ],
   "external": [
     [
-      "os",
-      10
-    ],
-    [
       "sys",
-      10
+      20
     ],
     [
       "json",
-      9
+      16
+    ],
+    [
+      "os",
+      15
     ],
     [
       "argparse",
-      6
+      14
+    ],
+    [
+      "pathlib",
+      10
     ],
     [
       "re",
-      5
+      9
+    ],
+    [
+      "subprocess",
+      6
+    ],
+    [
+      "time",
+      6
     ],
     [
       "datetime",
-      3
+      4
+    ],
+    [
+      "mcp",
+      4
     ],
     [
       "collections",
@@ -236,11 +506,23 @@
       3
     ],
     [
-      "subprocess",
-      2
+      "playwright",
+      3
     ],
     [
       "hashlib",
+      2
+    ],
+    [
+      "tempfile",
+      2
+    ],
+    [
+      "typing",
+      2
+    ],
+    [
+      "webbrowser",
       2
     ],
     [
@@ -260,11 +542,87 @@
       1
     ],
     [
-      "tempfile",
+      "abc",
       1
     ],
     [
-      "time",
+      "contextlib",
+      1
+    ],
+    [
+      "anthropic",
+      1
+    ],
+    [
+      "asyncio",
+      1
+    ],
+    [
+      "traceback",
+      1
+    ],
+    [
+      "xml",
+      1
+    ],
+    [
+      "base64",
+      1
+    ],
+    [
+      "functools",
+      1
+    ],
+    [
+      "http",
+      1
+    ],
+    [
+      "mimetypes",
+      1
+    ],
+    [
+      "signal",
+      1
+    ],
+    [
+      "math",
+      1
+    ],
+    [
+      "html",
+      1
+    ],
+    [
+      "fnmatch",
+      1
+    ],
+    [
+      "zipfile",
+      1
+    ],
+    [
+      "yaml",
+      1
+    ],
+    [
+      "concurrent",
+      1
+    ],
+    [
+      "select",
+      1
+    ],
+    [
+      "uuid",
+      1
+    ],
+    [
+      "random",
+      1
+    ],
+    [
+      "socket",
       1
     ]
   ],
