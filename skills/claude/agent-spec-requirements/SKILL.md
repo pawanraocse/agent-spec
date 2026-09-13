@@ -9,11 +9,12 @@ description: >-
 ## Gate
 
 ```bash
-test -f .agent-spec/sdlc/00-RAW-REQUIREMENTS.md && echo present || echo "none — use what the user typed"
+test -f .agent-spec/sdlc/00-INTENT.md && echo present || echo "none — use what the user typed"
 ```
 
-This is the first gate, so a missing raw-requirements file is fine: work from what the
-user said. Everything downstream depends on this being honest about what is *not* known.
+If `/agent-spec-intent` ran, `00-INTENT.md` holds the originator's own framing — read it
+and structure from it. If not, work from what the user said; a missing intent file is
+fine. Everything downstream depends on this being honest about what is *not* known.
 
 **Give every requirement an identifier** — `REQ-001`, `NFR-001`, `US-001`. Gate 8
 traces those identifiers through every downstream artifact; without them nothing can
@@ -21,7 +22,7 @@ prove a requirement survived, and a dropped one is invisible.
 
 
 1. Adopt the @WRITER persona.
-2. Read the user's raw input.
+2. Read `00-INTENT.md` if present, otherwise the user's raw input.
 3. Structure it according to `.agent-spec/sdlc/01-REQUIREMENTS.md`.
 4. Use `[NEEDS CLARIFICATION]` tags for missing information.
 5. Ask the user questions to fill the gaps — one at a time, in plain language, and stop

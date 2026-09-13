@@ -71,7 +71,7 @@ SKILL_SRC="${AGENT_SPEC_HOME}/skills/claude"
 [ -d "${SKILL_SRC}" ] || { echo "✗ not found: ${SKILL_SRC}" >&2; exit 1; }
 
 # The SDLC-design skills, held back only under --lean.
-LEAN_EXCLUDE="agent-spec-hld agent-spec-lld agent-spec-prd agent-spec-requirements agent-spec-tech-spec"
+LEAN_EXCLUDE="agent-spec-intent agent-spec-hld agent-spec-lld agent-spec-prd agent-spec-requirements agent-spec-tech-spec"
 
 echo -e "${BLUE}agent-spec${NC}"
 echo -e "  project: ${PROJECT_ROOT}"

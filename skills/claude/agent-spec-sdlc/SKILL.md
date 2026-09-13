@@ -24,6 +24,10 @@ Starting something new:
 
 ## The pipeline
 
+Before gate 0, optionally, `/agent-spec-intent` captures the originator's idea in their own
+words into `00-INTENT.md` — for ideas that must survive a handoff. It is not a gate: it
+records nothing in `STATE.json`, and gate 0 reads its output as input.
+
 | Gate | Name | Skill | Produces |
 |---|---|---|---|
 | 0 | REQUIREMENTS | `/agent-spec-requirements` | `01-REQUIREMENTS.md` |

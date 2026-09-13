@@ -83,7 +83,7 @@ rediscover the project.
 | `--skills-only` | Machine-wide skills, touch nothing in this directory |
 | `--project-only` | This directory only |
 | `--project-skills` | Also commit skills into `.claude/` and `.cursor/` (team repos) |
-| `--lean` | Skip the 5 SDLC-design skills |
+| `--lean` | Skip the 6 SDLC-design skills |
 | `--force` | Overwrite existing project files |
 
 </details>
@@ -99,7 +99,7 @@ and where it came from.
 |---|---|
 | **Router** | `/agent-spec` — picks the right skill for the job when you are not sure |
 | **Onboarding** | `/agent-spec-onboard` |
-| **SDLC pipeline** | `/agent-spec-sdlc` routes; `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-webapp-testing` (Playwright automation) `-validation` `-doc-coauthoring` (Zero-context verification) |
+| **SDLC pipeline** | `/agent-spec-sdlc` routes; `-intent` (capture the idea before gate 0) `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-webapp-testing` (Playwright automation) `-validation` `-doc-coauthoring` (Zero-context verification) |
 | **Diagnosis** | `/agent-spec-investigate` |
 | **Review** | `/agent-spec-review` `-self-review` `-solid-check` `-debt` |
 | **Prompt quality** | `/agent-spec-prompt-audit` — audits any body an agent re-reads every turn for dead references, bloat and rules a skill cannot enforce |
