@@ -39,18 +39,23 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   cheap arm. The report ends by saying that one task is one data point.
 
 ### Changed
-- Self-test: **125 assertions**, all passing, up from 120. Section `[16]` checks that every
+- Self-test: **128 assertions**, all passing, up from 120. Section `[16]` checks that every
   role named in the persona table has a matching uppercase persona file — the whole table,
   not only the new row, because a role token that does not resolve to a file is a persona
   nobody can load. It also asserts that the two directives the hybrid boundary rests on
   stay in `AI-ARCHITECT.md`, that `/agent-spec-prompt-audit` names no binary the installer
   does not ship, and that its prohibition on cutting a safety clause for bytes survives.
 - Persona count is eleven: `personas/README.md`, `skills/claude/agent-spec-persona/SKILL.md`
-  and `CLAUDE.md` all list `ai-architect`. Skill count is 30 throughout `README.md`, which
-  now matches `ls skills/claude` rather than asserting a number.
+  and `CLAUDE.md` all list `ai-architect`. Skill count is 31 throughout `README.md`. Three
+  advertised numbers had drifted — the skill count (was 30, now 31), the assertion count
+  (was 117, now 128), and the `--lean` comment (said 5, excludes 6) — so section `[17]` of
+  the self-test now asserts each against the thing it counts: the skill count against
+  `ls skills/claude`, the `--lean` comment against `LEAN_EXCLUDE`, and every `N assertions`
+  line against the run's own total. A number in the prose that no longer matches reality now
+  fails the suite instead of being charged into context on every read.
 - Self-test: **53 assertions at this point**, all passing, up from 50. The new ones cover
   the nesting guard, the signed cost delta, and the single-sample caveat. The suite has
-  grown several times since within this same unreleased block; 125 is the current count.
+  grown several times since within this same unreleased block; 128 is the current count.
 
 - **`agent-spec-tokens.py corpus`** — the same buckets aggregated across every session on
   the machine. One session proves nothing about the shape of the bill; it could be an

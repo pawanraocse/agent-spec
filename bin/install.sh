@@ -21,8 +21,8 @@
 #   --project-only    this directory only, leave the machine-wide install alone
 #   --project-skills  also copy skills into ./.claude/ and ./.cursor/ (team repos
 #                     that want the skills committed alongside the code)
-#   --lean            skip the 5 SDLC-design skills (hld lld prd requirements
-#                     tech-spec)
+#   --lean            skip the 6 SDLC-design skills (intent hld lld prd
+#                     requirements tech-spec)
 #   --force           overwrite project files that already exist
 #
 # WSL note: Claude Code reads user-level skills from the HOME of the *process*.

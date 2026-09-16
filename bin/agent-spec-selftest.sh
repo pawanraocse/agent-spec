@@ -631,6 +631,30 @@ grep -q 'Never delete a safety clause' "${HOME_DIR}/skills/claude/agent-spec-pro
   || bad "prompt-audit would let a safety clause be cut for bytes"
 
 echo ""
+echo "[17] advertised counts match reality"
+# Four count defects reached main because no test compared a number in the prose against
+# the thing it counts. Each drifts silently: a skill is added, README still says the old
+# total, and the stale number is charged into context on every read. Guard the counts the
+# same way references are guarded. The assertion check runs last, on purpose — it reads the
+# running PASS total, so every other assertion must already have executed.
+ACTUAL_SKILLS=$(ls -1d "${HOME_DIR}/skills/claude/"*/ 2>/dev/null | wc -l | tr -d ' ')
+WRONG_SKILLS=$(grep -oE '[0-9]+ (prefixed )?skills' "${HOME_DIR}/README.md" \
+  | grep -oE '^[0-9]+' | grep -vc "^${ACTUAL_SKILLS}$")
+want "every skill count in README matches the ${ACTUAL_SKILLS} installed skills" 0 "$WRONG_SKILLS"
+
+LEAN_ADVERTISED=$(grep -oE 'skip the [0-9]+ SDLC-design skills' "${HOME_DIR}/bin/install.sh" \
+  | grep -oE '[0-9]+' | head -1)
+LEAN_ACTUAL=$(grep -E '^LEAN_EXCLUDE=' "${HOME_DIR}/bin/install.sh" \
+  | grep -oE 'agent-spec-[a-z-]+' | wc -l | tr -d ' ')
+want "install.sh --lean comment count matches LEAN_EXCLUDE (${LEAN_ACTUAL})" "$LEAN_ACTUAL" "$LEAN_ADVERTISED"
+
+# Last assertion in the suite. Compares every "<N> assertions" in README against the total
+# this run will print, which is the current PASS plus this check itself.
+WRONG_ASSERT=$(grep -oE '[0-9]+ assertions' "${HOME_DIR}/README.md" \
+  | grep -oE '^[0-9]+' | grep -vc "^$((PASS + 1))$")
+want "every assertion count in README matches this run ($((PASS + 1)))" 0 "$WRONG_ASSERT"
+
+echo ""
 echo "-----------------------------------------"
 echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
 [ "$FAIL" -eq 0 ] || exit 1
