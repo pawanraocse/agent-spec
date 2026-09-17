@@ -51,6 +51,19 @@ def get_total(): return total([])
 X
   echo 'from app.services.pricing import total
 def test_total(): assert total([]) == 0' > "$d/tests/test_pricing.py"
+  # latest.py contains the substring "test" but is not a test — the old detector
+  # misclassified it. gateway.py imports a module via `from pkg import mod`, which must
+  # resolve to the submodule, not __init__. a/config.py and b/config.py share a basename
+  # so a bare `import config` is ambiguous.
+  echo 'from app.repository.prices import load
+def newest(): return load(0)' > "$d/app/latest.py"
+  echo 'from app.services import pricing
+def go(): return pricing.total([])' > "$d/app/gateway.py"
+  mkdir -p "$d/app/a" "$d/app/b"
+  echo 'VALUE = 1' > "$d/app/a/config.py"
+  echo 'VALUE = 2' > "$d/app/b/config.py"
+  echo 'import config
+def read(): return config.VALUE' > "$d/app/consumer.py"
 }
 
 mkfixture_java_services() {
@@ -648,6 +661,98 @@ LEAN_ACTUAL=$(grep -E '^LEAN_EXCLUDE=' "${HOME_DIR}/bin/install.sh" \
   | grep -oE 'agent-spec-[a-z-]+' | wc -l | tr -d ' ')
 want "install.sh --lean comment count matches LEAN_EXCLUDE (${LEAN_ACTUAL})" "$LEAN_ACTUAL" "$LEAN_ADVERTISED"
 
+echo ""
+echo "[18] the Cursor sessionStart hook works"
+# Cursor loads the digest automatically only if install.sh wires .cursor/hooks.json AND the
+# digest's --cursor-hook mode emits the JSON envelope Cursor reads. Both are checked against
+# a real installed fixture: a rule the agent must remember to obey is not a hook.
+python3 -c "
+import json, sys
+c = json.load(open('$P/.cursor/hooks.json'))
+h = c.get('hooks', {}).get('sessionStart', [])
+sys.exit(0 if c.get('version') == 1 and any('--cursor-hook' in x.get('command','') for x in h) else 1)
+" 2>/dev/null \
+  && ok "install wires .cursor/hooks.json sessionStart to the digest" \
+  || bad "install.sh did not wire .cursor/hooks.json to the cursor-hook digest"
+
+( cd "$P" && python3 ./.agent-spec/bin/agent-spec-digest.py --cursor-hook </dev/null ) \
+  | python3 -c "import json,sys; sys.exit(0 if json.load(sys.stdin).get('additional_context') else 1)" 2>/dev/null \
+  && ok "the --cursor-hook digest emits valid JSON with additional_context" \
+  || bad "the --cursor-hook digest did not emit valid additional_context JSON"
+
+echo ""
+echo "[19] graph accuracy — test detection, submodule resolution, ambiguity, aliases"
+GP="$P/.agent-spec/graph/knowledge-graph.json"
+# #1 A filename that merely contains the letters "test" is not a test file. The old
+# substring detector tagged app/latest.py (and every agent-spec-*.py) as a test.
+python3 -c "
+import json, sys
+g = json.load(open('$GP'))
+n = [x for x in g['nodes'] if x['path'] == 'app/latest.py']
+sys.exit(0 if n and n[0]['type'] != 'test' and n[0]['layer'] != 'test' else 1)
+" 2>/dev/null \
+  && ok "a filename containing 'test' is not misread as a test file" \
+  || bad "latest.py was misclassified as a test"
+
+# #2/#3 `from app.services import pricing` must resolve to the module file, not __init__.
+python3 -c "
+import json, sys
+e = json.load(open('$GP'))['edges']
+sys.exit(0 if any(x['source']=='app/gateway.py' and x['target']=='app/services/pricing.py'
+                  and x['type']=='imports' for x in e) else 1)
+" 2>/dev/null \
+  && ok "from-import resolves to the submodule, not __init__.py" \
+  || bad "from X import mod did not resolve to the submodule"
+
+# #4 A bare `import config` matching two files is recorded low-confidence, not dropped,
+# and never leaks into the confident import graph.
+python3 -c "
+import json, sys
+e = json.load(open('$GP'))['edges']
+amb = [x for x in e if x.get('type')=='imports_ambiguous' and x['source']=='app/consumer.py']
+leak = [x for x in e if x['type']=='imports' and x['source']=='app/consumer.py'
+        and x['target'].endswith('config.py')]
+sys.exit(0 if amb and not leak else 1)
+" 2>/dev/null \
+  && ok "an ambiguous import is recorded low-confidence, not dropped or trusted" \
+  || bad "ambiguous import was dropped or leaked into the confident graph"
+
+# #5 graph-aliases.json recovers an HTTP edge whose called host is not the service's
+# directory name — a gateway. Written after install, then re-indexed.
+GJ="$J/.agent-spec/graph/knowledge-graph.json"
+echo '{"orders-gw": "orders"}' > "$J/.agent-spec/graph-aliases.json"
+cat > "$J/billing/src/main/java/b/service/OrderClient.java" <<'X'
+package b.service;
+public class OrderClient { void call() { restTemplate.getForObject("http://orders-gw/orders", String.class); } }
+X
+# camelCase test detection must survive: FooTest is a test, FooService is not. The stem
+# must be tokenised in its original case, not lowercased first, or the boundary is lost.
+cat > "$J/orders/src/main/java/o/service/PricingTest.java" <<'X'
+package o.service;
+public class PricingTest {}
+X
+( cd "$J" && ./.agent-spec/bin/agent-spec-index --quiet >/dev/null 2>&1 )
+python3 -c "
+import json, sys
+e = json.load(open('$GJ'))['edges']
+sys.exit(0 if any(x.get('type')=='http' and x['source'].startswith('billing/')
+                  and x['target']=='orders' for x in e) else 1)
+" 2>/dev/null \
+  && ok "graph-aliases.json recovers an HTTP edge to an aliased host" \
+  || bad "the alias map did not recover the cross-service HTTP edge"
+
+python3 -c "
+import json, sys
+g = json.load(open('$GJ'))
+tn = [x for x in g['nodes'] if x['path'].endswith('PricingTest.java')]
+sn = [x for x in g['nodes'] if x['path'].endswith('OrderService.java')]
+sys.exit(0 if tn and tn[0]['type']=='test' and sn and sn[0]['type']!='test' else 1)
+" 2>/dev/null \
+  && ok "camelCase FooTest is a test, FooService is not" \
+  || bad "camelCase test detection regressed"
+
+echo ""
+echo "[17] advertised counts match reality (final tally)"
 # Last assertion in the suite. Compares every "<N> assertions" in README against the total
 # this run will print, which is the current PASS plus this check itself.
 WRONG_ASSERT=$(grep -oE '[0-9]+ assertions' "${HOME_DIR}/README.md" \

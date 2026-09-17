@@ -24,7 +24,7 @@ Unreleased work on `main`, on top of 1.0.0. What is in place today:
 | **Pipeline** | nine gates with state on disk, and requirement traceability from gate 0 to gate 8 |
 | **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
 | **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
-| **Tests** | `bin/agent-spec-selftest.sh` — 128 assertions across Python, Java-microservice and Node fixtures |
+| **Tests** | `bin/agent-spec-selftest.sh` — 135 assertions across Python, Java-microservice and Node fixtures |
 | **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript — measured buckets, not bytes ÷ 4 |
 | **Subagents** | `agent-spec-search` and `agent-spec-verify`, pinned to a cheap model, so broad sweeps and noisy test output never enter the main context |
 
@@ -32,9 +32,13 @@ Known gaps, stated rather than hidden:
 
 - Layer classification is a path and filename heuristic. It is reported, never enforced.
 - HTTP integration edges resolve only when the called host matches a detected service
-  name. A gateway, a config-driven base URL, or a discovery name that differs from the
-  directory name is invisible. Broker edges have no such limitation.
-- `from pkg import a` resolves to `pkg/__init__.py`, not `pkg/a.py`.
+  name — or an alias you list in `.agent-spec/graph-aliases.json` (`{"billing-gw":
+  "billing"}`), which recovers a gateway, a discovery name, or a config-driven base URL.
+  A host with no matching service and no alias is still invisible. Broker edges have no
+  such limitation.
+- An import that matches several files (a basename shared across packages) is recorded as
+  a low-confidence `imports_ambiguous` edge, kept out of stats, cycles and layer
+  violations, and flagged in a query rather than silently dropped.
 - Whether Claude Code picks up `outputStyle: "agent-spec"` from a freshly written
   `settings.json` has not been observed in a live session.
 
@@ -201,7 +205,7 @@ Method, raw numbers and the open questions: [docs/token-checklist.md](docs/token
 ## Maintaining
 
 ```bash
-bin/agent-spec-selftest.sh   # 128 assertions: three language fixtures, gates, memory, hooks, upgrade path
+bin/agent-spec-selftest.sh   # 135 assertions: three language fixtures, gates, memory, hooks, upgrade path
 bin/agent-spec-bench.sh      # always-on and per-skill cost, estimated at 4 bytes per token
 bin/agent-spec-bench.sh --session   # measured, from the real session transcript
 bin/agent-spec-benchmark.sh --repeats 3   # compare two modes over a verified task suite

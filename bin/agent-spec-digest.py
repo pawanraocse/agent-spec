@@ -104,9 +104,10 @@ def remembered():
     return ""
 
 
-def main():
+def build_digest():
+    """Assemble the digest text, or "" when this is not an agent-spec project."""
     if not os.path.isdir(SPEC):
-        return 0
+        return ""
 
     out = ["<agent-spec-digest>"]
 
@@ -134,9 +135,32 @@ def main():
     out.append("</agent-spec-digest>")
 
     text = "\n".join(out)
-    sys.stdout.write(text[:MAX_BYTES] + ("\n" if len(text) <= MAX_BYTES else "\n[truncated]\n"))
+    return text[:MAX_BYTES] + ("" if len(text) <= MAX_BYTES else "\n[truncated]")
+
+
+def main():
+    text = build_digest()
+    if not text:
+        return 0
+    sys.stdout.write(text + "\n")
+    return 0
+
+
+def cursor_hook():
+    """Cursor's sessionStart hook: read the payload on stdin, emit the digest in
+    the {"additional_context": ...} envelope Cursor injects into the session. Always
+    prints valid JSON — {} when there is nothing to add — so the hook never fails."""
+    try:
+        sys.stdin.read()
+    except Exception:
+        pass
+    text = build_digest()
+    payload = {"additional_context": text} if text else {}
+    sys.stdout.write(json.dumps(payload))
     return 0
 
 
 if __name__ == "__main__":
+    if "--cursor-hook" in sys.argv[1:]:
+        sys.exit(cursor_hook())
     sys.exit(main())

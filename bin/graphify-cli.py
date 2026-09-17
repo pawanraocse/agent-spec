@@ -62,8 +62,10 @@ def cmd_query(graph, args):
     src_edges = [e for e in edges if e.get("type", "imports") == "imports"]
     imports = sorted({e["target"] for e in src_edges if e["source"] == node})
     dependents = sorted({e["source"] for e in src_edges if e["target"] == node})
-    wires = [e for e in edges if e.get("type") != "imports"
+    wires = [e for e in edges if e.get("type") in ("http", "message")
              and node in (e["source"], e["target"])]
+    ambiguous = [e for e in edges if e.get("type") == "imports_ambiguous"
+                 and node in (e["source"], e["target"])]
 
     print(f"=== {node} ===")
     print(f"\n[IMPORTS] {len(imports)} internal")
@@ -83,6 +85,13 @@ def cmd_query(graph, args):
             arrow = "->" if e["source"] == node else "<-"
             other = e["target"] if e["source"] == node else e["source"]
             print(f"  {arrow} {other}  ({e['type']}: {e.get('detail', '')})")
+
+    if ambiguous:
+        print(f"\n[LOW CONFIDENCE] {len(ambiguous)} ambiguous imports — verify before trusting")
+        for e in ambiguous:
+            arrow = "->" if e["source"] == node else "<-"
+            other = e["target"] if e["source"] == node else e["source"]
+            print(f"  {arrow} {other}  (import '{e.get('detail', '')}' matched several files)")
 
     if args.depth > 1:
         seen, frontier = set(dependents) | {node}, set(dependents)
@@ -226,7 +235,7 @@ def cmd_services(graph, args):
         eps = sum(len(n.get("endpoints") or []) for n in nodes if n.get("service") == name)
         print(f"  {name:20s} {counts[name]:4d} files  {eps:3d} endpoints   ({root or '.'}/)")
 
-    wires = [e for e in graph.get("edges", []) if e.get("type") != "imports"]
+    wires = [e for e in graph.get("edges", []) if e.get("type") in ("http", "message")]
     pairs = Counter()
     for e in wires:
         src = owner.get(e["source"]) or "?"

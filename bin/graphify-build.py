@@ -10,6 +10,7 @@ noise that hides the real structure.
 import os
 import sys
 import re
+import ast
 import json
 import argparse
 
@@ -55,7 +56,32 @@ LANG_BY_EXT = {
     '.c': 'c', '.h': 'c', '.cpp': 'cpp', '.hpp': 'cpp', '.cc': 'cpp',
 }
 
-TEST_HINTS = ('test', 'spec', '_test.', '.test.', '.spec.')
+# A test file is named by convention, not by containing the letters "test" somewhere.
+# The old substring check tagged agent-spec-*.py, latest.py and anything with "spec" in
+# its path as a test, which collapsed real source into the test layer. Detection is now
+# by whole path segment (a tests/ or spec/ directory) or by the first/last token of the
+# filename (test_x, x_test, x.spec, OrderServiceTest), never a raw substring.
+TEST_DIR_SEGMENTS = {'test', 'tests', 'spec', 'specs', '__tests__', 'testing', 'e2e'}
+TEST_NAME_TOKENS = {'test', 'tests', 'spec', 'specs'}
+
+
+def _name_tokens(name):
+    """Split a filename stem into words across camelCase, snake, kebab and dots."""
+    spaced = re.sub(r'(?<=[a-z0-9])(?=[A-Z])', ' ', name)
+    return [t.lower() for t in re.split(r'[^A-Za-z0-9]+', spaced) if t]
+
+
+def is_test_file(rel):
+    parts = rel.split('/')
+    if any(seg.lower() in TEST_DIR_SEGMENTS for seg in parts[:-1]):
+        return True
+    # Keep original case here: _name_tokens splits camelCase (FooTest -> foo, test),
+    # which is lost if the stem is lowercased first.
+    stem = os.path.splitext(parts[-1])[0]
+    tokens = _name_tokens(stem)
+    if 'conftest' in tokens:
+        return True
+    return bool(tokens) and (tokens[0] in TEST_NAME_TOKENS or tokens[-1] in TEST_NAME_TOKENS)
 
 # Manifests, in probe order. First hit wins.
 MANIFESTS = [
@@ -112,12 +138,42 @@ def detect_stack():
     return " + ".join(dict.fromkeys(found))
 
 
-def extract_imports(filepath):
-    out = set()
+def _py_imports(content):
+    """Exact Python imports via the AST, or None on a syntax error so the caller
+    can fall back to the regex extractor.
+
+    For `from pkg import name` this emits the submodule form `pkg.name` alongside
+    `pkg`, so an import of a module resolves to `pkg/name.py` rather than collapsing
+    onto `pkg/__init__.py`. The regex extractor could only ever see `pkg`.
+    """
     try:
-        content = open(filepath, "r", encoding="utf-8", errors="ignore").read()
-    except OSError:
-        return []
+        tree = ast.parse(content)
+    except (SyntaxError, ValueError):
+        return None
+    out = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                out.add(alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            base = "." * (node.level or 0) + (node.module or "")
+            if node.module:
+                out.add(base)
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                sep = "" if (not base or base.endswith(".")) else "."
+                out.add(base + sep + alias.name)
+    return sorted(t for t in out if t)
+
+
+def extract_imports(rel, content):
+    """Imports for one file: exact AST for Python, regex for every other language."""
+    if rel.endswith(".py"):
+        py = _py_imports(content)
+        if py is not None:
+            return py
+    out = set()
     for pattern in IMPORT_PATTERNS:
         for m in re.finditer(pattern, content, re.MULTILINE):
             token = m.group(1).strip()
@@ -230,7 +286,13 @@ def build_index(files):
 
 
 def resolve(token, importer, by_path, by_dotted):
-    """Return the node this import names, or None if it is external."""
+    """Return the node this import names.
+
+    A string is a confident resolution. A list of >1 paths means the token is
+    ambiguous — it matches several files and none more specifically — so the caller
+    can record it as low-confidence rather than dropping the edge entirely. None
+    means the import is external.
+    """
     importer_dir = os.path.dirname(importer)
 
     # Relative: ./x, ../x, and Python's .x / ..x
@@ -252,15 +314,23 @@ def resolve(token, importer, by_path, by_dotted):
         return by_path.get(target) or by_path.get(token)
 
     token = token.replace("::", ".")           # Rust paths
-    # Longest dotted suffix that names exactly one file. Ambiguity is not a
-    # dependency — two candidates means we do not know, so we say nothing.
+    # Longest dotted suffix that names exactly one file wins. A more-specific unique
+    # match always beats a less-specific ambiguous one; only when no suffix is unique
+    # do we return the most-specific ambiguous set, for the caller to record as
+    # low-confidence rather than lose.
     parts = token.split(".")
+    ambiguous = None
     for i in range(len(parts)):
         candidate = ".".join(parts[i:])
         hits = by_dotted.get(candidate)
-        if hits and len(hits) == 1 and hits[0] != importer:
-            return hits[0]
-    return None
+        if not hits:
+            continue
+        uniq = [h for h in hits if h != importer]
+        if len(uniq) == 1:
+            return uniq[0]
+        if len(uniq) > 1 and ambiguous is None:
+            ambiguous = uniq
+    return ambiguous
 
 
 def find_cycles(adjacency, limit=20):
@@ -412,6 +482,24 @@ def detect_services():
     return roots
 
 
+def load_service_aliases():
+    """Optional map of a called host to the service it actually is, from
+    .agent-spec/graph-aliases.json ({"billing-gw": "billing"}). An HTTP edge is
+    invisible when the called host differs from the directory-derived service name —
+    a gateway, a discovery name, a config-driven base URL. This is the escape hatch:
+    a small hand-kept file, not a heuristic that guesses. Missing or malformed → {}.
+    """
+    path = os.path.join(PROJECT_ROOT, ".agent-spec", "graph-aliases.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {str(k).lower(): str(v) for k, v in data.items() if k and v}
+
+
 def service_of(rel, service_roots):
     """Longest matching service root owns the file."""
     best, name = -1, None
@@ -484,16 +572,22 @@ def extract_signals(content):
     }
 
 
-def wire_edges(file_signals, service_by_file, service_roots):
+def wire_edges(file_signals, service_by_file, service_roots, aliases=None):
     """Integration edges the import graph cannot see.
 
     Topic edges are real: a producer and a consumer naming the same topic string
     are connected whether or not they share a line of code. HTTP edges are only
-    emitted when the called host matches a known service name, because a URL to a
-    third-party API is a dependency on someone else's system, not an internal edge.
+    emitted when the called host matches a known service name (or an alias from
+    graph-aliases.json), because a URL to a third-party API is a dependency on
+    someone else's system, not an internal edge.
     """
     edges, topics = [], defaultdict(lambda: {"producers": [], "consumers": []})
     names = {name.lower(): name for name in service_roots.values()}
+    # An alias points a called host at a real service name. Only aliases whose target
+    # is an actual service become edges; a typo maps to nothing rather than a phantom.
+    for alias, svc in (aliases or {}).items():
+        if svc.lower() in names:
+            names[alias] = names[svc.lower()]
 
     for rel, sig in file_signals.items():
         for topic in sig["produces"]:
@@ -524,7 +618,7 @@ def wire_edges(file_signals, service_by_file, service_roots):
 # The cache is keyed by the parser version, so changing a pattern above
 # invalidates every entry rather than silently serving stale extractions.
 # ---------------------------------------------------------------------------
-PARSER_VERSION = "4.0"
+PARSER_VERSION = "5.0"
 CACHE_PATH = os.path.join(OUTPUT_DIR, ".cache.json")
 
 
@@ -567,14 +661,8 @@ def parse_file(rel, cache):
     except OSError:
         content = ""
 
-    imports = set()
-    for pattern in IMPORT_PATTERNS:
-        for m in re.finditer(pattern, content, re.MULTILINE):
-            token = m.group(1).strip()
-            if token:
-                imports.add(token)
-
-    entry = {"stamp": stamp, "imports": sorted(imports), "signals": extract_signals(content)}
+    entry = {"stamp": stamp, "imports": extract_imports(rel, content),
+             "signals": extract_signals(content)}
     return entry, True
 
 
@@ -772,8 +860,7 @@ def main():
     for rel in files:
         ext = os.path.splitext(rel)[1]
         lang_counts[LANG_BY_EXT.get(ext, "other")] += 1
-        lowered = rel.lower()
-        is_test = any(h in lowered for h in TEST_HINTS)
+        is_test = is_test_file(rel)
         if is_test:
             test_files += 1
 
@@ -799,15 +886,23 @@ def main():
 
         for token in entry["imports"]:
             target = resolve(token, rel, by_path, by_dotted)
-            if target:
+            if isinstance(target, str):
                 edges.append({"source": rel, "target": target, "type": "imports"})
                 adjacency[rel].add(target)
+            elif isinstance(target, list):
+                # Ambiguous: recorded low-confidence, kept out of the confident graph
+                # (cycles, layer violations and stats all filter on type=="imports").
+                for cand in target[:4]:
+                    edges.append({"source": rel, "target": cand,
+                                  "type": "imports_ambiguous", "detail": token,
+                                  "confidence": "low"})
             else:
                 external[token.split(".")[0].split("/")[0]] += 1
 
     save_cache(fresh_cache)
 
-    integration_edges, topics = wire_edges(file_signals, service_by_file, service_roots)
+    integration_edges, topics = wire_edges(file_signals, service_by_file, service_roots,
+                                           load_service_aliases())
     edges.extend(integration_edges)
     violations = layer_violations(edges, layer_of)
 
@@ -841,7 +936,7 @@ def main():
     conventions = detect_conventions(files)
 
     graph = {
-        "version": "4.0",
+        "version": "5.0",
         "project": os.path.basename(PROJECT_ROOT),
         "generated": datetime.now().isoformat(),
         "generator": "graphify-build",
@@ -855,9 +950,11 @@ def main():
         "nodes": nodes,
         "edges": edges,
         "external": external.most_common(50),
-        "note": ("Edges are resolved to node ids. type=imports is a source dependency; "
-                 "type=http and type=message are integration edges recovered from call "
-                 "and broker signals, which no import graph can see."),
+        "note": ("Edges are resolved to node ids. type=imports is a confident source "
+                 "dependency; type=http and type=message are integration edges recovered "
+                 "from call and broker signals, which no import graph can see; "
+                 "type=imports_ambiguous is a low-confidence import that matched several "
+                 "files and is excluded from stats, cycles and layer violations."),
     }
     with open(os.path.join(OUTPUT_DIR, "knowledge-graph.json"), "w", encoding="utf-8") as fh:
         json.dump(graph, fh, indent=2)

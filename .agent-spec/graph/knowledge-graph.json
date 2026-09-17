@@ -1,15 +1,15 @@
 {
-  "version": "4.0",
+  "version": "5.0",
   "project": "agent-spec",
-  "generated": "2026-09-12T14:44:20.041318",
+  "generated": "2026-09-17T20:45:56.878925",
   "generator": "graphify-build",
   "stack": "Unknown",
   "stats": {
     "files": 27,
-    "internal_edges": 8,
+    "internal_edges": 10,
     "integration_edges": 0,
-    "external_packages": 42,
-    "test_files": 24,
+    "external_packages": 45,
+    "test_files": 1,
     "cycles": 0,
     "services": 0,
     "endpoints": 0,
@@ -19,13 +19,24 @@
       "python": 27
     },
     "layers": {
-      "test": 24,
-      "unknown": 3
+      "unknown": 23,
+      "config": 1,
+      "test": 1,
+      "controller": 1,
+      "util": 1
     },
     "most_depended": [
       [
         "skills/claude/agent-spec-skill-creator/scripts/utils.py",
         3
+      ],
+      [
+        "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+        2
+      ],
+      [
+        "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+        2
       ],
       [
         "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
@@ -38,14 +49,6 @@
       [
         "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
         1
-      ],
-      [
-        "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
-        1
-      ],
-      [
-        "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
-        1
       ]
     ],
     "top_external": [
@@ -54,19 +57,23 @@
         20
       ],
       [
+        "pathlib",
+        20
+      ],
+      [
         "json",
-        16
+        17
       ],
       [
         "os",
-        15
+        16
       ],
       [
         "argparse",
         14
       ],
       [
-        "pathlib",
+        "datetime",
         10
       ],
       [
@@ -74,20 +81,16 @@
         9
       ],
       [
-        "subprocess",
-        6
-      ],
-      [
-        "time",
-        6
-      ],
-      [
-        "datetime",
-        4
+        "collections",
+        9
       ],
       [
         "mcp",
-        4
+        9
+      ],
+      [
+        "starlette",
+        7
       ]
     ]
   },
@@ -118,10 +121,10 @@
   "nodes": [
     {
       "id": "bin/agent-spec-digest.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-digest.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -129,10 +132,10 @@
     },
     {
       "id": "bin/agent-spec-gate.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-gate.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -140,10 +143,10 @@
     },
     {
       "id": "bin/agent-spec-lint-refs.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-lint-refs.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -151,10 +154,10 @@
     },
     {
       "id": "bin/agent-spec-memory.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-memory.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -162,10 +165,10 @@
     },
     {
       "id": "bin/agent-spec-settings.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-settings.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "config",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -173,10 +176,10 @@
     },
     {
       "id": "bin/agent-spec-tokens.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-tokens.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -184,10 +187,10 @@
     },
     {
       "id": "bin/agent-spec-wire-recorder.py",
-      "type": "test",
+      "type": "file",
       "path": "bin/agent-spec-wire-recorder.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -239,10 +242,10 @@
     },
     {
       "id": "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-mcp-builder/scripts/connections.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -250,10 +253,10 @@
     },
     {
       "id": "skills/claude/agent-spec-mcp-builder/scripts/evaluation.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-mcp-builder/scripts/evaluation.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -261,10 +264,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/eval-viewer/generate_review.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/eval-viewer/generate_review.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "controller",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -272,10 +275,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/__init__.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/__init__.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -283,10 +286,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/aggregate_benchmark.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/aggregate_benchmark.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -294,10 +297,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/generate_report.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -305,10 +308,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -316,10 +319,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/package_skill.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/package_skill.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -327,10 +330,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/quick_validate.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/quick_validate.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -338,10 +341,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -349,10 +352,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -360,10 +363,10 @@
     },
     {
       "id": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-skill-creator/scripts/utils.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "util",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -371,10 +374,10 @@
     },
     {
       "id": "skills/claude/agent-spec-webapp-testing/examples/console_logging.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-webapp-testing/examples/console_logging.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -382,10 +385,10 @@
     },
     {
       "id": "skills/claude/agent-spec-webapp-testing/examples/element_discovery.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-webapp-testing/examples/element_discovery.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -393,10 +396,10 @@
     },
     {
       "id": "skills/claude/agent-spec-webapp-testing/examples/static_html_automation.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-webapp-testing/examples/static_html_automation.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -404,10 +407,10 @@
     },
     {
       "id": "skills/claude/agent-spec-webapp-testing/scripts/with_server.py",
-      "type": "test",
+      "type": "file",
       "path": "skills/claude/agent-spec-webapp-testing/scripts/with_server.py",
       "lang": "python",
-      "layer": "test",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "produces": [],
@@ -447,6 +450,16 @@
     },
     {
       "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/improve_description.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
+      "target": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
+      "type": "imports"
+    },
+    {
+      "source": "skills/claude/agent-spec-skill-creator/scripts/run_loop.py",
       "target": "skills/claude/agent-spec-skill-creator/scripts/run_eval.py",
       "type": "imports"
     },
@@ -462,19 +475,23 @@
       20
     ],
     [
+      "pathlib",
+      20
+    ],
+    [
       "json",
-      16
+      17
     ],
     [
       "os",
-      15
+      16
     ],
     [
       "argparse",
       14
     ],
     [
-      "pathlib",
+      "datetime",
       10
     ],
     [
@@ -482,31 +499,47 @@
       9
     ],
     [
+      "collections",
+      9
+    ],
+    [
+      "mcp",
+      9
+    ],
+    [
+      "starlette",
+      7
+    ],
+    [
+      "time",
+      7
+    ],
+    [
       "subprocess",
       6
     ],
     [
-      "time",
+      "scripts",
       6
     ],
     [
-      "datetime",
-      4
-    ],
-    [
-      "mcp",
-      4
-    ],
-    [
-      "collections",
-      3
-    ],
-    [
-      "starlette",
-      3
-    ],
-    [
       "playwright",
+      6
+    ],
+    [
+      "typing",
+      4
+    ],
+    [
+      "abc",
+      3
+    ],
+    [
+      "http",
+      3
+    ],
+    [
+      "concurrent",
       3
     ],
     [
@@ -518,7 +551,15 @@
       2
     ],
     [
-      "typing",
+      "contextlib",
+      2
+    ],
+    [
+      "anthropic",
+      2
+    ],
+    [
+      "functools",
       2
     ],
     [
@@ -538,23 +579,19 @@
       1
     ],
     [
+      "ast",
+      1
+    ],
+    [
       "shlex",
       1
     ],
     [
-      "abc",
-      1
-    ],
-    [
-      "contextlib",
-      1
-    ],
-    [
-      "anthropic",
-      1
-    ],
-    [
       "asyncio",
+      1
+    ],
+    [
+      "connections",
       1
     ],
     [
@@ -567,14 +604,6 @@
     ],
     [
       "base64",
-      1
-    ],
-    [
-      "functools",
-      1
-    ],
-    [
-      "http",
       1
     ],
     [
@@ -606,10 +635,6 @@
       1
     ],
     [
-      "concurrent",
-      1
-    ],
-    [
       "select",
       1
     ],
@@ -626,5 +651,5 @@
       1
     ]
   ],
-  "note": "Edges are resolved to node ids. type=imports is a source dependency; type=http and type=message are integration edges recovered from call and broker signals, which no import graph can see."
+  "note": "Edges are resolved to node ids. type=imports is a confident source dependency; type=http and type=message are integration edges recovered from call and broker signals, which no import graph can see; type=imports_ambiguous is a low-confidence import that matched several files and is excluded from stats, cycles and layer violations."
 }

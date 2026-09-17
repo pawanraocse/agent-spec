@@ -140,8 +140,9 @@ copy_skills() {
 # Output style and hooks. These are the only levers that survive a new session: a
 # skill has to be invoked, whereas settings.json is read by the harness every time.
 # SessionStart supplies the digest; PreToolUse enforces the reading and writing
-# discipline that a skill body can only ask for. Cursor has no equivalent, so this
-# runs for .claude homes only.
+# discipline that a skill body can only ask for. This installs the .claude harness;
+# Cursor gets its own sessionStart hook wired per-project below (.cursor/hooks.json),
+# since Cursor has no user-level hooks home.
 # ---------------------------------------------------------------------------
 install_harness() {
   local home="$1"
@@ -288,6 +289,36 @@ if true; then
   } > "${PROJECT_ROOT}/.cursor/rules/agent-spec.mdc"
 fi
 echo -e "  ${GREEN}✓${NC} .cursor/rules/agent-spec.mdc"
+
+# Cursor's sessionStart hook (IDE sessions) is the equivalent of Claude Code's, added
+# after this framework first shipped. It injects the same digest automatically, so a
+# Cursor session no longer relies on the agent obeying the rule and running the script
+# itself. Merged, not clobbered: an existing hooks.json keeps its other handlers, and
+# ours is deduped by command so re-running the installer does not stack copies. Cloud
+# agents do not fire sessionStart; the .cursor rule's manual fallback still covers them.
+if command -v python3 >/dev/null 2>&1; then
+  CURSOR_HOOK_CMD="python3 ./.agent-spec/bin/agent-spec-digest.py --cursor-hook"
+  python3 - "${PROJECT_ROOT}/.cursor/hooks.json" "${CURSOR_HOOK_CMD}" <<'PY'
+import json, sys
+path, cmd = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as fh:
+        cfg = json.load(fh)
+    if not isinstance(cfg, dict):
+        cfg = {}
+except (OSError, ValueError):
+    cfg = {}
+cfg["version"] = 1
+hooks = cfg.setdefault("hooks", {})
+handlers = hooks.setdefault("sessionStart", [])
+if not any(isinstance(h, dict) and h.get("command") == cmd for h in handlers):
+    handlers.append({"command": cmd})
+with open(path, "w") as fh:
+    json.dump(cfg, fh, indent=2)
+    fh.write("\n")
+PY
+  echo -e "  ${GREEN}✓${NC} .cursor/hooks.json (sessionStart → digest)"
+fi
 
 # Antigravity and the other generic agents have no user-level skill home, so their
 # copy is project-local. Claude and Cursor are already covered machine-wide.

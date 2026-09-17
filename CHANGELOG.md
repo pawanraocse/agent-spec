@@ -9,7 +9,49 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- **Graph accuracy pass on `bin/graphify-build.py` (parser version 5.0).** Five gaps in the
+  indexer, each of which quietly degraded a query:
+  - **Test detection matched a raw substring.** `is_test` checked whether the letters
+    `test` or `spec` appeared anywhere in a path, so `agent-spec-*.py`, `latest.py` and
+    anything under a path containing `spec` were tagged as tests. On this repository that
+    collapsed the entire `bin/` CLI into the `test` layer and made the zero layer-violation
+    count partly an artifact of everything sharing one layer. Detection is now by whole path
+    segment (`tests/`, `spec/`) or by the first or last token of the filename (`test_x`,
+    `x_test`, `x.spec`, `OrderServiceTest`), never a substring. After the fix only the one
+    genuine test file in `bin/` is classified as a test.
+  - **Python imports are parsed with the `ast` module**, not a line regex, so multiline,
+    aliased and conditional imports are seen exactly. Other languages keep the regex path.
+  - **`from pkg import mod` now resolves to `pkg/mod.py`**, not `pkg/__init__.py`. The AST
+    extractor emits the submodule candidate `pkg.mod` alongside `pkg`, recovering an edge
+    the regex extractor could never see.
+  - **Ambiguous imports are no longer dropped.** A token that matches several files with no
+    more-specific unique match is recorded as a low-confidence `imports_ambiguous` edge,
+    excluded from stats, cycles and layer violations and surfaced in a `query` under a
+    `[LOW CONFIDENCE]` heading, instead of vanishing.
+  - **`.agent-spec/graph-aliases.json` recovers HTTP edges to gateways.** An HTTP call whose
+    host does not match a service directory name — a gateway, a discovery name, a
+    config-driven base URL — was invisible. An optional `{"billing-gw": "billing"}` map,
+    read at build time, points such a host at its real service. An alias whose target is not
+    a known service maps to nothing rather than inventing a phantom edge.
+
+  `bin/graphify-cli.py` keeps `imports_ambiguous` out of the confident-import and
+  integration views and shows it in its own low-confidence section. Self-test section `[19]`
+  covers all five against real Python and Java fixtures; the suite is 135 assertions.
+
 ### Added
+- **Cursor `sessionStart` hook** — Cursor now loads the project digest automatically, the
+  way Claude Code already did, instead of relying on the `.cursor` rule and the agent
+  remembering to run the digest itself. Cursor added a `sessionStart` hook with an
+  `additional_context` output slot after this framework first shipped; `bin/install.sh` now
+  writes (and merges into, never clobbers) `.cursor/hooks.json` per project, wiring it to a
+  new `--cursor-hook` mode of `bin/agent-spec-digest.py`. That mode reuses the same digest
+  and wraps it in the `{"additional_context": …}` envelope Cursor injects, always emitting
+  valid JSON so the hook never fails. `sessionStart` is IDE-only — cloud and background
+  Cursor agents do not fire it, so the rule's manual fallback is kept for them. Self-test
+  section `[18]` checks both halves against a real installed fixture: that install wires
+  `.cursor/hooks.json` to the digest, and that `--cursor-hook` emits valid
+  `additional_context` JSON. The suite is 135 assertions.
 - **`personas/AI-ARCHITECT.md`** — an eleventh persona, `@AI-ARCHITECT`, for the decision
   this framework makes most often and had no lens for: whether a piece of work should be a
   skill, a hook, a subagent or a plain Python script. The ten existing personas all reason
@@ -39,7 +81,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   cheap arm. The report ends by saying that one task is one data point.
 
 ### Changed
-- Self-test: **128 assertions**, all passing, up from 120. Section `[16]` checks that every
+- Self-test: **135 assertions**, all passing, up from 120. Section `[16]` checks that every
   role named in the persona table has a matching uppercase persona file — the whole table,
   not only the new row, because a role token that does not resolve to a file is a persona
   nobody can load. It also asserts that the two directives the hybrid boundary rests on
@@ -55,7 +97,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   fails the suite instead of being charged into context on every read.
 - Self-test: **53 assertions at this point**, all passing, up from 50. The new ones cover
   the nesting guard, the signed cost delta, and the single-sample caveat. The suite has
-  grown several times since within this same unreleased block; 128 is the current count.
+  grown several times since within this same unreleased block; 135 is the current count.
 
 - **`agent-spec-tokens.py corpus`** — the same buckets aggregated across every session on
   the machine. One session proves nothing about the shape of the bill; it could be an
