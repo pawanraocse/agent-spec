@@ -18,11 +18,19 @@ Read-only. It never writes anything under ~/.claude.
   session   the four buckets, weighted, for one session
   tools     per tool: what was written into it, what came back, the largest results
   compare   two transcripts side by side, for an honest A/B
+  overhead  what the harness re-sends every turn that is not the conversation
+  audit     configuration that inflates that overhead, on this machine
   list      the transcripts available for this project
+
+Transcripts are read from ~/.claude and, under WSL, from the Windows profile too
+(WIN_CLAUDE_HOME, default /mnt/c/Users/<user>): a session started from the Windows app
+is recorded there, not under the WSL home.
 """
 import argparse
+import getpass
 import json
 import os
+import re
 import sys
 from collections import Counter, defaultdict
 
@@ -39,19 +47,45 @@ BUCKETS = [
 ]
 
 
+def claude_roots():
+    """Every .claude directory whose transcripts and settings belong to this user.
+
+    Under WSL the Windows app keeps its own profile, so a machine has two.
+    """
+    home = os.path.join(os.path.expanduser("~"), ".claude")
+    roots = [home]
+    win = os.environ.get("WIN_CLAUDE_HOME") or os.path.join("/mnt/c/Users", getpass.getuser())
+    win = os.path.join(win, ".claude")
+    if os.path.isdir(win) and os.path.realpath(win) != os.path.realpath(home):
+        roots.append(win)
+    return roots
+
+
 def project_dir(cwd=None):
     """Claude Code stores transcripts under the working directory with / replaced by -."""
     cwd = os.path.abspath(cwd or os.getcwd())
-    return os.path.join(os.path.expanduser("~"), ".claude", "projects",
-                        cwd.replace(os.sep, "-"))
+    return os.path.join(claude_roots()[0], "projects", cwd.replace(os.sep, "-"))
+
+
+def project_dirs(cwd=None):
+    """project_dir on every root. The Windows app names a WSL path by its UNC form."""
+    cwd = os.path.abspath(cwd or os.getcwd())
+    out = [project_dir(cwd)]
+    distro = os.environ.get("WSL_DISTRO_NAME")
+    for root in claude_roots()[1:]:
+        if distro:
+            unc = "\\\\wsl.localhost\\" + distro + cwd.replace(os.sep, "\\")
+            out.append(os.path.join(root, "projects", re.sub(r"[^A-Za-z0-9]", "-", unc)))
+    return out
 
 
 def transcripts(cwd=None):
-    d = project_dir(cwd)
-    try:
-        names = [os.path.join(d, n) for n in os.listdir(d) if n.endswith(".jsonl")]
-    except OSError:
-        return []
+    names = []
+    for d in project_dirs(cwd):
+        try:
+            names += [os.path.join(d, n) for n in os.listdir(d) if n.endswith(".jsonl")]
+        except OSError:
+            continue
     return sorted(names, key=lambda p: os.path.getmtime(p), reverse=True)
 
 
@@ -195,20 +229,21 @@ def print_session(data, weights):
 
 
 def all_transcripts():
-    """Every transcript this machine has, across every project."""
-    root = os.path.join(os.path.expanduser("~"), ".claude", "projects")
+    """Every transcript this machine has, across every project and every profile."""
     out = []
-    try:
-        projects = sorted(os.listdir(root))
-    except OSError:
-        return out
-    for name in projects:
-        d = os.path.join(root, name)
-        if not os.path.isdir(d):
+    for root in claude_roots():
+        base = os.path.join(root, "projects")
+        try:
+            projects = sorted(os.listdir(base))
+        except OSError:
             continue
-        for f in sorted(os.listdir(d)):
-            if f.endswith(".jsonl"):
-                out.append((name, os.path.join(d, f)))
+        for name in projects:
+            d = os.path.join(base, name)
+            if not os.path.isdir(d):
+                continue
+            for f in sorted(os.listdir(d)):
+                if f.endswith(".jsonl"):
+                    out.append((name, os.path.join(d, f)))
     return out
 
 
@@ -221,7 +256,7 @@ def print_corpus(weights, min_turns=5):
     """
     found = all_transcripts()
     if not found:
-        print("No transcripts under ~/.claude/projects.", file=sys.stderr)
+        print("No transcripts under any .claude/projects.", file=sys.stderr)
         return 1
 
     totals = Counter()
@@ -367,6 +402,266 @@ def print_compare(a, b, weights):
           "made.")
 
 
+# A copy of the system prompt and tool schemas, kept for the transcript. It is the base
+# prefix every session has, not something a project added, so it is not overhead to fix.
+NOT_OVERHEAD = {"prompt_snapshot"}
+
+
+def overhead_key(att):
+    kind = att.get("type", "?")
+    if kind.startswith("hook_"):
+        return "%s:%s" % (kind, att.get("hookEvent") or att.get("hookName") or "?")
+    return kind
+
+
+def read_overhead(path):
+    """Bytes the harness added around the conversation, and how long each stayed in context.
+
+    An attachment that appears before turn N is re-read on every later turn, so its cost
+    is its size times the turns remaining. That is why one injection per prompt costs far
+    more than the same text once: each copy is carried to the end of the session.
+    """
+    rows = {}
+    turn = 0
+    entries = []
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if entry.get("type") == "assistant" and (entry.get("message") or {}).get("usage"):
+                turn += 1
+            elif entry.get("type") == "attachment":
+                entries.append((turn, entry.get("attachment") or {}))
+
+    def add(key, at, size):
+        n, b, carried = rows.get(key, (0, 0, 0))
+        rows[key] = (n + 1, b + size, carried + (size // 4) * max(turn - at, 0))
+
+    for at, att in entries:
+        if att.get("type") in NOT_OVERHEAD:
+            continue
+        if att.get("type") == "instructions" and isinstance(att.get("files"), list):
+            for f in att["files"]:
+                name = os.path.basename(str(f.get("path", "?")).replace("\\", "/"))
+                add("instructions:%s" % name, at, len(f.get("content", "") or ""))
+            continue
+        add(overhead_key(att), at, len(json.dumps(att)))
+    return turn, rows
+
+
+def print_overhead(paths, weights):
+    turns, rows, cache_read = 0, {}, 0
+    for path in paths:
+        t, r = read_overhead(path)
+        turns += t
+        cache_read += read_usage(path)["totals"].get("cache_read_input_tokens", 0)
+        for key, (n, b, c) in r.items():
+            on, ob, oc = rows.get(key, (0, 0, 0))
+            rows[key] = (on + n, ob + b, oc + c)
+    if not rows:
+        print("no attachments recorded — nothing added around the conversation.")
+        return 0
+    print("=== overhead: %d session(s), %d assistant turns, %s cache-read tokens ==="
+          % (len(paths), turns, "{:,}".format(cache_read)))
+    print("%-42s %6s %10s %14s %7s" % ("source", "count", "bytes", "re-read tokens", "of read"))
+    for key, (n, b, c) in sorted(rows.items(), key=lambda kv: -kv[1][2])[:14]:
+        print("%-42s %6d %10s %14s %6.1f%%"
+              % (key[:42], n, "{:,}".format(b), "{:,}".format(c), 100 * c / max(cache_read, 1)))
+    print("\nre-read tokens = bytes/4 x turns the text stayed in context. An estimate, and an\n"
+          "upper bound: the harness may fold repeated reminders. Run `audit` for the fixes.")
+    return 0
+
+
+# Findings that cost tokens or leak: limits are opinions, so each is a flag.
+DEFAULT_LIMITS = {"hook_bytes": 1000, "memory_bytes": 8000,
+                  "local_bytes": 50000, "listing_bytes": 25000}
+SECRET_PATTERNS = [
+    ("a JWT", re.compile(r"eyJ[\w-]{10,}\.[\w-]{10,}\.[\w-]+")),
+    ("an AWS access key", re.compile(r"AKIA[0-9A-Z]{16}")),
+    ("a private key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY")),
+    ("an API key", re.compile(r"\bsk-[A-Za-z0-9]{20,}")),
+]
+
+
+def hook_commands(settings):
+    for event, groups in (settings.get("hooks") or {}).items():
+        for group in groups if isinstance(groups, list) else []:
+            for h in (group.get("hooks") or []) if isinstance(group, dict) else []:
+                if isinstance(h, dict) and h.get("command"):
+                    yield event, h["command"]
+
+
+def skill_description(path):
+    """The frontmatter description of a SKILL.md, folded scalars included."""
+    try:
+        lines = open(path, encoding="utf-8", errors="replace").read().split("\n")
+    except OSError:
+        return ""
+    if not lines or lines[0].strip() != "---":
+        return ""
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            break
+        if line.startswith("description:"):
+            value = line.split(":", 1)[1].strip()
+            if value in (">", ">-", "|", "|-"):
+                block = []
+                for nxt in lines[i + 1:]:
+                    if nxt.strip() == "---" or (nxt and not nxt.startswith(" ")):
+                        break
+                    block.append(nxt.strip())
+                return " ".join(block)
+            return value.strip("\"'")
+    return ""
+
+
+def skills_in(directory):
+    out = {}
+    try:
+        names = sorted(os.listdir(directory))
+    except OSError:
+        return out
+    for n in names:
+        f = os.path.join(directory, n, "SKILL.md")
+        if os.path.isfile(f):
+            out[n] = len(n) + len(skill_description(f))
+    return out
+
+
+def _same_file(path, candidates):
+    try:
+        mine = open(path, "rb").read()
+        return any(os.path.isfile(c) and open(c, "rb").read() == mine for c in candidates)
+    except OSError:
+        return False
+
+
+def find_projects(scan):
+    """Directories that hold a .claude: each scan dir itself, or its children."""
+    found = []
+    for d in scan:
+        d = os.path.abspath(d)
+        if os.path.isdir(os.path.join(d, ".claude")):
+            found.append(d)
+            continue
+        try:
+            kids = sorted(os.listdir(d))
+        except OSError:
+            continue
+        found += [os.path.join(d, k) for k in kids
+                  if os.path.isdir(os.path.join(d, k, ".claude"))]
+    return found
+
+
+def load_json(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh), None
+    except OSError:
+        return None, None
+    except ValueError as exc:
+        return None, str(exc)
+
+
+def audit_findings(scan, limits):
+    """(where, finding, risk, fix) for each configuration defect that inflates overhead."""
+    out = []
+    roots = claude_roots()
+    home = roots[0]
+    projects = find_projects(scan)
+    global_skills = {}
+    for root in roots:
+        global_skills.update(skills_in(os.path.join(root, "skills")))
+
+    def check_settings(path, is_windows):
+        settings, err = load_json(path)
+        if err:
+            out.append((path, "not valid JSON (%s)" % err, "the harness ignores the whole file",
+                        "fix the syntax"))
+        for event, cmd in hook_commands(settings or {}):
+            token = cmd.split()[0]
+            if is_windows and token.startswith("/mnt/"):
+                out.append((path, "%s hook path %s" % (event, token),
+                            "the Windows app runs hooks in Git Bash, where /mnt/ does not exist: exit 127 on every call",
+                            "register ~/.claude/hooks/... — re-run bin/install.sh"))
+            elif token.startswith("/") and not os.path.exists(token):
+                out.append((path, "%s hook %s does not exist" % (event, token),
+                            "a failing hook adds an error to the transcript on every call",
+                            "reinstall the hook or remove the entry"))
+            if event == "UserPromptSubmit" and len(cmd) > limits["hook_bytes"]:
+                out.append((path, "UserPromptSubmit injects %d B inline" % len(cmd),
+                            "every copy stays in context to the end of the session, so N prompts cost N copies",
+                            "inject once from SessionStart, or trim under %d B" % limits["hook_bytes"]))
+        try:
+            text = open(path, encoding="utf-8", errors="replace").read()
+        except OSError:
+            return
+        for label, rx in SECRET_PATTERNS:
+            hits = len(rx.findall(text))
+            if hits:
+                out.append((path, "%d value(s) that look like %s" % (hits, label),
+                            "credentials at rest in a file that is copied and synced",
+                            "delete the entry and rotate the credential if it has not expired"))
+        if path.endswith("settings.local.json") and len(text) > limits["local_bytes"]:
+            out.append((path, "%d B of accumulated allow rules" % len(text),
+                        "one-off commands pile up and hide the rules that matter",
+                        "prune to wildcard rules (see /fewer-permission-prompts)"))
+
+    for root in roots:
+        check_settings(os.path.join(root, "settings.json"), root != home)
+        base = os.path.join(root, "projects")
+        try:
+            names = sorted(os.listdir(base))
+        except OSError:
+            names = []
+        for n in names:
+            mem = os.path.join(base, n, "memory", "MEMORY.md")
+            if os.path.isfile(mem) and os.path.getsize(mem) > limits["memory_bytes"]:
+                out.append((mem, "memory index is %d B" % os.path.getsize(mem),
+                            "loaded into every turn of every session in that project",
+                            "one line per fact, bodies in their own files; under %d B" % limits["memory_bytes"]))
+
+    for proj in projects:
+        for name in ("settings.json", "settings.local.json"):
+            check_settings(os.path.join(proj, ".claude", name), False)
+        mine = skills_in(os.path.join(proj, ".claude", "skills"))
+        for n in mine:
+            for g in (n, "agent-spec-" + n):
+                if g not in global_skills:
+                    continue
+                same = _same_file(os.path.join(proj, ".claude", "skills", n, "SKILL.md"),
+                                  [os.path.join(r, "skills", g, "SKILL.md") for r in roots])
+                out.append((os.path.join(proj, ".claude", "skills", n),
+                            "%s the global skill %s (%s)"
+                            % ("same name as" if g == n else "an unprefixed twin of", g,
+                               "byte-identical" if same else "content differs"),
+                            "both descriptions are listed on every turn"
+                            + ("" if same else ", and they may give different instructions"),
+                            "delete the project copy" if same else
+                            "diff them, keep the one you want, delete the other"))
+                break
+        total = sum(mine.values()) + sum(global_skills.values())
+        if total > limits["listing_bytes"]:
+            out.append((proj, "skill listing is ~%d B (%d project + %d global skills)"
+                        % (total, len(mine), len(global_skills)),
+                        "name and description of every skill ride in the prefix each turn",
+                        "shorten descriptions or remove skills the project never uses"))
+    return out
+
+
+def print_audit(scan, limits):
+    findings = audit_findings(scan, limits)
+    if not findings:
+        print("audit: no findings.")
+        return 0
+    for where, finding, risk, fix in findings:
+        print("%s\n  Finding. %s.\n  Risk. %s.\n  Fix. %s.\n" % (where, finding, risk, fix))
+    print("%d finding(s)." % len(findings))
+    return 1
+
+
 def main():
     parser = argparse.ArgumentParser(description="Measure a Claude Code session's token cost")
     parser.add_argument("--weights", default=None,
@@ -389,6 +684,18 @@ def main():
     p = sub.add_parser("corpus", help="aggregate across every session on this machine")
     p.add_argument("--min-turns", type=int, default=5)
 
+    p = sub.add_parser("overhead", help="what the harness re-sends each turn besides the conversation")
+    p.add_argument("--file", default=None)
+    p.add_argument("--all", action="store_true", help="every transcript of this project")
+
+    p = sub.add_parser("audit", help="configuration on this machine that inflates that overhead")
+    p.add_argument("--scan", action="append", default=None,
+                   help="directory holding projects, or a project (default: cwd); repeatable")
+    p.add_argument("--max-hook-bytes", type=int, default=DEFAULT_LIMITS["hook_bytes"])
+    p.add_argument("--max-memory-bytes", type=int, default=DEFAULT_LIMITS["memory_bytes"])
+    p.add_argument("--max-local-bytes", type=int, default=DEFAULT_LIMITS["local_bytes"])
+    p.add_argument("--max-listing-bytes", type=int, default=DEFAULT_LIMITS["listing_bytes"])
+
     sub.add_parser("list", help="transcripts available for this project")
 
     args = parser.parse_args()
@@ -396,6 +703,17 @@ def main():
 
     if args.command == "corpus":
         return print_corpus(weights, args.min_turns)
+
+    if args.command == "audit":
+        return print_audit(args.scan or [os.getcwd()], {
+            "hook_bytes": args.max_hook_bytes, "memory_bytes": args.max_memory_bytes,
+            "local_bytes": args.max_local_bytes, "listing_bytes": args.max_listing_bytes})
+
+    if args.command == "overhead":
+        paths = transcripts() if args.all else [resolve(args)]
+        if not paths or paths[0] is None:
+            return 1
+        return print_overhead(paths, weights)
 
     if args.command == "list":
         found = transcripts()

@@ -173,11 +173,14 @@ install_harness() {
     echo -e "  ${GREEN}\u2713${NC} removed superseded ${stale}"
   fi
 
+  # Registered as ~/.claude/... rather than ${home}/..., because ${home} for the Windows
+  # profile is /mnt/c/..., a path Git Bash (which the Windows app runs hooks in) cannot
+  # resolve. The tilde expands per shell, so one string is right on both sides.
   if command -v python3 >/dev/null 2>&1; then
     local msg
     msg="$(python3 "${AGENT_SPEC_HOME}/bin/agent-spec-settings.py" \
-             "${home}/settings.json" "${home}/hooks/agent-spec-session-start.sh" \
-             "${home}/hooks/agent-spec-pre-tool-use.py" 2>&1)" || true
+             "${home}/settings.json" "~/.claude/hooks/agent-spec-session-start.sh" \
+             "~/.claude/hooks/agent-spec-pre-tool-use.py" 2>&1)" || true
     echo -e "  ${GREEN}\u2713${NC} harness \u2192 ${home}   (${msg})"
   else
     echo -e "  \u26a0\ufe0f  python3 not found \u2014 settings.json not updated in ${home}"

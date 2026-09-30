@@ -9,7 +9,28 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **`agent-spec-tokens.py overhead` and `audit`.** `overhead` groups everything the harness
+  attaches around the conversation (skill listing, instruction files such as `MEMORY.md`,
+  hook output, hook errors, reminders) with a count, its bytes, and an estimate of the
+  cache-read tokens each stayed in context for. `audit` checks configuration that inflates
+  that overhead: hook paths Git Bash cannot resolve, hooks pointing at missing files,
+  per-prompt hooks that inject kilobytes inline, credentials in settings files, an oversized
+  memory index or skill listing, and project skills that duplicate or twin a global one, byte-identical or not.
+  Limits are flags. `audit --scan <dir>` covers every project under a directory.
+- **Both profiles are read.** Under WSL, a session started from the Windows app is recorded
+  under the Windows profile, so `list`, `corpus`, `overhead` and `audit` now look in
+  `~/.claude` and `WIN_CLAUDE_HOME` (default `/mnt/c/Users/<user>`). Previously such
+  sessions were invisible to every subcommand.
+
 ### Fixed
+- **Hooks registered for the Windows profile never ran.** `install_harness` registered
+  `${home}/hooks/...`, which for the Windows `.claude` is `/mnt/c/Users/<user>/.claude/...`.
+  The Windows app runs hooks in Git Bash, where `/mnt/c` does not exist, so every Bash call
+  failed with exit 127 and the SessionStart digest and PreToolUse guard were silently dead
+  for any project opened from Windows. The installer now registers `~/.claude/hooks/...`,
+  which expands per shell, and `agent-spec-settings.py` repairs an existing entry for the
+  same hook file in place instead of treating any path containing `agent-spec` as current.
 - **Graph accuracy pass on `bin/graphify-build.py` (parser version 5.0).** Five gaps in the
   indexer, each of which quietly degraded a query:
   - **Test detection matched a raw substring.** `is_test` checked whether the letters
@@ -97,7 +118,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
   fails the suite instead of being charged into context on every read.
 - Self-test: **53 assertions at this point**, all passing, up from 50. The new ones cover
   the nesting guard, the signed cost delta, and the single-sample caveat. The suite has
-  grown several times since within this same unreleased block; 135 is the current count.
+  grown several times since within this same unreleased block; 143 is the current count.
 
 - **`agent-spec-tokens.py corpus`** — the same buckets aggregated across every session on
   the machine. One session proves nothing about the shape of the bill; it could be an

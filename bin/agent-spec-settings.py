@@ -18,6 +18,32 @@ import sys
 MARKER = "agent-spec"
 
 
+def merge_hook(groups, path, matcher, timeout):
+    """Ensure `path` is registered in `groups`. True when the file was changed."""
+    entries = [
+        h
+        for group in groups
+        if isinstance(group, dict)
+        for h in group.get("hooks", [])
+        if isinstance(h, dict)
+    ]
+    base = os.path.basename(path)
+    for h in entries:
+        cmd = h.get("command", "")
+        if cmd == path:
+            return False
+        if MARKER in cmd and os.path.basename(cmd) == base:
+            h["command"] = path
+            return True
+    if any(MARKER in h.get("command", "") for h in entries):
+        return False
+    group = {"hooks": [{"type": "command", "command": path, "timeout": timeout}]}
+    if matcher:
+        group["matcher"] = matcher
+    groups.append(group)
+    return True
+
+
 def main():
     if len(sys.argv) not in (3, 4):
         print("usage: agent-spec-settings.py <settings.json> <session-hook> "
@@ -45,43 +71,21 @@ def main():
         settings["outputStyle"] = MARKER
         changed.append("outputStyle=agent-spec")
 
-    # SessionStart hook: matched on the exact command path, and on the marker as a
-    # fallback for a hook installed under an older name. Matching on the marker alone
-    # silently stacked a second copy whenever the path did not contain it.
+    # Hooks are matched on the exact command path, and on the marker as a fallback for
+    # a hook installed under an older name. Matching on the marker alone silently
+    # stacked a second copy whenever the path did not contain it. An entry that is
+    # ours (same file name) but registered under a different path is repaired in
+    # place: the Windows app runs hooks in Git Bash, where an old /mnt/c/... path
+    # exits 127 on every call.
     hooks = settings.setdefault("hooks", {})
-    session_start = hooks.setdefault("SessionStart", [])
-    existing = [
-        h.get("command", "")
-        for group in session_start
-        if isinstance(group, dict)
-        for h in group.get("hooks", [])
-        if isinstance(h, dict)
-    ]
-    already = any(cmd == hook_path or MARKER in cmd for cmd in existing)
-    if not already:
-        session_start.append({
-            "hooks": [{"type": "command", "command": hook_path, "timeout": 10}]
-        })
+    if merge_hook(hooks.setdefault("SessionStart", []), hook_path, None, 10):
         changed.append("SessionStart hook")
 
     # PreToolUse hook: input is 86.7% of the bill, and a skill body can only ask for
-    # reading discipline. This is the only place it can be enforced. Matched the same
-    # way as SessionStart so a re-run never stacks a second copy.
-    if pre_tool_path:
-        pre_tool = hooks.setdefault("PreToolUse", [])
-        existing_pre = [
-            h.get("command", "")
-            for group in pre_tool
-            if isinstance(group, dict)
-            for h in group.get("hooks", [])
-            if isinstance(h, dict)
-        ]
-        if not any(cmd == pre_tool_path or MARKER in cmd for cmd in existing_pre):
-            pre_tool.append({
-                "matcher": "Read|Write|Bash",
-                "hooks": [{"type": "command", "command": pre_tool_path, "timeout": 5}],
-            })
-            changed.append("PreToolUse hook")
+    # reading discipline. This is the only place it can be enforced.
+    if pre_tool_path and merge_hook(hooks.setdefault("PreToolUse", []), pre_tool_path,
+                                    "Read|Write|Bash", 5):
+        changed.append("PreToolUse hook")
 
     if not changed:
         print("settings.json already current")

@@ -588,6 +588,12 @@ want "one PreToolUse entry after two installs" 1 \
   "$(python3 -c "import json;print(len(json.load(open('$SET2'))['hooks']['PreToolUse']))")"
 want "and it is matched against Read, Write and Bash" "Read|Write|Bash" \
   "$(python3 -c "import json;print(json.load(open('$SET2'))['hooks']['PreToolUse'][0]['matcher'])")"
+SET3="${WORK}/settings-stale.json"
+echo '{"hooks":{"PreToolUse":[{"matcher":"Read|Write|Bash","hooks":[{"type":"command","command":"/mnt/c/Users/u/.claude/hooks/agent-spec-pre-tool-use.py","timeout":5}]}]}}' > "$SET3"
+python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET3" '~/.claude/hooks/s.sh' '~/.claude/hooks/agent-spec-pre-tool-use.py' >/dev/null
+want "a stale /mnt/ hook path is repaired in place, not stacked" \
+  "1 ~/.claude/hooks/agent-spec-pre-tool-use.py" \
+  "$(python3 -c "import json;g=json.load(open('$SET3'))['hooks']['PreToolUse'];print(len(g),g[0]['hooks'][0]['command'])")"
 grep -q 'agent-spec-pre-tool-use.py' "${HOME_DIR}/bin/install.sh" \
   && ok "the installer deploys it to every .claude home" \
   || bad "install.sh does not install the PreToolUse hook"
@@ -750,6 +756,44 @@ sys.exit(0 if tn and tn[0]['type']=='test' and sn and sn[0]['type']!='test' else
 " 2>/dev/null \
   && ok "camelCase FooTest is a test, FooService is not" \
   || bad "camelCase test detection regressed"
+
+echo ""
+echo "[20] overhead and audit read both profiles and name the real defects"
+T="${HOME_DIR}/bin/agent-spec-tokens.py"
+H20="${WORK}/h20"; W20="${WORK}/w20"; P20="${WORK}/p20"
+mkdir -p "${H20}/.claude/skills" "${W20}/.claude/projects/-x" "${P20}/.claude/skills/review" "${P20}/.agent-spec"
+python3 - "$W20" "$P20" <<'PY'
+import json, sys
+w, p = sys.argv[1], sys.argv[2]
+turn = {"type": "assistant", "message": {"usage": {"cache_read_input_tokens": 10, "output_tokens": 1}}}
+hook = {"type": "attachment", "attachment": {"type": "hook_success", "hookEvent": "UserPromptSubmit", "content": "x" * 400}}
+with open(w + "/.claude/projects/-x/s.jsonl", "w") as fh:
+    for _ in range(3):
+        fh.write(json.dumps(hook) + "\n"); fh.write(json.dumps(turn) + "\n")
+json.dump({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "/mnt/c/u/.claude/hooks/a.sh"}]}]}},
+          open(w + "/.claude/settings.json", "w"))
+json.dump({"hooks": {"UserPromptSubmit": [{"hooks": [{"type": "command", "command": "echo " + "y" * 1500}]}]}},
+          open(p + "/.claude/settings.json", "w"))
+open(p + "/.claude/settings.local.json", "w").write(json.dumps(
+    {"permissions": {"allow": ["Bash(curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3.abcdefghijklmnop')"]}}))
+PY
+mkdir -p "${H20}/.claude/skills/agent-spec-review"
+printf -- '---\nname: agent-spec-review\ndescription: x\n---\n' > "${H20}/.claude/skills/agent-spec-review/SKILL.md"
+printf -- '---\nname: review\ndescription: y\n---\n' > "${P20}/.claude/skills/review/SKILL.md"
+export_env() { HOME="${H20}" WIN_CLAUDE_HOME="${W20}" "$@"; }
+want "corpus finds a transcript that only exists under the Windows profile" "1" \
+  "$(export_env python3 "$T" corpus --min-turns 1 | sed -n 's/^=== corpus: \([0-9]*\) sessions.*/\1/p')"
+OVR="$(export_env python3 "$T" overhead --file "${W20}/.claude/projects/-x/s.jsonl")"
+echo "$OVR" | grep -q 'hook_success:UserPromptSubmit *3 ' \
+  && ok "overhead groups the three per-prompt injections into one row" \
+  || bad "overhead did not count the injections"
+AUD="$(export_env python3 "$T" audit --scan "${P20}")"
+for needle in "hook path /mnt/c/u/.claude/hooks/a.sh" "UserPromptSubmit injects" "look like a JWT" "an unprefixed twin of the global skill agent-spec-review (content differs)"; do
+  echo "$AUD" | grep -q "$needle" && ok "audit reports: $needle" || bad "audit missed: $needle"
+done
+CLEAN="${WORK}/clean20"; mkdir -p "${CLEAN}/.claude"
+HOME="${WORK}/h20clean" WIN_CLAUDE_HOME="${WORK}/none" python3 "$T" audit --scan "${CLEAN}" >/dev/null
+want "audit exits 0 when there is nothing to report" 0 "$?"
 
 echo ""
 echo "[17] advertised counts match reality (final tally)"
