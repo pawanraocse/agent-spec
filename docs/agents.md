@@ -57,6 +57,12 @@ app has opened a `\\wsl.localhost\...` folder, because it is still a Windows pro
 Syncing only one home is why skills appear in some projects and not others. `install.sh`
 writes every home it finds. Override the Windows guess with `WIN_CLAUDE_HOME`.
 
+Hooks have the same problem in a different form. The Windows app runs them in Git Bash,
+where `/mnt/c/...` does not exist, so a hook registered by that path exits 127 on every
+call and never runs. `install.sh` therefore registers `~/.claude/hooks/...`, which each
+shell expands to its own home. Sessions started from the Windows app are also recorded
+under the Windows profile, and `agent-spec-tokens.py` reads both.
+
 Restart the agent afterwards: skills are enumerated at session start.
 
 ## Script naming

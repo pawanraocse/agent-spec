@@ -11,12 +11,31 @@ here is a vendor number.
 Claude Code writes a JSONL transcript per session under
 `~/.claude/projects/<working directory with / replaced by ->/<session-uuid>.jsonl`. Every
 assistant turn carries a `usage` object with four token buckets. That is ground truth.
+Under WSL, a session started from the Windows app is recorded under the Windows profile
+instead; the tool reads both (`WIN_CLAUDE_HOME` overrides the guess).
 
 ```bash
 ./.agent-spec/bin/agent-spec-tokens.py session    # the four buckets, weighted
 ./.agent-spec/bin/agent-spec-tokens.py tools      # per tool: written in, returned
 ./.agent-spec/bin/agent-spec-tokens.py compare A.jsonl B.jsonl
+./.agent-spec/bin/agent-spec-tokens.py overhead   # what the harness re-sends besides the conversation
+./.agent-spec/bin/agent-spec-tokens.py audit      # configuration that inflates it
 ```
+
+`overhead` is run from inside the project you want to measure, because it reads that
+project's transcripts:
+
+```bash
+cd <your-project>
+python3 ~/personal/agent-spec/bin/agent-spec-tokens.py overhead --all    # every session of this project
+python3 ~/personal/agent-spec/bin/agent-spec-tokens.py overhead          # the most recent session only
+python3 ~/personal/agent-spec/bin/agent-spec-tokens.py overhead --file <session>.jsonl
+python3 ~/personal/agent-spec/bin/agent-spec-tokens.py audit --scan ~/personal   # config, every project under a directory
+```
+
+Use `--all` for the shape of the bill and the newest session alone to check whether a
+change took effect: `--all` is dominated by older sessions. Inside an installed project the
+same tool is `./.agent-spec/bin/agent-spec-tokens.py`.
 
 `bin/agent-spec-bench.sh` still reports always-on and per-skill cost as bytes ÷ 4. That is
 an estimate, labelled as one, useful for comparing two revisions of a file. Only
@@ -41,6 +60,30 @@ day's task. `agent-spec-tokens.py corpus` aggregates every session on the machin
 
 That is the corpus the ordering below rests on. The single-session figures that follow are
 kept because they are reproducible by anyone reading this file.
+
+## Where the harness overhead sits, and which fixes cost quality
+
+`overhead` groups everything attached around the conversation and estimates how long each
+piece stayed in context: bytes ÷ 4 times the turns remaining, so an upper bound. On one
+project's 24 sessions (8,439 turns, about 309,000 tokens re-read per turn), the largest
+sources were a per-prompt hook injection (9.9% of cache reads), files changed outside the
+model's own edits (6.8%), and the skill listing (4.5%). Everything listed was about 27%;
+the rest is the base prefix and the conversation, so session length is still the lever.
+
+`audit` reports configuration that inflates that overhead. Whether a fix is safe to apply
+depends on whether it changes what the model sees:
+
+| Kind | Examples | Rule |
+|---|---|---|
+| Lossless | a hook that never runs, credentials in a settings file, an allow-list of one-off commands | Fix on sight. |
+| Needs a diff | a project skill that twins a global one | Compare the files; never delete on the name alone. |
+| Behavior change | a per-prompt hook, a large memory index, a long skill listing | Weigh tokens against what the model stops seeing. |
+
+Always-on rules belong in `CLAUDE.md`: it is loaded once into the cached prefix and
+survives compaction. A per-prompt hook stores another copy in the transcript on every
+prompt, and each copy is re-read until the session ends; keep hooks for state that changes
+per prompt. A dense memory index is not waste: its lines carry the reason a rule exists,
+which is what makes the model apply it.
 
 ## Where the tokens went
 

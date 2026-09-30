@@ -25,7 +25,7 @@ Unreleased work on `main`, on top of 1.0.0. What is in place today:
 | **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
 | **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
 | **Tests** | `bin/agent-spec-selftest.sh` — 143 assertions across Python, Java-microservice and Node fixtures |
-| **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript — measured buckets, not bytes ÷ 4 |
+| **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript (both WSL and Windows profiles) — measured buckets, not bytes ÷ 4; `overhead --all` and `audit` find what the harness re-sends and the config behind it ([usage](docs/token-efficiency.md#how-to-measure)) |
 | **Subagents** | `agent-spec-search` and `agent-spec-verify`, pinned to a cheap model, so broad sweeps and noisy test output never enter the main context |
 
 Known gaps, stated rather than hidden:
