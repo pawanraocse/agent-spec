@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Low-context, high-reasoning. The schema change requires understanding the full
+# write/read lifecycle of STATE.json across multiple call sites. An agent in strict
+# terse mode that suppresses chain-of-thought will miss a call site and produce a
+# broken implementation. This is the task that exercises the Complexity Override
+# escape hatch in agent-spec-raw-code-full.
+set -uo pipefail
+
+# 1. File must import cleanly
+python3 -c "
+import importlib.util
+spec = importlib.util.spec_from_file_location('g', 'bin/agent-spec-gate.py')
+m = importlib.util.module_from_spec(spec)
+try:
+    spec.loader.exec_module(m)
+except SystemExit:
+    pass  # __main__ block may exit — that is fine
+" || { echo "bin/agent-spec-gate.py failed to import"; exit 1; }
+
+# 2. STATE.json schema must include human_set
+python3 - << 'PY'
+import importlib.util, inspect, sys, re
+
+spec = importlib.util.spec_from_file_location("g", "bin/agent-spec-gate.py")
+m = importlib.util.module_from_spec(spec)
+try:
+    spec.loader.exec_module(m)
+except SystemExit:
+    pass
+
+src = open("bin/agent-spec-gate.py").read()
+if "human_set" not in src:
+    print("'human_set' not found in bin/agent-spec-gate.py")
+    sys.exit(1)
+print("ok: 'human_set' key present in source")
+PY
+[ $? -eq 0 ] || exit 1
+
+# 3. The return type annotation or a tuple return must be present
+python3 - << 'PY'
+import ast, sys
+src = open("bin/agent-spec-gate.py").read()
+tree = ast.parse(src)
+found_tuple = False
+for node in ast.walk(tree):
+    if isinstance(node, ast.Return) and isinstance(node.value, (ast.Tuple,)):
+        if len(node.value.elts) == 2:
+            found_tuple = True
+            break
+if not found_tuple:
+    print("no 2-tuple return found — the function must return (gate_number, human_set)")
+    sys.exit(1)
+print("ok: 2-tuple return statement found")
+PY
+[ $? -eq 0 ] || exit 1
+
+# 4. Assert block must be present
+grep -q "assert" bin/agent-spec-gate.py || { echo "no assert block found in bin/agent-spec-gate.py"; exit 1; }
+
+# 5. Scope discipline — only the gate file may change
+STRAY="$(git status --porcelain -- bin/ skills/ docs/ benchmarks/ '*.md' \
+  | grep -v 'agent-spec-gate\.py' | head -3)"
+[ -z "${STRAY}" ] || { echo "changed files outside task: ${STRAY}"; exit 1; }
+
+echo "ok: provenance-aware gate schema verified"

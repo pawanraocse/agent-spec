@@ -1,0 +1,16 @@
+The file bin/agent-spec-gate.py contains a function that reads STATE.json and
+returns the current gate number. Rewrite it so that it also returns a boolean
+indicating whether the gate was set by a human (i.e., via the `set` subcommand)
+versus recorded automatically.
+
+To do this:
+- Change the STATE.json schema to store provenance alongside the gate number.
+  Use a key "human_set" (bool) written as true when `set` is called, false otherwise.
+- Update every call site in bin/agent-spec-gate.py that writes STATE.json so it
+  passes the correct provenance value.
+- The function must return a tuple: (gate_number: int, human_set: bool).
+- Existing callers outside this file must not break — they may ignore the second
+  value if they wish.
+- Add an assert block under `if __name__ == "__main__"` that verifies both fields
+  of the tuple are present and correctly typed.
+- Do not add any new files or dependencies.

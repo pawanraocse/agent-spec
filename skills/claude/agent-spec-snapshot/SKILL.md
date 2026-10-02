@@ -6,6 +6,15 @@ description: >-
 
 # agent-spec-snapshot
 
+## When to run
+
+- **Session end** — you are about to close the chat.
+- **Context at ~70%** — prevents silent truncation of the history the next session needs.
+- **Before `/agent-spec-compact`** — state must be written to disk before the context is reset.
+  A compact without a snapshot loses everything the session learned.
+
+## Steps
+
 1. Review the chat history for the current session.
 2. Summarise completed tasks, modified files, and next steps.
 3. **Append a new dated section to `.agent-spec/SESSION-SNAPSHOT.md`; do not overwrite the

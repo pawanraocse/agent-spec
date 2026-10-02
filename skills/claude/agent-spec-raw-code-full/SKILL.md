@@ -56,6 +56,21 @@ thread and is usually the better trade mid-task — measured 480,083 to 53,191 t
 - Recommend; never survey branches. Options: three max, one line each.
 - No preamble, recap, next-steps, or tool-call narration.
 
+## When to break this mode (Complexity Override)
+
+This mode suppresses conversational filler, not reasoning. A fixed-ratio terse rule
+applied to a genuinely complex algorithm will produce a wrong answer more cheaply.
+
+Break into normal prose when **all three** are true:
+1. The task requires non-trivial algorithmic reasoning (cryptography, distributed
+   consensus, complex state machines, or novel data structures).
+2. The first implementation attempt failed its own tests.
+3. A brief reasoning trace would produce a correct second attempt.
+
+Resume raw-code-full immediately after the algorithm is verified green.
+Say "complexity override" at the start of the reasoning section so it is visible in
+the transcript, and "resuming raw-code-full" when you return.
+
 ## Never compress
 
 Verbatim, however long: error strings, file paths, numbers, units, command output,
@@ -71,4 +86,6 @@ question asked twice.
 Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` artifacts,
 memory files.
 
-<!-- Figures: docs/token-checklist.md. Caveman prose measured 0 and was removed. -->
+<!-- Figures: docs/token-checklist.md. Caveman prose measured 0 and was removed.
+     Complexity Override: inspired by TPP-diversity finding (arXiv:2605.08541) —
+     fixed-ratio output rules degrade on off-distribution (high-complexity) tasks. -->

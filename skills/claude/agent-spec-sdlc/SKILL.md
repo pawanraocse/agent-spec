@@ -22,25 +22,41 @@ Starting something new:
 ./.agent-spec/bin/agent-spec-gate.py reset --feature "<short-name>"
 ```
 
+## Which gates to run
+
+Not every change needs all nine. Map the change to one of four tracks using two signals:
+**scope** (how many files/services change) and **algorithm** (how novel is the logic).
+
+| | **Low algorithm** (CRUD, config, message edit) | **High algorithm** (novel data structure, state machine, crypto, schema migration) |
+|---|---|---|
+| **Narrow scope** (1–3 files, one service) | **Fast-track** → gates 5–8 | **Algorithm track** → gate 1, then 5–8 |
+| **Wide scope** (cross-service, schema, new API) | **Design track** → gates 0–4, then 5–8 | **Full pipeline** → all 9 gates |
+
+**Fast-track** — CSS fix, config value, error message, one-line rename:
+Say "fast-track mode, gates 0–4 skipped" and go directly to `/agent-spec-implement`.
+Do not record gates you did not run.
+
+**Algorithm track** — complex function rewrite, non-trivial state machine, but confined
+to one file or one service:
+Run gate 1 only (`/agent-spec-tech-spec`, to surface NFR conflicts early). Skip gates 2–4.
+Run gates 5–8. If `02-TECH-SPEC.md` sets `Algorithm: high`, the task qualifies for the
+Complexity Override in `/agent-spec-raw-code-full` — say so before coding starts.
+
+**Design track** — new endpoint, new DB table, cross-service change with no
+algorithmic novelty:
+Gates 0–4 for design artifacts, then gates 5–8.
+
+**Full pipeline** — scope is wide *and* the algorithm is novel:
+All 9 gates. Do not abbreviate.
+
+If `02-TECH-SPEC.md` has a `## Complexity` section, read it — that is the evidence-based
+input for this decision. If not, state your assumption out loud and proceed.
+
 ## The pipeline
 
-Before gate 0, optionally, `/agent-spec-intent` captures the originator's idea in their own
-words into `00-INTENT.md` — for ideas that must survive a handoff. It is not a gate: it
-records nothing in `STATE.json`, and gate 0 reads its output as input.
+Pre-pipeline: `/agent-spec-intent` → `00-INTENT.md` (for handoffs; not a gate).
 
-| Gate | Name | Skill | Produces |
-|---|---|---|---|
-| 0 | REQUIREMENTS | `/agent-spec-requirements` | `01-REQUIREMENTS.md` |
-| 1 | TECH-SPEC | `/agent-spec-tech-spec` | `02-TECH-SPEC.md` |
-| 2 | PRD | `/agent-spec-prd` | `03-PRD.md` |
-| 3 | HLD | `/agent-spec-hld` | `04-HLD.md` |
-| 4 | LLD | `/agent-spec-lld` | `05-LLD.md` |
-| 5 | DEVELOPMENT | `/agent-spec-implement` | code + tests |
-| 6 | REVIEW | `/agent-spec-review` | `06-REVIEW.md` |
-| 7 | TESTING | `/agent-spec-testing` | `07-TEST-REPORT.md` |
-| 8 | VALIDATION | `/agent-spec-validation` | `08-VALIDATION.md` |
-
-All artifacts live in `.agent-spec/sdlc/`.
+Gates 0–8: `requirements` → `tech-spec` → `prd` → `hld` → `lld` → `implement` → `review` → `testing` → `validation`. Artifacts: `01-REQUIREMENTS.md` through `08-VALIDATION.md`, all in `.agent-spec/sdlc/`.
 
 ## How to run one gate
 
@@ -59,10 +75,6 @@ All artifacts live in `.agent-spec/sdlc/`.
 **One gate per invocation.** Do not chain. Every gate is a separate human approval, and
 chaining two on one "yes" is how a requirement gets dropped with nobody noticing — which
 is precisely what gate 8 exists to catch, after the cost has already been paid.
-
-Exception, stated out loud when you use it: a change too small for a design pass. Say
-"small-change mode, gates 0–4 skipped", go straight to `/agent-spec-implement`, and do not record a
-gate you did not run.
 
 ## Requirement traceability
 

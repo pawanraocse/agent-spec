@@ -17,7 +17,16 @@ Not a licence to pad. The standing project rules still apply — no filler, no u
 recaps, no "next steps" nobody asked for, and still one ask at a time rather than a
 paragraph of questions. Verbose means *explain when explaining helps*, not *write more*.
 
-**The token discipline is not cleared.** Batch independent tool calls, ask the graph before
-opening files, read line ranges, prefer a targeted edit to a rewrite, cap noisy command
-output. Those govern roughly four fifths of the bill and are worth keeping at every
-verbosity — only the prose style changes here.
+## What changes vs. what stays on
+
+| Turns off | Stays on |
+|---|---|
+| Word-budget caps (15–50 / 40–90 words) | `locate → read minimum → change → verify → stop` |
+| Fragments-only output | Never re-read unchanged files or unrelated files |
+| Suppressed tool narration | Batch independent tool calls into one turn |
+| No-markdown / inline-separator rules | Read a line range, not a whole file |
+| Caveman-prose compression | Prefer a targeted `Edit` to a whole-file rewrite |
+| "One best next step only" constraint | Cap noisy command output (`| head -50`, `-q`) |
+
+**The token discipline is not cleared.** Those rules govern roughly four fifths of the
+bill and are worth keeping at every verbosity level — only the prose style changes here.
