@@ -8,7 +8,7 @@ description: >-
 
 # Web Application Testing
 
-## Gate
+## Gate (check this first)
 
 ```bash
 ./.agent-spec/bin/agent-spec-gate.py check 7
@@ -18,14 +18,27 @@ description: >-
 
 Adopt the **@QA** persona (`.agent-spec/personas/QA.md`) before proceeding.
 
+## Which skill to use
+
+| Situation | Use |
+|---|---|
+| Running the backend test suite (unit, integration, contract) | `/agent-spec-testing` |
+| Verifying UI behaviour, selectors, or page flows in a browser | **this skill** |
+| Both | Run `/agent-spec-testing` first (it opens gate 7), then this skill |
+
+Do not use this skill to run `pytest`, `jest`, or any non-browser test runner.
+
 ---
 
 To test local web applications, write native Python Playwright scripts.
 
 **Helper Scripts Available**:
-- `scripts/with_server.py` - Manages server lifecycle (supports multiple servers)
+- `scripts/with_server.py` — Manages server lifecycle (supports multiple servers)
 
-**Always run scripts with `--help` first** to see usage. DO NOT read the source until you try running the script first and find that a customized solution is abslutely necessary. These scripts can be very large and thus pollute your context window. They exist to be called directly as black-box scripts rather than ingested into your context window.
+**Always run scripts with `--help` first** to see usage. DO NOT read the source until you
+try running the script first and find that a customised solution is absolutely necessary.
+These scripts can be very large and thus pollute your context window. They exist to be
+called directly as black-box scripts rather than ingested into your context window.
 
 ## Decision Tree: Choosing Your Approach
 
@@ -48,8 +61,6 @@ User task → Is it static HTML?
 
 ## Example: Using with_server.py
 
-To start a server, run `--help` first, then use the helper:
-
 **Single server:**
 ```bash
 python scripts/with_server.py --server "npm run dev" --port 5173 -- python your_automation.py
@@ -63,15 +74,15 @@ python scripts/with_server.py \
   -- python your_automation.py
 ```
 
-To create an automation script, include only Playwright logic (servers are managed automatically):
+Automation script — include only Playwright logic (servers are managed automatically):
 ```python
 from playwright.sync_api import sync_playwright
 
 with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True) # Always launch chromium in headless mode
+    browser = p.chromium.launch(headless=True)  # Always headless
     page = browser.new_page()
-    page.goto('http://localhost:5173') # Server already running and ready
-    page.wait_for_load_state('networkidle') # CRITICAL: Wait for JS to execute
+    page.goto('http://localhost:5173')
+    page.wait_for_load_state('networkidle')  # CRITICAL: wait for JS to execute
     # ... your automation logic
     browser.close()
 ```
@@ -84,27 +95,22 @@ with sync_playwright() as p:
    content = page.content()
    page.locator('button').all()
    ```
-
 2. **Identify selectors** from inspection results
-
 3. **Execute actions** using discovered selectors
 
-## Common Pitfall
-
-❌ **Don't** inspect the DOM before waiting for `networkidle` on dynamic apps
-✅ **Do** wait for `page.wait_for_load_state('networkidle')` before inspection
+❌ Don't inspect the DOM before `networkidle` on dynamic apps.
+✅ Do `page.wait_for_load_state('networkidle')` before any inspection.
 
 ## Best Practices
 
-- **Use bundled scripts as black boxes** - To accomplish a task, consider whether one of the scripts available in `scripts/` can help. These scripts handle common, complex workflows reliably without cluttering the context window. Use `--help` to see usage, then invoke directly. 
-- Use `sync_playwright()` for synchronous scripts
-- Always close the browser when done
-- Use descriptive selectors: `text=`, `role=`, CSS selectors, or IDs
-- Add appropriate waits: `page.wait_for_selector()` or `page.wait_for_timeout()`
+- Use bundled scripts as black boxes — `--help` then invoke directly.
+- Use `sync_playwright()` for synchronous scripts.
+- Always close the browser when done.
+- Prefer `text=`, `role=`, or ID selectors over fragile CSS paths.
+- Add explicit waits: `page.wait_for_selector()` before acting on dynamic elements.
 
 ## Reference Files
 
-- **examples/** - Examples showing common patterns:
-  - `element_discovery.py` - Discovering buttons, links, and inputs on a page
-  - `static_html_automation.py` - Using file:// URLs for local HTML
-  - `console_logging.py` - Capturing console logs during automation
+- `examples/element_discovery.py` — discovering buttons, links, inputs
+- `examples/static_html_automation.py` — using `file://` URLs for local HTML
+- `examples/console_logging.py` — capturing console logs during automation

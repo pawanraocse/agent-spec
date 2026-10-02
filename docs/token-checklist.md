@@ -183,6 +183,13 @@ Four items, in order of how much they could still be worth.
 3. **Items 6 and 10 — reading discipline and cheap subagents.** Both are untested because
    every benchmark task runs eight turns against a small context.
    `04-long-session.task` exists for exactly this and has never completed a run.
+   Two new tasks address the missing complexity quadrants:
+   - `05-needle-in-haystack.task` — large context (1,000-line file), trivial answer: tests whether
+     the agent uses `grep` or the graph (152 B) instead of reading the file (35,966 B).
+   - `06-hard-algorithm.task` — small context, schema migration across multiple call sites:
+     tests whether the agent correctly activates the Complexity Override in `raw-code-full`
+     rather than producing a cheaper wrong answer under strict terse mode.
+   These cover the two off-diagonal quadrants previously missing from the suite.
 
 4. **Input quality, which nothing here addresses.** Every item above makes the input
    smaller. None of them makes it better, and the rule at the foot of this document says

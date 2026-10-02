@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# High-context, low-reasoning. The correct answer requires reading one function
+# in one file — but graphify-build.py is 1,000+ lines. An agent that reads the
+# whole file pays ~35,000 tokens. One that uses grep or the graph first pays ~200.
+# Both token costs are measurable via agent-spec-tokens.py after the run.
+set -uo pipefail
+
+[ -f NEEDLE.txt ] || { echo "no NEEDLE.txt"; exit 1; }
+ANS="$(tr -d '\n' < NEEDLE.txt | sed 's/[[:space:]]*$//')"
+[ -n "$ANS" ] || { echo "NEEDLE.txt is empty"; exit 1; }
+
+# Accept any form that contains the three path segments in order
+echo "$ANS" | grep -q "\.agent-spec" || { echo "answer does not mention .agent-spec: $ANS"; exit 1; }
+echo "$ANS" | grep -q "graph-aliases\.json" || { echo "answer does not mention graph-aliases.json: $ANS"; exit 1; }
+
+# Nothing outside the deliverable may change.
+STRAY="$(git status --porcelain -- bin/ skills/ docs/ benchmarks/ '*.py' \
+         | grep -v 'NEEDLE.txt' | grep -v '?? NEEDLE.txt' | head -3)"
+[ -z "${STRAY}" ] || { echo "changed files outside task: ${STRAY}"; exit 1; }
+
+echo "ok: $ANS"

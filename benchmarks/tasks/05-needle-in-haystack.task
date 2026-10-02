@@ -1,0 +1,7 @@
+The function load_service_aliases in bin/graphify-build.py constructs a file path
+using os.path.join with three arguments. Write the full path it constructs —
+exactly as Python would evaluate it at runtime, using PROJECT_ROOT as a literal
+placeholder — to NEEDLE.txt as a single line. Do not modify any source files.
+
+Example of the expected format:
+  <PROJECT_ROOT>/.agent-spec/graph-aliases.json

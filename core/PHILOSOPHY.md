@@ -13,7 +13,7 @@ The highest-leverage activity a human can do is write a clear, unambiguous speci
 - **Vibe coding** leads to hallucination, architectural drift, and technical debt.
 - **Spec coding** leads to predictable, testable, and maintainable software.
 
-In `agent-spec`, we use the **6-Gate Pipeline**. The agent is physically blocked from writing code until the specification and architecture are approved.
+In `agent-spec`, we use the **nine-gate pipeline**. The agent is physically blocked from writing code until the specification and architecture are approved. For small changes, the router fast-tracks past the design gates directly to implementation.
 
 ## 2. Memory is Non-Negotiable
 

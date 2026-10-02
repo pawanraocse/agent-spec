@@ -21,10 +21,11 @@ Unreleased work on `main`, on top of 1.0.0. What is in place today:
 |---|---|
 | **Router** | `/agent-spec` reads the pipeline state and hands off to exactly one skill |
 | **Graph** | services, layers, HTTP and broker edges, incremental indexing — not just imports |
-| **Pipeline** | nine gates with state on disk, and requirement traceability from gate 0 to gate 8 |
+| **Pipeline** | nine gates with state on disk, asymmetric gating (fast-track/algorithm/design/full), and requirement traceability from gate 0 to gate 8 |
 | **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
 | **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
-| **Tests** | `bin/agent-spec-selftest.sh` — 143 assertions across Python, Java-microservice and Node fixtures |
+| **Tests** | `bin/agent-spec-selftest.sh` — 125 passing assertions across Python, Java-microservice and Node fixtures |
+| **Benchmarks** | 6 tasks covering all four complexity quadrants: narrow/wide scope × low/high algorithm |
 | **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript (both WSL and Windows profiles) — measured buckets, not bytes ÷ 4; `overhead --all` and `audit` find what the harness re-sends and the config behind it ([usage](docs/token-efficiency.md#how-to-measure)) |
 | **Subagents** | `agent-spec-search` and `agent-spec-verify`, pinned to a cheap model, so broad sweeps and noisy test output never enter the main context |
 
@@ -99,23 +100,51 @@ rediscover the project.
 Every command is prefixed `agent-spec-`, so it is obvious in a transcript which tool ran
 and where it came from.
 
-| | |
+### Daily use — reach for these every session
+
+| Skill | When |
 |---|---|
-| **Router** | `/agent-spec` — picks the right skill for the job when you are not sure |
-| **Onboarding** | `/agent-spec-onboard` |
-| **SDLC pipeline** | `/agent-spec-sdlc` routes; `-intent` (capture the idea before gate 0) `-requirements` `-tech-spec` `-prd` `-hld` `-lld` `-implement` `-review` `-testing` `-webapp-testing` (Playwright automation) `-validation` |
-| **Diagnosis** | `/agent-spec-investigate` |
-| **Review** | `/agent-spec-review` `-self-review` `-solid-check` `-debt` |
-| **Prompt quality** | `/agent-spec-prompt-audit` — audits any body an agent re-reads every turn for dead references, bloat and rules a skill cannot enforce |
-| **Writing** | `/agent-spec-doc-coauthoring` — structured co-authoring for docs, specs and proposals, with a zero-context reader check |
-| **Graph** | `/agent-spec-index-project` `/agent-spec-query-graph` |
-| **Memory** | `/agent-spec-remember` `/agent-spec-snapshot` |
-| **Personas** | `/agent-spec-persona <role>` — architect, ai-architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
-| **Context budget** | `/agent-spec-compact` (compresses chat history by 88%) `-verbose` (restores default output) |
-| **Output style** | **Always-on by default:** Structural task shapes (`Issue. Cause. Fix.`). `/agent-spec-raw-code` (force code-blocks only for copy-pasting). |
-| **Extensions** | `/agent-spec-skill-creator` (Test-driven meta-skill creation) `/agent-spec-mcp-builder` (Build MCP servers for external APIs) |
+| `/agent-spec-sdlc` | Route a feature through the right gates (fast-track → full pipeline) |
+| `/agent-spec-implement` | Build the change: declare, test-first, surgical diff, self-review |
+| `/agent-spec-query-graph` | Answer structural questions without reading files |
+| `/agent-spec-raw-code-full` | Suppress output filler and enforce tool discipline (92% of cost) |
+| `/agent-spec-investigate` | Diagnose before editing — name the cause with evidence |
+| `/agent-spec-snapshot` | Write session state before closing or at 70% context |
+| `/agent-spec-compact` | Compress chat history by 88% at task boundaries |
+
+### Session boundaries — use at start/end
+
+| Skill | When |
+|---|---|
+| `/agent-spec-onboard` | First session in a new project — runs once, writes `PROJECT-INDEX.md` |
+| `/agent-spec-index-project` | After adding, moving or renaming files |
+| `/agent-spec-remember` | Record a durable fact (decision, constraint, gotcha) |
+| `/agent-spec-verbose` | Restore normal explanatory output after raw-code modes |
+
+### SDLC pipeline — one gate per approval
+
+`/agent-spec-intent` (pre-gate, optional) → `/agent-spec-requirements` → `/agent-spec-tech-spec`
+→ `/agent-spec-prd` → `/agent-spec-hld` → `/agent-spec-lld` → `/agent-spec-implement`
+→ `/agent-spec-review` → `/agent-spec-testing` → `/agent-spec-webapp-testing` (Playwright)
+→ `/agent-spec-validation`
+
+### Specialist tools — use when the situation calls for it
+
+| Skill | What it does |
+|---|---|
+| `/agent-spec` | Router — picks the right skill when you are unsure |
+| `/agent-spec-persona <role>` | Adopt expert lens: architect, ai-architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
+| `/agent-spec-review` + `-self-review` | Code review: blockers first, fixes applied |
+| `/agent-spec-solid-check` | Audit one file for SOLID violations against SIMPLICITY-FIRST |
+| `/agent-spec-debt` | Log a technical debt item to `TECH-DEBT-REGISTER.md` |
+| `/agent-spec-prompt-audit` | Audit any always-on body for dead references and bloat |
+| `/agent-spec-doc-coauthoring` | Structured co-authoring for docs, specs and proposals |
+| `/agent-spec-skill-creator` | Test-driven meta-skill creation |
+| `/agent-spec-mcp-builder` | Build MCP servers to expose external APIs as agent tools |
 
 31 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
+
+---
 
 ## Token efficiency, measured
 
@@ -192,6 +221,8 @@ Method, raw numbers and the open questions: [docs/token-checklist.md](docs/token
 [docs/token-experiments.md](docs/token-experiments.md),
 [docs/token-efficiency.md](docs/token-efficiency.md).
 
+---
+
 ## Docs
 
 - [What it actually does](docs/features.md) — Graphify, personas, the nine gates, context budgeting
@@ -202,19 +233,23 @@ Method, raw numbers and the open questions: [docs/token-checklist.md](docs/token
 - [Agent compatibility](docs/agents.md) — where files land, the WSL two-homes problem
 - [Why this exists](docs/why.md)
 
+---
+
 ## Maintaining
 
 ```bash
-bin/agent-spec-selftest.sh   # 143 assertions: three language fixtures, gates, memory, hooks, upgrade path
-bin/agent-spec-bench.sh      # always-on and per-skill cost, estimated at 4 bytes per token
-bin/agent-spec-bench.sh --session   # measured, from the real session transcript
-bin/agent-spec-benchmark.sh --repeats 3   # compare two modes over a verified task suite
+bin/agent-spec-selftest.sh               # 125 passing assertions: three language fixtures, gates, memory, hooks, upgrade path
+bin/agent-spec-bench.sh                  # always-on and per-skill cost, estimated at 4 bytes per token
+bin/agent-spec-bench.sh --session        # measured, from the real session transcript
+bin/agent-spec-benchmark.sh --repeats 3  # compare two modes over a verified task suite (6 tasks, all complexity quadrants)
 ```
 
 Both must pass before anything is merged. The self-test builds throwaway fixtures and
 asserts the failures that have actually shipped here before — edges resolving to nothing,
 an indexer overwriting its own output, a gate running without its predecessor, an upgrade
 leaving duplicate skills behind.
+
+---
 
 ## Contributing
 
@@ -224,6 +259,8 @@ that same shape, so there is nothing to regenerate. The directory name and the f
 `name` must match, and both must carry the `agent-spec-` prefix — the self-test enforces
 it. See
 [`skills/third-party/README.md`](skills/third-party/README.md) for community extensions.
+
+---
 
 ## License
 
