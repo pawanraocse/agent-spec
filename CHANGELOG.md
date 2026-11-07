@@ -1,6 +1,20 @@
 # Changelog — algosec-agent-spec
 
-## Unreleased — Slice 4c (not yet versioned; live steps pending, see PHASE1-VERIFICATION E and F)
+## 2.0.0 — Phase 2 Platform
+
+**Control Plane v2 & AI-First Realignment**
+- **Dashboard UI & Platform API** (D-010–D-022, CP-000–CP-050): React 19 SPA bundled to 103.8 kB gzip
+  served via stdlib `http.server` on 127.0.0.1; 5 core spaces (Home, Sessions, Runs, Knowledge, Governance);
+  status bar with live hook status, doctor health, graph freshness, and session metrics.
+- **Hook Event Spine & Ingest** (AF-001–AF-008): `hooks/cursor-event.py` records raw events to `events.jsonl`;
+  ingestor builds requests/steps/subagent runs without Python heuristics.
+- **AI Session Review** (AF-003): Evidence-backed session evaluation in `agent-spec-session-review` skill.
+- **Self-Learning Flywheel** (L-001, L-002, L-005): Experience records in `experience.jsonl` with reuse tracking
+  and measured token reduction; Fact schema v2 with expiration and supersession support.
+- **Cursor-Native Orchestration** (O-001–O-020, B-003–B-009): Skill-driven workflows executed via
+  `agent-spec-hub-runner` and recorded through `agent-spec-run.py`; live execution of `rca`, `pr-review`,
+  `fix-plan`, and `eval` against golden tickets with human gate approvals and deterministic MCP output filtering.
+
 
 - **Dashboard server** (D-020, S-003): `agent-spec-platform.py serve` — stdlib `http.server` on 127.0.0.1,
   read-only JSON over `platform.db` (`/api/health`, `/api/runs`, `/api/runs/{id}`, `/api/tasks`) and one

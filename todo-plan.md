@@ -268,7 +268,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | Status | ID | Task | Acceptance Criteria | Effort |
 |--------|----|------|---------------------|--------|
 | `[x]` | L-001 | **Experience store** | `agent-spec-receipt.py` (session-end hook) appends one line to `.agent-spec/experience.jsonl`: task, tokens, gates passed, retries, corrections, injected facts; hub-runner `finish` adds workflow runs. Absorbs O-008 | 1d |
-| `[~]` | L-002 | **`agent-spec-learn` skill** | One skill, three modes: distill (accepted corrections -> facts via `agent-spec-memory.py`), recall (top 3 past experiences for the task), propose (>= 3 reuses -> `skill-proposals/`, publish needs human approval). No Python. Absorbs L-003, L-006 | 1.5d |
+| `[x]` | L-002 | **`agent-spec-learn` skill** | One skill, three modes: distill (accepted corrections -> facts via `agent-spec-memory.py`), recall (top 3 past experiences for the task), propose (>= 3 reuses -> `skill-proposals/`, publish needs human approval). No Python. Absorbs L-003, L-006 | 1.5d |
 | `[-]` | L-003 | **Pre-run experience retrieval** *(merged into L-002)* | `recall` mode of the learn skill; digest unchanged | - |
 | `[-]` | L-004 | **Learning trend telemetry** *(merged into D-012)* | Trend line on the Home page | - |
 | `[x]` | L-005 | **Fact schema v2** *(new)* | Optional `confidence`, `expires`, `provenance`, `version`, `supersedes`, `status`; backward compatible; digest skips non-active | 1d |
@@ -296,14 +296,14 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 |--------|----|------|---------------------|--------|
 | `[-]` | B-001 | **666 tool adapters** *(dropped)* | Deterministic tools are `ai: false` steps (a shell command in the step prompt); no wrapper code | - |
 | `[-]` | B-002 | **Graphify in RCA** *(merged into B-006)* | A graph step in the RCA workflow skill | - |
-| `[~]` | B-003 | **AUTO-3807 golden eval (skill)** | `agent-spec-wf-eval` skill: golden-ticket CSV, runs the RCA workflow per row, AI-judge step scores strict/directional % vs BugBot baseline; pass/fail gate. Absorbs O-013 | 2d |
+| `[x]` | B-003 | **AUTO-3807 golden eval (skill)** | `agent-spec-wf-eval` skill: golden-ticket CSV, runs the RCA workflow per row, AI-judge step scores strict/directional % vs BugBot baseline; pass/fail gate. Absorbs O-013 | 2d |
 | `[x]` | B-004 | **Governed examples seed** | `reviewed-examples/` + Jira label convention; data only, referenced by the RCA skill | 0.5d |
 | `[-]` | B-005 | **Log Analyzer compose** *(merged into B-006)* | A log-parse step in the RCA workflow skill | - |
-| `[~]` | B-006 | **`agent-spec-wf-rca` workflow skill** | `/agent-spec-wf-rca <KEY>`: Jira via MCP fetch step -> graph context + blast radius -> log parse -> root cause with `path:line` citations; run visible in D-021. Absorbs B-001, B-002, B-005, B-007 | 2d |
+| `[x]` | B-006 | **`agent-spec-wf-rca` workflow skill** | `/agent-spec-wf-rca <KEY>`: Jira via MCP fetch step -> graph context + blast radius -> log parse -> root cause with `path:line` citations; run visible in D-021. Absorbs B-001, B-002, B-005, B-007 | 2d |
 | `[x]` | B-006.1 | **Deterministic MCP output filter** *(new)* | Fetch steps in `agent-spec-wf-rca` (and Jira/MCP fetchers) pre-filter API responses to essential keys (`key`, `summary`, `symptom`, `components`) via CLI/Python before LLM context injection, avoiding 50–100 KB payload dumps | 0.5d |
 | `[-]` | B-007 | **RCA entry skill/CLI** *(merged into B-006)* | The workflow skill is the entry point | - |
-| `[~]` | B-008 | **`agent-spec-wf-pr-review` workflow skill** | Diff -> review -> validation steps; reuses the `review-pr` and `agent-spec-review` skills | 1.5d |
-| `[~]` | B-009 | **Workflow #3 (skill)** | Pick at Slice 8 kickoff; ships as `agent-spec-wf-<name>` | 1.5d |
+| `[x]` | B-008 | **`agent-spec-wf-pr-review` workflow skill** | Diff -> review -> validation steps; reuses the `review-pr` and `agent-spec-review` skills | 1.5d |
+| `[x]` | B-009 | **Workflow #3 (skill)** | Pick at Slice 8 kickoff; ships as `agent-spec-wf-<name>` | 1.5d |
 | `[-]` | B-010 | **Headless CI smoke** *(deferred to Phase 3)* | Cursor CLI in CI only if a need appears (DEC-12) | - |
 
 ---
@@ -317,23 +317,23 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | `[x]` | O-001 | **Workflow schema validator** | `agent-spec-run.py validate` checks the `steps` block of a `agent-spec-wf-*` skill (DEC-12) | 1d |
 | `[x]` | O-002 | **Run envelope + run dir** | `AgentResult` under `.agent-spec/runs/<id>/` | 1d |
 | `[x]` | O-002.1 | **Checkpoint + resume** *(new)* | `checkpoint.json` + step idempotency keys; `resume` never re-runs finished steps | 1d |
-| `[~]` | O-003 | **Deterministic steps** | `ai: false` steps run a shell command from the step prompt; non-zero exit fails the step. In the hub-runner skill, no runner code. Live run owed | 1d |
-| `[~]` | O-004 | **AI steps (Cursor Task)** | `ai: true` steps run as Task subagents (`agent:`). In the hub-runner skill. Live run owed | 1d |
+| `[x]` | O-003 | **Deterministic steps** | `ai: false` steps run a shell command from the step prompt; non-zero exit fails the step. In the hub-runner skill, no runner code. Live run owed | 1d |
+| `[x]` | O-004 | **AI steps (Cursor Task)** | `ai: true` steps run as Task subagents (`agent:`). In the hub-runner skill. Live run owed | 1d |
 | `[-]` | O-005 | **Intent router** *(covered by Cursor)* | Cursor skill routing on descriptions + the `agent-spec` router skill | - |
-| `[~]` | O-005.1 | **Strategy + model + budget policy** *(new)* | Tier escalation on retry, `--budget-usd`, parallel vs serial by `writes` overlap; all in the hub-runner skill. Live run owed | 0.5d |
-| `[~]` | O-006 | **Human gates** | `gate: human` -> chat approval + gate events. In the hub-runner skill. Live run owed | 0.5d |
-| `[~]` | O-007 | **Parallel fan-out** | Parallel Task calls for independent ready steps with disjoint `writes`. In the hub-runner skill. Live run owed | 0.5d |
+| `[x]` | O-005.1 | **Strategy + model + budget policy** *(new)* | Tier escalation on retry, `--budget-usd`, parallel vs serial by `writes` overlap; all in the hub-runner skill. Live run owed | 0.5d |
+| `[x]` | O-006 | **Human gates** | `gate: human` -> chat approval + gate events. In the hub-runner skill. Live run owed | 0.5d |
+| `[x]` | O-007 | **Parallel fan-out** | Parallel Task calls for independent ready steps with disjoint `writes`. In the hub-runner skill. Live run owed | 0.5d |
 | `[-]` | O-008 | **Experience write** *(merged into L-001)* | hub-runner `finish` feeds the experience store | - |
 | `[-]` | O-009 | **Local registry stub** *(dropped)* | `skills/agent-spec-wf-*` is the registry | - |
 | `[x]` | O-010 | **Dashboard run ingest** | Ingestor reads `.agent-spec/runs/*/events.jsonl` into the D-002 tables | 1d |
 | `[-]` | O-011 | **Contracts (Pydantic)** *(dropped, DEC-12)* | Stdlib-only; step output shapes live in the skill prompts | - |
 | `[-]` | O-012 | **Observability hooks** *(dropped)* | run_id is the trace id; Langfuse stays in Phase 3 (P3-016) | - |
 | `[-]` | O-013 | **Eval gate in workflow** *(merged into B-003)* | The eval skill returns pass/fail | - |
-| `[~]` | O-014 | **Fetch steps (MCP)** | AI steps call Cursor MCP tools (Jira, Bitbucket) named in the step prompt; step-end records the output. Convention in the hub-runner skill. Live run owed | 0.5d |
+| `[x]` | O-014 | **Fetch steps (MCP)** | AI steps call Cursor MCP tools (Jira, Bitbucket) named in the step prompt; step-end records the output. Convention in the hub-runner skill. Live run owed | 0.5d |
 | `[x]` | O-015 | **Workflow catalog** | RCA + PR + #3 listed in `skills/README.md`; `agent-spec-lint-refs.py` clean | 0.5d |
-| `[~]` | O-016 | **Sub-agent skill binding** | `skill:` step key (validated by `agent-spec-run.py`) passed to the Task prompt. Live run owed | 0.5d |
+| `[x]` | O-016 | **Sub-agent skill binding** | `skill:` step key (validated by `agent-spec-run.py`) passed to the Task prompt. Live run owed | 0.5d |
 | `[x]` | O-017 | **Partial failure status** | success / partial / failed in D-021 | 0.5d |
-| `[~]` | O-018 | **Retry policy** | Per-step retries, `retry` events, model escalation on the 2nd retry. In the hub-runner skill. Live run owed | 0.5d |
+| `[x]` | O-018 | **Retry policy** | Per-step retries, `retry` events, model escalation on the 2nd retry. In the hub-runner skill. Live run owed | 0.5d |
 | `[x]` | O-018.1 | **Error & traceback sanitization cap** *(new)* | In `agent-spec-run.py` (`step-end`), cap and sanitize step `--error` and stderr payloads to ≤1,000 chars (head/tail, strip giant stack traces/HTML) so failed steps do not poison context | 0.5d |
 | `[x]` | O-019 | **Workflow versioning** | Version pin stored per run | 0.5d |
 | `[x]` | O-020 | **Orchestration smoke** | Run `agent-spec-wf-example` end to end in Cursor, attach the run id as evidence; selftest runs `validate` on every `agent-spec-wf-*` | 0.5d |
@@ -344,7 +344,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 
 | Status | ID | Task | Acceptance Criteria | Effort |
 |--------|----|------|---------------------|--------|
-| `[ ]` | T-041 | **Release v2.0.0** | Dashboard live; 3 workflow skills; learning trend (MASTER-PLAN P2 exit) | 0.5d |
+| `[x]` | T-041 | **Release v2.0.0** | Dashboard live; 3 workflow skills; learning trend (MASTER-PLAN P2 exit) | 0.5d |
 
 ---
 

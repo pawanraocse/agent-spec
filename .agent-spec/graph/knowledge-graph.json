@@ -1,7 +1,7 @@
 {
   "version": "5.0",
-  "project": "algosec-agent-spec",
-  "generated": "2026-11-07T18:45:37.843431",
+  "project": "agent-spec",
+  "generated": "2026-11-07T20:21:15.264194",
   "generator": "graphify-build",
   "stack": "Node.js + React",
   "stats": {

@@ -1,1 +1,2 @@
 key,expected_root_cause,expected_files,notes
+AVC-8414,Branch diverged from develop causing unresolved merge markers in sdlc STATE,bin/agent-spec-digest.py;sdlc/06-DEVELOPMENT.md,SDLC gate sync mismatch
