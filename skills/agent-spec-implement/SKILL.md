@@ -59,12 +59,26 @@ import direction. A structural break should fail here, not in production six mon
 **G5 — Verify clean.** The full local gate: tests, linter, type checker. All green, no
 exceptions. Paste the command and its real output.
 
-**G6 — Self-review, then report.** Run the
+**G6 — Self-review, then advance gate.** Run the
 [`self-review`](../agent-spec-self-review/SKILL.md) loop over the diff — two passes, apply the fixes
 yourself, report once. Pay particular attention to class B (stale reference after an edit):
 callers, tests, imports and docs that referred to what you just changed.
 
 Do not proceed to the next gate until the current one's checklist is complete.
+
+## Automated Gate Transition
+
+Once G5 tests are 100% green and G6 self-review is clean:
+
+1. **If SDLC pipeline is in flight** (an LLD was checked):
+   **Automatically execute Gate 5 recording immediately** without waiting for user prompting:
+   ```bash
+   ./.agent-spec/bin/agent-spec-gate.py set 5
+   ```
+   Print the output: `gate 5 DEVELOPMENT recorded. next: /agent-spec-review (REVIEW)`.
+
+2. **If in small-change mode**:
+   State out loud: `Small-change mode: clean tests verified, skipping formal SDLC gate advance.`
 
 ## Reporting
 
@@ -77,9 +91,3 @@ report tests green before they are.
 `/agent-spec-review`.
 
 State this and stop — each gate is a separate approval.
-
-Record this gate before you stop:
-
-```bash
-./.agent-spec/bin/agent-spec-gate.py set 5
-```

@@ -73,7 +73,8 @@ subscriptions in `ngOnDestroy`; no direct DOM manipulation.
 unasked: graph first (`context --task`, `query --file`) before editing; post a
 Pre-Change Declaration (file, quoted current behaviour, change, test command,
 confidence — LOW/UNKNOWN: ask); failing test first; surgical diff; run the tests and
-report their real output. Typo or comment-only edits: declaration only.
+report their real output. When tests verify green, automatically advance Gate 5
+(`./.agent-spec/bin/agent-spec-gate.py set 5` if SDLC in flight) and prompt for `/agent-spec-review`. Typo or comment-only edits: declaration only.
 
 ---
 
