@@ -14,14 +14,16 @@ Reuse log: `.agent-spec/experience-reuse.jsonl` (`{"ts", "exp_id", "task"}`), wr
 
 ## distill
 
-1. List candidates: lines in `experience.jsonl` with `corrections` > 0, newest first, at most 10.
-2. For each, open the session transcript only if the developer says so. Otherwise ask one question:
-   "What did you correct, and is it still true?" A correction counts only after the developer
-   confirms it in chat.
-3. Record each accepted one with `agent-spec-memory.py add --type gotcha|constraint|decision
-   --subject "<3 words>" --source "experience <exp_id>" "<one sentence, why>"`.
-   Not derivable from code, not a duplicate (`agent-spec-memory.py search "<subject>"` first).
-4. Report: facts added, corrections declined, nothing else.
+1. Check `.agent-spec/memory/staged-candidates.jsonl` first.
+   - If present with `status: pending`: present the staged correction candidate:
+     `"Found staged correction from session <session_id>: '<candidate>' (context: '<task>'). Accept to save as memory fact? [constraint | gotcha | decision | decline]"`
+   - If accepted: run `agent-spec-memory.py add --type <type> --subject "<3 words>" --source "session <id>" "<one sentence, why>"`.
+   - Update candidate status to `"status": "accepted"` in `staged-candidates.jsonl`.
+   - If declined: update candidate status to `"status": "declined"`.
+2. If no staged candidates, fall back to lines in `experience.jsonl` with `corrections` > 0, newest first, at most 10.
+   - For each, ask one question: "What did you correct, and is it still true?"
+   - Record confirmed ones with `agent-spec-memory.py add`.
+3. Report: facts added, corrections declined, nothing else.
 
 ## recall
 

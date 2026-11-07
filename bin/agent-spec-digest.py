@@ -214,6 +214,23 @@ def doctor_line():
     return out.stdout.strip()[:200]
 
 
+def staged_learning_line():
+    """Surfaces the first pending candidate from zero-touch distillation."""
+    path = os.path.join(SPEC, "memory", "staged-candidates.jsonl")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                try:
+                    row = json.loads(line)
+                    if row.get("status") == "pending" and row.get("candidate"):
+                        return 'learning candidate: "%s" — run `/agent-spec-learn distill` or confirm in chat to remember.' % row["candidate"][:90]
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return ""
+
+
 def build_digest():
     """Assemble the digest text, or "" when this is not an agent-spec project."""
     if not os.path.isdir(SPEC):
@@ -247,6 +264,10 @@ def build_digest():
     if facts:
         out.append("remembered:")
         out.append(facts)
+
+    staged = staged_learning_line()
+    if staged:
+        out.append(staged)
 
     out.append(
         "Do NOT open PROJECT-INDEX.md, KNOWLEDGE-GRAPH.md or SESSION-SNAPSHOT.md to "

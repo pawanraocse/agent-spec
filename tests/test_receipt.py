@@ -98,6 +98,11 @@ def test_experience_line_is_upserted_per_session():
     assert e["corrections"] == 1, "one later user turn opened with 'no'"
     assert e["facts_injected"] == 3 and e["tokens"]["input"] >= 0 and "gates" in e
     assert "x" * 100 not in json.dumps(e), "experience holds counts and a short task, never file contents"
+    staged_path = os.path.join(proj, ".agent-spec", "memory", "staged-candidates.jsonl")
+    assert os.path.isfile(staged_path), "staged-candidates.jsonl should be created on corrections"
+    staged = [json.loads(line) for line in open(staged_path).read().splitlines()]
+    assert len(staged) == 1 and staged[0]["status"] == "pending"
+    assert "no, that is wrong - use csv" in staged[0]["candidate"]
 
 
 def test_experience_task_is_redacted_and_capped():

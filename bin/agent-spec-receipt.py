@@ -24,6 +24,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 
 SCHEMA = 1
 READ_CAP = 20000
@@ -264,10 +265,10 @@ QUERY_RE = re.compile(r"<user_query>\s*(.*?)\s*</user_query>", re.S)
 CORRECTION_RE = re.compile(r"^(no|nope|wrong|not|don'?t|stop|actually|instead|undo|revert)\b", re.I)
 
 
-def scan_prompts(path):
-    """(task, corrections): the first `<user_query>` text and the later user turns that open with a
-    correction word. Counts a heuristic only; the learn skill decides what a correction means."""
-    task, corrections = None, 0
+def scan_prompts(path, return_snippets=False):
+    """(task, corrections) or (task, corrections, snippets): the first `<user_query>` text,
+    the count of user turns opening with a correction word, and optional snippets."""
+    task, corrections, snippets = None, 0, []
     try:
         with open(path, encoding="utf-8", errors="replace") as fh:
             for line in fh:
@@ -288,9 +289,54 @@ def scan_prompts(path):
                 body = (m.group(1) if m else text).strip()
                 if CORRECTION_RE.match(body):
                     corrections += 1
+                    clean = " ".join(body.split())[:140]
+                    if clean and len(snippets) < 3:
+                        snippets.append(clean)
     except OSError:
         pass
+    if return_snippets:
+        return task, corrections, snippets
     return task, corrections
+
+
+def stage_candidates(project, session_id, task, snippets):
+    """Stage candidate learnings in .agent-spec/memory/staged-candidates.jsonl for zero-touch distillation."""
+    if not snippets or not session_id:
+        return None
+    try:
+        mem_dir = os.path.join(project, ".agent-spec", "memory")
+        os.makedirs(mem_dir, exist_ok=True)
+        path = os.path.join(mem_dir, "staged-candidates.jsonl")
+        kept = []
+        try:
+            with open(path, encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        row = json.loads(line)
+                        if row.get("session_id") == session_id:
+                            continue
+                        if row.get("status") == "pending":
+                            kept.append(line.rstrip("\n"))
+                    except ValueError:
+                        pass
+        except OSError:
+            pass
+        now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        for s in snippets:
+            kept.append(json.dumps({
+                "session_id": session_id,
+                "ts": now,
+                "task": (task or "")[:100],
+                "candidate": s,
+                "status": "pending"
+            }, sort_keys=True))
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            fh.write("\n".join(kept) + "\n")
+        os.replace(tmp, path)
+        return path
+    except OSError:
+        return None
 
 
 def build_experience(project, receipt, session=None, transcript=None):
@@ -305,7 +351,10 @@ def build_experience(project, receipt, session=None, transcript=None):
     except Exception:
         redact = None
     path = find_transcript(load_tokens(), project, session, transcript)
-    task, corrections = scan_prompts(path) if path else (None, 0)
+    task, corrections, snippets = scan_prompts(path, return_snippets=True) if path else (None, 0, [])
+    if snippets and receipt.get("session_id"):
+        redacted_snippets = [redact(s)[:140] if redact else s[:140] for s in snippets]
+        stage_candidates(project, receipt["session_id"], redact(task) if (task and redact) else task, redacted_snippets)
     t = receipt["tokens"]
     return {"schema": 1, "exp_id": "session:" + receipt["session_id"], "kind": "session", "ts": receipt["ts"],
             "task": redact(" ".join(task.split()))[:200] if (task and redact) else "",

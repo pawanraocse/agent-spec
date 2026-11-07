@@ -201,6 +201,26 @@ def test_digest_expired_fact_only_does_not_print_remembered_header():
         shutil.rmtree(t)
 
 
+def test_digest_surfaces_staged_learning_candidate():
+    t = make_project()
+    try:
+        mem_dir = os.path.join(t, ".agent-spec", "memory")
+        os.makedirs(mem_dir, exist_ok=True)
+        staged_file = os.path.join(mem_dir, "staged-candidates.jsonl")
+        with open(staged_file, "w") as fh:
+            fh.write(json.dumps({
+                "session_id": "test-sid",
+                "ts": "2026-11-07T20:00:00Z",
+                "task": "fix export",
+                "candidate": "no, that is wrong - use csv",
+                "status": "pending"
+            }) + "\n")
+        out = digest(t)
+        assert 'learning candidate: "no, that is wrong - use csv"' in out, out
+    finally:
+        shutil.rmtree(t)
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

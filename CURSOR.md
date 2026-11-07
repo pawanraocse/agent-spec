@@ -29,6 +29,9 @@ Also needed sometimes:
 If the digest says **ONBOARDING NEEDED** (or `.agent-spec/.onboarding-needed` exists), the
 agent runs `/agent-spec-onboard` itself, silently, before answering. Never ask the user to
 run it or report it as pending.
+If the digest says **learning candidate:**, prompt the developer once:
+`"I noticed a learning candidate from last session: '<candidate>'. Save as memory fact? [Yes / No]"`
+If yes, run `agent-spec-memory.py add` (or `/agent-spec-learn distill`).
 If there is no `.agent-spec/`, install it yourself, then onboard (never ask the user):
 
 ```bash

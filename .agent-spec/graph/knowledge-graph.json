@@ -1,7 +1,7 @@
 {
   "version": "5.0",
   "project": "agent-spec",
-  "generated": "2026-11-07T20:21:15.264194",
+  "generated": "2026-11-07T20:37:42.049943",
   "generator": "graphify-build",
   "stack": "Node.js + React",
   "stats": {
@@ -2040,25 +2040,32 @@
       "line": 200
     },
     {
-      "id": "bin/agent-spec-digest.py::build_digest",
+      "id": "bin/agent-spec-digest.py::staged_learning_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
       "line": 217
     },
     {
+      "id": "bin/agent-spec-digest.py::build_digest",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-digest.py",
+      "line": 234
+    },
+    {
       "id": "bin/agent-spec-digest.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 263
+      "line": 284
     },
     {
       "id": "bin/agent-spec-digest.py::cursor_hook",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 271
+      "line": 292
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx",
@@ -2723,112 +2730,119 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 39
+      "line": 40
     },
     {
       "id": "bin/agent-spec-receipt.py::metrics_dir",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 51
+      "line": 52
     },
     {
       "id": "bin/agent-spec-receipt.py::is_ranged",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 55
+      "line": 56
     },
     {
       "id": "bin/agent-spec-receipt.py::scan_transcript",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 66
+      "line": 67
     },
     {
       "id": "bin/agent-spec-receipt.py::_flatten",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 110
+      "line": 111
     },
     {
       "id": "bin/agent-spec-receipt.py::facts_in_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 120
+      "line": 121
     },
     {
       "id": "bin/agent-spec-receipt.py::gates",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 136
+      "line": 137
     },
     {
       "id": "bin/agent-spec-receipt.py::find_transcript",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 152
+      "line": 153
     },
     {
       "id": "bin/agent-spec-receipt.py::build_receipt",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 166
+      "line": 167
     },
     {
       "id": "bin/agent-spec-receipt.py::write_receipt",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 202
+      "line": 203
     },
     {
       "id": "bin/agent-spec-receipt.py::daily_row",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 218
+      "line": 219
     },
     {
       "id": "bin/agent-spec-receipt.py::upsert_daily",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 234
+      "line": 235
     },
     {
       "id": "bin/agent-spec-receipt.py::scan_prompts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 267
+      "line": 268
+    },
+    {
+      "id": "bin/agent-spec-receipt.py::stage_candidates",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-receipt.py",
+      "line": 302
     },
     {
       "id": "bin/agent-spec-receipt.py::build_experience",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 296
+      "line": 342
     },
     {
       "id": "bin/agent-spec-receipt.py::upsert_experience",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 317
+      "line": 366
     },
     {
       "id": "bin/agent-spec-receipt.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-receipt.py",
-      "line": 344
+      "line": 393
     },
     {
       "id": "bin/agent-spec-roi.py::receipts_dir",
@@ -6506,6 +6520,13 @@
       "line": 195
     },
     {
+      "id": "tests/test_digest.py::test_digest_surfaces_staged_learning_candidate",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_digest.py",
+      "line": 204
+    },
+    {
       "id": "tests/test_doctor.py::Sandbox",
       "type": "symbol",
       "kind": "class",
@@ -8099,21 +8120,21 @@
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_receipt.py",
-      "line": 103
+      "line": 108
     },
     {
       "id": "tests/test_receipt.py::test_explicit_transcript_and_session_selector",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_receipt.py",
-      "line": 114
+      "line": 119
     },
     {
       "id": "tests/test_receipt.py::test_no_transcript_fails_cleanly",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_receipt.py",
-      "line": 122
+      "line": 127
     },
     {
       "id": "tests/test_redact.py::RedactTest",
@@ -9129,6 +9150,11 @@
     },
     {
       "source": "bin/agent-spec-digest.py::build_digest",
+      "target": "bin/agent-spec-digest.py::staged_learning_line",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-digest.py::build_digest",
       "target": "bin/agent-spec-digest.py::team_line",
       "type": "calls"
     },
@@ -9820,6 +9846,11 @@
     {
       "source": "bin/agent-spec-receipt.py::build_experience",
       "target": "bin/agent-spec-receipt.py::scan_prompts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-receipt.py::build_experience",
+      "target": "bin/agent-spec-receipt.py::stage_candidates",
       "type": "calls"
     },
     {
@@ -13116,6 +13147,16 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_digest.py::test_digest_surfaces_staged_learning_candidate",
+      "target": "tests/test_digest.py::digest",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_digest.py::test_digest_surfaces_staged_learning_candidate",
+      "target": "tests/test_digest.py::make_project",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_doctor.py::Sandbox.install",
       "target": "tests/test_doctor.py::Sandbox.sh",
       "type": "calls"
@@ -16185,16 +16226,16 @@
       20
     ],
     [
+      "time",
+      20
+    ],
+    [
       "pathlib",
       20
     ],
     [
       "_run_helpers",
       20
-    ],
-    [
-      "time",
-      19
     ],
     [
       "http",
