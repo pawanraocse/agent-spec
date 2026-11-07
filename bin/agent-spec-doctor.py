@@ -414,6 +414,18 @@ def check_mcp(ctx):
     return [("mcp", "OK", "MCP tool schemas %d tokens (limit %d)" % (tokens, limit), "")]
 
 
+def check_skill_proposals(ctx):
+    """Guardrail 4: audit .agent-spec/skill-proposals/ for pending proposals."""
+    proposals_dir = os.path.join(ctx.spec, "skill-proposals")
+    if not os.path.isdir(proposals_dir):
+        return []
+    proposals = [f for f in os.listdir(proposals_dir) if f.endswith(".md") and f != "README.md"]
+    if proposals:
+        return [("proposals", "INFO", "%d pending skill proposal(s) in .agent-spec/skill-proposals/" % len(proposals),
+                 "review proposals before graduating to skills/")]
+    return []
+
+
 # (function, runs in --line quick mode). The digest calls --line on every session,
 # so quick mode may only stat files — no subprocesses, and never the digest itself.
 CHECKS = [
@@ -421,7 +433,7 @@ CHECKS = [
     (check_digest, False), (check_memory, True), (check_memory_lint, False),
     (check_register, True), (check_version, True), (check_git_hooks, True),
     (check_team, True), (check_team_facts, True), (check_audit, False), (check_coexistence, True),
-    (check_onboarding, True), (check_mcp, True),
+    (check_onboarding, True), (check_mcp, True), (check_skill_proposals, True),
 ]
 
 

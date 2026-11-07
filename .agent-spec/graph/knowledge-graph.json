@@ -1,7 +1,7 @@
 {
   "version": "5.0",
   "project": "agent-spec",
-  "generated": "2026-11-07T20:37:42.049943",
+  "generated": "2026-11-07T20:39:52.695035",
   "generator": "graphify-build",
   "stack": "Node.js + React",
   "stats": {
@@ -2257,25 +2257,32 @@
       "line": 374
     },
     {
+      "id": "bin/agent-spec-doctor.py::check_skill_proposals",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-doctor.py",
+      "line": 417
+    },
+    {
       "id": "bin/agent-spec-doctor.py::run_checks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 428
+      "line": 440
     },
     {
       "id": "bin/agent-spec-doctor.py::line_summary",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 442
+      "line": 454
     },
     {
       "id": "bin/agent-spec-doctor.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 452
+      "line": 464
     },
     {
       "id": "bin/agent-spec-gate.py::load_state",

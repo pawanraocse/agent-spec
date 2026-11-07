@@ -42,6 +42,7 @@ Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd
 - `/agent-spec-wf-fix-plan <rca run id>` — RCA follow-on: test-first fix plan behind a human gate
 - `/agent-spec-wf-eval` — golden-ticket score of the RCA workflow vs the BugBot baseline (`evals/`)
 - `/agent-spec-learn distill|recall|propose` — experience store to facts, recall, skill proposals
+- `/agent-spec-synthesize-routine` — synthesize repeated task patterns into parameterized `agent-spec-wf-*` workflows
 - New workflows: `skills/agent-spec-wf-<name>/SKILL.md` with a ```steps block; check with `agent-spec-run.py validate`
 
 ## Context modes
