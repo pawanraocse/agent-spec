@@ -1,91 +1,119 @@
-# CURSOR.md — Cursor Configuration
+# CURSOR.md — algosec-agent-spec (canonical always-on rules)
 
-> **Rules for Cursor AI when working in any project initialized with agent-spec.**
-> These rules are loaded via `.cursor/rules/` and apply to all Cursor AI interactions.
+> Loaded into `.cursor/rules/agent-spec.mdc` (`alwaysApply: true`) by `./install.sh`.
+> Edit this file in the **package**, then re-run install/register to refresh projects.
+> Do not maintain a second copy in AGENTS.md.
 
 ---
 
-## 🧭 Session Start
+## Session Start
 
-**Cursor has no session hook, so your first action in a new session is to run the
-digest yourself:**
+IDE chats with Hooks enabled get the digest from `sessionStart`
+(`.cursor/hooks/agent-spec-session-start.py`). **Cloud agents / Bugbot / Hooks-off
+sessions do not** — then your first action is:
 
 ```bash
 ./.agent-spec/bin/agent-spec-digest.py
 ```
 
-It prints about 1,700 bytes: stack, graph size, current pipeline gate, what the last
-session did, and the remembered constraints. **Once you have it, do not re-read
-`PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` to learn those facts —
-you already have them.** Reading those three costs 30,560 bytes to learn what the digest
-gave you for 1,700.
+~1,700 bytes: stack, graph size, pipeline gate, last session, remembered constraints.
+**Once you have it, do not re-read** `PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md`, or
+`SESSION-SNAPSHOT.md` for those facts.
 
-Two things the digest does not carry, because they are only needed sometimes:
+Also needed sometimes:
 
-- `.agent-spec/CONSTITUTION.md` — read before the first code edit of the session.
-- Structure — query it, do not read it:
+- `.agent-spec/CONSTITUTION.md` — before the first code edit of the session.
+- Structure — query, do not read whole files:
   `./.agent-spec/bin/graphify-cli.py query --file <path>`
 
-If the digest says **ONBOARDING NEEDED**, run `/agent-spec-onboard` before anything else.
-If there is no digest and no `.agent-spec/` directory, tell the user to run `bin/install.sh`.
+If the digest says **ONBOARDING NEEDED** (or `.agent-spec/.onboarding-needed` exists), the
+agent runs `/agent-spec-onboard` itself, silently, before answering. Never ask the user to
+run it or report it as pending.
+If there is no `.agent-spec/`, install it yourself, then onboard (never ask the user):
 
+```bash
+"$(cat ~/.cursor/skills/.algosec-agent-spec-root)/install.sh" --register "<absolute path of the opened Cursor folder>"
+```
 
-## 🎭 Personas
+If that marker file is missing, the global skills were never installed: report that in one line.
+
+---
+
+## Personas
 
 Default: **@REVIEWER** — skeptical, precise, asks before assuming.
 
-`/agent-spec-persona <role>` switches: `architect` `security` `qa` `data` `devops` `perf`
-`refactor` `api` `writer` `reviewer`. Each loads `.agent-spec/personas/<ROLE>.md`, whose
-**Absolute Rules** section is binding and does not relax on request.
+`/agent-spec-persona <role>`: `architect` `ai-architect` `security` `qa` `data` `devops`
+`perf` `refactor` `api` `writer` `reviewer`. Loads `.agent-spec/personas/<ROLE>.md`;
+**Absolute Rules** are binding.
 
-A persona changes the lens, not the task, and never overrides the rules in this file.
+---
 
+## Confidence Scoring
 
-## 📊 Confidence Scoring
-
-All non-trivial claims must include confidence rating:
 - `[CONFIDENCE: HIGH]` — verified in this session
 - `[CONFIDENCE: MEDIUM]` — pattern-based
-- `[CONFIDENCE: LOW]` — inference, validate first
-- `[CONFIDENCE: UNKNOWN]` — ask developer
+- `[CONFIDENCE: LOW]` — inference; validate first
+- `[CONFIDENCE: UNKNOWN]` — ask the developer
 
 ---
 
-## 📐 Always-On Coding Rules
+## Always-On Coding Rules
 
-These apply to every file Cursor generates or modifies:
+**Java** — `coding-standards/languages/JAVA.md`: controllers delegate only; custom
+exceptions (never raw `RuntimeException`); Javadoc on public methods.
 
-**Java:**
-- Follow `coding-standards/languages/JAVA.md`
-- Controllers delegate only — zero business logic
-- Custom exceptions always — never raw `RuntimeException`
-- All public methods documented with Javadoc
+**Angular** — `coding-standards/languages/ANGULAR.md`: smart/dumb split; clean up
+subscriptions in `ngOnDestroy`; no direct DOM manipulation.
 
-**Angular:**
-- Follow `coding-standards/languages/ANGULAR.md`
-- Smart/dumb component separation
-- All subscriptions cleaned up in `ngOnDestroy`
-- No direct DOM manipulation
+**Code change** — any request that edits source runs the `/agent-spec-implement` gates
+unasked: graph first (`context --task`, `query --file`) before editing; post a
+Pre-Change Declaration (file, quoted current behaviour, change, test command,
+confidence — LOW/UNKNOWN: ask); failing test first; surgical diff; run the tests and
+report their real output. Typo or comment-only edits: declaration only.
 
 ---
 
-## 🚧 Hard Stops
+## Hard Stops
 
-Cursor will not:
-```
-❌ Delete files without confirmation
-❌ Skip tests
-❌ Invent class/method names without reading source
-❌ Modify .env files
-❌ Suggest main branch commits
-```
+- Delete files without explicit confirmation
+- Skip tests for new code
+- Invent class/method names without reading source
+- Modify `.env` or secret files
+- Suggest commits to main/master
+- Continue past a failing test
 
 ---
 
-## 📋 Session End
+## Context discipline
 
-Remind developer to run `/agent-spec-snapshot` (or describe snapshot task) before ending session.
+Prefer graph/query and ranged reads over whole-file dumps. Broad sweeps → Task
+`agent-spec-search`. Noisy builds/tests → Task `agent-spec-verify`. At task boundaries
+run `/agent-spec-snapshot` then `/agent-spec-compact` (new Cursor chat — not Claude
+`/compact`).
+
+### Tool discipline
+
+1. Structure before content: `graphify-cli.py query --file <path>` before reading a file you
+   have not seen; `context --task "<task>"` before touching several files.
+2. Never read a file over ~20 KB whole — `grep -n`, then Read with `offset`/`limit`.
+3. `git diff --stat` before any full diff; `--name-only` to list files.
+4. Batch independent tool calls in one message; do not poll.
+5. Edit with a targeted replace; never rewrite a file to change a few lines.
+6. Cap noisy output (`| head -50`, `-q`); build/test runs go to `agent-spec-verify`.
+7. Do not re-read a file to confirm an edit landed, or re-read the digest facts.
+
+`preToolUse` may nudge once toward cheaper tool use; retry as-is if intentional. A team can
+make it a hard stop with `AGENT_SPEC_READ_HARD_CAP_KB=<n>` (rangeless Read ≥ n KB denied).
 
 ---
 
-*Version: 1.0.0 | Framework: agent-spec | Spec: cursor*
+## Session End
+
+Remind the developer to run `/agent-spec-snapshot` before ending the session.
+
+---
+
+Algosec Cursor AI
+
+*algosec-agent-spec | Cursor-only | see VERSION*

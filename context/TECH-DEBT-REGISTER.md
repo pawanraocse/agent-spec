@@ -9,14 +9,13 @@
 
 | ID | Date Logged | Component | Description | Severity | Fix Effort | Status |
 |----|-------------|-----------|-------------|----------|------------|--------|
-| `DEBT-001` | YYYY-MM-DD | `UserService.java` | The `createUser` method is 300 lines long and handles email dispatch directly instead of using an event listener. Violates SRP. | HIGH | Medium | OPEN |
-| `DEBT-002` | YYYY-MM-DD | `database` | `orders` table missing an index on `customer_id`, causing slow lookups. | MEDIUM | Low | OPEN |
+| _none logged_ | | | Add a row per defect risk found outside the current task. | | | |
 
 ## Resolved Debt
 
 | ID | Date Resolved | Component | Resolution |
 |----|---------------|-----------|------------|
-| `DEBT-000` | YYYY-MM-DD | `AuthFilter` | Replaced custom JWT validation with standard Spring Security OAuth2 resource server library. |
+| _none_ | | | |
 
 ---
 

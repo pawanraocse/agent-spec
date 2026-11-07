@@ -1,0 +1,9 @@
+# .agent-spec/team.yaml — optional team defaults. Copy to .agent-spec/team.yaml to enable:
+#   cp .agent-spec/templates/team.yaml .agent-spec/team.yaml
+# Flat `key: value` only. The sessionStart digest prints valid keys as one `team:` line.
+# Invalid values and unknown keys are ignored by the digest and reported by the doctor.
+#
+# java_version: 17            # digits and dots
+# node_version: 20
+# sdlc_track: fast-track      # fast-track | algorithm | design | full
+# default_branch: develop

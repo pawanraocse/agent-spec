@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""agent-spec-platform.py — local platform database, ingest and dashboard (Phase 2).
+
+  agent-spec-platform.py init     [--project P]            create / migrate platform.db
+  agent-spec-platform.py status   [--project P] [--json]   schema version, row counts, ingest lag
+  agent-spec-platform.py ingest   [WHAT ...] [--rebuild]   transcripts gates memory graph backlog runs
+  agent-spec-platform.py serve    [--port 8765]            dashboard (extra) or ROI fallback
+
+The database is derived from files (DEC-04); `ingest --rebuild` recreates it. Stdlib only for the
+data layer; `serve` needs the optional extra (requirements-platform.txt) and otherwise falls back
+to `agent-spec-roi.py serve` on the same port. Fail-soft: errors print one line and exit non-zero,
+never a traceback.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+
+from aspec_platform import common, db  # noqa: E402
+
+TABLES = ("requests", "steps", "subagent_runs", "events", "gate_events", "tasks", "memory_facts",
+          "fact_injections", "experiences", "graph_stats", "quarantine_events")
+
+
+def cmd_init(args) -> int:
+    project = common.find_project(args.project)
+    path = db.db_path(project)
+    conn = db.open_ready(path)
+    print("platform db ready: %s (schema v%d)" % (path, db.schema_version(conn)))
+    conn.close()
+    return 0
+
+
+def cmd_status(args) -> int:
+    project = common.find_project(args.project)
+    path = db.db_path(project)
+    if not os.path.isfile(path):
+        print("no platform db at %s — run: agent-spec-platform.py init" % path)
+        return 1
+    conn = db.connect(path, readonly=True)
+    counts = {t: conn.execute("SELECT COUNT(*) FROM %s" % t).fetchone()[0] for t in TABLES}
+    out = {"path": path, "schema": db.schema_version(conn), "rows": counts}
+    if args.json:
+        print(json.dumps(out, indent=2))
+    else:
+        print("%s  schema v%d" % (path, out["schema"]))
+        for name, n in counts.items():
+            print("  %-18s %d" % (name, n))
+    return 0
+
+
+def cmd_ingest(args) -> int:
+    from aspec_platform import ingest
+    project = common.find_project(args.project)
+    try:
+        report = ingest.run(project, args.what or ["all"], rebuild=args.rebuild)
+    except db.SchemaError as exc:
+        print("error: %s" % exc, file=sys.stderr)
+        return 2
+    for name, stats in report.items():
+        print("%-12s %s" % (name, " ".join("%s=%s" % kv for kv in sorted(stats.items()))))
+    return 0
+
+
+def cmd_export(args) -> int:
+    from aspec_platform import export
+    project = common.find_project(args.project)
+    path = db.db_path(project)
+    if not os.path.isfile(path):
+        print("no platform db at %s — run: agent-spec-platform.py init" % path, file=sys.stderr)
+        return 1
+    conn = db.connect(path, readonly=True)
+    try:
+        written = export.write(conn, args.out, args.format)
+    finally:
+        conn.close()
+    print("proof pack (counts only, no prompts or paths): %s" % ", ".join(os.path.join(args.out, f) for f in written))
+    return 0
+
+
+
+def cmd_seed(args) -> int:
+    from aspec_platform import demo_seed
+    project = common.find_project(args.project)
+    if args.remove:
+        out = demo_seed.remove(project)
+    else:
+        out = demo_seed.seed(project)
+    print(json.dumps(out))
+    return 0
+
+
+def cmd_serve(args) -> int:
+    from aspec_platform import serve
+    return serve.main(args)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(prog="agent-spec-platform.py", description=__doc__.split("\n")[0])
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    p = sub.add_parser("init", help="create or migrate platform.db")
+    p.add_argument("--project")
+    p.set_defaults(fn=cmd_init)
+    p = sub.add_parser("status", help="schema version and row counts")
+    p.add_argument("--project")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_status)
+    p = sub.add_parser("ingest", help="import files into platform.db (idempotent)")
+    p.add_argument("what", nargs="*",
+                   help="transcripts gates memory graph backlog runs quarantine experiences (default: all)")
+    p.add_argument("--project")
+    p.add_argument("--rebuild", action="store_true", help="drop and recreate the database first")
+    p.set_defaults(fn=cmd_ingest)
+    p = sub.add_parser("export", help="write the proof pack (CSV/JSON metrics, no prompts or paths)")
+    p.add_argument("--project")
+    p.add_argument("--out", default="proof-pack")
+    p.add_argument("--format", choices=("csv", "json"), default="csv")
+    p.set_defaults(fn=cmd_export)
+    p = sub.add_parser("seed", help="add or remove demo_seed rows in platform.db")
+    p.add_argument("--project")
+    p.add_argument("--remove", action="store_true")
+    p.set_defaults(fn=cmd_seed)
+    p = sub.add_parser("serve", help="start the dashboard")
+    p.add_argument("--project")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8765)
+    p.set_defaults(fn=cmd_serve)
+    args = ap.parse_args(argv)
+    try:
+        return args.fn(args)
+    except KeyboardInterrupt:
+        return 130
+    except Exception as exc:  # fail-soft: one line, no traceback
+        print("error: %s: %s" % (type(exc).__name__, exc), file=sys.stderr)
+        if os.environ.get("AGENT_SPEC_DEBUG"):
+            raise
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

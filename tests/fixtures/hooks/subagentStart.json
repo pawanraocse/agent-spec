@@ -1,0 +1,7 @@
+{
+  "event": "subagentStart",
+  "sessionId": "sess-1234",
+  "subagentId": "sub-999",
+  "agent": "agent-spec-search",
+  "model": "claude-3-5-sonnet"
+}

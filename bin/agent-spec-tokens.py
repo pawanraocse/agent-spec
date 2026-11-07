@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
-"""Measure where a Claude Code session's tokens actually went.
+"""Measure session token cost and harness overhead (algosec-agent-spec / Cursor).
 
-`agent-spec-bench.sh` estimates context cost as bytes divided by four. That is fine for
-comparing two revisions of a file and useless for a session, which is where the money
-goes. Claude Code already records the truth: every assistant turn in the session
-transcript carries a `usage` object with the four token buckets. This reads it.
+By default, `list`, `session`, `overhead`, `corpus`, `context`, `tools`, and `compare`
+read **Cursor** agent transcripts under
+`~/.cursor/projects/<workspace-slug>/agent-transcripts/<session>/<session>.jsonl`.
+Cursor JSONL usually has no `usage` object; those commands then estimate in/out from
+message size (chars ÷ 4) and parse harness tags in user turns for `overhead`.
 
-The reason this exists at all is that the published numbers for token-saving tools do not
-survive measurement — one advertised 60-90% savings and benchmarked 7.6% *more* expensive.
-Nothing in this framework should claim a saving it has not counted, and until now it had
-no way to count.
+With `--claude`, the same commands use Claude Code JSONL (~/.claude/projects/…) where
+assistant `usage` is ground truth for the four token buckets.
 
-Read-only. It never writes anything under ~/.claude.
+`audit` scans Cursor harness config (`.cursor/hooks.json`, rules, skills, memory). Pass
+`--include-claude` to also scan Claude settings and `.claude/skills` twins.
 
-  context   how big the context has grown, and whether a reset now pays for itself
-  corpus    the same buckets across every session on this machine
-  session   the four buckets, weighted, for one session
-  tools     per tool: what was written into it, what came back, the largest results
-  compare   two transcripts side by side, for an honest A/B
-  overhead  what the harness re-sends every turn that is not the conversation
-  audit     configuration that inflates that overhead, on this machine
-  list      the transcripts available for this project
+Read-only. Never writes under ~/.cursor, ~/.claude, or project trees.
 
-Transcripts are read from ~/.claude and, under WSL, from the Windows profile too
-(WIN_CLAUDE_HOME, default /mnt/c/Users/<user>): a session started from the Windows app
-is recorded there, not under the WSL home.
+  audit     harness config on this machine (Cursor-first)
+  overhead  what the harness re-sends each turn besides the conversation
+  session   four buckets, weighted (exact with Claude usage; estimated on Cursor)
+  list      transcripts for the cwd workspace root
 """
 import argparse
 import getpass
@@ -45,6 +39,101 @@ BUCKETS = [
     ("output_tokens", "out"),
     ("input_tokens", "in"),
 ]
+
+CURSOR_HARNESS_RE = [
+    ("attached_skills", re.compile(
+        r"<manually_attached_skills\b[^>]*>(.*?)</manually_attached_skills>", re.I | re.S)),
+    ("hooks_context", re.compile(
+        r"<hooks_context\b[^>]*>(.*?)</hooks_context>", re.I | re.S)),
+    ("agent_spec_digest", re.compile(
+        r"<agent-spec-digest\b[^>]*>(.*?)</agent-spec-digest>", re.I | re.S)),
+    ("workspace_rules", re.compile(
+        r"<always_applied_workspace_rules\b[^>]*>(.*?)</always_applied_workspace_rules>",
+        re.I | re.S)),
+    ("user_rules", re.compile(
+        r"<user_rules\b[^>]*>(.*?)</user_rules>", re.I | re.S)),
+]
+
+
+def cursor_projects_root():
+    return os.path.join(os.path.expanduser("~"), ".cursor", "projects")
+
+
+def cursor_project_slug(cwd=None):
+    """Cursor folder under ~/.cursor/projects: drop leading /, then `-` for `/` and `.`."""
+    cwd = os.path.abspath(cwd or os.getcwd())
+    if cwd.startswith(os.sep):
+        cwd = cwd[len(os.sep):]
+    return cwd.replace(os.sep, "-").replace(".", "-")
+
+
+def cursor_transcript_dir(cwd=None):
+    return os.path.join(cursor_projects_root(), cursor_project_slug(cwd), "agent-transcripts")
+
+
+def cursor_transcripts(cwd=None):
+    """Main session JSONL files for this workspace (not subagent transcripts)."""
+    base = cursor_transcript_dir(cwd)
+    names = []
+    try:
+        sessions = os.listdir(base)
+    except OSError:
+        return []
+    for sid in sessions:
+        main = os.path.join(base, sid, sid + ".jsonl")
+        if os.path.isfile(main):
+            names.append(main)
+    return sorted(names, key=lambda p: os.path.getmtime(p), reverse=True)
+
+
+def transcript_format(path):
+    """'cursor' or 'claude' from the first JSONL record."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                entry = json.loads(line)
+                if entry.get("type") == "attachment":
+                    return "claude"
+                if entry.get("role") in ("user", "assistant"):
+                    return "cursor"
+                if entry.get("type") == "assistant":
+                    return "claude"
+                break
+    except (OSError, ValueError):
+        pass
+    return "cursor"
+
+
+def message_content(entry):
+    message = entry.get("message") or {}
+    content = message.get("content")
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts = []
+    for block in content:
+        if not isinstance(block, dict):
+            continue
+        if block.get("type") == "text":
+            parts.append(block.get("text") or "")
+        elif block.get("type") == "tool_use":
+            parts.append(json.dumps(block.get("input", {})))
+    return "".join(parts)
+
+
+def is_assistant_turn(entry):
+    if entry.get("type") == "assistant":
+        return True
+    return entry.get("role") == "assistant"
+
+
+def assistant_usage(entry):
+    message = entry.get("message") or {}
+    return message.get("usage") or entry.get("usage")
 
 
 def claude_roots():
@@ -79,7 +168,7 @@ def project_dirs(cwd=None):
     return out
 
 
-def transcripts(cwd=None):
+def claude_transcripts(cwd=None):
     names = []
     for d in project_dirs(cwd):
         try:
@@ -89,21 +178,42 @@ def transcripts(cwd=None):
     return sorted(names, key=lambda p: os.path.getmtime(p), reverse=True)
 
 
+def transcripts(cwd=None, claude_only=False):
+    if not claude_only:
+        found = cursor_transcripts(cwd)
+        if found:
+            return found
+    return claude_transcripts(cwd)
+
+
 def resolve(args):
     """The transcript to read, or None with the reason already printed."""
+    claude_only = getattr(args, "claude", False)
     if getattr(args, "file", None):
         if os.path.exists(args.file):
             return args.file
         print("no such transcript: %s" % args.file, file=sys.stderr)
         return None
-    found = transcripts()
+    found = transcripts(claude_only=claude_only)
     if found:
         return found[0]
-    print("No session transcript under %s.\n"
-          "Transcripts are written by Claude Code itself: another agent, a piped\n"
-          "session, or a different working directory will not have one, and there is\n"
-          "nothing to measure without it." % project_dir(), file=sys.stderr)
+    explain_no_transcripts(claude_only=claude_only)
     return None
+
+
+def explain_no_transcripts(claude_only=False):
+    """Why session/overhead/corpus may show nothing (stderr)."""
+    if claude_only:
+        print("No Claude Code session transcripts for this project.", file=sys.stderr)
+        print("  looked in: %s" % project_dir(), file=sys.stderr)
+        print("  Transcripts exist only after Claude Code sessions in this folder.", file=sys.stderr)
+        return
+    print("No Cursor agent transcripts for this workspace.", file=sys.stderr)
+    print("  looked in: %s" % cursor_transcript_dir(), file=sys.stderr)
+    print("  Open this folder in Cursor and run agent chats, then retry.", file=sys.stderr)
+    print("  Harness config: python3 bin/agent-spec-tokens.py audit", file=sys.stderr)
+    print("  Account spend: Cursor Settings → usage / billing.", file=sys.stderr)
+    print("  Claude Code JSONL instead: add --claude", file=sys.stderr)
 
 
 def read_usage(path):
@@ -118,6 +228,8 @@ def read_usage(path):
     tool_out_bytes = Counter()     # what came back — an input cost
     biggest = []
     pending = {}                   # tool_use id -> tool name, so results can be attributed
+    estimated = transcript_format(path) == "cursor"
+    running_context = 0
 
     with open(path, encoding="utf-8", errors="replace") as fh:
         for line in fh:
@@ -127,16 +239,29 @@ def read_usage(path):
                 continue
             message = entry.get("message") or {}
 
-            usage = message.get("usage")
-            if usage and entry.get("type") == "assistant":
+            usage = assistant_usage(entry)
+            if is_assistant_turn(entry):
                 turns += 1
-                if first_usage is None:
-                    first_usage = usage
-                last_usage = usage
-                for key, _ in BUCKETS:
-                    totals[key] += usage.get(key, 0) or 0
-                per_turn_context.append((usage.get("cache_read_input_tokens", 0) or 0)
-                                        + (usage.get("cache_creation_input_tokens", 0) or 0))
+                if usage:
+                    estimated = False
+                    if first_usage is None:
+                        first_usage = usage
+                    last_usage = usage
+                    for key, _ in BUCKETS:
+                        totals[key] += usage.get(key, 0) or 0
+                    per_turn_context.append((usage.get("cache_read_input_tokens", 0) or 0)
+                                            + (usage.get("cache_creation_input_tokens", 0) or 0))
+                else:
+                    text = message_content(entry)
+                    totals["output_tokens"] += len(text) // 4
+                    running_context += len(text) // 4
+                    per_turn_context.append(running_context)
+
+            elif entry.get("role") == "user":
+                text = message_content(entry)
+                if text:
+                    totals["input_tokens"] += len(text) // 4
+                    running_context += len(text) // 4
 
             content = message.get("content")
             if not isinstance(content, list):
@@ -157,20 +282,26 @@ def read_usage(path):
                     name = pending.get(block.get("tool_use_id"), "?")
                     tool_out_bytes[name] += size
                     biggest.append((size, name))
+                    if estimated:
+                        totals["input_tokens"] += size // 4
+                        running_context += size // 4
 
     biggest.sort(reverse=True)
     first_usage = first_usage or {}
     return {
         "path": path,
         "turns": turns,
+        "estimated": estimated,
         "last_usage": last_usage,
         "first_usage": first_usage,
         "first_creation": first_usage.get("cache_creation_input_tokens", 0) or 0,
         "first_context": ((first_usage.get("cache_read_input_tokens", 0) or 0)
                           + (first_usage.get("cache_creation_input_tokens", 0) or 0)
-                          + (first_usage.get("input_tokens", 0) or 0)),
+                          + (first_usage.get("input_tokens", 0) or 0))
+                          if not estimated else (per_turn_context[0] if per_turn_context else 0),
         "totals": totals,
-        "avg_context": sum(per_turn_context) // max(turns, 1),
+        "per_turn_context": per_turn_context,
+        "avg_context": sum(per_turn_context) // max(len(per_turn_context), 1),
         "tool_calls": tool_calls,
         "tool_in_bytes": tool_in_bytes,
         "tool_out_bytes": tool_out_bytes,
@@ -207,6 +338,8 @@ def print_session(data, weights):
     grand = sum(w.values()) or 1
 
     print("=== %s ===" % os.path.basename(data["path"]))
+    if data.get("estimated"):
+        print("(Cursor transcript — no usage in JSONL; in/out are chars÷4 estimates.)\n")
     print("%d assistant turns, ~%s tokens of context re-read per turn\n"
           % (data["turns"], "{:,}".format(data["avg_context"])))
     print("%-30s %14s %14s %7s" % ("bucket", "tokens", "weighted", "share"))
@@ -228,8 +361,35 @@ def print_session(data, weights):
           % ("{:,}".format(returned // 4), 100 * (returned // 4) / grand))
 
 
-def all_transcripts():
-    """Every transcript this machine has, across every project and every profile."""
+def all_transcripts(claude_only=False):
+    """Every transcript this machine has (Cursor agent-transcripts or Claude projects)."""
+    if claude_only:
+        return _all_claude_transcripts()
+    out = []
+    root = cursor_projects_root()
+    try:
+        slugs = sorted(os.listdir(root))
+    except OSError:
+        slugs = []
+    for slug in slugs:
+        base = os.path.join(root, slug, "agent-transcripts")
+        if not os.path.isdir(base):
+            continue
+        try:
+            sessions = os.listdir(base)
+        except OSError:
+            continue
+        for sid in sessions:
+            main = os.path.join(base, sid, sid + ".jsonl")
+            if os.path.isfile(main):
+                out.append((slug, main))
+    if out:
+        return out
+    return _all_claude_transcripts()
+
+
+def _all_claude_transcripts():
+    """Claude Code JSONL only."""
     out = []
     for root in claude_roots():
         base = os.path.join(root, "projects")
@@ -247,16 +407,16 @@ def all_transcripts():
     return out
 
 
-def print_corpus(weights, min_turns=5):
+def print_corpus(weights, min_turns=5, claude_only=False):
     """Aggregate across every session on this machine.
 
     One session proves nothing about the shape of the bill — it could be an artefact
     of that day's task. Across a corpus the shares are stable, and that is the only
     basis on which the ordering in `agent-spec-raw-code-full` is defensible.
     """
-    found = all_transcripts()
+    found = all_transcripts(claude_only=claude_only)
     if not found:
-        print("No transcripts under any .claude/projects.", file=sys.stderr)
+        print("No transcripts under Cursor agent-transcripts or Claude projects.", file=sys.stderr)
         return 1
 
     totals = Counter()
@@ -323,6 +483,20 @@ def print_context(data, weights):
     cheaper at the size the session has actually reached.
     """
     usage = data["last_usage"]
+    if data.get("estimated"):
+        pts = data.get("per_turn_context") or []
+        context = pts[-1] if pts else 0
+        first = pts[0] if pts else 0
+        carry = context * weights["read"]
+        print("=== context — %s (estimated) ===" % os.path.basename(data["path"]))
+        print("turn 1:    %14s est. tokens" % "{:,}".format(first))
+        print("turn %-4d  %14s est. tokens   (%.1fx growth over %d turns)"
+              % (data["turns"], "{:,}".format(context),
+                 context / max(first, 1), data["turns"]))
+        print("\nCursor JSONL has no cache buckets — use Cursor billing for spend.")
+        print("carrying est. context costs ~%s weighted units/turn at read=%g."
+              % ("{:,.0f}".format(carry), weights["read"]))
+        return 0
     context = ((usage.get("cache_read_input_tokens", 0) or 0)
                + (usage.get("cache_creation_input_tokens", 0) or 0)
                + (usage.get("input_tokens", 0) or 0))
@@ -414,13 +588,49 @@ def overhead_key(att):
     return kind
 
 
-def read_overhead(path):
-    """Bytes the harness added around the conversation, and how long each stayed in context.
+def harness_blocks_in_user_text(text):
+    """Byte sizes of Cursor-injected blocks in a user turn."""
+    blocks = {}
+    for key, rx in CURSOR_HARNESS_RE:
+        for m in rx.finditer(text):
+            blocks[key] = blocks.get(key, 0) + len(m.group(1))
+    return blocks
 
-    An attachment that appears before turn N is re-read on every later turn, so its cost
-    is its size times the turns remaining. That is why one injection per prompt costs far
-    more than the same text once: each copy is carried to the end of the session.
-    """
+
+def read_overhead_cursor(path):
+    """Harness tags in Cursor user turns; cost = size x turns remaining."""
+    rows = {}
+    turn = 0
+    entries = []
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if is_assistant_turn(entry):
+                turn += 1
+            elif entry.get("role") == "user":
+                text = message_content(entry)
+                blocks = harness_blocks_in_user_text(text)
+                if blocks:
+                    entries.append((turn, blocks))
+
+    def add(key, at, size):
+        n, b, carried = rows.get(key, (0, 0, 0))
+        rows[key] = (n + 1, b + size, carried + (size // 4) * max(turn - at, 0))
+
+    for at, blocks in entries:
+        for key, size in blocks.items():
+            add("cursor:%s" % key, at, size)
+    return turn, rows
+
+
+def read_overhead(path):
+    """Bytes the harness added around the conversation, and how long each stayed in context."""
+    if transcript_format(path) == "cursor":
+        return read_overhead_cursor(path)
+
     rows = {}
     turn = 0
     entries = []
@@ -456,19 +666,23 @@ def print_overhead(paths, weights):
     for path in paths:
         t, r = read_overhead(path)
         turns += t
-        cache_read += read_usage(path)["totals"].get("cache_read_input_tokens", 0)
+        usage = read_usage(path)
+        cache_read += usage["totals"].get("cache_read_input_tokens", 0)
+        if usage.get("estimated") and not cache_read:
+            cache_read += sum(c for _, _, c in r.values())
         for key, (n, b, c) in r.items():
             on, ob, oc = rows.get(key, (0, 0, 0))
             rows[key] = (on + n, ob + b, oc + c)
     if not rows:
-        print("no attachments recorded — nothing added around the conversation.")
+        print("no harness blocks recorded in user turns (Cursor tags or Claude attachments).")
         return 0
-    print("=== overhead: %d session(s), %d assistant turns, %s cache-read tokens ==="
-          % (len(paths), turns, "{:,}".format(cache_read)))
-    print("%-42s %6s %10s %14s %7s" % ("source", "count", "bytes", "re-read tokens", "of read"))
+    denom = max(cache_read, sum(c for _, _, c in rows.values()), 1)
+    print("=== overhead: %d session(s), %d assistant turns, %s re-read tokens (denom) ==="
+          % (len(paths), turns, "{:,}".format(denom)))
+    print("%-42s %6s %10s %14s %7s" % ("source", "count", "bytes", "re-read tokens", "of denom"))
     for key, (n, b, c) in sorted(rows.items(), key=lambda kv: -kv[1][2])[:14]:
         print("%-42s %6d %10s %14s %6.1f%%"
-              % (key[:42], n, "{:,}".format(b), "{:,}".format(c), 100 * c / max(cache_read, 1)))
+              % (key[:42], n, "{:,}".format(b), "{:,}".format(c), 100 * c / denom))
     print("\nre-read tokens = bytes/4 x turns the text stayed in context. An estimate, and an\n"
           "upper bound: the harness may fold repeated reminders. Run `audit` for the fixes.")
     return 0
@@ -555,6 +769,216 @@ def find_projects(scan):
     return found
 
 
+def find_cursor_projects(scan):
+    """Workspace roots with Cursor harness markers (.agent-spec or .cursor/hooks.json)."""
+    found = []
+
+    def is_cursor_root(path):
+        return (
+            os.path.isfile(os.path.join(path, ".cursor", "hooks.json"))
+            or os.path.isdir(os.path.join(path, ".agent-spec"))
+        )
+
+    for d in scan:
+        d = os.path.abspath(d)
+        if is_cursor_root(d):
+            found.append(d)
+            continue
+        try:
+            kids = sorted(os.listdir(d))
+        except OSError:
+            continue
+        for k in kids:
+            p = os.path.join(d, k)
+            if os.path.isdir(p) and is_cursor_root(p):
+                found.append(p)
+    return found
+
+
+def cursor_skills_home():
+    return skills_in(os.path.join(os.path.expanduser("~"), ".cursor", "skills"))
+
+
+def cursor_hook_commands(hooks_cfg):
+    hooks = (hooks_cfg or {}).get("hooks") or {}
+    for event, handlers in hooks.items():
+        if not isinstance(handlers, list):
+            continue
+        for h in handlers:
+            if isinstance(h, dict) and h.get("command"):
+                yield event, h["command"]
+
+
+def resolve_hook_script(project_root, cmd):
+    parts = cmd.split()
+    if not parts:
+        return None
+    if parts[0] in ("python3", "python", "/usr/bin/python3") and len(parts) > 1:
+        target = parts[1]
+        if target.startswith("/"):
+            return target
+        return os.path.normpath(os.path.join(project_root, target))
+    if not parts[0].startswith("/"):
+        return os.path.normpath(os.path.join(project_root, parts[0]))
+    return parts[0]
+
+
+def audit_cursor_project(proj, limits, global_skills, out):
+    """Cursor harness checks for one registered workspace."""
+    hooks_path = os.path.join(proj, ".cursor", "hooks.json")
+    has_harness = os.path.isdir(os.path.join(proj, ".agent-spec"))
+
+    if has_harness and not os.path.isfile(hooks_path):
+        out.append((
+            proj,
+            "registered .agent-spec but no .cursor/hooks.json",
+            "sessionStart digest and preToolUse nudges never run",
+            "re-run ./install.sh --register on the Cursor workspace root; enable Hooks in Settings",
+        ))
+
+    cfg, err = (None, None)
+    if os.path.isfile(hooks_path):
+        cfg, err = load_json(hooks_path)
+        if err:
+            out.append((
+                hooks_path,
+                "not valid JSON (%s)" % err,
+                "Cursor ignores broken hooks.json",
+                "fix the syntax or re-run ./install.sh --register",
+            ))
+        try:
+            text = open(hooks_path, encoding="utf-8", errors="replace").read()
+        except OSError:
+            text = ""
+        for label, rx in SECRET_PATTERNS:
+            hits = len(rx.findall(text))
+            if hits:
+                out.append((
+                    hooks_path,
+                    "%d value(s) that look like %s" % (hits, label),
+                    "credentials at rest in a file that is copied and synced",
+                    "delete the entry and rotate the credential if it has not expired",
+                ))
+
+    if cfg:
+        hooks = cfg.get("hooks") or {}
+        for event in ("sessionStart", "preToolUse"):
+            handlers = hooks.get(event) or []
+            if not isinstance(handlers, list):
+                continue
+            ours = [
+                h for h in handlers
+                if isinstance(h, dict) and "agent-spec" in (h.get("command") or "")
+            ]
+            if has_harness and not ours:
+                out.append((
+                    hooks_path,
+                    "no algosec-agent-spec handler wired for %s" % event,
+                    "standing protocol and digest rely on these hooks",
+                    "re-run ./install.sh --register",
+                ))
+            if len(ours) > 1:
+                out.append((
+                    hooks_path,
+                    "%d algosec-agent-spec %s handlers (expected 1)" % (len(ours), event),
+                    "duplicate hook output is re-read every turn",
+                    "run hooks/merge-hooks-json.py or reinstall; keep one handler per event",
+                ))
+        for event, cmd in cursor_hook_commands(cfg):
+            token = cmd.split()[0]
+            if token.startswith("/mnt/"):
+                out.append((
+                    hooks_path,
+                    "%s hook uses %s" % (event, token),
+                    "paths under /mnt/c fail in some Windows shells (exit 127)",
+                    "use project-relative commands: python3 .cursor/hooks/agent-spec-*.py",
+                ))
+            resolved = resolve_hook_script(proj, cmd)
+            if resolved and not os.path.isfile(resolved):
+                out.append((
+                    hooks_path,
+                    "%s hook target missing: %s" % (event, resolved),
+                    "a failing hook adds errors to every session",
+                    "reinstall hooks or fix the command path",
+                ))
+
+    rules_dir = os.path.join(proj, ".cursor", "rules")
+    if os.path.isdir(rules_dir):
+        try:
+            rule_files = [f for f in os.listdir(rules_dir) if f.endswith((".mdc", ".md"))]
+        except OSError:
+            rule_files = []
+        lean = [f for f in rule_files if f.startswith("algosec-lean")]
+        for f in lean:
+            try:
+                always = re.search(r"(?m)^alwaysApply:\s*true",
+                                   open(os.path.join(rules_dir, f), encoding="utf-8").read())
+            except OSError:
+                always = None
+            if always and "agent-spec.mdc" in rule_files:
+                out.append((
+                    os.path.join(rules_dir, f),
+                    "algosec-lean is Always Apply next to agent-spec.mdc (stacked always-on style rules)",
+                    "both rules ride in the cached prefix every turn and can contradict each other on reply shape",
+                    "set alwaysApply: false in %s and invoke it on demand; keep one always-on style rule" % f,
+                ))
+        if len(rule_files) > 1:
+            out.append((
+                rules_dir,
+                "%d always-on rule files (Cursor loads all of them every chat)" % len(rule_files),
+                "each file sits in the cached prefix for the whole session",
+                "keep one standing rules file (agent-spec.mdc); move the rest to skills on demand",
+            ))
+
+    mine = skills_in(os.path.join(proj, ".cursor", "skills"))
+    for n in mine:
+        for g in (n, "agent-spec-" + n):
+            if g not in global_skills:
+                continue
+            same = _same_file(
+                os.path.join(proj, ".cursor", "skills", n, "SKILL.md"),
+                [os.path.join(os.path.expanduser("~"), ".cursor", "skills", g, "SKILL.md")],
+            )
+            out.append((
+                os.path.join(proj, ".cursor", "skills", n),
+                "%s the global skill %s (%s)"
+                % ("same name as" if g == n else "an unprefixed twin of", g,
+                   "byte-identical" if same else "content differs"),
+                "both descriptions may appear in the skill listing each turn"
+                + ("" if same else ", and they may give different instructions"),
+                "delete the project copy" if same else
+                "diff them, keep one, delete the other",
+            ))
+            break
+    total_listing = sum(mine.values()) + sum(global_skills.values())
+    if total_listing > limits["listing_bytes"]:
+        out.append((
+            proj,
+            "Cursor skill listing is ~%d B (%d project + %d global skills)"
+            % (total_listing, len(mine), len(global_skills)),
+            "name and description of every skill ride in the prefix each turn",
+            "shorten descriptions or remove skills the project never uses",
+        ))
+
+    mem_dir = os.path.join(proj, ".agent-spec", "memory")
+    if os.path.isdir(mem_dir):
+        # Only INDEX.md is pulled into sessions. Fact bodies (facts/) and archived
+        # snapshots are read on demand, so counting them flagged healthy stores.
+        mem_bytes = 0
+        try:
+            mem_bytes = os.path.getsize(os.path.join(mem_dir, "INDEX.md"))
+        except OSError:
+            pass
+        if mem_bytes > limits["memory_bytes"]:
+            out.append((
+                mem_dir,
+                "memory tree is %d B" % mem_bytes,
+                "facts and index text can be pulled into session context",
+                "one line per fact in the index; bodies in separate files; under %d B"
+                % limits["memory_bytes"],
+            ))
+
+
 def load_json(path):
     try:
         with open(path, encoding="utf-8") as fh:
@@ -565,15 +989,16 @@ def load_json(path):
         return None, str(exc)
 
 
-def audit_findings(scan, limits):
+def audit_findings(scan, limits, include_claude=False):
     """(where, finding, risk, fix) for each configuration defect that inflates overhead."""
     out = []
     roots = claude_roots()
     home = roots[0]
-    projects = find_projects(scan)
+    projects = find_projects(scan) if include_claude else []
     global_skills = {}
-    for root in roots:
-        global_skills.update(skills_in(os.path.join(root, "skills")))
+    if include_claude:
+        for root in roots:
+            global_skills.update(skills_in(os.path.join(root, "skills")))
 
     def check_settings(path, is_windows):
         settings, err = load_json(path)
@@ -609,50 +1034,60 @@ def audit_findings(scan, limits):
                         "one-off commands pile up and hide the rules that matter",
                         "prune to wildcard rules (see /fewer-permission-prompts)"))
 
-    for root in roots:
-        check_settings(os.path.join(root, "settings.json"), root != home)
-        base = os.path.join(root, "projects")
-        try:
-            names = sorted(os.listdir(base))
-        except OSError:
-            names = []
-        for n in names:
-            mem = os.path.join(base, n, "memory", "MEMORY.md")
-            if os.path.isfile(mem) and os.path.getsize(mem) > limits["memory_bytes"]:
-                out.append((mem, "memory index is %d B" % os.path.getsize(mem),
-                            "loaded into every turn of every session in that project",
-                            "one line per fact, bodies in their own files; under %d B" % limits["memory_bytes"]))
+    if include_claude:
+        for root in roots:
+            check_settings(os.path.join(root, "settings.json"), root != home)
+            base = os.path.join(root, "projects")
+            try:
+                names = sorted(os.listdir(base))
+            except OSError:
+                names = []
+            for n in names:
+                mem = os.path.join(base, n, "memory", "MEMORY.md")
+                if os.path.isfile(mem) and os.path.getsize(mem) > limits["memory_bytes"]:
+                    out.append((mem, "memory index is %d B" % os.path.getsize(mem),
+                                "loaded into every turn of every session in that project",
+                                "one line per fact, bodies in their own files; under %d B"
+                                % limits["memory_bytes"]))
 
-    for proj in projects:
-        for name in ("settings.json", "settings.local.json"):
-            check_settings(os.path.join(proj, ".claude", name), False)
-        mine = skills_in(os.path.join(proj, ".claude", "skills"))
-        for n in mine:
-            for g in (n, "agent-spec-" + n):
-                if g not in global_skills:
-                    continue
-                same = _same_file(os.path.join(proj, ".claude", "skills", n, "SKILL.md"),
-                                  [os.path.join(r, "skills", g, "SKILL.md") for r in roots])
-                out.append((os.path.join(proj, ".claude", "skills", n),
-                            "%s the global skill %s (%s)"
-                            % ("same name as" if g == n else "an unprefixed twin of", g,
-                               "byte-identical" if same else "content differs"),
-                            "both descriptions are listed on every turn"
-                            + ("" if same else ", and they may give different instructions"),
-                            "delete the project copy" if same else
-                            "diff them, keep the one you want, delete the other"))
-                break
-        total = sum(mine.values()) + sum(global_skills.values())
-        if total > limits["listing_bytes"]:
-            out.append((proj, "skill listing is ~%d B (%d project + %d global skills)"
-                        % (total, len(mine), len(global_skills)),
-                        "name and description of every skill ride in the prefix each turn",
-                        "shorten descriptions or remove skills the project never uses"))
+        for proj in projects:
+            for name in ("settings.json", "settings.local.json"):
+                check_settings(os.path.join(proj, ".claude", name), False)
+            mine = skills_in(os.path.join(proj, ".claude", "skills"))
+            for n in mine:
+                for g in (n, "agent-spec-" + n):
+                    if g not in global_skills:
+                        continue
+                    same = _same_file(os.path.join(proj, ".claude", "skills", n, "SKILL.md"),
+                                      [os.path.join(r, "skills", g, "SKILL.md") for r in roots])
+                    out.append((os.path.join(proj, ".claude", "skills", n),
+                                "%s the global skill %s (%s)"
+                                % ("same name as" if g == n else "an unprefixed twin of", g,
+                                   "byte-identical" if same else "content differs"),
+                                "both descriptions are listed on every turn"
+                                + ("" if same else ", and they may give different instructions"),
+                                "delete the project copy" if same else
+                                "diff them, keep the one you want, delete the other"))
+                    break
+            total = sum(mine.values()) + sum(global_skills.values())
+            if total > limits["listing_bytes"]:
+                out.append((proj, "skill listing is ~%d B (%d project + %d global skills)"
+                            % (total, len(mine), len(global_skills)),
+                            "name and description of every skill ride in the prefix each turn",
+                            "shorten descriptions or remove skills the project never uses"))
+
+    cursor_global = cursor_skills_home()
+    seen = set()
+    for proj in find_cursor_projects(scan):
+        if proj in seen:
+            continue
+        seen.add(proj)
+        audit_cursor_project(proj, limits, cursor_global, out)
     return out
 
 
-def print_audit(scan, limits):
-    findings = audit_findings(scan, limits)
+def print_audit(scan, limits, include_claude=False):
+    findings = audit_findings(scan, limits, include_claude=include_claude)
     if not findings:
         print("audit: no findings.")
         return 0
@@ -663,7 +1098,10 @@ def print_audit(scan, limits):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Measure a Claude Code session's token cost")
+    parser = argparse.ArgumentParser(
+        description="Measure Cursor agent transcripts and harness overhead (audit)")
+    parser.add_argument("--claude", action="store_true",
+                        help="use Claude Code JSONL only (skip Cursor agent-transcripts)")
     parser.add_argument("--weights", default=None,
                         help="price ratios, e.g. out=5,write=1.25,read=0.1,in=1")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -691,33 +1129,46 @@ def main():
     p = sub.add_parser("audit", help="configuration on this machine that inflates that overhead")
     p.add_argument("--scan", action="append", default=None,
                    help="directory holding projects, or a project (default: cwd); repeatable")
+    p.add_argument("--include-claude", action="store_true",
+                   help="also scan Claude settings and .claude/skills (legacy twins)")
     p.add_argument("--max-hook-bytes", type=int, default=DEFAULT_LIMITS["hook_bytes"])
     p.add_argument("--max-memory-bytes", type=int, default=DEFAULT_LIMITS["memory_bytes"])
     p.add_argument("--max-local-bytes", type=int, default=DEFAULT_LIMITS["local_bytes"])
     p.add_argument("--max-listing-bytes", type=int, default=DEFAULT_LIMITS["listing_bytes"])
 
-    sub.add_parser("list", help="transcripts available for this project")
+    sub.add_parser("list", help="transcripts available for this workspace (Cursor-first)")
 
     args = parser.parse_args()
     weights = parse_weights(args.weights)
 
     if args.command == "corpus":
-        return print_corpus(weights, args.min_turns)
+        return print_corpus(weights, args.min_turns, claude_only=args.claude)
 
     if args.command == "audit":
         return print_audit(args.scan or [os.getcwd()], {
             "hook_bytes": args.max_hook_bytes, "memory_bytes": args.max_memory_bytes,
-            "local_bytes": args.max_local_bytes, "listing_bytes": args.max_listing_bytes})
+            "local_bytes": args.max_local_bytes, "listing_bytes": args.max_listing_bytes},
+            include_claude=getattr(args, "include_claude", False))
 
     if args.command == "overhead":
-        paths = transcripts() if args.all else [resolve(args)]
-        if not paths or paths[0] is None:
-            return 1
+        if args.all:
+            paths = transcripts(claude_only=args.claude)
+            if not paths:
+                explain_no_transcripts(claude_only=args.claude)
+                return 1
+        else:
+            path = resolve(args)
+            if not path:
+                return 1
+            paths = [path]
         return print_overhead(paths, weights)
 
     if args.command == "list":
-        found = transcripts()
-        print("=== %d transcripts in %s ===" % (len(found), project_dir()))
+        found = transcripts(claude_only=args.claude)
+        if args.claude:
+            print("=== %d Claude transcripts in %s ===" % (len(found), project_dir()))
+        else:
+            print("=== %d Cursor transcripts in %s ===" % (len(found), cursor_transcript_dir()))
         for path in found:
             print("  %s  %8d B" % (os.path.basename(path), os.path.getsize(path)))
         if not found:
@@ -737,7 +1188,7 @@ def main():
         return 1
     data = read_usage(path)
     if data["turns"] == 0:
-        print("%s has no assistant turns with usage — nothing to measure."
+        print("%s has no assistant turns — nothing to measure."
               % os.path.basename(path), file=sys.stderr)
         return 1
     if args.command == "session":

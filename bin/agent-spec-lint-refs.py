@@ -15,7 +15,8 @@ path it names exists, and that each /agent-spec-<skill> it names has a directory
 
 Runtime paths under .agent-spec/ are deliberately not checked: they belong to whatever
 project the framework is installed into, not to this repository. CHANGELOG.md is not
-checked either, because a changelog is supposed to name things that have since gone.
+checked either, because a changelog is supposed to name things that have since gone, and
+neither is docs/IMPLEMENTATION-GUIDE.md, because a build plan names files before they exist.
 
 Usage: agent-spec-lint-refs.py [repo-root]
 """
@@ -35,7 +36,7 @@ PATH_RE = re.compile(
 SKILL_RE = re.compile(BOUNDARY + r"/(agent-spec(?:-[a-z0-9]+)*)(?![A-Za-z0-9_./-])")
 
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".agent-spec"}
-SKIP_FILES = {"CHANGELOG.md"}
+SKIP_FILES = {"CHANGELOG.md", "IMPLEMENTATION-GUIDE.md"}
 
 
 def scan_files(root):
@@ -62,7 +63,7 @@ def check(root):
             # A placeholder or a glob names a shape, not a file.
             if any(ch in raw for ch in "*<>"):
                 continue
-            # Prose that trails off mid-path ("skills/claude/agent-spec-") is not a claim.
+            # Prose that trails off mid-path ("skills/agent-spec-") is not a claim.
             if raw.endswith(("-", "/", ".")):
                 continue
             target = raw.rstrip(".,;:)")
@@ -76,7 +77,7 @@ def check(root):
             problems.append("%s names %s, which does not exist" % (rel, raw))
 
         for name in set(SKILL_RE.findall(text)):
-            if name in ("agent-spec",) and "skills/claude/agent-spec" not in text:
+            if name in ("agent-spec",) and "skills/agent-spec" not in text:
                 pass
             if known_skills and name not in known_skills:
                 problems.append("%s names the skill /%s, which is not installed" % (rel, name))

@@ -1,267 +1,257 @@
-# 🚀 agent-spec
+# algosec-agent-spec
 
-> **Stop "vibe coding." Start engineering.**
+**Cursor-only** agent framework for AlgoSec — disciplined engineering on real codebases,
+with measured context discipline instead of vibe-coding.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Framework: Agnostic](https://img.shields.io/badge/Framework-Agnostic-success.svg)](#)
-[![Agents: Claude | Cursor | Antigravity](https://img.shields.io/badge/Agents-Claude%20|%20Cursor%20|%20Antigravity-blueviolet)](#)
+Version **1.1.0** (see [`VERSION`](VERSION)). Forked from
+[agent-spec](https://github.com/pawanraocse/agent-spec); Claude Code, Gemini, and
+Antigravity surfaces are not shipped here. Commands stay `/agent-spec-*`.
 
-A framework that installs into your repo and turns a hallucination-prone coding assistant
-into a disciplined engineer: a queryable map of your architecture, a gated SDLC pipeline,
-project memory that survives a new chat, strict confidence scoring, and 31 prefixed skills
-that work in Claude Code, Cursor and Antigravity.
+**Requires:** `python3` (digest, graph, gate, hooks) and Cursor with **Skills** and
+**Hooks** enabled.
+
+Feature detail: [docs/features.md](docs/features.md).
+
+**Planning:** [docs/MASTER-PLAN.md](docs/MASTER-PLAN.md) (strategy) · [todo-plan.md](todo-plan.md) (sequenced tasks).
 
 ---
 
-## Status
-
-Unreleased work on `main`, on top of 1.0.0. What is in place today:
+## At a glance
 
 | | |
 |---|---|
-| **Router** | `/agent-spec` reads the pipeline state and hands off to exactly one skill |
-| **Graph** | services, layers, HTTP and broker edges, incremental indexing — not just imports |
-| **Pipeline** | nine gates with state on disk, asymmetric gating (fast-track/algorithm/design/full), and requirement traceability from gate 0 to gate 8 |
-| **Memory** | a bounded fact store read at every session start, plus a rotating narrative snapshot |
-| **Token cost** | ~2,190 tokens of always-on context; the session digest replaced a four-file read |
-| **Tests** | `bin/agent-spec-selftest.sh` — 125 passing assertions across Python, Java-microservice and Node fixtures |
-| **Benchmarks** | 6 tasks covering all four complexity quadrants: narrow/wide scope × low/high algorithm |
-| **Measurement** | `bin/agent-spec-tokens.py` reads the real session transcript (both WSL and Windows profiles) — measured buckets, not bytes ÷ 4; `overhead --all` and `audit` find what the harness re-sends and the config behind it ([usage](docs/token-efficiency.md#how-to-measure)) |
-| **Subagents** | `agent-spec-search` and `agent-spec-verify`, pinned to a cheap model, so broad sweeps and noisy test output never enter the main context |
-
-Known gaps, stated rather than hidden:
-
-- Layer classification is a path and filename heuristic. It is reported, never enforced.
-- HTTP integration edges resolve only when the called host matches a detected service
-  name — or an alias you list in `.agent-spec/graph-aliases.json` (`{"billing-gw":
-  "billing"}`), which recovers a gateway, a discovery name, or a config-driven base URL.
-  A host with no matching service and no alias is still invisible. Broker edges have no
-  such limitation.
-- An import that matches several files (a basename shared across packages) is recorded as
-  a low-confidence `imports_ambiguous` edge, kept out of stats, cycles and layer
-  violations, and flagged in a query rather than silently dropped.
-- Whether Claude Code picks up `outputStyle: "agent-spec"` from a freshly written
-  `settings.json` has not been observed in a live session.
-
-See [CHANGELOG.md](CHANGELOG.md) for the full list.
+| **Router** | `/agent-spec` reads pipeline state and hands off to one skill |
+| **Graph** | Services, layers, HTTP/broker edges — query via `graphify-cli.py`, not tree walks |
+| **Pipeline** | Nine gates on disk; **asymmetric tracks** (fast-track / algorithm / design / full) via `/agent-spec-sdlc` |
+| **Memory** | Bounded facts + rotating `SESSION-SNAPSHOT.md`; digest on new chat |
+| **Hooks** | `sessionStart` digest (~1.7 KB); `preToolUse` input discipline (fail-open) |
+| **Measurement** | `agent-spec-tokens.py` on Cursor agent JSONL ([usage](#measuring-usage)) |
+| **Skills** | 34 commands → `~/.cursor/skills/` via `./install.sh` |
+| **Self-test** | `./bin/agent-spec-selftest.sh` — package shape, install idempotency, no Claude paths |
 
 ---
 
 ## Install
 
-`agent-spec` uses a **hybrid architecture**. Running the install command does two things simultaneously:
-1. **Machine-wide (Global):** Installs the 31 skills into your home directory so every project on your machine can access the tools.
-2. **Project-specific (Local):** Initializes `.agent-spec/` (knowledge graph, pipeline) and `.cursor/rules/` strictly in your current working directory.
+Two layers: machine-wide skills, plus a per-project harness.
 
-**Option A: Install from the web (Standard)**
-Navigate to your target project folder and run:
+### 1. Global skills (once per machine)
+
 ```bash
-curl -sSL https://raw.githubusercontent.com/pawanraocse/agent-spec/main/bin/install.sh | bash
+cd /path/to/algosec-agent-spec
+chmod +x install.sh check-install.sh uninstall.sh
+./install.sh
+./check-install.sh
 ```
 
-**Option B: Install from a local clone (Faster for multiple projects)**
-If you already have `agent-spec` cloned on your machine, navigate to your target project folder and run your local script:
+Copies `agent-spec-*` → `~/.cursor/skills/`, harnesses this package repo, refreshes
+previously `--register`'d workspaces. **Restart Cursor or open a new chat.**
+
+Windows (skills): `.\install.ps1` · full harness: Git Bash / WSL `./install.sh …`
+
+### 2. Project harness (once per app repo)
+
+Register the folder Cursor actually opened (title-bar root):
+
 ```bash
-/path/to/your/clone/agent-spec/bin/install.sh
+./install.sh --register "/absolute/path/of/the/folder/you/opened/in/Cursor"
+./check-install.sh "/absolute/path/of/the/folder/you/opened/in/Cursor"
 ```
 
-**Update:** re-run the exact same command. Run it in an empty directory and you get a new project, git and all.
+Enable **Hooks** in Cursor Settings. Confirm **Customize → Rules → agent-spec** is
+**Always Apply**.
 
-Installing also writes an output style, two cheap-model subagents and two hooks into
-each `.claude` home, merged into any existing `settings.json` without touching what is already there.
-`SessionStart` puts a short project digest — stack, graph size, current gate, last
-session — in front of every session, so no session begins by reading four files to work
-out where it is. `PreToolUse` declines a whole-file read, a rewrite of a file that already
-exists, or an unfiltered diff, once per target per session, so the retry always goes
-through when the expensive form is genuinely what you want.
+| | Global (`./install.sh`) | Per project (`--register`) |
+|---|---|---|
+| Lands in | `~/.cursor/skills/agent-spec-*` | `.agent-spec/`, `.cursor/rules/`, hooks, agents |
+| How often | Once per machine; re-run to upgrade | Once per app repo |
+| Needed for | Commands to exist | State those commands read/write |
 
-Then restart your agent (skills are read at session start) and type **`/agent-spec-onboard`**. It
-reads the graph and the manifest, writes `PROJECT-INDEX.md` and `CONSTITUTION.md` from
-what is actually in your repo, and never runs again — so no later session has to
-rediscover the project.
+Flags: `--skills-only` · `--lean` · `--force-reindex` · `--project-skills` · `--force` ·
+`--register-here` (git root of the current folder, else the folder itself).
+Registering runs `agent-spec-doctor.py`, which prints a fix command for anything broken.
+Day-1 path, Windows (Git Bash/WSL), team defaults, adoption checklist and QA checklist:
+[docs/QUICKSTART.md](docs/QUICKSTART.md). Verification series: [docs/PHASE1-VERIFICATION.md](docs/PHASE1-VERIFICATION.md).
 
-<details>
-<summary>Options</summary>
+**Adoption checklist:** install → register → Hooks on + Always Apply → digest ends
+`doctor: OK` → `/agent-spec-onboard` once → snapshot + compact (new chat) at task boundaries.
+Full checkbox list: [QUICKSTART › Adoption checklist](docs/QUICKSTART.md#adoption-checklist-paste-into-confluence).
 
-| Flag | Effect |
-|---|---|
-| `--skills-only` | Machine-wide skills, touch nothing in this directory |
-| `--project-only` | This directory only |
-| `--project-skills` | Also commit skills into `.claude/` and `.cursor/` (team repos) |
-| `--lean` | Skip the 6 SDLC-design skills |
-| `--force` | Overwrite existing project files |
-
-</details>
+**What lands in a registered project:** `agent-spec.mdc` (from `CURSOR.md`), hooks,
+`agent-spec-search` / `agent-spec-verify` subagents, graph, gate, memory, `bin/`.
 
 ---
 
 ## Skills
 
-Every command is prefixed `agent-spec-`, so it is obvious in a transcript which tool ran
-and where it came from.
+Every command is prefixed `agent-spec-` so transcripts show which workflow ran.
 
-### Daily use — reach for these every session
-
-| Skill | When |
-|---|---|
-| `/agent-spec-sdlc` | Route a feature through the right gates (fast-track → full pipeline) |
-| `/agent-spec-implement` | Build the change: declare, test-first, surgical diff, self-review |
-| `/agent-spec-query-graph` | Answer structural questions without reading files |
-| `/agent-spec-raw-code-full` | Suppress output filler and enforce tool discipline (92% of cost) |
-| `/agent-spec-investigate` | Diagnose before editing — name the cause with evidence |
-| `/agent-spec-snapshot` | Write session state before closing or at 70% context |
-| `/agent-spec-compact` | Compress chat history by 88% at task boundaries |
-
-### Session boundaries — use at start/end
+### Daily use
 
 | Skill | When |
 |---|---|
-| `/agent-spec-onboard` | First session in a new project — runs once, writes `PROJECT-INDEX.md` |
-| `/agent-spec-index-project` | After adding, moving or renaming files |
-| `/agent-spec-remember` | Record a durable fact (decision, constraint, gotcha) |
-| `/agent-spec-verbose` | Restore normal explanatory output after raw-code modes |
+| `/agent-spec-sdlc` | Route a feature through the right gate track |
+| `/agent-spec-implement` | Declare, test-first, surgical diff, self-review |
+| `/agent-spec-query-graph` | Structure without opening large files |
+| `/agent-spec-raw-code-full` | Tool-traffic discipline (batch, graph, Edit, cap output) |
+| `/agent-spec-investigate` | Diagnose before editing — evidence first |
+| `/agent-spec-snapshot` | Append session state (end of block, ~70% context) |
+| `/agent-spec-compact` | Snapshot, then **new Cursor chat** at task boundaries |
 
-### SDLC pipeline — one gate per approval
+### Session boundaries
 
-`/agent-spec-intent` (pre-gate, optional) → `/agent-spec-requirements` → `/agent-spec-tech-spec`
-→ `/agent-spec-prd` → `/agent-spec-hld` → `/agent-spec-lld` → `/agent-spec-implement`
-→ `/agent-spec-review` → `/agent-spec-testing` → `/agent-spec-webapp-testing` (Playwright)
-→ `/agent-spec-validation`
-
-### Specialist tools — use when the situation calls for it
-
-| Skill | What it does |
+| Skill | When |
 |---|---|
-| `/agent-spec` | Router — picks the right skill when you are unsure |
-| `/agent-spec-persona <role>` | Adopt expert lens: architect, ai-architect, security, qa, data, devops, perf, refactor, api, writer, reviewer |
-| `/agent-spec-review` + `-self-review` | Code review: blockers first, fixes applied |
-| `/agent-spec-solid-check` | Audit one file for SOLID violations against SIMPLICITY-FIRST |
-| `/agent-spec-debt` | Log a technical debt item to `TECH-DEBT-REGISTER.md` |
-| `/agent-spec-prompt-audit` | Audit any always-on body for dead references and bloat |
-| `/agent-spec-doc-coauthoring` | Structured co-authoring for docs, specs and proposals |
-| `/agent-spec-skill-creator` | Test-driven meta-skill creation |
-| `/agent-spec-mcp-builder` | Build MCP servers to expose external APIs as agent tools |
+| `/agent-spec-onboard` | First session — writes `PROJECT-INDEX` + `CONSTITUTION` once |
+| `/agent-spec-index-project` | After big moves / renames |
+| `/agent-spec-remember` | Durable constraint, decision, or gotcha |
+| `/agent-spec-verbose` | Turn off terse modes |
 
-31 skills. Installed machine-wide for both Claude Code and Cursor by the same command.
+### SDLC pipeline (one gate per approval)
+
+`/agent-spec-intent` (optional, pre-gate) → `/agent-spec-requirements` →
+`/agent-spec-tech-spec` → `/agent-spec-prd` → `/agent-spec-hld` → `/agent-spec-lld` →
+`/agent-spec-implement` → `/agent-spec-review` → `/agent-spec-testing` →
+`/agent-spec-webapp-testing` (Playwright, under gate 7) → `/agent-spec-validation`
+
+Gate 1's `## Complexity` block (scope × algorithm) selects **fast-track**, **algorithm**,
+**design**, or **full** — see `/agent-spec-sdlc`.
+
+### Specialists
+
+| Skill | What |
+|---|---|
+| `/agent-spec` | Router when unsure |
+| `/agent-spec-persona <role>` | architect, security, qa, … — Absolute Rules bind |
+| `/agent-spec-review` · `-self-review` · `-solid-check` · `-debt` | Review, repair loop, SOLID, debt register |
+| `/agent-spec-doc-coauthoring` | Specs and proposals with a zero-context reader check |
+| `/agent-spec-prompt-audit` · `-skill-creator` · `-mcp-builder` | Audit prompts; author skills; MCP servers |
+
+Maintainer index: [skills/README.md](skills/README.md).
 
 ---
 
-## Token efficiency, measured
+## Token discipline (measured)
 
-![Where the tokens actually go](docs/images/agent-spec-impact.png)
+~**92%** of a long session is tool traffic; **~8%** is assistant prose. Optimizing what
+enters context matters more than shortening replies.
 
-This framework had a skill that made the model answer in terse code blocks, on the
-assumption that it saved tokens. Twenty-six verified benchmark runs against plain Claude
-Code — same tasks, same model, interleaved, each in a fresh clone — showed it was **1.4%
-more expensive**. That result is why everything below is a measurement rather than a claim.
+| Lever | Before → After | Saving |
+|---|---:|---:|
+| `/agent-spec-compact` → new chat | 480,083 → 53,191 tok | **−88.9%** |
+| Session digest (`sessionStart`) | ~30,560 B → ~1.7 KB | **−94.8%** |
+| Graph query vs whole-file read | 35,966 B → 152 B | **−99.6%** |
+| Batch independent tools in one turn | extra turn tax | **−100% of that turn** |
 
-Across **138 session transcripts and 7,648 assistant turns**, here is what a conversation
-actually accumulates:
+`/agent-spec-raw-code` and `-full` enforce **fit and tool discipline**, not magic savings.
+Full methodology: [docs/token-efficiency.md](docs/token-efficiency.md) ·
+[docs/token-checklist.md](docs/token-checklist.md) ·
+[docs/token-experiments.md](docs/token-experiments.md).
 
-| | Bytes | Share |
-|---|---|---|
-| Tool results — what commands returned | 5,591,224 | **46.1%** |
-| Tool call inputs — file bodies written, commands issued | 5,546,195 | **45.7%** |
-| Assistant prose — the model talking | 988,456 | **8.2%** |
+### Measuring usage
 
-**92% of a conversation is tool traffic. 8% is the model talking.** A single turn is
-95,190 bytes on the wire before any conversation exists, and **83.6% of that is tool
-schemas** belonging to Claude Code, which no skill can reduce.
+Run from the **folder you opened in Cursor**. Transcripts:
+`~/.cursor/projects/<slug>/agent-transcripts/`.
 
-Weighted by what each token actually costs, the same conclusion arrives from the other
-direction: cache re-reads are 56.7% of the bill and cache writes are 30.0%, so **input is
-86.7% and output is 13.2%**. Shaping what the model says is the smaller half of the
-problem. Deciding what enters context in the first place is the larger one, and it is the
-half a skill can only ask for — which is why there is now a hook.
+| Command | Purpose |
+|---|---|
+| `list` | Sessions for this workspace |
+| `overhead --all` | Harness blocks re-sent in user turns |
+| `session` | Latest session: turns, char estimates, tool share |
+| `audit` | Hooks, rules, skills config (`--scan` from package clone) |
 
-### What each skill saves, and what it can reach
+`./bin/agent-spec-tokens.py` in this clone, or `./.agent-spec/bin/agent-spec-tokens.py`
+in a registered app. Account spend: Cursor **Settings → usage**. Optional legacy Claude
+JSONL: `--claude` on the same commands.
 
-Two numbers, because one alone misleads: a 99% saving on 1% of the bill is a 1% saving.
+---
 
-| Skill or method | Use it when | Before → After | Saving | Reach |
-|---|---|---|---|---|
-| `/agent-spec-compact` | A task boundary in a long session | 480,083 → 53,191 tok | **−88.9%** | Up to **85.6%** — the conversation |
-| Session digest (`SessionStart` hook) | Automatic, every session | 30,560 → 1,597 B | **−94.8%** | All of session startup |
-| `/agent-spec-query-graph` | Before opening a file to learn structure | 35,966 → 152 B | **−99.6%**, −286 KB with re-sends | Part of the **45.7%** |
-| Batch independent tool calls | Calls that do not depend on each other | 95,190 → 0 B | **−100%** of one turn | Every avoided turn |
-| Targeted `Edit`, never a rewrite | Any file change | whole file → the diff | varies | **45.7%** — tool call inputs |
-| `grep -n`, then a 50-line range | You need 20 lines, not 4,000 | 35,966 → 2,071 B | **−94.2%** | File read volume |
-| `git diff --stat` first | Before any full diff | 33,830 → 427 B | **−98.7%** | Review turns |
-| Cap what commands return | Tests, builds, logs | 5,117 → 107 B | **−97.9%** | **46.1%** — tool results |
-| `/agent-spec-raw-code` | You want replies you can act on | 991 → 966 tok | **0** (+1.4%, noise) | **8.2%** ceiling |
-| Input discipline (`PreToolUse` hook) | Automatic, every tool call | declines the four rows above, once per target | **effect unmeasured** | **86.7%** — the input half |
-| `/agent-spec-snapshot`, `/agent-spec-remember` | Session boundaries | — | **0 alone** | Enables the −88.9% |
+## How a session works
 
-### What measured nothing
+Enable **Hooks** or run `./.agent-spec/bin/agent-spec-digest.py` manually.
 
-| | Advertised | Measured |
-|---|---|---|
-| Terse output discipline | saves tokens | **+1.4%**, inside the noise |
-| Caveman prose | −65% | **0** — output went *up* 133 tokens |
-| RTK-style tool-result rewriting | 60–90% | **+7.6% more expensive** ([JetBrains, 425 trials](https://blog.jetbrains.com/ai/2026/07/rtk-claude-code-token-savings/)) |
-| Restricting `--allowed-tools` | smaller prompt | **0 bytes** — 95,190 either way |
+| Piece | Role |
+|---|---|
+| **Digest** (`sessionStart`) | Stack, graph size, gate, last session, memory facts — do not re-read INDEX/graph for those |
+| **preToolUse** | One nudge on expensive reads/diffs/rewrites, then allow retry |
+| **Snapshot** | Append narrative to `SESSION-SNAPSHOT.md`; keep working in this chat |
+| **Compact** | Snapshot first, then open a **new chat** (no in-thread compression) |
+| **Remember** | Facts promoted into the next digest |
 
-Caveman prose was deleted from this framework the day it was measured.
+| Prefer | Avoid |
+|---|---|
+| `graphify-cli.py context --task "…"` | Walking the tree to orient |
+| `grep -n` + ranged Read | Whole large files |
+| `git diff --stat` first | Unfiltered diffs in chat |
+| Task → `agent-spec-search` / `agent-spec-verify` | Noisy output in main thread |
 
-### Five rules this produced
+### Working cases
 
-1. **Not reading beats not talking, by about 20×.** Every large saving is "do not put it
-   in context at all".
-2. **A turn is the most expensive unit you have.** One avoided turn beats any single
-   filtering decision, because the whole 95,190 bytes goes again.
-3. **Watch what the agent writes, not only what it reads.** In the longest session
-   measured, 61.3% of the conversation was tool call inputs — mostly file bodies.
-4. **A skill body is charged every turn.** It sits in the prompt prefix and is re-read
-   like `CLAUDE.md`. Imperatives belong in the skill, evidence in the docs.
-5. **Verify the instrument before trusting it.** Claude Code reports a constant
-   `input_tokens` of 8,194 through a local proxy — for a 200-token prompt and for a
-   9,000-token one alike. `bin/agent-spec-wire-recorder.py` exists because of that.
+**A — New repo:** Install + `--register` → new chat → digest → `/agent-spec-onboard` if
+needed → spot-check `graphify-cli.py services` → `/agent-spec-raw-code-full`.
 
-Method, raw numbers and the open questions: [docs/token-checklist.md](docs/token-checklist.md),
-[docs/token-experiments.md](docs/token-experiments.md),
-[docs/token-efficiency.md](docs/token-efficiency.md).
+**B — Daily coding:** Trust digest · query graph before explore · `/agent-spec-investigate`
+before implement · snapshot + compact at task boundaries.
+
+**C — Feature (SDLC):**
+
+```bash
+./.agent-spec/bin/agent-spec-gate.py reset --feature "short-name"
+```
+
+`/agent-spec-sdlc` once per gate. Pick a track (fast-track / algorithm / design / full) or
+read `## Complexity` from gate 1. `./.agent-spec/bin/agent-spec-gate.py status` for resume.
+
+**D — Memory:** `/agent-spec-remember` for still-true constraints; `/agent-spec-snapshot`
+for narrative; `/agent-spec-index-project` when architecture moved.
+
+**E — End of session:** index if needed → snapshot → remember → compact → new chat.
+
+More flow: [docs/QUICKSTART.md](docs/QUICKSTART.md).
+
+---
+
+## Upgrade
+
+```bash
+cd /path/to/algosec-agent-spec
+git pull
+./install.sh
+```
+
+Refreshes skills, rules, hooks, `bin/`. Preserves constitution, SDLC artifacts, memory,
+graph (unless `--force-reindex`). [docs/QUICKSTART.md](docs/QUICKSTART.md).
+
+## Coexistence
+
+Re-install overwrites global `agent-spec-*` (**last install wins**). Avoid stacking
+**algosec-lean** Always Apply with `agent-spec.mdc`. Install never touches `.env`.
+
+## Uninstall
+
+```bash
+./uninstall.sh                             # global skills only
+./uninstall.sh --unregister <workspace>    # one project harness
+./uninstall.sh --full                      # skills + all registered workspaces
+```
 
 ---
 
 ## Docs
 
-- [What it actually does](docs/features.md) — Graphify, personas, the nine gates, context budgeting
-- [Token efficiency](docs/token-efficiency.md) — where the tokens actually go, measured, and why the popular savings claims do not hold
-- [Token checklist](docs/token-checklist.md) — all 22 methods with status and evidence
-- [Experiment queue](docs/token-experiments.md) — what is still unmeasured, and the local measurement rig
-- [Daily workflow](docs/workflow.md) — starting a feature, managing tokens, ending a session
-- [Agent compatibility](docs/agents.md) — where files land, the WSL two-homes problem
-- [Why this exists](docs/why.md)
+| Doc | Topic |
+|---|---|
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Install QA, first session |
+| [docs/HLD.md](docs/HLD.md) | Architecture, components, install/rollback |
+| [docs/features.md](docs/features.md) | Graph, SDLC, personas |
+| [docs/token-efficiency.md](docs/token-efficiency.md) | Where tokens go |
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | Paths, upgrade contract |
+
+## Develop this package
+
+Edit `skills/`, `CURSOR.md`, re-run `./install.sh` (and `--register` for app workspaces).
+Cursor-only — no Claude harness in this tree.
 
 ---
 
-## Maintaining
-
-```bash
-bin/agent-spec-selftest.sh               # 125 passing assertions: three language fixtures, gates, memory, hooks, upgrade path
-bin/agent-spec-bench.sh                  # always-on and per-skill cost, estimated at 4 bytes per token
-bin/agent-spec-bench.sh --session        # measured, from the real session transcript
-bin/agent-spec-benchmark.sh --repeats 3  # compare two modes over a verified task suite (6 tasks, all complexity quadrants)
-```
-
-Both must pass before anything is merged. The self-test builds throwaway fixtures and
-asserts the failures that have actually shipped here before — edges resolving to nothing,
-an indexer overwriting its own output, a gate running without its predecessor, an upgrade
-leaving duplicate skills behind.
-
----
-
-## Contributing
-
-New personas, specialised skills and pipeline refinements are all welcome — open a PR.
-Skills are authored once in `skills/claude/agent-spec-<name>/SKILL.md`; every agent reads
-that same shape, so there is nothing to regenerate. The directory name and the frontmatter
-`name` must match, and both must carry the `agent-spec-` prefix — the self-test enforces
-it. See
-[`skills/third-party/README.md`](skills/third-party/README.md) for community extensions.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+Algosec Cursor AI

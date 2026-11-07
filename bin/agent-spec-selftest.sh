@@ -1,809 +1,171 @@
 #!/usr/bin/env bash
-# =============================================================================
-# agent-spec-selftest.sh — prove the framework works before shipping it
-#
-# Builds three throwaway fixture projects, installs into each, and asserts the
-# things that have actually broken here before: edges that resolve to nothing,
-# an indexer that overwrites its own output, a --lean run that prunes the wrong
-# tree, gate ordering that lets a gate run without its predecessor.
-#
-# Usage: bin/agent-spec-selftest.sh [workdir]
-# =============================================================================
-set -uo pipefail
+# algosec-agent-spec Cursor selftest — no Claude Code paths
+set -euo pipefail
 
 HOME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORK="${1:-$(mktemp -d)}"
-GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
-PASS=0; FAIL=0
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+PY=python3
+[ -x /usr/bin/python3 ] && PY=/usr/bin/python3
 
-ok()   { PASS=$((PASS+1)); echo -e "  ${GREEN}✓${NC} $1"; }
-bad()  { FAIL=$((FAIL+1)); echo -e "  ${RED}✗${NC} $1"; }
-want() { # want <description> <expected> <actual>
-  if [ "$2" = "$3" ]; then ok "$1"; else bad "$1 — expected '$2', got '$3'"; fi
-}
-at_least() {
-  if [ "$3" -ge "$2" ] 2>/dev/null; then ok "$1 ($3)"; else bad "$1 — wanted >= $2, got '$3'"; fi
-}
+ok() { echo "  OK: $*"; }
+bad() { echo "  FAIL: $*"; FAILS=$((FAILS+1)); }
+FAILS=0
 
-jq_stat() { # jq_stat <graph.json> <key>
-  python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['stats'].get(sys.argv[2],''))" "$1" "$2"
-}
+echo "[1] package shape"
+[ -f "$HOME_DIR/VERSION" ] && ok "VERSION" || bad "VERSION"
+[ -f "$HOME_DIR/CURSOR.md" ] && ok "CURSOR.md" || bad "CURSOR.md"
+[ -f "$HOME_DIR/AGENTS.md" ] && ok "AGENTS.md" || bad "AGENTS.md"
+[ -f "$HOME_DIR/install.sh" ] && ok "install.sh" || bad "install.sh"
+[ -f "$HOME_DIR/hooks/cursor-session-start.py" ] && ok "session hook" || bad "session hook"
+[ -f "$HOME_DIR/hooks/cursor-pre-tool-use.py" ] && ok "preToolUse hook" || bad "preToolUse hook"
+[ ! -f "$HOME_DIR/CLAUDE.md" ] && ok "no CLAUDE.md" || bad "CLAUDE.md still present"
+[ ! -d "$HOME_DIR/skills/claude" ] && ok "no skills/claude" || bad "skills/claude remains"
+[ ! -d "$HOME_DIR/output-styles" ] && ok "no output-styles" || bad "output-styles remains"
 
-# ---------------------------------------------------------------------------
-mkfixture_python() {
-  local d="$1"; mkdir -p "$d/app/services" "$d/app/repository" "$d/tests"
-  cat > "$d/pyproject.toml" <<'X'
-[project]
-name = "fixture"
-dependencies = ["fastapi"]
-X
-  cat > "$d/app/services/pricing.py" <<'X'
-from app.repository.prices import load
-def total(items): return sum(load(i) for i in items)
-X
-  echo 'def load(i): return 1' > "$d/app/repository/prices.py"
-  cat > "$d/app/api.py" <<'X'
-from app.services.pricing import total
-from fastapi import APIRouter
-router = APIRouter()
-@router.get("/total")
-def get_total(): return total([])
-X
-  echo 'from app.services.pricing import total
-def test_total(): assert total([]) == 0' > "$d/tests/test_pricing.py"
-  # latest.py contains the substring "test" but is not a test — the old detector
-  # misclassified it. gateway.py imports a module via `from pkg import mod`, which must
-  # resolve to the submodule, not __init__. a/config.py and b/config.py share a basename
-  # so a bare `import config` is ambiguous.
-  echo 'from app.repository.prices import load
-def newest(): return load(0)' > "$d/app/latest.py"
-  echo 'from app.services import pricing
-def go(): return pricing.total([])' > "$d/app/gateway.py"
-  mkdir -p "$d/app/a" "$d/app/b"
-  echo 'VALUE = 1' > "$d/app/a/config.py"
-  echo 'VALUE = 2' > "$d/app/b/config.py"
-  echo 'import config
-def read(): return config.VALUE' > "$d/app/consumer.py"
-}
-
-mkfixture_java_services() {
-  local d="$1"
-  mkdir -p "$d/orders/src/main/java/o/controller" "$d/orders/src/main/java/o/service" "$d/billing/src/main/java/b/service"
-  echo '<project><dependency>spring-boot</dependency></project>' > "$d/orders/pom.xml"
-  echo '<project><dependency>spring-boot</dependency></project>' > "$d/billing/pom.xml"
-  cat > "$d/orders/src/main/java/o/controller/OrderController.java" <<'X'
-package o.controller;
-import o.service.OrderService;
-@RestController public class OrderController { @GetMapping("/orders") void get() {} }
-X
-  cat > "$d/orders/src/main/java/o/service/OrderService.java" <<'X'
-package o.service;
-public class OrderService { void go() { kafkaTemplate.send("order.placed", null); } }
-X
-  cat > "$d/billing/src/main/java/b/service/BillingService.java" <<'X'
-package b.service;
-@KafkaListener(topics = "order.placed") public class BillingService {}
-X
-}
-
-mkfixture_node() {
-  local d="$1"; mkdir -p "$d/src/api" "$d/src/lib"
-  echo '{"name":"fx","dependencies":{"express":"4"}}' > "$d/package.json"
-  echo "export const fmt = (x) => x;" > "$d/src/lib/fmt.js"
-  echo "import { fmt } from '../lib/fmt';
-app.get('/health', () => fmt(1));" > "$d/src/api/health.js"
-}
-
-# ---------------------------------------------------------------------------
-echo "workdir: ${WORK}"
-
-echo ""
-echo "[1] python fixture — import resolution"
-P="${WORK}/py"; mkfixture_python "$P"
-( cd "$P" && bash "${HOME_DIR}/bin/install.sh" --project-only >/dev/null 2>&1 )
-G="$P/.agent-spec/graph/knowledge-graph.json"
-if [ -f "$G" ]; then
-  at_least "internal edges resolve" 3 "$(jq_stat "$G" internal_edges)"
-  want     "endpoints found"        1 "$(jq_stat "$G" endpoints)"
-  want     "test files found"       1 "$(jq_stat "$G" test_files)"
-  # The bug that shipped once: the wrapper overwrote the builder's own output.
-  ( cd "$P" && ./.agent-spec/bin/agent-spec-index --quiet >/dev/null 2>&1 )
-  at_least "graph survives the wrapper" 3 "$(jq_stat "$G" internal_edges)"
+echo "[2] CURSOR.md documents sessionStart (not 'no hook')"
+if grep -q 'sessionStart' "$HOME_DIR/CURSOR.md"; then
+  ok "CURSOR.md mentions sessionStart"
 else
-  bad "graph not written"
+  bad "CURSOR.md missing sessionStart"
+fi
+if grep -qi 'Cursor has no session hook' "$HOME_DIR/CURSOR.md"; then
+  bad "CURSOR.md still claims no session hook"
+else
+  ok "stale no-hook claim absent"
 fi
 
-echo ""
-echo "[2] java fixture — services, topics, layers"
-J="${WORK}/java"; mkfixture_java_services "$J"
-( cd "$J" && bash "${HOME_DIR}/bin/install.sh" --project-only >/dev/null 2>&1 )
-G="$J/.agent-spec/graph/knowledge-graph.json"
-if [ -f "$G" ]; then
-  want     "two services detected"  2 "$(jq_stat "$G" services)"
-  at_least "topic edge recovered"   1 "$(jq_stat "$G" integration_edges)"
-  want     "topics"                 1 "$(jq_stat "$G" topics)"
-  at_least "endpoints"              1 "$(jq_stat "$G" endpoints)"
+echo "[3] skills install + register idempotent"
+UH="$WORK/home"
+P="$WORK/proj"
+mkdir -p "$UH" "$P"
+export HOME="$UH"
+mkdir -p "$HOME/.cursor"
+
+bash "$HOME_DIR/install.sh" --skills-only >/dev/null
+SKILLS="$(find "$HOME/.cursor/skills" -mindepth 1 -maxdepth 1 -type d -name 'agent-spec*' 2>/dev/null | wc -l | tr -d ' ')"
+[ "$SKILLS" -ge 20 ] && ok "skills installed ($SKILLS)" || bad "too few skills ($SKILLS)"
+
+bash "$HOME_DIR/install.sh" --register "$P" >/dev/null
+[ -f "$P/.cursor/rules/agent-spec.mdc" ] && ok "mdc written" || bad "mdc missing"
+[ -f "$P/.cursor/hooks.json" ] && ok "hooks.json" || bad "hooks.json"
+[ -f "$P/.cursor/hooks/agent-spec-session-start.py" ] && ok "session script" || bad "session script"
+[ -f "$P/.cursor/hooks/agent-spec-pre-tool-use.py" ] && ok "preTool script" || bad "preTool script"
+[ -f "$P/.cursor/hooks/agent-spec-session-end.py" ] && ok "session-end script" || bad "session-end script"
+[ -f "$P/.agent-spec/bin/agent-spec-receipt.py" ] && [ -f "$P/.agent-spec/bin/agent-spec-roi.py" ] && ok "receipt + roi bins" || bad "receipt/roi bins missing"
+[ -f "$P/.cursor/agents/agent-spec-search.md" ] && ok "agents" || bad "agents"
+[ -f "$P/.agent-spec/bin/agent-spec-platform.py" ] && [ -f "$P/.agent-spec/bin/aspec_platform/ingest.py" ] && [ -f "$P/.agent-spec/bin/agent-spec-run.py" ] && [ -f "$P/.agent-spec/bin/agent-spec-backlog.py" ] && ok "platform bins + package installed" || bad "platform bins missing from register"
+[ -f "$P/.agent-spec/bin/agent-spec-platform.py" ] && [ -f "$P/.agent-spec/bin/aspec_platform/ingest.py" ] && [ -f "$P/.agent-spec/bin/agent-spec-run.py" ] && [ -f "$P/.agent-spec/bin/agent-spec-backlog.py" ] && ok "platform bins + package installed" || bad "platform bins missing from register"
+[ -f "$P/.agent-spec/bin/agent-spec-digest.py" ] && ok "project bin" || bad "project bin"
+
+bash "$HOME_DIR/install.sh" --register "$P" >/dev/null
+COUNT="$($PY -c "import json;d=json.load(open('$P/.cursor/hooks.json'));print(len(d['hooks']['sessionStart']))")"
+[ "$COUNT" = "1" ] && ok "sessionStart not duplicated ($COUNT)" || bad "sessionStart count=$COUNT"
+COUNT2="$($PY -c "import json;d=json.load(open('$P/.cursor/hooks.json'));print(len(d['hooks']['preToolUse']))")"
+[ "$COUNT2" = "1" ] && ok "preToolUse not duplicated ($COUNT2)" || bad "preToolUse count=$COUNT2"
+
+echo "[4] digest --cursor-hook JSON"
+OUT="$(cd "$P" && $PY ./.agent-spec/bin/agent-spec-digest.py --cursor-hook)"
+$PY -c "import json,sys; json.loads(sys.argv[1])" "$OUT" && ok "digest JSON" || bad "digest JSON"
+
+echo "[5] preToolUse fail-open / nudge"
+ALLOW="$(echo '{}' | $PY "$HOME_DIR/hooks/cursor-pre-tool-use.py")"
+echo "$ALLOW" | $PY -c "import json,sys; d=json.load(sys.stdin); assert d.get('permission')=='allow'" && ok "allow outside project" || bad "allow outside"
+
+echo "[6] lean exclude"
+bash "$HOME_DIR/install.sh" --skills-only --lean >/dev/null
+[ ! -d "$HOME/.cursor/skills/agent-spec-hld" ] && ok "lean removed hld" || bad "lean left hld"
+# restore full skill set for check-install
+bash "$HOME_DIR/install.sh" --skills-only >/dev/null
+
+echo "[7] no Claude install surface in scripts"
+if rg -n '~/\.claude|WIN_CLAUDE|CLAUDE\.md|install_harness|\.claude/skills' \
+  "$HOME_DIR/install.sh" "$HOME_DIR/check-install.sh" "$HOME_DIR/uninstall.sh" 2>/dev/null; then
+  bad "Claude paths still in install scripts"
 else
-  bad "graph not written"
+  ok "install scripts Claude-clean"
 fi
 
-echo ""
-echo "[3] node fixture — relative imports"
-N="${WORK}/node"; mkfixture_node "$N"
-( cd "$N" && bash "${HOME_DIR}/bin/install.sh" --project-only >/dev/null 2>&1 )
-G="$N/.agent-spec/graph/knowledge-graph.json"
-at_least "relative import resolves" 1 "$(jq_stat "$G" internal_edges)"
 
-echo ""
-echo "[4] gate ordering"
-GATE="${HOME_DIR}/bin/agent-spec-gate.py"
-( cd "$P" && python3 "$GATE" reset --feature selftest >/dev/null )
-( cd "$P" && python3 "$GATE" check 2 >/dev/null 2>&1 )
-want "gate 2 blocked without its predecessor" 1 "$?"
-( cd "$P" && python3 "$GATE" check 0 >/dev/null 2>&1 )
-want "gate 0 always runnable" 0 "$?"
-printf 'REQ-001 a\nREQ-002 b\n' > "$P/.agent-spec/sdlc/01-REQUIREMENTS.md"
-echo 'covers REQ-001' > "$P/.agent-spec/sdlc/03-PRD.md"
-( cd "$P" && python3 "$GATE" trace >/dev/null 2>&1 )
-want "trace fails on a dropped requirement" 1 "$?"
-
-echo ""
-echo "[5] digest"
-OUT="$( cd "$P" && python3 "${HOME_DIR}/bin/agent-spec-digest.py" )"
-case "$OUT" in
-  *"<agent-spec-digest>"*) ok "digest emitted" ;;
-  *) bad "digest empty" ;;
-esac
-OUT="$( cd "${WORK}" && python3 "${HOME_DIR}/bin/agent-spec-digest.py" )"
-want "digest silent outside an agent-spec project" "" "$OUT"
-
-echo ""
-echo "[6] settings merge is idempotent"
-SET="${WORK}/settings.json"
-echo '{"model":"opus"}' > "$SET"
-python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET" /x/hook.sh >/dev/null
-python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET" /x/hook.sh >/dev/null
-COUNT="$(python3 -c "import json;print(len(json.load(open('$SET'))['hooks']['SessionStart']))")"
-want "one SessionStart entry after two runs" 1 "$COUNT"
-KEEP="$(python3 -c "import json;print(json.load(open('$SET')).get('model'))")"
-want "existing settings preserved" "opus" "$KEEP"
-
-echo ""
-echo "[7] skill naming contract"
-BAD=0
-for d in "${HOME_DIR}/skills/claude"/*/; do
-  n="$(basename "$d")"
-  case "$n" in agent-spec*) ;; *) BAD=$((BAD+1)); echo "     unprefixed: $n" ;; esac
-  # the frontmatter name must equal the directory, or the harness lists a skill nobody can invoke
-  # Quoted and unquoted are both valid YAML; the contract is that the value equals the
-  # directory, so the extractor must not report a style difference as a name mismatch.
-  FM="$(sed -n 's/^name:[[:space:]]*"\{0,1\}\([^"]*\)"\{0,1\}[[:space:]]*$/\1/p' "${d}SKILL.md" | head -1)"
-  [ "$FM" = "$n" ] || { BAD=$((BAD+1)); echo "     name mismatch: $n vs $FM"; }
-done
-want "every skill prefixed and self-consistent" 0 "$BAD"
-
-echo ""
-echo "[8] memory"
-MEM="${HOME_DIR}/bin/agent-spec-memory.py"
-( cd "$P" && python3 "$MEM" add --type constraint --subject "selftest" --source "selftest" "This is a constraint recorded by the self test to prove the store works." >/dev/null )
-COUNT="$( cd "$P" && python3 "$MEM" list | head -1 | grep -o '[0-9]\+' )"
-want "fact recorded" 1 "$COUNT"
-( cd "$P" && python3 "$MEM" add --type constraint --subject "selftest" --source "selftest" "This is a constraint recorded by the self test to prove the store works." >/dev/null )
-COUNT="$( cd "$P" && python3 "$MEM" list | head -1 | grep -o '[0-9]\+' )"
-want "identical fact not duplicated" 1 "$COUNT"
-( cd "$P" && python3 "$MEM" add --type gotcha --subject "short" --source "x" "tiny" >/dev/null 2>&1 )
-want "a fact too short to be worth keeping is refused" 2 "$?"
-OUT="$( cd "$P" && python3 "$MEM" digest )"
-case "$OUT" in *"[constraint] selftest"*) ok "fact reaches the digest" ;; *) bad "fact missing from digest" ;; esac
-OUT="$( cd "$P" && python3 "${HOME_DIR}/bin/agent-spec-digest.py" )"
-case "$OUT" in *"remembered:"*) ok "session digest carries memory" ;; *) bad "session digest has no memory block" ;; esac
-# constraints survive a prune by age; that is the whole point of the type
-( cd "$P" && python3 "$MEM" prune --older-than 0 >/dev/null )
-COUNT="$( cd "$P" && python3 "$MEM" list | head -1 | grep -o '[0-9]\+' )"
-want "constraints are never pruned by age" 1 "$COUNT"
-
-echo ""
-echo "[9] snapshot rotation"
-SNAP="$P/.agent-spec/SESSION-SNAPSHOT.md"
-: > "$SNAP"
-for i in 1 2 3 4 5; do
-  printf '# Session Snapshot — day %d\n\n## Session Summary\nfiller %d\n%s\n\n' \
-    "$i" "$i" "$(head -c 3000 /dev/zero | tr '\0' 'x')" >> "$SNAP"
-done
-( cd "$P" && python3 "$MEM" rotate >/dev/null )
-KEPT="$(grep -c '^# Session Snapshot' "$SNAP")"
-want "rotation keeps the two newest sections" 2 "$KEPT"
-ARCHIVED="$(cat "$P"/.agent-spec/memory/snapshots/*.md 2>/dev/null | grep -c '^# Session Snapshot')"
-want "and archives the other three" 3 "$ARCHIVED"
-# Moving sections out without saying so is how a record quietly stops being one.
-grep -q '## Archived sections' "$SNAP" \
-  && ok "the live file keeps an index of what was archived" \
-  || bad "rotation moved sections out leaving no trace in the live file"
-INDEXED="$(grep -c '^- \*\*day ' "$SNAP")"
-want "one index line per archived section" 3 "$INDEXED"
-# Reviewing the record must not mean opening a 29 KB file to find out what is in it.
-OUT="$( cd "$P" && python3 "$MEM" snapshots 2>&1 )"
-case "$OUT" in *"sections,"*) ok "snapshots lists every section, live and archived" ;; *) bad "no snapshots listing" ;; esac
-case "$OUT" in *"filler 1"*) ok "and carries each section's summary line" ;; *) bad "listing has no summaries — it is just filenames" ;; esac
-
-echo ""
-echo "[10] indexer limits"
-BIG="${WORK}/big"; mkdir -p "$BIG/src" "$BIG/generated"
-echo '{"name":"big"}' > "$BIG/package.json"
-printf 'generated/\n' > "$BIG/.gitignore"
-echo "export const a = 1;" > "$BIG/src/a.js"
-echo "export const gen = 1;" > "$BIG/generated/huge.js"
-echo "export const m = 1;" > "$BIG/src/vendor.min.js"
-head -c 2000000 /dev/zero | tr '\0' 'x' > "$BIG/src/bundle.js"
-( cd "$BIG" && bash "${HOME_DIR}/bin/install.sh" --project-only >/dev/null 2>&1 )
-FILES="$(jq_stat "$BIG/.agent-spec/graph/knowledge-graph.json" files)"
-want "gitignored dir, minified and oversized files all skipped" 1 "$FILES"
-
-echo ""
-echo "[11] upgrade path"
-UH="${WORK}/upgradehome"
-mkdir -p "$UH/.claude/skills/review" "$UH/.claude/skills/my-own-skill"
-printf -- '---\nname: "review"\ndescription: >-\n  old\n---\nbody\n' > "$UH/.claude/skills/review/SKILL.md"
-printf -- '---\nname: "my-own-skill"\ndescription: >-\n  mine\n---\nbody\n' > "$UH/.claude/skills/my-own-skill/SKILL.md"
-( cd "$P" && HOME="$UH" WIN_CLAUDE_HOME="$UH/nowin" bash "${HOME_DIR}/bin/install.sh" --skills-only >/dev/null 2>&1 )
-LEFT="$(ls "$UH/.claude/skills" 2>/dev/null | grep -cv '^agent-spec')"
-want "the old unprefixed skill is pruned, the user's own is kept" 1 "$LEFT"
-want "and the one kept is theirs" "my-own-skill" "$(ls "$UH/.claude/skills" | grep -v '^agent-spec')"
-CURSOR_COUNT="$(ls "$UH/.cursor/skills" 2>/dev/null | wc -l | tr -d ' ')"
-CLAUDE_COUNT="$(ls "$UH/.claude/skills" 2>/dev/null | grep -c '^agent-spec')"
-want "cursor and claude get the same skill set" "$CLAUDE_COUNT" "$CURSOR_COUNT"
-
-echo ""
-echo "[12] token measurement"
-TOK="${HOME_DIR}/bin/agent-spec-tokens.py"
-FIX="${WORK}/fixture.jsonl"
-# Two assistant turns with known usage, one Bash call and its result.
-cat > "$FIX" <<'JSONL'
-{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"output_tokens":50},"content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls"}}]}}
-{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"0123456789"}]}]}}
-{"type":"assistant","message":{"usage":{"input_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"output_tokens":50},"content":[]}}
-JSONL
-OUT="$(python3 "$TOK" session --file "$FIX" 2>&1)"
-want "counts the turns"        "2 assistant turns, ~1,100 tokens of context re-read per turn" "$(echo "$OUT" | sed -n 2p)"
-want "sums the buckets" "2,000" "$(echo "$OUT" | awk '$1=="cache_read_input_tokens"{print $2}')"
-want "weights them (2000*0.1 + 200*1.25 + 100*5 + 20)" "970" "$(echo "$OUT" | awk '$1=="TOTAL"{print $2}')"
-OUT="$(python3 "$TOK" --weights read=1 session --file "$FIX" 2>&1)"
-case "$OUT" in *"read=1"*) ok "weights are overridable" ;; *) bad "--weights ignored" ;; esac
-OUT="$(python3 "$TOK" tools --file "$FIX" 2>&1)"
-case "$OUT" in *"Bash"*"10 B"*) ok "attributes a result to its tool" ;; *) bad "tool attribution wrong" ;; esac
-python3 "$TOK" session --file "${WORK}/does-not-exist.jsonl" >/dev/null 2>&1
-want "a missing transcript exits nonzero with a reason" 1 "$?"
-
-echo ""
-echo "[13] terse modes"
-MODES="$(ls -d "${HOME_DIR}/skills/claude"/agent-spec-{raw-code,raw-code-full,verbose,dense,trim-noise} 2>/dev/null | wc -l | tr -d ' ')"
-want "three remain: raw-code, raw-code-full, verbose" 3 "$MODES"
-UH2="${WORK}/upgrade2"
-mkdir -p "$UH2/.claude/skills/agent-spec-dense" "$UH2/.claude/skills/agent-spec-trim-noise" "$UH2/.claude/skills/mine"
-printf -- '---\nname: "agent-spec-dense"\ndescription: >-\n  old\n---\nbody\n' > "$UH2/.claude/skills/agent-spec-dense/SKILL.md"
-printf -- '---\nname: "agent-spec-trim-noise"\ndescription: >-\n  old\n---\nbody\n' > "$UH2/.claude/skills/agent-spec-trim-noise/SKILL.md"
-printf -- '---\nname: "mine"\ndescription: >-\n  mine\n---\nbody\n' > "$UH2/.claude/skills/mine/SKILL.md"
-( cd "$P" && HOME="$UH2" WIN_CLAUDE_HOME="$UH2/nowin" bash "${HOME_DIR}/bin/install.sh" --skills-only >/dev/null 2>&1 )
-want "the dropped modes are pruned on upgrade" 0 "$(ls "$UH2/.claude/skills" | grep -cE 'agent-spec-(dense|trim-noise)$')"
-want "and the user's own skill survives" "mine" "$(ls "$UH2/.claude/skills" | grep -v '^agent-spec')"
-
-echo ""
-echo "[14] context break-even and subagents"
-OUT="$(python3 "$TOK" context --file "$FIX" 2>&1)"
-case "$OUT" in *"turn 1:"*) ok "reports the starting context" ;; *) bad "no turn 1 line" ;; esac
-case "$OUT" in *"break-even"*|*"already small"*) ok "reaches a reset verdict" ;; *) bad "no verdict" ;; esac
-AGENTS="$(ls "${HOME_DIR}/agents"/*.md 2>/dev/null | wc -l | tr -d ' ')"
-at_least "subagents ship with the framework" 2 "$AGENTS"
-CHEAP=0
-for f in "${HOME_DIR}/agents"/*.md; do grep -qE '^model: (haiku|sonnet)$' "$f" || CHEAP=$((CHEAP+1)); done
-want "every subagent pins a model rather than inheriting" 0 "$CHEAP"
-want "installed into the home"    "$AGENTS" "$(ls "$UH2/.claude/agents"/*.md 2>/dev/null | wc -l | tr -d ' ')"
-want "and into the project"       "$AGENTS" "$(ls "$P/.claude/agents"/*.md 2>/dev/null | wc -l | tr -d ' ')"
-# an older framework version installed its own sync script; leaving it re-installs old names
-touch "$UH2/.claude/sync-agent-spec-skills.sh"
-echo "# agent-spec sync" > "$UH2/.claude/sync-agent-spec-skills.sh"
-( cd "$P" && HOME="$UH2" WIN_CLAUDE_HOME="$UH2/nowin" bash "${HOME_DIR}/bin/install.sh" --skills-only >/dev/null 2>&1 )
-want "the superseded sync script is removed" 0 "$(ls "$UH2/.claude/sync-agent-spec-skills.sh" 2>/dev/null | wc -l | tr -d ' ')"
-
-echo ""
-echo "[15] corpus and the A/B harness"
-OUT="$(python3 "$TOK" corpus --min-turns 1 2>&1)"
-case "$OUT" in *"sessions across"*"projects"*) ok "corpus aggregates across projects" ;; *) bad "corpus output wrong" ;; esac
-bash "${HOME_DIR}/bin/agent-spec-ab.sh" >/dev/null 2>&1
-want "the A/B runner refuses a bare invocation" 1 "$?"
-( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" start A "measure this" >/dev/null 2>&1 )
-want "arming an arm records the task" "measure this" "$(cat "$P/.agent-spec/ab/task-A.txt" 2>/dev/null)"
-( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" end A >/dev/null 2>&1 )
-want "ending an arm with no new transcript is refused" 1 "$?"
-( cd "$P" && bash "${HOME_DIR}/bin/agent-spec-ab.sh" report >/dev/null 2>&1 )
-want "a report with unfinished arms is refused" 1 "$?"
-# The automated path must refuse to run nested: Claude Code will not launch inside
-# itself, and a nested run is not a fresh context, which is the variable under test.
-OUT="$( cd "$P" && CLAUDECODE=1 bash "${HOME_DIR}/bin/agent-spec-ab.sh" run "x" 2>&1 )"
-case "$OUT" in *"plain terminal"*) ok "the automated run refuses to nest" ;; *) bad "no nesting guard" ;; esac
-# The comparison table must render from two result JSONs and name a direction.
-mkdir -p "${WORK}/abt"
-echo '{"num_turns":18,"total_cost_usd":0.82,"duration_ms":94000,"usage":{"input_tokens":40,"cache_creation_input_tokens":52000,"cache_read_input_tokens":610000,"output_tokens":9800}}' > "${WORK}/abt/a.json"
-echo '{"num_turns":11,"total_cost_usd":0.54,"duration_ms":71000,"usage":{"input_tokens":36,"cache_creation_input_tokens":49000,"cache_read_input_tokens":318000,"output_tokens":6100}}' > "${WORK}/abt/b.json"
-OUT="$(bash -c "$(sed -n '/^report_json() {/,/^}/p' "${HOME_DIR}/bin/agent-spec-ab.sh"; echo "report_json ${WORK}/abt/a.json ${WORK}/abt/b.json ARM_A ARM_B")" 2>&1)"
-case "$OUT" in *"34.1% cheaper"*) ok "the comparison reports a signed cost delta" ;; *) bad "cost delta missing or wrong" ;; esac
-case "$OUT" in *"One task is one data point"*) ok "and refuses to let one run become a headline" ;; *) bad "no single-sample caveat" ;; esac
-# "Not logged in" comes back as a normal result with is_error, which otherwise looks
-# like a broken experiment rather than a missing login.
-FAKEHOME="${WORK}/nologin"; mkdir -p "$FAKEHOME/.claude"
-echo '{"claudeAiOauth":{"accessToken":"","refreshToken":"","expiresAt":0}}' > "$FAKEHOME/.claude/.credentials.json"
-OUT="$( cd "$P" && HOME="$FAKEHOME" CLAUDECODE= bash "${HOME_DIR}/bin/agent-spec-ab.sh" run "x" 2>&1 )"
-case "$OUT" in *"not logged in"*) ok "an empty credential stub is caught before any arm runs" ;; *) bad "no login preflight" ;; esac
-case "$OUT" in *"work-A"*) bad "it cloned before checking the login" ;; *) ok "and nothing is cloned first" ;; esac
-# The first real run produced a -47.8% delta from two arms that changed nothing.
-# The void guard exists so that never gets published.
-VOID="$(bash -c 'CHANGED_A=0; CHANGED_B=0; RED=""; NC=""
-if [ "${CHANGED_A}" = "0" ] || [ "${CHANGED_B}" = "0" ]; then echo "THIS RESULT IS VOID"; fi')"
-want "a run where an arm changed nothing is voided" "THIS RESULT IS VOID" "$VOID"
-grep -q 'THIS RESULT IS VOID' "${HOME_DIR}/bin/agent-spec-ab.sh" \
-  && ok "the void guard is wired into the runner" || bad "void guard missing from ab.sh"
-grep -q 'allowed-tools' "${HOME_DIR}/bin/agent-spec-ab.sh" \
-  && ok "arms are allowed the tools the task needs" || bad "arms cannot run Bash"
-# claude -p inherits the caller's working directory. Without a cd, both arms read
-# the real repository while git status was checked in an untouched clone.
-grep -q 'cd "${dir}" && env -u CLAUDECODE' "${HOME_DIR}/bin/agent-spec-ab.sh" \
-  && ok "each arm runs inside its own clone" || bad "arms run in the caller's directory"
-grep -q 'ran OUTSIDE its clone' "${HOME_DIR}/bin/agent-spec-ab.sh" \
-  && ok "and the transcript location is checked, not assumed" || bad "no clone-location check"
-# A leading /skill-name line in a -p prompt is passed through as plain text: three
-# runs produced a delta between two arms that were running the same configuration.
-grep -q 'append-system-prompt' "${HOME_DIR}/bin/agent-spec-ab.sh" \
-  && ok "the skill body is injected, not slash-invoked" || bad "arms run with no mode in force"
-grep -q 'skill body is not present' "${HOME_DIR}/bin/agent-spec-ab.sh" \
-  && ok "and its presence is verified in the transcript" || bad "no mode-in-force check"
-
-echo ""
-echo "[16] benchmark suite"
-TD="${HOME_DIR}/benchmarks/tasks"
-NT="$(ls "$TD"/*.task 2>/dev/null | wc -l | tr -d ' ')"
-at_least "tasks exist" 3 "$NT"
-MISSING=0
-for f in "$TD"/*.task; do [ -f "${f%.task}.verify" ] || MISSING=$((MISSING+1)); done
-want "every task has a verify script" 0 "$MISSING"
-# A verifier that passes on an untouched tree scores not doing the work as success.
-FALSEPASS=0
-for f in "$TD"/*.verify; do
-  ( cd "$P" && bash "$f" >/dev/null 2>&1 ) && FALSEPASS=$((FALSEPASS+1))
-done
-want "no verifier passes on an unmodified tree" 0 "$FALSEPASS"
-# The reporter must expose a cheap-but-failing arm rather than crowning it.
-mkdir -p "${WORK}/bm/.agent-spec/benchmark"
-python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
-import json
-for r in range(3):
-    print(json.dumps({"arm":"A","skill":"agent-spec-raw-code","task":"t1","repeat":r,
-        "verdict":"PASS","cost":0.15,"turns":7,"seconds":9,"session":"x",
-        "in":1,"write":1,"read":1,"out":1,"is_error":False}))
-    print(json.dumps({"arm":"B","skill":"agent-spec-raw-code-full","task":"t1","repeat":r,
-        "verdict":"PASS" if r==0 else "FAIL","cost":0.02,"turns":2,"seconds":3,"session":"y",
-        "in":1,"write":1,"read":1,"out":1,"is_error":False}))
-JSON
-OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
-case "$OUT" in *"33%"*|*"1 (33%)"*) ok "a failing arm's completion rate is exposed" ;; *) bad "completion rate not reported" ;; esac
-case "$OUT" in *"too few"*) ok "a delta from one verified run is refused" ;; *) bad "quoted a delta from n=1" ;; esac
-case "$OUT" in *"NO MEASURABLE DIFFERENCE"*) ok "and a noise-dominated suite says so" ;; *) bad "no noise verdict" ;; esac
-# Equal-but-imperfect completion is not "rates differ"; and a task both arms fail
-# is a broken task, which is a different message and a different action.
-python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
-import json
-for r in range(3):
-    for arm,skill in (("A","agent-spec-raw-code"),("B","agent-spec-raw-code-full")):
-        print(json.dumps({"arm":arm,"skill":skill,"task":"t1","repeat":r,
-            "verdict":"FAIL" if r==2 else "PASS","cost":0.10,"turns":5,"seconds":9,
-            "session":"s","in":1,"write":1,"read":1,"out":1,"is_error":False}))
-JSON
-OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
-case "$OUT" in *"Every arm failed the same runs"*) ok "a task every arm fails is called a broken task" ;; *) bad "misreported equal completion as differing" ;; esac
-case "$OUT" in *"rates differ"*) bad "claimed rates differ when they are equal" ;; *) ok "and equal rates are not reported as differing" ;; esac
-# A run that billed nothing never reached the model — a usage limit, an expired
-# login. Its clone is untouched, so its verify message describes an empty repo
-# and reads exactly like the mode did the work badly. Counting those as failures
-# is how an account problem becomes a false finding about a skill.
-python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
-import json
-for r in range(3):
-    for arm, skill in (("A", "agent-spec-raw-code"), ("B", "agent-spec-raw-code-full")):
-        print(json.dumps({"arm": arm, "skill": skill, "task": "t1", "repeat": r,
-            "verdict": "PASS", "cost": 0.10, "turns": 5, "seconds": 9,
-            "session": "s", "in": 1, "write": 1, "read": 1, "out": 1, "is_error": False}))
-print(json.dumps({"arm": "A", "skill": "agent-spec-raw-code", "task": "t2", "repeat": 1,
-    "verdict": "FAIL", "cost": 0.0, "turns": 1, "seconds": 3, "session": "z",
-    "in": 0, "write": 0, "read": 0, "out": 0, "is_error": True}))
-JSON
-OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
-case "$OUT" in *"1 run(s) never reached the model"*) ok "an unbilled run is reported as an error, not a failed task" ;; *) bad "counted a zero-cost run as a task failure" ;; esac
-case "$OUT" in *"3 (100%)"*) ok "and is excluded from the completion rate" ;; *) bad "unbilled run polluted the completion rate" ;; esac
-grep -q "CONSEC_ERRORS" "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
-  && ok "the suite stops after consecutive unbilled runs" \
-  || bad "no abort on repeated unbilled runs — a usage limit burns the whole suite"
-
-# Mode against mode ranks two skills. Only a control arm with no skill body can
-# say whether either saves anything against plain Claude Code.
-grep -q 'if \[ "${skill}" != "none" \]' "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
-  && ok "the benchmark has a no-skill control arm" \
-  || bad "no control arm — the suite can only rank the modes, never measure them"
-[ -f "${HOME_DIR}/benchmarks/tasks/04-long-session.task" ] \
-  && ok "the suite has a long-session task" \
-  || bad "no long-session task — raw-code-full's reading rules are untestable"
-
-# A local model bills nothing, so cost cannot be the metric or the liveness test.
-# --metric tokens ranks on tokens moved and must not discard runs as "never
-# reached the model" just because they cost zero.
-python3 - > "${WORK}/bm/.agent-spec/benchmark/results.jsonl" <<'JSON'
-import json
-for r in range(3):
-    for arm, skill, read in (("A", "none", 40000), ("B", "agent-spec-raw-code", 30000)):
-        print(json.dumps({"arm": arm, "skill": skill, "task": "t1", "repeat": r,
-            "verdict": "PASS", "cost": 0.0, "turns": 6, "seconds": 9, "session": "s",
-            "in": 5, "write": 1000, "read": read + r, "out": 500, "is_error": False}))
-JSON
-OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report --metric tokens 2>&1 )"
-case "$OUT" in *"never reached the model"*) bad "zero-cost local runs discarded under --metric tokens" ;; *) ok "a zero-cost run counts when the metric is tokens" ;; esac
-case "$OUT" in *"tokens per VERIFIED task"*) ok "the headline table is ranked in tokens" ;; *) bad "still ranking on cost under --metric tokens" ;; esac
-case "$OUT" in *"cannot be quoted as a saving in money"*) ok "and the report says a token ranking is not a cost result" ;; *) bad "a local ranking is presented without its caveat" ;; esac
-OUT="$( cd "${WORK}/bm" && bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" --report 2>&1 )"
-case "$OUT" in *"cost per VERIFIED task"*) ok "and the default metric is still cost" ;; *) bad "--metric tokens leaked into the default" ;; esac
-
-# The harness end to end, with a stubbed claude so it costs nothing. The label
-# is used as a directory name: when it was computed with printf escapes every
-# arm resolved to the literal "\000", shared one clone, and claude exited on a
-# path it could not lstat — 36 runs aborted before one reached the model.
-HARNESS="${WORK}/harness"
-git clone --quiet --no-hardlinks "${HOME_DIR}" "${HARNESS}" 2>/dev/null
-mkdir -p "${WORK}/stub"
-cat > "${WORK}/stub/claude" <<'STUB'
-#!/usr/bin/env bash
-echo '{"total_cost_usd":0.05,"num_turns":5,"is_error":false,"usage":{"input_tokens":3,"cache_creation_input_tokens":1000,"cache_read_input_tokens":20000,"output_tokens":500}}'
-STUB
-chmod +x "${WORK}/stub/claude"
-OUT="$( cd "${HARNESS}" && env -u CLAUDECODE PATH="${WORK}/stub:$PATH" \
-        bash "${HOME_DIR}/bin/agent-spec-benchmark.sh" \
-        --arms none,agent-spec-raw-code,agent-spec-raw-code-full \
-        --tasks 01-add-cli-flag --repeats 1 2>&1 )"
-case "$OUT" in *"A 01-add-cli-flag"*) ok "arm labels are plain letters" ;; *) bad "arm label is not a letter — it becomes a directory name" ;; esac
-case "$OUT" in *"C 01-add-cli-flag"*) ok "three arms run and are labelled A, B, C" ;; *) bad "third arm never ran" ;; esac
-N="$(ls "${HARNESS}/.agent-spec/benchmark/failed" 2>/dev/null | wc -l | tr -d ' ')"
-want "each arm gets its own clone" 3 "$N"
-case "$OUT" in *"plain (no skill)"*) ok "the control arm is named in the report" ;; *) bad "control arm missing from report" ;; esac
-
-# Cutting a long session is the largest saving measured anywhere, and Claude
-# Code's /compact cannot be reached from a skill or from Cursor at all. The
-# portable version has to exist, and Cursor has to be told to pull the digest
-# that Claude Code's hook pushes.
-grep -q 'name: "agent-spec-compact"' "${HOME_DIR}/skills/claude/agent-spec-compact/SKILL.md" 2>/dev/null \
-  && ok "the portable context cut ships as a skill" \
-  || bad "no agent-spec-compact skill — the biggest measured saving is unreachable in Cursor"
-grep -q 'agent-spec-digest.py' "${HOME_DIR}/CURSOR.md" \
-  && ok "Cursor is told to run the digest itself" \
-  || bad "CURSOR.md does not tell Cursor to fetch the digest, and Cursor has no hook"
-# Only Claude Code runs a SessionStart hook. Every other harness file that promises one
-# is telling its reader not to load three files on the strength of a digest it will never
-# receive. This was fixed once in CURSOR.md and the assertion was written for that file
-# alone, so the same claim survived in AGENTS.md and GEMINI.md until it was found again.
-for f in CURSOR.md GEMINI.md; do
-  grep -q 'SessionStart. hook has already' "${HOME_DIR}/$f" \
-    && bad "$f claims a SessionStart hook its harness does not have" \
-    || ok "$f does not claim a hook its harness does not have"
-  grep -q 'agent-spec-digest.py' "${HOME_DIR}/$f" \
-    || bad "$f does not tell its reader to run the digest itself"
-done
-grep -q 'Every other\n*.*agent has no session hook\|agent has no session hook' "${HOME_DIR}/AGENTS.md" \
-  && ok "AGENTS.md separates Claude Code from the harnesses with no hook" \
-  || bad "AGENTS.md promises every agent a hook only Claude Code has"
-grep -q 'agent-spec-compact' "${HOME_DIR}/skills/claude/agent-spec/SKILL.md" \
-  && ok "the router points at it" \
-  || bad "router does not mention agent-spec-compact"
-
-# A skill body is re-read every turn. raw-code-full lost its own benchmark by 5%
-# because 4,247 bytes of rationale sat in the prompt prefix. Rationale belongs in
-# docs; the body holds imperatives.
-for f in agent-spec-raw-code agent-spec-raw-code-full; do
-  SZ="$(wc -c < "${HOME_DIR}/skills/claude/$f/SKILL.md" | tr -d ' ')"
-  if [ "$SZ" -le 3000 ]; then ok "$f body is $SZ B (cap 3000)"; else bad "$f body is $SZ B, over the 3000 B cap"; fi
-  for clause in "Never compress" "Break style for" "Always normal prose"; do
-    grep -q "$clause" "${HOME_DIR}/skills/claude/$f/SKILL.md" \
-      || bad "$f lost its '$clause' section while being shrunk"
-  done
-done
-ok "both modes kept every safety clause through the shrink"
-
-# Levels came from an external lean-output framework; its ultra level did not. Ultra is
-# plain text with no markdown, which is
-# caveman prose under another name, and caveman measured 0 across 26 verified runs.
-RC="${HOME_DIR}/skills/claude/agent-spec-raw-code/SKILL.md"
-for lvl in lite full; do
-  grep -q "agent-spec-raw-code $lvl" "$RC" \
-    && ok "raw-code documents the $lvl level and how to switch to it" \
-    || bad "raw-code does not document the $lvl level"
-done
-grep -qi 'ultra' "$RC" \
-  && bad "raw-code declares an ultra level — that is caveman prose, which measured 0" \
-  || ok "and declares no ultra level"
-grep -q '^| Debug | Issue. Cause. Fix. Verify. |' "$RC" \
-  && ok "raw-code carries the task-shapes table" \
-  || bad "raw-code lost the task-shapes table"
-grep -qi 'not for saving tokens' "$RC" \
-  && ok "raw-code still refuses to claim a token saving" \
-  || bad "raw-code claims a saving that 26 runs measured at +1.4% cost"
-grep -q 'cache read bills at 0.1x only while the bytes are unchanged' \
-  "${HOME_DIR}/skills/claude/agent-spec-raw-code-full/SKILL.md" \
-  && ok "raw-code-full states why the always-on prefix must not be edited mid-session" \
-  || bad "raw-code-full lost the cache-stability rule"
-
-echo ""
-echo "[14] input discipline (PreToolUse hook)"
-# Input is 86.7% of the bill against 13.2% for output. A skill body can only ask for
-# reading discipline; this hook is the only place it is enforced. Every case below
-# drives the hook directly, because a hook that blocks wrongly breaks every session
-# on the machine.
-PTU="${HOME_DIR}/hooks/pre-tool-use.py"
-[ -f "$PTU" ] && ok "the PreToolUse hook ships" || bad "hooks/pre-tool-use.py is missing"
-
-HK="${WORK}/hookproj"
-mkdir -p "${HK}/.agent-spec"
-python3 -c "open('${HK}/big.py','w').write('x = 1\n' * 5000)"
-printf 'small\n' > "${HK}/small.py"
-
-# fire <session> <json> -> exit code, run from inside the fixture project
-fire() { ( cd "$HK" && printf '%s' "$2" | python3 "$PTU" >/dev/null 2>&1; echo $? ); }
-# Session ids must be unique per run: the hook remembers what it has already said, and
-# WORK can be pinned by the caller, so fixed ids would make the second run a false pass.
-S="ptu$$"
-
-R_NOLIMIT='{"session_id":"'"${S}1"'","tool_name":"Read","tool_input":{"file_path":"'"${HK}"'/big.py"}}'
-want "a whole-file Read of a 35 kB file is refused once" 2 "$(fire "${S}1" "$R_NOLIMIT")"
-want "and the immediate retry goes through" 0 "$(fire "${S}1" "$R_NOLIMIT")"
-want "a Read with a limit is never refused" 0 \
-  "$(fire "${S}2" '{"session_id":"'"${S}2"'","tool_name":"Read","tool_input":{"file_path":"'"${HK}"'/big.py","limit":50}}')"
-want "a small file is never refused" 0 \
-  "$(fire "${S}2" '{"session_id":"'"${S}2"'","tool_name":"Read","tool_input":{"file_path":"'"${HK}"'/small.py"}}')"
-want "a Write over an existing file is refused once" 2 \
-  "$(fire "${S}3" '{"session_id":"'"${S}3"'","tool_name":"Write","tool_input":{"file_path":"'"${HK}"'/big.py","content":"x"}}')"
-want "a Write creating a new file is never refused" 0 \
-  "$(fire "${S}3" '{"session_id":"'"${S}3"'","tool_name":"Write","tool_input":{"file_path":"'"${HK}"'/new.py","content":"x"}}')"
-want "git diff without --stat is refused once" 2 \
-  "$(fire "${S}4" '{"session_id":"'"${S}4"'","tool_name":"Bash","tool_input":{"command":"git diff"}}')"
-want "git diff --stat is never refused" 0 \
-  "$(fire "${S}5" '{"session_id":"'"${S}5"'","tool_name":"Bash","tool_input":{"command":"git diff --stat"}}')"
-want "cat of a large file is refused once" 2 \
-  "$(fire "${S}6" '{"session_id":"'"${S}6"'","tool_name":"Bash","tool_input":{"command":"cat '"${HK}"'/big.py"}}')"
-want "cat piped through head is never refused" 0 \
-  "$(fire "${S}7" '{"session_id":"'"${S}7"'","tool_name":"Bash","tool_input":{"command":"cat '"${HK}"'/big.py | head -50"}}')"
-want "malformed stdin never blocks a tool call" 0 "$(fire "${S}8" 'not json at all')"
-
-OUTSIDE="${WORK}/notaproject"
-mkdir -p "$OUTSIDE"
-CODE="$( cd "$OUTSIDE" && printf '%s' "$R_NOLIMIT" | python3 "$PTU" >/dev/null 2>&1; echo $? )"
-want "silent outside an agent-spec project, so it is safe machine-wide" 0 "$CODE"
-
-SET2="${WORK}/settings-ptu.json"
-python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET2" /x/hook.sh /x/ptu.py >/dev/null
-python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET2" /x/hook.sh /x/ptu.py >/dev/null
-want "one PreToolUse entry after two installs" 1 \
-  "$(python3 -c "import json;print(len(json.load(open('$SET2'))['hooks']['PreToolUse']))")"
-want "and it is matched against Read, Write and Bash" "Read|Write|Bash" \
-  "$(python3 -c "import json;print(json.load(open('$SET2'))['hooks']['PreToolUse'][0]['matcher'])")"
-SET3="${WORK}/settings-stale.json"
-echo '{"hooks":{"PreToolUse":[{"matcher":"Read|Write|Bash","hooks":[{"type":"command","command":"/mnt/c/Users/u/.claude/hooks/agent-spec-pre-tool-use.py","timeout":5}]}]}}' > "$SET3"
-python3 "${HOME_DIR}/bin/agent-spec-settings.py" "$SET3" '~/.claude/hooks/s.sh' '~/.claude/hooks/agent-spec-pre-tool-use.py' >/dev/null
-want "a stale /mnt/ hook path is repaired in place, not stacked" \
-  "1 ~/.claude/hooks/agent-spec-pre-tool-use.py" \
-  "$(python3 -c "import json;g=json.load(open('$SET3'))['hooks']['PreToolUse'];print(len(g),g[0]['hooks'][0]['command'])")"
-grep -q 'agent-spec-pre-tool-use.py' "${HOME_DIR}/bin/install.sh" \
-  && ok "the installer deploys it to every .claude home" \
-  || bad "install.sh does not install the PreToolUse hook"
-
-# An instruction the model cannot follow is charged on every turn like any other, and
-# then wastes a tool call proving itself wrong. Four separate defects of that kind
-# reached main, each found by accident. This checks every file at once instead.
-LINT="$(python3 "${HOME_DIR}/bin/agent-spec-lint-refs.py" "${HOME_DIR}" 2>&1)"
-if [ $? -eq 0 ]; then
-  ok "every path and skill name the framework prints actually exists"
-else
-  bad "dangling references: $(echo "$LINT" | tail -1)"
-  echo "$LINT" | head -12 | sed 's/^/      /'
-fi
-grep -q 'agent-spec-lint-refs.py' "${HOME_DIR}/bin/agent-spec-selftest.sh" \
-  && ok "and the check runs on every suite, not once by hand" \
-  || bad "the reference linter is not wired in"
-
-echo ""
-echo "[16] agentic design guidance"
-# Eleven personas covered software structure and none covered the decision that gets
-# made most often here: skill, hook, subagent or plain script. A persona file is only
-# reachable if the role token in the skill table matches an uppercase filename, so the
-# whole table is checked, not just the new row.
-BAD=0
-for role in $(sed -n 's/^| `\([a-z-]*\)` |.*/\1/p' "${HOME_DIR}/skills/claude/agent-spec-persona/SKILL.md"); do
-  UP="$(echo "$role" | tr '[:lower:]' '[:upper:]')"
-  [ "$role" = "reviewer" ] && continue   # the default, listed first, has a file like the rest
-  [ -f "${HOME_DIR}/personas/${UP}.md" ] || { BAD=$((BAD+1)); echo "     no persona file for role: $role"; }
-done
-want "every role in the table has a persona file" 0 "$BAD"
-
-grep -q '^## Absolute Rules' "${HOME_DIR}/personas/AI-ARCHITECT.md" \
-  && ok "the AI architect carries binding rules, not only a lens" \
-  || bad "personas/AI-ARCHITECT.md has no Absolute Rules section"
-
-# The two rules this repository paid to learn. If either leaves the persona, the persona
-# is decoration: a skill body cannot enforce anything, and a model call is charged per turn.
-for clause in "Deterministic First" "Enforcement Belongs in Hooks"; do
-  grep -q "$clause" "${HOME_DIR}/personas/AI-ARCHITECT.md" \
-    || bad "AI-ARCHITECT lost its '$clause' directive"
-done
-ok "the hybrid boundary survived as an absolute rule"
-
-# The audit skill must not tell an installed project to run a binary install.sh does not
-# copy. agent-spec-lint-refs.py stays in this repository only, so naming it as a runtime
-# command would be exactly the dangling-reference defect the skill exists to catch.
-grep -q 'agent-spec-lint-refs.py' "${HOME_DIR}/skills/claude/agent-spec-prompt-audit/SKILL.md" \
-  && bad "prompt-audit names a linter install.sh never copies into a project" \
-  || ok "prompt-audit names no binary the installer does not ship"
-
-grep -q 'Never delete a safety clause' "${HOME_DIR}/skills/claude/agent-spec-prompt-audit/SKILL.md" \
-  && ok "shrinking a prompt cannot cut a hard stop" \
-  || bad "prompt-audit would let a safety clause be cut for bytes"
-
-echo ""
-echo "[17] advertised counts match reality"
-# Four count defects reached main because no test compared a number in the prose against
-# the thing it counts. Each drifts silently: a skill is added, README still says the old
-# total, and the stale number is charged into context on every read. Guard the counts the
-# same way references are guarded. The assertion check runs last, on purpose — it reads the
-# running PASS total, so every other assertion must already have executed.
-ACTUAL_SKILLS=$(ls -1d "${HOME_DIR}/skills/claude/"*/ 2>/dev/null | wc -l | tr -d ' ')
-WRONG_SKILLS=$(grep -oE '[0-9]+ (prefixed )?skills' "${HOME_DIR}/README.md" \
-  | grep -oE '^[0-9]+' | grep -vc "^${ACTUAL_SKILLS}$")
-want "every skill count in README matches the ${ACTUAL_SKILLS} installed skills" 0 "$WRONG_SKILLS"
-
-LEAN_ADVERTISED=$(grep -oE 'skip the [0-9]+ SDLC-design skills' "${HOME_DIR}/bin/install.sh" \
-  | grep -oE '[0-9]+' | head -1)
-LEAN_ACTUAL=$(grep -E '^LEAN_EXCLUDE=' "${HOME_DIR}/bin/install.sh" \
-  | grep -oE 'agent-spec-[a-z-]+' | wc -l | tr -d ' ')
-want "install.sh --lean comment count matches LEAN_EXCLUDE (${LEAN_ACTUAL})" "$LEAN_ACTUAL" "$LEAN_ADVERTISED"
-
-echo ""
-echo "[18] the Cursor sessionStart hook works"
-# Cursor loads the digest automatically only if install.sh wires .cursor/hooks.json AND the
-# digest's --cursor-hook mode emits the JSON envelope Cursor reads. Both are checked against
-# a real installed fixture: a rule the agent must remember to obey is not a hook.
-python3 -c "
-import json, sys
-c = json.load(open('$P/.cursor/hooks.json'))
-h = c.get('hooks', {}).get('sessionStart', [])
-sys.exit(0 if c.get('version') == 1 and any('--cursor-hook' in x.get('command','') for x in h) else 1)
-" 2>/dev/null \
-  && ok "install wires .cursor/hooks.json sessionStart to the digest" \
-  || bad "install.sh did not wire .cursor/hooks.json to the cursor-hook digest"
-
-( cd "$P" && python3 ./.agent-spec/bin/agent-spec-digest.py --cursor-hook </dev/null ) \
-  | python3 -c "import json,sys; sys.exit(0 if json.load(sys.stdin).get('additional_context') else 1)" 2>/dev/null \
-  && ok "the --cursor-hook digest emits valid JSON with additional_context" \
-  || bad "the --cursor-hook digest did not emit valid additional_context JSON"
-
-echo ""
-echo "[19] graph accuracy — test detection, submodule resolution, ambiguity, aliases"
-GP="$P/.agent-spec/graph/knowledge-graph.json"
-# #1 A filename that merely contains the letters "test" is not a test file. The old
-# substring detector tagged app/latest.py (and every agent-spec-*.py) as a test.
-python3 -c "
-import json, sys
-g = json.load(open('$GP'))
-n = [x for x in g['nodes'] if x['path'] == 'app/latest.py']
-sys.exit(0 if n and n[0]['type'] != 'test' and n[0]['layer'] != 'test' else 1)
-" 2>/dev/null \
-  && ok "a filename containing 'test' is not misread as a test file" \
-  || bad "latest.py was misclassified as a test"
-
-# #2/#3 `from app.services import pricing` must resolve to the module file, not __init__.
-python3 -c "
-import json, sys
-e = json.load(open('$GP'))['edges']
-sys.exit(0 if any(x['source']=='app/gateway.py' and x['target']=='app/services/pricing.py'
-                  and x['type']=='imports' for x in e) else 1)
-" 2>/dev/null \
-  && ok "from-import resolves to the submodule, not __init__.py" \
-  || bad "from X import mod did not resolve to the submodule"
-
-# #4 A bare `import config` matching two files is recorded low-confidence, not dropped,
-# and never leaks into the confident import graph.
-python3 -c "
-import json, sys
-e = json.load(open('$GP'))['edges']
-amb = [x for x in e if x.get('type')=='imports_ambiguous' and x['source']=='app/consumer.py']
-leak = [x for x in e if x['type']=='imports' and x['source']=='app/consumer.py'
-        and x['target'].endswith('config.py')]
-sys.exit(0 if amb and not leak else 1)
-" 2>/dev/null \
-  && ok "an ambiguous import is recorded low-confidence, not dropped or trusted" \
-  || bad "ambiguous import was dropped or leaked into the confident graph"
-
-# #5 graph-aliases.json recovers an HTTP edge whose called host is not the service's
-# directory name — a gateway. Written after install, then re-indexed.
-GJ="$J/.agent-spec/graph/knowledge-graph.json"
-echo '{"orders-gw": "orders"}' > "$J/.agent-spec/graph-aliases.json"
-cat > "$J/billing/src/main/java/b/service/OrderClient.java" <<'X'
-package b.service;
-public class OrderClient { void call() { restTemplate.getForObject("http://orders-gw/orders", String.class); } }
-X
-# camelCase test detection must survive: FooTest is a test, FooService is not. The stem
-# must be tokenised in its original case, not lowercased first, or the boundary is lost.
-cat > "$J/orders/src/main/java/o/service/PricingTest.java" <<'X'
-package o.service;
-public class PricingTest {}
-X
-( cd "$J" && ./.agent-spec/bin/agent-spec-index --quiet >/dev/null 2>&1 )
-python3 -c "
-import json, sys
-e = json.load(open('$GJ'))['edges']
-sys.exit(0 if any(x.get('type')=='http' and x['source'].startswith('billing/')
-                  and x['target']=='orders' for x in e) else 1)
-" 2>/dev/null \
-  && ok "graph-aliases.json recovers an HTTP edge to an aliased host" \
-  || bad "the alias map did not recover the cross-service HTTP edge"
-
-python3 -c "
-import json, sys
-g = json.load(open('$GJ'))
-tn = [x for x in g['nodes'] if x['path'].endswith('PricingTest.java')]
-sn = [x for x in g['nodes'] if x['path'].endswith('OrderService.java')]
-sys.exit(0 if tn and tn[0]['type']=='test' and sn and sn[0]['type']!='test' else 1)
-" 2>/dev/null \
-  && ok "camelCase FooTest is a test, FooService is not" \
-  || bad "camelCase test detection regressed"
-
-echo ""
-echo "[20] overhead and audit read both profiles and name the real defects"
+echo "[8] agent-spec-tokens.py cursor audit"
 T="${HOME_DIR}/bin/agent-spec-tokens.py"
-H20="${WORK}/h20"; W20="${WORK}/w20"; P20="${WORK}/p20"
-mkdir -p "${H20}/.claude/skills" "${W20}/.claude/projects/-x" "${P20}/.claude/skills/review" "${P20}/.agent-spec"
-python3 - "$W20" "$P20" <<'PY'
-import json, sys
-w, p = sys.argv[1], sys.argv[2]
-turn = {"type": "assistant", "message": {"usage": {"cache_read_input_tokens": 10, "output_tokens": 1}}}
-hook = {"type": "attachment", "attachment": {"type": "hook_success", "hookEvent": "UserPromptSubmit", "content": "x" * 400}}
-with open(w + "/.claude/projects/-x/s.jsonl", "w") as fh:
-    for _ in range(3):
-        fh.write(json.dumps(hook) + "\n"); fh.write(json.dumps(turn) + "\n")
-json.dump({"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": "/mnt/c/u/.claude/hooks/a.sh"}]}]}},
-          open(w + "/.claude/settings.json", "w"))
-json.dump({"hooks": {"UserPromptSubmit": [{"hooks": [{"type": "command", "command": "echo " + "y" * 1500}]}]}},
-          open(p + "/.claude/settings.json", "w"))
-open(p + "/.claude/settings.local.json", "w").write(json.dumps(
-    {"permissions": {"allow": ["Bash(curl -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3.abcdefghijklmnop')"]}}))
-PY
-mkdir -p "${H20}/.claude/skills/agent-spec-review"
-printf -- '---\nname: agent-spec-review\ndescription: x\n---\n' > "${H20}/.claude/skills/agent-spec-review/SKILL.md"
-printf -- '---\nname: review\ndescription: y\n---\n' > "${P20}/.claude/skills/review/SKILL.md"
-export_env() { HOME="${H20}" WIN_CLAUDE_HOME="${W20}" "$@"; }
-want "corpus finds a transcript that only exists under the Windows profile" "1" \
-  "$(export_env python3 "$T" corpus --min-turns 1 | sed -n 's/^=== corpus: \([0-9]*\) sessions.*/\1/p')"
-OVR="$(export_env python3 "$T" overhead --file "${W20}/.claude/projects/-x/s.jsonl")"
-echo "$OVR" | grep -q 'hook_success:UserPromptSubmit *3 ' \
-  && ok "overhead groups the three per-prompt injections into one row" \
-  || bad "overhead did not count the injections"
-AUD="$(export_env python3 "$T" audit --scan "${P20}")"
-for needle in "hook path /mnt/c/u/.claude/hooks/a.sh" "UserPromptSubmit injects" "look like a JWT" "an unprefixed twin of the global skill agent-spec-review (content differs)"; do
-  echo "$AUD" | grep -q "$needle" && ok "audit reports: $needle" || bad "audit missed: $needle"
+BAD="${WORK}/badproj"
+CLEAN="${WORK}/cleanproj"
+EMPTY="${WORK}/emptyscan"
+mkdir -p "${BAD}/.agent-spec" "${BAD}/.cursor/hooks" "${CLEAN}/.agent-spec" "${EMPTY}"
+"$PY" -c "import json,sys; r=sys.argv[1]; json.dump({'version':1,'hooks':{'sessionStart':[{'command':'python3 .cursor/hooks/agent-spec-session-start.py'},{'command':'python3 .cursor/hooks/agent-spec-session-start.py'}],'preToolUse':[{'command':'python3 .cursor/hooks/agent-spec-pre-tool-use.py'}]}}, open(r+'/.cursor/hooks.json','w'))" "${BAD}"
+AUD="$("$PY" "$T" audit --scan "${BAD}" 2>&1 || true)"
+echo "$AUD" | grep -q "2 algosec-agent-spec sessionStart handlers" \
+  && ok "audit flags duplicate sessionStart" || bad "audit missed duplicate sessionStart"
+echo "$AUD" | grep -q "hook target missing" \
+  && ok "audit flags missing hook script" || bad "audit missed missing hook script"
+AUD_CLEAN="$("$PY" "$T" audit --scan "${CLEAN}" 2>&1 || true)"
+echo "$AUD_CLEAN" | grep -q "no .cursor/hooks.json" \
+  && ok "audit flags harness without hooks.json" || bad "audit missed missing hooks.json"
+"$PY" "$T" audit --scan "${EMPTY}" >/dev/null 2>&1
+[ $? -eq 0 ] && ok "audit exits 0 on empty scan tree" || bad "audit should exit 0 when clean"
+[ -f "${HOME_DIR}/bin/agent-spec-tokens.py" ] && ok "package bin/agent-spec-tokens.py" || bad "tokens.py missing"
+
+echo "[9] git auto-indexing lifecycle"
+if [ -f "${HOME_DIR}/tests/test_manage_git_hooks.py" ]; then
+  "$PY" "${HOME_DIR}/tests/test_manage_git_hooks.py" >/dev/null \
+    && ok "git auto-indexing hooks (checkout/merge/rewrite + custom preservation)" \
+    || bad "git hooks test failed"
+fi
+
+echo "[10] check-install"
+bash "$HOME_DIR/check-install.sh" "$P" >/dev/null && ok "check-install" || bad "check-install"
+
+
+echo "[11] Unit suites (memory, digest, preToolUse, audit, doctor/install, receipt, session-end, roi, team facts)"
+for t in test_memory test_digest test_pre_tool_use test_audit test_doctor test_receipt test_session_end test_roi test_team_facts; do
+  if [ -f "${HOME_DIR}/tests/${t}.py" ]; then
+    # HOME was redirected for the install tests above; suites make their own sandboxes.
+    if PYTHONDONTWRITEBYTECODE=1 "$PY" "${HOME_DIR}/tests/${t}.py" >"${WORK}/${t}.log" 2>&1; then
+      ok "${t}: $(tail -1 "${WORK}/${t}.log")"
+    else
+      bad "${t} failed — $(tail -5 "${WORK}/${t}.log" | tr '\n' ' ')"
+    fi
+  else
+    bad "${t}.py missing"
+  fi
 done
-CLEAN="${WORK}/clean20"; mkdir -p "${CLEAN}/.claude"
-HOME="${WORK}/h20clean" WIN_CLAUDE_HOME="${WORK}/none" python3 "$T" audit --scan "${CLEAN}" >/dev/null
-want "audit exits 0 when there is nothing to report" 0 "$?"
 
+echo "[12] Phase 1 package invariants"
+ROUTER_BYTES="$(wc -c < "${HOME_DIR}/skills/agent-spec/SKILL.md" | tr -d ' ')"
+[ "$ROUTER_BYTES" -lt 3072 ] && ok "router skill ${ROUTER_BYTES} B (<3072)" || bad "router skill ${ROUTER_BYTES} B (limit 3072)"
+grep -q "agent-spec-gate.py status" "${HOME_DIR}/skills/agent-spec/SKILL.md" && ok "router points at gate status" || bad "router lacks gate status pointer"
+grep -q "### Tool discipline" "${HOME_DIR}/CURSOR.md" && ok "CURSOR.md tool discipline" || bad "CURSOR.md lacks Tool discipline"
+[ -f "${HOME_DIR}/bin/agent-spec-doctor.py" ] && ok "doctor shipped" || bad "doctor missing"
+[ -f "${HOME_DIR}/templates/team.yaml" ] && ok "team.yaml template" || bad "team.yaml template missing"
+if grep -q "YYYY-MM-DD" "${HOME_DIR}/context/TECH-DEBT-REGISTER.md"; then bad "debt template still has placeholders"; else ok "debt template placeholder-free"; fi
+grep -q '^\*\*Code change\*\*' "${HOME_DIR}/CURSOR.md" && ok "CURSOR.md auto-harness rule (T-052)" || bad "CURSOR.md lacks the Code change rule"
+CURSOR_BYTES="$(wc -c < "${HOME_DIR}/CURSOR.md" | tr -d ' ')"
+[ "$CURSOR_BYTES" -lt 4600 ] && ok "CURSOR.md ${CURSOR_BYTES} B (<4600)" || bad "CURSOR.md ${CURSOR_BYTES} B grew past the 4600 B always-on budget"
+LINT="$("$PY" "${HOME_DIR}/bin/agent-spec-lint-refs.py" "${HOME_DIR}" 2>&1 | tail -1)"
+[ "$LINT" = "every path and skill name resolves" ] && ok "doc refs: 0 dangling (T-059)" || bad "doc refs: ${LINT}"
+echo "[13] platform (Phase 2): data layer, ingest, API, run plumbing (stdlib only, DEC-12)"
+while read -r t; do
+  case "$t" in ""|\#*) continue;; esac
+  [ -f "${HOME_DIR}/tests/${t}.py" ] || { bad "${t}.py missing"; continue; }
+  if PYTHONDONTWRITEBYTECODE=1 "$PY" "${HOME_DIR}/tests/${t}.py" >"${WORK}/${t}.log" 2>&1; then
+    ok "${t}: $(tail -1 "${WORK}/${t}.log")"
+  else
+    bad "${t} failed — $(tail -5 "${WORK}/${t}.log" | tr '\n' ' ')"
+  fi
+done < "${HOME_DIR}/tests/platform-suites.txt"
+for wf in "${HOME_DIR}"/skills/agent-spec-wf-*/SKILL.md; do
+  name="$(basename "$(dirname "$wf")")"
+  if "$PY" "${HOME_DIR}/bin/agent-spec-run.py" validate "$wf" >"${WORK}/${name}.validate" 2>&1; then
+    ok "${name}: workflow validates"
+  else
+    bad "${name} failed validate — $(tail -3 "${WORK}/${name}.validate" | tr '\n' ' ')"
+  fi
+done
 echo ""
-echo "[17] advertised counts match reality (final tally)"
-# Last assertion in the suite. Compares every "<N> assertions" in README against the total
-# this run will print, which is the current PASS plus this check itself.
-WRONG_ASSERT=$(grep -oE '[0-9]+ assertions' "${HOME_DIR}/README.md" \
-  | grep -oE '^[0-9]+' | grep -vc "^$((PASS + 1))$")
-want "every assertion count in README matches this run ($((PASS + 1)))" 0 "$WRONG_ASSERT"
-
-echo ""
-echo "-----------------------------------------"
-echo -e "${GREEN}${PASS} passed${NC}, ${FAIL} failed"
-[ "$FAIL" -eq 0 ] || exit 1
+if [ "$FAILS" -eq 0 ]; then
+  echo "All selftests passed."
+  exit 0
+fi
+echo "$FAILS failure(s)."
+exit 1

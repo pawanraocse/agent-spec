@@ -1,0 +1,9 @@
+{
+  "event": "postToolUse",
+  "sessionId": "sess-1234",
+  "toolName": "Read",
+  "toolInput": {"path": "src/app.py", "range": [1, 20]},
+  "durationMs": 45,
+  "status": "success",
+  "tokens": {"input": 120, "output": 40}
+}

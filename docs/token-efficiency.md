@@ -8,18 +8,58 @@ here is a vendor number.
 
 ## How to measure
 
+### Track A — Cursor agent transcripts (default)
+
+Cursor stores one JSONL per agent chat under:
+
+`~/.cursor/projects/<workspace-slug>/agent-transcripts/<session-id>/<session-id>.jsonl`
+
+The slug is the opened folder path without its leading `/`, with **both** `/` and `.`
+replaced by `-` (e.g. `/Users/you/dev/my-app` → `Users-you-dev-my-app`).
+
+```bash
+cd <registered-project>
+./.agent-spec/bin/agent-spec-tokens.py list
+./.agent-spec/bin/agent-spec-tokens.py session      # in/out estimated (chars÷4) unless usage present
+./.agent-spec/bin/agent-spec-tokens.py overhead --all
+./.agent-spec/bin/agent-spec-tokens.py tools
+```
+
+Cursor JSONL usually has **no** `usage` object — weighted cache buckets are estimates.
+Account-level spend: Cursor **Settings → usage / billing**.
+
+### Track B — Cursor harness audit (config)
+
+Enable **Hooks** in Cursor Settings so `sessionStart` and `preToolUse` run. Then audit
+configuration that inflates always-on context:
+
+```bash
+./bin/agent-spec-tokens.py audit --scan ~/development   # every registered root under a tree
+cd <registered-project> && ./.agent-spec/bin/agent-spec-tokens.py audit
+```
+
+Fix **lossless** findings first (missing hooks, broken paths, duplicate handlers). Weigh
+**behavior-change** findings (many always-on rule files, duplicated global/project skills,
+large memory tree).
+
+Legacy **Claude Code** JSONL (exact `usage` buckets): add **`--claude`** to `list`,
+`session`, `overhead`, and `corpus`. On `audit`, add **`--include-claude`** to scan
+`.claude/settings` and project `.claude/skills` twins.
+
+### Track C — Claude Code JSONL (optional, `--claude`)
+
 Claude Code writes a JSONL transcript per session under
 `~/.claude/projects/<working directory with / replaced by ->/<session-uuid>.jsonl`. Every
-assistant turn carries a `usage` object with four token buckets. That is ground truth.
-Under WSL, a session started from the Windows app is recorded under the Windows profile
-instead; the tool reads both (`WIN_CLAUDE_HOME` overrides the guess).
+assistant turn carries a `usage` object with four token buckets. Under WSL, a session
+started from the Windows app is recorded under the Windows profile instead; the tool reads
+both (`WIN_CLAUDE_HOME` overrides the guess).
 
 ```bash
 ./.agent-spec/bin/agent-spec-tokens.py session    # the four buckets, weighted
 ./.agent-spec/bin/agent-spec-tokens.py tools      # per tool: written in, returned
 ./.agent-spec/bin/agent-spec-tokens.py compare A.jsonl B.jsonl
 ./.agent-spec/bin/agent-spec-tokens.py overhead   # what the harness re-sends besides the conversation
-./.agent-spec/bin/agent-spec-tokens.py audit      # configuration that inflates it
+./.agent-spec/bin/agent-spec-tokens.py audit      # Claude settings + Cursor harness (both)
 ```
 
 `overhead` is run from inside the project you want to measure, because it reads that
@@ -27,19 +67,54 @@ project's transcripts:
 
 ```bash
 cd <your-project>
-python3 ~/personal/agent-spec/bin/agent-spec-tokens.py overhead --all    # every session of this project
-python3 ~/personal/agent-spec/bin/agent-spec-tokens.py overhead          # the most recent session only
-python3 ~/personal/agent-spec/bin/agent-spec-tokens.py overhead --file <session>.jsonl
-python3 ~/personal/agent-spec/bin/agent-spec-tokens.py audit --scan ~/personal   # config, every project under a directory
+python3 <path-to-algosec-agent-spec>/bin/agent-spec-tokens.py overhead --all
+python3 <path-to-algosec-agent-spec>/bin/agent-spec-tokens.py overhead
+python3 <path-to-algosec-agent-spec>/bin/agent-spec-tokens.py overhead --file <session>.jsonl
 ```
 
-Use `--all` for the shape of the bill and the newest session alone to check whether a
-change took effect: `--all` is dominated by older sessions. Inside an installed project the
-same tool is `./.agent-spec/bin/agent-spec-tokens.py`.
+Use `--all` for the shape of the bill; use the newest session alone to check whether a
+change took effect.
 
-`bin/agent-spec-bench.sh` still reports always-on and per-skill cost as bytes ÷ 4. That is
-an estimate, labelled as one, useful for comparing two revisions of a file. Only
-`--session` measures.
+`agent-spec-bench.sh` (upstream agent-spec only; here `bin/agent-spec-tokens.py audit`) still reports always-on and per-skill cost as bytes ÷ 4. That is
+an estimate, labelled as one, useful for comparing two revisions of a file. Only JSONL
+`session` measures real buckets.
+
+## Post-harness measurement habit
+
+Run after any change to rules, hooks, skills or memory (full commands in
+[QUICKSTART](QUICKSTART.md#measuring-the-harness-post-install-habit)):
+
+1. `agent-spec-tokens.py list` — pick a transcript from before and one from after.
+2. `agent-spec-tokens.py compare <before> <after>` — weighted buckets side by side.
+3. `agent-spec-tokens.py overhead --all` — what the harness re-sends each turn.
+4. `agent-spec-tokens.py audit --scan .` — config defects. Exits non-zero on findings, so it
+   can run as a CI step (`python3 .agent-spec/bin/agent-spec-tokens.py audit --scan .`).
+
+The Phase 1 target is harness overhead below 5 % of session cost. Report the number with the
+transcripts it came from; if there are too few transcripts to compare, report UNKNOWN.
+
+## Where the harness overhead sits, and which fixes cost quality
+
+`overhead` groups everything attached around the conversation and estimates how long each
+piece stayed in context: bytes ÷ 4 times the turns remaining, so an upper bound. On one
+project's 24 sessions (8,439 turns, about 309,000 tokens re-read per turn), the largest
+sources were a per-prompt hook injection (9.9% of cache reads), files changed outside the
+model's own edits (6.8%), and the skill listing (4.5%). Everything listed was about 27%;
+the rest is the base prefix and the conversation, so session length is still the lever.
+
+`audit` reports configuration that inflates that overhead. Whether a fix is safe to apply
+depends on whether it changes what the model sees:
+
+| Kind | Examples | Rule |
+|---|---|---|
+| Lossless | a hook that never runs, broken `.cursor/hooks.json`, credentials in hook files | Fix on sight. |
+| Needs a diff | a project skill that twins a global one | Compare the files; never delete on the name alone. |
+| Behavior change | many `.cursor/rules/` files, a long skill listing, a large memory tree | Weigh tokens against what the model stops seeing. |
+
+Always-on rules belong in **`CURSOR.md` → `.cursor/rules/agent-spec.mdc`**: loaded once
+into the cached prefix. Do not duplicate standing rules via per-prompt injection. A dense
+memory index is not waste when each line carries a durable fact the digest should not
+re-guess.
 
 ## Where the tokens went, across the whole corpus
 
@@ -60,30 +135,6 @@ day's task. `agent-spec-tokens.py corpus` aggregates every session on the machin
 
 That is the corpus the ordering below rests on. The single-session figures that follow are
 kept because they are reproducible by anyone reading this file.
-
-## Where the harness overhead sits, and which fixes cost quality
-
-`overhead` groups everything attached around the conversation and estimates how long each
-piece stayed in context: bytes ÷ 4 times the turns remaining, so an upper bound. On one
-project's 24 sessions (8,439 turns, about 309,000 tokens re-read per turn), the largest
-sources were a per-prompt hook injection (9.9% of cache reads), files changed outside the
-model's own edits (6.8%), and the skill listing (4.5%). Everything listed was about 27%;
-the rest is the base prefix and the conversation, so session length is still the lever.
-
-`audit` reports configuration that inflates that overhead. Whether a fix is safe to apply
-depends on whether it changes what the model sees:
-
-| Kind | Examples | Rule |
-|---|---|---|
-| Lossless | a hook that never runs, credentials in a settings file, an allow-list of one-off commands | Fix on sight. |
-| Needs a diff | a project skill that twins a global one | Compare the files; never delete on the name alone. |
-| Behavior change | a per-prompt hook, a large memory index, a long skill listing | Weigh tokens against what the model stops seeing. |
-
-Always-on rules belong in `CLAUDE.md`: it is loaded once into the cached prefix and
-survives compaction. A per-prompt hook stores another copy in the transcript on every
-prompt, and each copy is re-read until the session ends; keep hooks for state that changes
-per prompt. A dense memory index is not waste: its lines carry the reason a rule exists,
-which is what makes the model apply it.
 
 ## Where the tokens went
 
@@ -221,7 +272,7 @@ of short tasks and they only act on long ones.
 
 **So the honest statement is: on short tasks `raw-code-full` is not cheaper, and it
 carries a body the session pays for on every turn. Use it on long sessions.** Proving it
-wins there needs a long-session task in `benchmarks/tasks/`, which does not exist yet.
+wins there needs a long-session task in the benchmark task suite, which does not exist yet (the suite is upstream agent-spec only).
 
 ## A skill body is context
 
@@ -281,7 +332,7 @@ Charged on every turn of every session, whether or not any skill is invoked:
 | | bytes | ≈ tokens |
 |---|---|---|
 | `CLAUDE.md` | 4,912 | ~1,228 |
-| `output-styles/agent-spec.md` | 2,267 | ~567 |
+| `agent-spec.md` output style (upstream only) | 2,267 | ~567 |
 | Skill frontmatter, 24 skills | 3,836 | ~959 |
 | `SessionStart` digest | 1,745 | ~436 |
 | **Total** | **12,760** | **~3,190** |
@@ -319,13 +370,15 @@ reporting it as one is how a 60–90% claim gets made.
 
 ### Use the benchmark, not the A/B
 
-`bin/agent-spec-ab.sh` compares one task once per arm, and that is not enough to say
+> The scripts named in this section (`agent-spec-ab.sh`, `agent-spec-benchmark.sh`) ship in upstream agent-spec only, not in this Cursor-only package.
+
+`agent-spec-ab.sh` compares one task once per arm, and that is not enough to say
 anything. Three successive runs of two *identical* configurations — the skill body was
 never loaded, so both arms were the same — produced deltas of −47.8%, −19.6% and −0.5%.
 That spread is the noise floor. Any real difference has to be bigger than it.
 
 ```bash
-bin/agent-spec-benchmark.sh --repeats 3
+agent-spec-benchmark.sh --repeats 3
 ```
 
 What makes it stable rather than merely automated:
@@ -343,7 +396,7 @@ What makes it stable rather than merely automated:
 Every verify script must fail on an unmodified tree — otherwise doing nothing scores as
 success. The self-test asserts that for all of them.
 
-`bin/agent-spec-ab.sh run "<task>"` remains for a single ad-hoc comparison. It runs: both arms via
+`agent-spec-ab.sh run "<task>"` remains for a single ad-hoc comparison. It runs: both arms via
 `claude -p`, each with its own session id and its own throwaway clone at the same commit,
 so the only variable is the mode. It reports the token buckets and the real dollar cost
 per arm, and it refuses to count an arm that errored. Run it from a plain terminal —

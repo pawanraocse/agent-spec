@@ -1,0 +1,8 @@
+{
+  "event": "postToolUseFailure",
+  "sessionId": "sess-1234",
+  "toolName": "RunCommand",
+  "toolInput": {"command": "npm test"},
+  "durationMs": 230,
+  "error": "command failed with code 1"
+}

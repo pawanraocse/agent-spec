@@ -1,52 +1,66 @@
-# The Skills System
+# Skills (Cursor)
 
-> **Skills are executable workflows for AI agents.**
+On-demand workflows installed to `~/.cursor/skills/<name>/SKILL.md`. Standing rules:
+`.cursor/rules/agent-spec.mdc` (from `CURSOR.md`).
 
-While personas define *how* an agent behaves (rules and tone), skills define *what* an agent does (workflows and outputs). 
+## Daily use
 
-`agent-spec` provides a suite of standard skills that map directly to the SDLC stages and pipeline gates.
+| Skill | When |
+|---|---|
+| `/agent-spec-sdlc` | Gate routing (four tracks) |
+| `/agent-spec-implement` | Build with test-first discipline |
+| `/agent-spec-query-graph` | Structure without file walks |
+| `/agent-spec-raw-code-full` | Tool-traffic discipline |
+| `/agent-spec-investigate` | Diagnose before edit |
+| `/agent-spec-snapshot` | Session state on disk |
+| `/agent-spec-compact` | Snapshot + new Cursor chat |
 
----
+## Session boundaries
 
-## The Core Skills
+| Skill | When |
+|---|---|
+| `/agent-spec-onboard` | Once per new project |
+| `/agent-spec-index-project` | After structural moves |
+| `/agent-spec-remember` | Durable facts |
+| `/agent-spec-verbose` | Exit terse modes |
 
-### The SDLC Builders
-- `/agent-spec-requirements`: Elicit and structure raw customer needs.
-- `/agent-spec-tech-spec`: Define feasibility and constraints.
-- `/agent-spec-prd`: Generate the Product Requirements Document (WHAT/WHY).
-- `/agent-spec-hld`: Generate the High Level Design (Architecture/Mermaid).
-- `/agent-spec-lld`: Generate the Low Level Design (Classes/Schemas).
+## SDLC pipeline
 
-### The Execution Engine
-- `/agent-spec-implement`: Triggers the 6-Gate coding pipeline.
-- `/agent-spec-review`: Deep, skeptical code review against SOLID/Security standards.
-- `/agent-spec-solid-check`: Specifically audits a file for SOLID violations.
+`/agent-spec-intent` (optional) → requirements → tech-spec → prd → hld → lld → implement →
+review → testing → webapp-testing → validation.
 
-### Memory & State
-- `/agent-spec-index-project`: Runs Graphify to build/update `KNOWLEDGE-GRAPH.md`.
-- `/agent-spec-snapshot`: Generates `SESSION-SNAPSHOT.md` to save state.
-- `/agent-spec-debt`: Analyzes code and logs findings to `TECH-DEBT-REGISTER.md`.
+Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd`
+`/agent-spec-hld` `/agent-spec-lld` `/agent-spec-implement` `/agent-spec-review`
+`/agent-spec-testing` `/agent-spec-validation` · UI: `/agent-spec-webapp-testing`.
 
-### Context Management (Token Savers)
-- `/agent-spec-raw-code`: Minimal output. Code only. No pleasantries.
-- `/agent-spec-raw-code`: Short, actionable replies at two levels, `full` and `lite`.
-- `/agent-spec-raw-code-full`: Adds the tool-traffic discipline, which is 92% of what a conversation accumulates.
-- `/agent-spec-verbose`: Restores default chatty behavior.
+## Workflows
 
----
+- `/agent-spec-hub-runner` — run a workflow skill step by step with Task subagents; run state via `bin/agent-spec-run.py`
+- `/agent-spec-wf-example` — read-only fixture workflow (gather → analyze → summarize)
+- `/agent-spec-wf-rca <KEY>` — Jira (MCP) → graph + blast radius → log parse → cited root cause
+- `/agent-spec-wf-pr-review <branch|PR>` — diff → review → validate each finding
+- `/agent-spec-wf-fix-plan <rca run id>` — RCA follow-on: test-first fix plan behind a human gate
+- `/agent-spec-wf-eval` — golden-ticket score of the RCA workflow vs the BugBot baseline (`evals/`)
+- `/agent-spec-learn distill|recall|propose` — experience store to facts, recall, skill proposals
+- New workflows: `skills/agent-spec-wf-<name>/SKILL.md` with a ```steps block; check with `agent-spec-run.py validate`
 
-## How Skills Are Installed
+## Context modes
 
-Every skill is authored once, in `skills/claude/<name>/SKILL.md`. Claude Code, Cursor and
-the generic agents all read that same shape, so the installer copies it directly. One
-tree, no translations, nothing to regenerate.
+- `/agent-spec-raw-code` — short actionable replies (`full` / `lite`)
+- `/agent-spec-raw-code-full` — batch, graph, Edit, cap output; Complexity Override for hard algorithms
+- `/agent-spec-compact` — snapshot then new chat
+- `/agent-spec-verbose` — normal prose
 
-`bin/install.sh` installs skills **machine-wide** by default, so they are available in
-every project without a per-project step:
+## Router and specialists
 
-- **Claude**: `~/.claude/skills/<name>/SKILL.md` (and the Windows home, on WSL)
-- **Cursor**: `~/.cursor/skills/<name>/SKILL.md` — on-demand skills, not always-on rules
-- **Antigravity / generic**: `.agents/skills/<name>/SKILL.md` per project
+- `/agent-spec` — picks one skill from pipeline state
+- `/agent-spec-persona <role>` — expert lens with Absolute Rules
+- `/agent-spec-self-review` `/agent-spec-solid-check` `/agent-spec-debt`
+- `/agent-spec-doc-coauthoring` `/agent-spec-prompt-audit` `/agent-spec-skill-creator` `/agent-spec-mcp-builder`
 
-`--project-skills` additionally writes `.claude/skills/` and `.cursor/skills/` inside the
-repo, for teams that want them committed. See [`docs/agents.md`](../docs/agents.md).
+## Authoring
+
+Skills live under `skills/<name>/SKILL.md`. `./install.sh` copies to `~/.cursor/skills/`.
+`--project-skills` also writes `<workspace>/.cursor/skills/`.
+
+See [docs/QUICKSTART.md](../docs/QUICKSTART.md) and [docs/QUICKSTART.md](../docs/QUICKSTART.md).

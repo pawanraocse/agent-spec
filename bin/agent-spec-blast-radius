@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+"""Blast radius for one file (S-001): a coloured wrapper over `graphify-cli.py query --file`.
+
+  agent-spec-blast-radius --file <path> [--depth N] [--no-color]
+
+Run from the project root (where .agent-spec/graph lives). Exit 0 on success, 2 on an
+unknown or ambiguous file or a missing graph. Colour is off when stdout is not a TTY,
+NO_COLOR is set, or --no-color is given.
+"""
+import argparse
+import os
+import subprocess
+import sys
+
+CLI = os.path.join(os.path.dirname(os.path.abspath(__file__)), "graphify-cli.py")
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--file", required=True)
+    ap.add_argument("--depth", type=int, default=10, help="transitive levels (default 10)")
+    ap.add_argument("--no-color", action="store_true")
+    args = ap.parse_args(argv)
+
+    res = subprocess.run([sys.executable, CLI, "query", "--file", args.file,
+                          "--depth", str(args.depth)], capture_output=True, text=True)
+    if res.returncode != 0:
+        sys.stderr.write((res.stdout + res.stderr).strip() + "\n")
+        return 2
+
+    node, direct, trans, section = args.file, [], [], None
+    for line in res.stdout.splitlines():
+        if line.startswith("=== "):
+            node = line.strip("= ")
+        elif line.startswith("[BLAST RADIUS depth"):
+            section = trans
+        elif line.startswith("[BLAST RADIUS]"):
+            section = direct
+        elif line.startswith("["):
+            section = None
+        elif line.startswith("  <- ") and section is not None:
+            section.append(line[5:].strip())
+
+    color = not (args.no_color or os.environ.get("NO_COLOR") or not sys.stdout.isatty())
+
+    def c(code, text):
+        return "\033[%sm%s\033[0m" % (code, text) if color else text
+
+    print(c("1;36", "Blast radius: " + node))
+    for title, items, code in (("Direct dependents", direct, "1;31"),
+                               ("Transitive dependents", trans, "1;33")):
+        print("\n" + c(code, "%s (%d)" % (title, len(items))))
+        for i in items:
+            print("  " + i)
+        if not items:
+            print("  " + c("2", "(none)"))
+    print("\n" + c("1;32", "Total: %d files affected" % (len(direct) + len(trans))))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

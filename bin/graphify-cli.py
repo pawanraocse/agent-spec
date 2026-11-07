@@ -353,6 +353,49 @@ def cmd_context(graph, args):
     return 0
 
 
+def _need_symbols(graph):
+    if "symbols" in graph:
+        return True
+    print("Graph has no symbols. Rebuild it: ./.agent-spec/bin/agent-spec-index")
+    return False
+
+
+def cmd_symbols(graph, args):
+    """Classes, functions and methods declared in one file."""
+    if not _need_symbols(graph):
+        return 0
+    node = match_node(graph, args.file)
+    if node is None:
+        return 0
+    syms = sorted((s for s in graph["symbols"] if s["file"] == node), key=lambda s: s["line"])
+    print(f"=== {len(syms)} symbols in {node} ===")
+    for s in syms:
+        print(f"  {s['id'].split('::', 1)[1]:<40} {s['kind']:<9} ({s['file']}:{s['line']})")
+    return 0
+
+
+def cmd_callers(graph, args):
+    """Symbols that call the named symbol (name-resolved; `?` marks low confidence)."""
+    if not _need_symbols(graph):
+        return 0
+    want = args.symbol
+    hits = [s for s in graph["symbols"]
+            if s["id"] == want or s["id"].split("::", 1)[1] == want
+            or s["id"].split("::", 1)[1].endswith("." + want)]
+    if not hits:
+        print(f"No symbol matching '{want}'.")
+        return 0
+    callers = defaultdict(list)
+    for e in graph.get("calls", []):
+        callers[e["target"]].append(e)
+    for s in hits:
+        found = callers.get(s["id"], [])
+        print(f"=== {len(found)} callers of {s['id']} ({s['file']}:{s['line']}) ===")
+        for e in sorted(found, key=lambda x: x["source"]):
+            print(f"  {'?' if e.get('confidence') == 'low' else ' '} {e['source']}")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="Graphify query engine")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -395,6 +438,14 @@ def main():
     p.add_argument("--task", required=True)
     p.add_argument("--budget", type=int, default=12, help="Maximum files to return")
     p.set_defaults(func=cmd_context)
+
+    p = sub.add_parser("symbols", help="Classes, functions and methods in one file")
+    p.add_argument("--file", required=True)
+    p.set_defaults(func=cmd_symbols)
+
+    p = sub.add_parser("callers", help="Who calls a symbol (name-resolved)")
+    p.add_argument("--symbol", required=True)
+    p.set_defaults(func=cmd_callers)
 
     args = parser.parse_args()
     sys.exit(args.func(load_graph(), args))

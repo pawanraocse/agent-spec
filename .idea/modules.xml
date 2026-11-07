@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/agent-spec.iml" filepath="$PROJECT_DIR$/.idea/agent-spec.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/algosec-agent-spec.iml" filepath="$PROJECT_DIR$/.idea/algosec-agent-spec.iml" />
     </modules>
   </component>
 </project>

@@ -1,28 +1,36 @@
+# Local / OS
 .DS_Store
-.agent-spec/graph/knowledge-graph.json
-.agent-spec/graph/KNOWLEDGE-GRAPH.md
-.agent-spec/sdlc/*.md
-!.agent-spec/sdlc/README.md
-.agent-spec/SESSION-SNAPSHOT.md
-node_modules/
-dist/
-build/
-.env
+.idea/
 *.log
-
-# Local test init artifacts
-/.agent-spec/
-/.agents/
-/.claude/
-/.cursor/
-
-# Python bytecode
 __pycache__/
 *.py[cod]
+.env
+.env.*
 
-# Graphify incremental cache — regenerated on every index run
-.agent-spec/graph/.cache.json
+# Dependencies / build (if any appear)
+node_modules/
+dist/
+!bin/aspec_platform/ui/dist/
+build/
+target/
 
-# Benchmark and A/B working state — regenerated per run
-.agent-spec/benchmark/
-.agent-spec/ab/
+# Never commit dogfood install state inside this package
+.agent-spec/
+.agents/
+.claude/
+.cursor/rules/
+.cursor/hooks.json
+.cursor/hooks/
+.cursor/agents/
+.cursor/skills/
+
+# Keep package sources; ignore accidental local Cursor user state
+*.swp
+*~
+
+# Platform extra (P2)
+.venv-platform/
+.agent-spec/platform/
+*.db
+*.db-wal
+*.db-shm

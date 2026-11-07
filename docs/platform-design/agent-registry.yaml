@@ -1,0 +1,38 @@
+# Agent Hub Registry
+# 
+# This file catalogs all agents registered with the framework.
+# The orchestrator uses this to discover workflows and validate inputs.
+#
+# To register a new agent, add an entry here and provide a valid workflow.yaml
+# in the specified directory.
+
+agents:
+  # The universal failure investigation agent
+  # ----------------------------------------
+  - id: rca-investigation
+    name: "RCA Intelligence Loop"
+    description: "Investigates CI failures, support tickets, and customer incidents."
+    owner: "team-platform"
+    tier: "prototype" # prototype | candidate | verified
+    path: "agents/rca-investigation"
+    entry_workflow: "workflow.yaml"
+    triggers:
+      - type: webhook
+        source: jenkins
+      - type: manual
+        source: cursor
+
+  # The pull request intelligence agent
+  # ----------------------------------------
+  - id: pr-review
+    name: "PR Intelligence Loop"
+    description: "Multi-repo, structural pull request review."
+    owner: "team-platform"
+    tier: "prototype"
+    path: "agents/pr-review"
+    entry_workflow: "workflow.yaml"
+    triggers:
+      - type: webhook
+        source: bitbucket
+      - type: manual
+        source: cursor

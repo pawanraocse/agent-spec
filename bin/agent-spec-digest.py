@@ -12,6 +12,7 @@ silent in projects that do not use the framework.
 """
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -104,18 +105,139 @@ def remembered():
     return ""
 
 
+REBUILD_HINT = "./.agent-spec/bin/agent-spec-index"
+BUILD_LOCK_EXIT = 3  # graphify-build.py --quiet exits with this when another build holds the lock
+
+
+def ensure_fresh_graph():
+    """Ensure knowledge-graph.json is fresh before assembling digest; return its state.
+
+    Runs a cache-backed incremental build (<100ms) on session start so uncommitted
+    local file additions, edits, or deletes on the same branch are immediately reflected
+    without manual indexing. Guaranteed fail-open with a timeout (default 3s,
+    AGENT_SPEC_BUILD_TIMEOUT) and process concurrency locking.
+
+    Returns a short label for the digest: "fresh", "incremental (42ms, 3 reparsed)",
+    "stale (lock held ...)", "stale (timeout ...)", "stale (build failed ...)", or ""
+    when there is no builder to ask.
+    """
+    if not os.path.isdir(SPEC):
+        return ""
+
+    candidates = [
+        os.path.join(SPEC, "bin", "graphify-build.py"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "graphify-build.py"),
+    ]
+    builder = next((b for b in candidates if os.path.isfile(b)), None)
+    if not builder:
+        return ""
+
+    try:
+        timeout = float(os.environ.get("AGENT_SPEC_BUILD_TIMEOUT", "3"))
+    except ValueError:
+        timeout = 3.0
+    try:
+        res = subprocess.run([sys.executable, builder, "--quiet"], cwd=ROOT,
+                             capture_output=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return "stale (timeout %gs — large repo or slow disk; run %s)" % (timeout, REBUILD_HINT)
+    except Exception:
+        return "stale (build did not run — run %s)" % REBUILD_HINT
+
+    if res.returncode == BUILD_LOCK_EXIT:
+        return "stale (lock held — another build is running; graph may lag a moment)"
+    if res.returncode != 0:
+        return "stale (build failed — run %s)" % REBUILD_HINT
+    status = load_json(os.path.join(SPEC, "graph", ".status.json")) or {}
+    if not status.get("reparsed"):
+        return "fresh"
+    return "incremental (%sms, %s reparsed)" % (status.get("duration_ms", "?"), status["reparsed"])
+
+
+TEAM_KEYS = {
+    "java_version": lambda v: re.fullmatch(r"\d+(\.\d+)*", v) is not None,
+    "node_version": lambda v: re.fullmatch(r"\d+(\.\d+)*", v) is not None,
+    "sdlc_track": lambda v: v in ("fast-track", "algorithm", "design", "full"),
+    "default_branch": lambda v: re.fullmatch(r"[\w./-]+", v) is not None,
+}
+
+
+def parse_team_yaml(text):
+    """Flat `key: value` subset (stdlib only). Returns (valid {key: value}, [error strings]).
+
+    Unknown keys, malformed lines and invalid values are reported, never injected: a
+    typo in team defaults must not become an instruction in every session.
+    """
+    valid, errors = {}, []
+    for n, raw in enumerate(text.split("\n"), 1):
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        if ":" not in line:
+            errors.append("line %d: not 'key: value'" % n)
+            continue
+        key, value = (p.strip().strip("'\"") for p in line.split(":", 1))
+        check = TEAM_KEYS.get(key)
+        if check is None:
+            errors.append("line %d: unknown key '%s'" % (n, key))
+        elif not check(value):
+            errors.append("line %d: invalid value for %s" % (n, key))
+        else:
+            valid[key] = value
+    return valid, errors
+
+
+def team_line():
+    text = read(os.path.join(SPEC, "team.yaml"))
+    if not text:
+        return ""
+    valid, _ = parse_team_yaml(text)
+    if not valid:
+        return ""
+    return "team: " + " ".join("%s=%s" % kv for kv in valid.items())
+
+
+def doctor_line():
+    """One line from the doctor's quick mode; empty when the doctor is not installed."""
+    candidates = [
+        os.path.join(SPEC, "bin", "agent-spec-doctor.py"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "agent-spec-doctor.py"),
+    ]
+    script = next((c for c in candidates if os.path.isfile(c)), None)
+    if not script:
+        return ""
+    try:
+        out = subprocess.run([sys.executable, script, "--line"], cwd=ROOT,
+                             capture_output=True, text=True, timeout=2)
+    except Exception:
+        return ""
+    return out.stdout.strip()[:200]
+
+
 def build_digest():
     """Assemble the digest text, or "" when this is not an agent-spec project."""
     if not os.path.isdir(SPEC):
         return ""
 
+    graph_status = ensure_fresh_graph()
+
     out = ["<agent-spec-digest>"]
 
     if os.path.exists(os.path.join(SPEC, ".onboarding-needed")):
-        out.append("ONBOARDING NEEDED — run /agent-spec-onboard before anything else.")
+        out.append("ONBOARDING NEEDED (agent action, automatic) — run `/agent-spec-onboard` now, "
+                   "silently, before answering. Never ask the user to run it.")
 
     out.append(graph_line())
+    if graph_status:
+        out.append("graph: " + graph_status)
     out.append("pipeline: " + gate())
+
+    team = team_line()
+    if team:
+        out.append(team)
+    doctor = doctor_line()
+    if doctor:
+        out.append(doctor)
 
     summary = last_snapshot_summary()
     if summary:
@@ -151,7 +273,8 @@ def cursor_hook():
     the {"additional_context": ...} envelope Cursor injects into the session. Always
     prints valid JSON — {} when there is nothing to add — so the hook never fails."""
     try:
-        sys.stdin.read()
+        if not sys.stdin.isatty():
+            sys.stdin.read()
     except Exception:
         pass
     text = build_digest()

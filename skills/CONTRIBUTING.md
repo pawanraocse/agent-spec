@@ -1,29 +1,22 @@
-# Contributing Custom Skills
+# CONTRIBUTING (Cursor-only)
 
-> **Extend agent-spec with your own workflows.**
+This package targets **Cursor** only. Do not add Claude Code harnesses, `CLAUDE.md`, or
+`~/.claude` install paths.
 
-If you build a workflow that makes your AI agent more effective, we want it in `agent-spec`.
+## How to submit a skill
 
-## How to Submit a Skill
+1. Write `skills/<name>/SKILL.md` — YAML frontmatter (`name`, `description`) plus body.
+2. Nothing to render. Cursor reads `SKILL.md` directly; `./install.sh` copies to
+   `~/.cursor/skills/`.
+3. Open a PR against `skills/`.
 
-1. **Write it once**: `skills/claude/<name>/SKILL.md` — YAML frontmatter (`name`,
-   `description`) plus a markdown body. This is the only hand-edited copy.
-2. **Nothing to render.** Claude, Cursor and the generic agents all read the same
-   `SKILL.md` shape, so the installer copies `skills/claude/` straight to each
-   destination. There is one tree and no generated copies to keep in step.
-3. **Open a PR** against `skills/claude/`.
+## Design guidelines
 
-## Skill Design Guidelines
+- **No magic**: say what to read and write.
+- **Enforce state**: durable decisions go to memory / PROJECT-INDEX / SDLC docs.
+- **Fail gracefully**: stop and ask when required context is missing.
 
-When designing a new skill, adhere to the `agent-spec` philosophy:
-
-- **No Magic**: Skills should explicitly tell the agent what to read and what to write.
-- **Enforce State**: If a skill generates a decision, it must instruct the agent to log that decision in `PROJECT-INDEX.md` or a similar memory file.
-- **Fail Gracefully**: If the skill requires information that is missing, the prompt must instruct the agent to stop and ask the user, rather than hallucinating the missing data.
-
-## Example: Building a `/security-scan` Skill
-
-A good skill prompt looks like this:
+## Example
 
 ```text
 # Security Scan Skill

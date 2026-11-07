@@ -1,0 +1,9 @@
+{
+  "event": "subagentStop",
+  "sessionId": "sess-1234",
+  "subagentId": "sub-999",
+  "agent": "agent-spec-search",
+  "status": "completed",
+  "durationMs": 1450,
+  "outputBytes": 420
+}

@@ -1,0 +1,38 @@
+# Agent Workflow Definition
+# -------------------------
+# The Python framework reads this file to orchestrate your agent.
+# It defines the steps, which sub-agents to invoke, and execution mode (parallel/sequential).
+
+agent_id: "template-agent"
+version: "1.0.0"
+
+# The pipeline defines the execution graph. Steps run sequentially by default.
+pipeline:
+  
+  # Step 1: Sequential data gathering
+  - step_id: "gather-context"
+    description: "Fetch initial context for the trigger."
+    execution: "sequential"
+    sub_agents:
+      - id: "context-fetcher"
+        handler: "handlers.context_agent"
+
+  # Step 2: Parallel execution (fan-out)
+  - step_id: "investigate"
+    description: "Run specialized agents concurrently."
+    execution: "parallel"
+    sub_agents:
+      - id: "log-analyzer"
+        handler: "handlers.log_agent"
+      - id: "repo-analyzer"
+        handler: "handlers.repo_agent"
+
+  # Step 3: Synthesis and Validation
+  - step_id: "validate"
+    description: "Merge results and validate confidence."
+    execution: "sequential"
+    sub_agents:
+      - id: "validator"
+        handler: "handlers.validation_agent"
+        # The framework automatically merges results from the previous parallel step
+        # and passes them in the context to this sequential step.

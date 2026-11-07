@@ -1,0 +1,6 @@
+{
+  "event": "preCompact",
+  "sessionId": "sess-1234",
+  "contextTokens": 82000,
+  "threshold": 80000
+}

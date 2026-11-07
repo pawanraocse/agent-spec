@@ -1,0 +1,25 @@
+# Suites run by agent-spec-selftest.sh section [13]: one test module per line (stdlib, Python 3.9+).
+test_platform_guard
+test_platform_db
+test_backlog
+test_blast_radius
+test_run_dir
+test_resume
+test_status
+test_workflow_validate
+test_redact
+test_ingest_transcripts
+test_ingest_subagents
+test_ingest_gates
+test_ingest_memory
+test_ingest_graph
+test_graph_symbols
+test_api_security
+test_api
+test_savings
+test_ingest_runs
+test_o020_framework_proof
+test_insights
+
+test_agent_exec
+test_platform_data

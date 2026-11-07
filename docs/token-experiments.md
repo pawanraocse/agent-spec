@@ -86,7 +86,9 @@ deferral, which a proxy disables — which is why EXP-10 has to run against Anth
 
 ## The instrument
 
-`bin/agent-spec-wire-recorder.py` is committed because every number above depends on it
+> `agent-spec-wire-recorder.py` and `agent-spec-benchmark.sh` ship in upstream agent-spec only, not in this Cursor-only package.
+
+`agent-spec-wire-recorder.py` is committed because every number above depends on it
 and none of them can be reproduced without it.
 
 ```bash
@@ -97,13 +99,13 @@ setx OLLAMA_HOST "0.0.0.0"          # PowerShell, then restart ollama from the t
 litellm --config litellm-local.yaml --port 4001
 
 # the recorder, between Claude Code and the proxy
-./bin/agent-spec-wire-recorder.py --listen 4002 --upstream http://127.0.0.1:4001 \
+./agent-spec-wire-recorder.py --listen 4002 --upstream http://127.0.0.1:4001 \
                                   --log requests.jsonl
 
 AGENT_SPEC_WIRE_LOG=requests.jsonl \
 ANTHROPIC_BASE_URL=http://127.0.0.1:4002 ANTHROPIC_AUTH_TOKEN=sk-1234 \
 MAX_THINKING_TOKENS=0 \
-  bin/agent-spec-benchmark.sh --metric bytes --model local
+  agent-spec-benchmark.sh --metric bytes --model local
 ```
 
 Three settings are not optional and each cost an afternoon to find:

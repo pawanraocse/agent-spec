@@ -12,6 +12,7 @@ import sys
 import re
 import ast
 import json
+import time
 import argparse
 
 # Cycle detection recurses to the depth of the longest import chain.
@@ -618,7 +619,7 @@ def wire_edges(file_signals, service_by_file, service_roots, aliases=None):
 # The cache is keyed by the parser version, so changing a pattern above
 # invalidates every entry rather than silently serving stale extractions.
 # ---------------------------------------------------------------------------
-PARSER_VERSION = "5.0"
+PARSER_VERSION = "5.1"
 CACHE_PATH = os.path.join(OUTPUT_DIR, ".cache.json")
 
 
@@ -637,14 +638,156 @@ def load_cache(rebuild):
 
 def save_cache(entries):
     try:
-        with open(CACHE_PATH, "w", encoding="utf-8") as fh:
+        tmp_path = CACHE_PATH + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as fh:
             json.dump({"parser": PARSER_VERSION, "files": entries}, fh)
+        os.replace(tmp_path, CACHE_PATH)
     except OSError:
         pass
 
 
+# ---------------------------------------------------------------------------
+# Symbols and calls (D-007)
+#
+# Deterministic and name-based: Python through the AST, Java / Kotlin / TypeScript /
+# JavaScript through line regexes. A symbol is a class, function or method; `calls`
+# holds the bare callee names found in its body. Resolution to a target symbol happens
+# once per build in `resolve_calls`, against the file itself and its imports.
+# ---------------------------------------------------------------------------
+MAX_SYMBOLS_PER_FILE = 200
+MAX_CALLS_PER_SYMBOL = 50
+SYMBOL_EXTS = {".py", ".java", ".kt", ".kts", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}
+NOT_CALLS = {"if", "for", "while", "switch", "catch", "return", "new", "else", "function",
+             "synchronized", "super", "this", "throw", "try", "when", "fun", "elif", "with",
+             "print", "len", "str", "int", "list", "dict", "set", "tuple", "isinstance",
+             "range", "sorted", "sum", "min", "max", "open", "super"}
+_CALL_RE = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
+_MODS = r"(?:(?:public|private|protected|internal|static|final|abstract|synchronized|default|" \
+        r"override|open|suspend|inline|async|readonly|export|data|sealed)\s+)*"
+_CLASS_RE = re.compile(r"^(\s*)" + _MODS + r"(?:class|interface|object|enum)\s+(\w+)")
+_JAVA_METHOD_RE = re.compile(r"^(\s+)" + _MODS + r"(?:<[^>]+>\s+)?[\w<>\[\],.?]+\s+(\w+)\s*\(.*\)"
+                             r"\s*(?:throws [\w., ]+)?\{\s*$")
+_KOTLIN_FUN_RE = re.compile(r"^(\s*)" + _MODS + r"fun\s+(?:<[^>]+>\s*)?(?:[\w.<>?]+\.)?(\w+)\s*\(")
+_JS_FUNC_RE = re.compile(r"^(\s*)(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s*\*?\s*(\w+)")
+_JS_ARROW_RE = re.compile(r"^(\s*)(?:export\s+)?const\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::[^=]+)?=>")
+_JS_METHOD_RE = re.compile(r"^(\s+)" + _MODS + r"(\w+)\s*\([^)]*\)\s*(?::\s*[^{]+)?\{\s*$")
+
+
+def _py_symbols(content):
+    """Symbols from the Python AST, or None on a syntax error."""
+    try:
+        tree = ast.parse(content)
+    except (SyntaxError, ValueError):
+        return None
+    out = []
+
+    def callees(node):
+        names = set()
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Call):
+                fn = sub.func
+                name = fn.id if isinstance(fn, ast.Name) else fn.attr if isinstance(fn, ast.Attribute) else None
+                if name and name not in NOT_CALLS:
+                    names.add(name)
+        return sorted(names)[:MAX_CALLS_PER_SYMBOL]
+
+    def visit(body, prefix, in_class):
+        for node in body:
+            if isinstance(node, ast.ClassDef):
+                qual = prefix + node.name
+                out.append({"name": qual, "kind": "class", "line": node.lineno, "calls": []})
+                visit(node.body, qual + ".", True)
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                out.append({"name": prefix + node.name, "kind": "method" if in_class else "function",
+                            "line": node.lineno, "calls": callees(node)})
+
+    visit(tree.body, "", False)
+    return out
+
+
+def _regex_symbols(rel, content):
+    """Symbols for Java, Kotlin, TypeScript and JavaScript from declaration lines."""
+    ext = os.path.splitext(rel)[1]
+    lines = content.splitlines()
+    found, classes = [], []          # classes: stack of (indent, name)
+    for i, line in enumerate(lines, 1):
+        if not line.strip():
+            continue
+        indent = len(line) - len(line.lstrip())
+        while classes and indent <= classes[-1][0]:
+            classes.pop()
+        m = _CLASS_RE.match(line)
+        if m:
+            name = ".".join([c[1] for c in classes] + [m.group(2)])
+            found.append({"name": name, "kind": "class", "line": i, "calls": [], "_indent": indent})
+            classes.append((indent, m.group(2)))
+            continue
+        if ext == ".java":
+            m = _JAVA_METHOD_RE.match(line)
+        elif ext in (".kt", ".kts"):
+            m = _KOTLIN_FUN_RE.match(line)
+        else:
+            m = _JS_FUNC_RE.match(line) or _JS_ARROW_RE.match(line) or (classes and _JS_METHOD_RE.match(line))
+        if not m or m.group(2) in NOT_CALLS:
+            continue
+        name = ".".join([c[1] for c in classes] + [m.group(2)])
+        found.append({"name": name, "kind": "method" if classes else "function", "line": i,
+                      "calls": [], "_indent": indent})
+    for idx, sym in enumerate(found):
+        if sym["kind"] == "class":
+            continue
+        end = found[idx + 1]["line"] - 1 if idx + 1 < len(found) else len(lines)
+        names = set()
+        for body_line in lines[sym["line"]:end]:        # skip the declaration line itself
+            names.update(n for n in _CALL_RE.findall(body_line) if n not in NOT_CALLS)
+        sym["calls"] = sorted(names)[:MAX_CALLS_PER_SYMBOL]
+    for sym in found:
+        sym.pop("_indent", None)
+    return found
+
+
+def extract_symbols(rel, content):
+    """Symbols for one file: [{name, kind, line, calls}], capped per file."""
+    if os.path.splitext(rel)[1] not in SYMBOL_EXTS:
+        return []
+    syms = _py_symbols(content) if rel.endswith(".py") else _regex_symbols(rel, content)
+    return (syms or [])[:MAX_SYMBOLS_PER_FILE]
+
+
+def resolve_calls(symbols_by_file, adjacency):
+    """`calls` edges between symbol ids.
+
+    A callee name is looked up in the caller's own file first, then in the files it
+    imports. One match is a confident edge; several are kept at `confidence: low`
+    (mirrors `imports_ambiguous`), at most 4 per call.
+    """
+    short = {}
+    for rel, syms in symbols_by_file.items():
+        idx = defaultdict(list)
+        for s in syms:
+            idx[s["name"].rsplit(".", 1)[-1]].append("%s::%s" % (rel, s["name"]))
+        short[rel] = idx
+    edges = []
+    for rel, syms in symbols_by_file.items():
+        imported = sorted(adjacency.get(rel, ()))
+        for s in syms:
+            source = "%s::%s" % (rel, s["name"])
+            for callee in s["calls"]:
+                targets = short[rel].get(callee, [])           # own file shadows imports
+                if not targets:
+                    targets = [t for f in imported for t in short.get(f, {}).get(callee, [])]
+                targets = [t for t in targets if t != source]
+                if len(targets) == 1:
+                    edges.append({"source": source, "target": targets[0], "type": "calls"})
+                else:
+                    for t in targets[:4]:
+                        edges.append({"source": source, "target": t, "type": "calls",
+                                      "confidence": "low"})
+    return edges
+
+
 def parse_file(rel, cache):
-    """Imports plus wire signals for one file, from cache when it has not changed."""
+    """Imports, wire signals and symbols for one file, from cache when it has not changed."""
     full = os.path.join(PROJECT_ROOT, rel)
     try:
         st = os.stat(full)
@@ -662,7 +805,7 @@ def parse_file(rel, cache):
         content = ""
 
     entry = {"stamp": stamp, "imports": extract_imports(rel, content),
-             "signals": extract_signals(content)}
+             "signals": extract_signals(content), "symbols": extract_symbols(rel, content)}
     return entry, True
 
 
@@ -841,6 +984,27 @@ def main():
     args = parser.parse_args()
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+    started = time.monotonic()
+
+    # Process concurrency lock — prevent race conditions between background Git hooks
+    # and synchronous sessionStart indexing.
+    lock_file = None
+    try:
+        import fcntl
+        lock_path = os.path.join(OUTPUT_DIR, ".build.lock")
+        lock_file = open(lock_path, "w")
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (BlockingIOError, OSError):
+            if args.quiet:
+                # Another build is already running; exit without colliding. Exit code 3
+                # tells the digest the graph may lag (git hooks ignore exit codes).
+                sys.exit(3)
+            # If interactive, wait for the running build to complete
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+    except Exception:
+        # Fail-open if fcntl is not available (e.g. non-POSIX Windows fallback)
+        pass
 
     stack = detect_stack()
     files = collect_files()
@@ -856,6 +1020,7 @@ def main():
     adjacency = defaultdict(set)
     layer_of, service_by_file, file_signals, fresh_cache = {}, {}, {}, {}
     endpoint_index = []
+    symbols_by_file = {}
 
     for rel in files:
         ext = os.path.splitext(rel)[1]
@@ -869,6 +1034,8 @@ def main():
         reparsed += 1 if was_parsed else 0
         signals = entry["signals"]
         file_signals[rel] = signals
+        if entry.get("symbols"):
+            symbols_by_file[rel] = entry["symbols"]
 
         layer = classify_layer(rel, is_test)
         service = service_of(rel, service_roots)
@@ -905,6 +1072,13 @@ def main():
                                            load_service_aliases())
     edges.extend(integration_edges)
     violations = layer_violations(edges, layer_of)
+
+    # Symbols and `calls` live in their own arrays so file-level consumers (fan-in, cycles,
+    # layer checks, graphify-cli) never see them.
+    symbol_nodes = [{"id": "%s::%s" % (rel, s["name"]), "type": "symbol", "kind": s["kind"],
+                     "file": rel, "line": s["line"]}
+                    for rel, syms in symbols_by_file.items() for s in syms]
+    call_edges = resolve_calls(symbols_by_file, adjacency)
 
     fan_in = Counter(e["target"] for e in edges if e["type"] == "imports")
     fan_out = Counter(e["source"] for e in edges if e["type"] == "imports")
@@ -949,6 +1123,8 @@ def main():
         "conventions": conventions,
         "nodes": nodes,
         "edges": edges,
+        "symbols": symbol_nodes,
+        "calls": call_edges,
         "external": external.most_common(50),
         "note": ("Edges are resolved to node ids. type=imports is a confident source "
                  "dependency; type=http and type=message are integration edges recovered "
@@ -956,8 +1132,11 @@ def main():
                  "type=imports_ambiguous is a low-confidence import that matched several "
                  "files and is excluded from stats, cycles and layer violations."),
     }
-    with open(os.path.join(OUTPUT_DIR, "knowledge-graph.json"), "w", encoding="utf-8") as fh:
+    target_graph = os.path.join(OUTPUT_DIR, "knowledge-graph.json")
+    tmp_graph = target_graph + ".tmp"
+    with open(tmp_graph, "w", encoding="utf-8") as fh:
         json.dump(graph, fh, indent=2)
+    os.replace(tmp_graph, target_graph)
 
     write_project_index(stack, top_modules(files), stats,
                         os.path.join(PROJECT_ROOT, ".agent-spec", "PROJECT-INDEX.md"))
@@ -965,6 +1144,26 @@ def main():
                    os.path.join(OUTPUT_DIR, "KNOWLEDGE-GRAPH.md"))
     write_conventions(conventions, service_roots, endpoint_index, violations,
                       os.path.join(OUTPUT_DIR, "CONVENTIONS.md"))
+
+    # Freshness signal for the digest and the doctor: what this run did and how long it took.
+    status_path = os.path.join(OUTPUT_DIR, ".status.json")
+    with open(status_path + ".tmp", "w", encoding="utf-8") as fh:
+        json.dump({"state": "ok", "finished": datetime.now().isoformat(),
+                   "duration_ms": int((time.monotonic() - started) * 1000),
+                   "reparsed": reparsed, "files": len(nodes)}, fh)
+    os.replace(status_path + ".tmp", status_path)
+
+    # Platform trend line (D-006): one JSON line per successful build; fail-silent.
+    try:
+        import hashlib
+        with open(target_graph, "rb") as fh:
+            graph_sha = hashlib.sha1(fh.read()).hexdigest()
+        with open(os.path.join(OUTPUT_DIR, "stats-history.jsonl"), "a", encoding="utf-8") as fh:
+            fh.write(json.dumps({"ts": datetime.now().isoformat(timespec="seconds"),
+                                 "files": len(nodes), "edges": len(import_edges), "symbols": len(symbol_nodes),
+                                 "cycles": len(cycles), "sha": graph_sha, "age_s": 0}) + "\n")
+    except Exception:
+        pass
 
     if not args.quiet:
         resolved_pct = 100 * len(import_edges) / max(len(import_edges) + sum(external.values()), 1)

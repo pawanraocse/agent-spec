@@ -122,13 +122,15 @@ cached. Neither figure alone is the answer.
 | 1 | Prompt caching is on and the prefix is stable | **MEASURED, DONE** | cache reads are 56–69% of the bill, which only happens when caching works |
 | 2 | Keep the session warm; do not restart for no reason | **UNKNOWN** | cache TTL reported as ~1h; never measured here |
 | 3 | Do not switch model or effort mid-session | **DONE** | `claude-opus-5`, `CLAUDE_EFFORT=high`, no auto-switching mode in use |
-| 3b | Enforce input discipline rather than asking for it | **SHIPPED, EFFECT UNKNOWN** | `hooks/pre-tool-use.py` refuses a rangeless `Read`, a `Write` over an existing file, `git diff` without `--stat` and `cat` of a large file — once per target per session, so the retry always passes |
+| 3b | Enforce input discipline rather than asking for it | **SHIPPED, EFFECT UNKNOWN** | `hooks/cursor-pre-tool-use.py` refuses a rangeless `Read`, a `Write` over an existing file, `git diff` without `--stat` and `cat` of a large file — once per target per session, so the retry always passes |
 | 4 | Compact or reset a long session | **MEASURED, LARGEST** | 480,083 → 53,191 (−88.9%); 308,223 → 46,101 (−85.0%) |
 | 4b | Whether compact beats a clean reset | **UNKNOWN** | the summary's own output cost has never been isolated |
 | 5 | Filter tool output at source (`head`, `--stat`, `-q`) | **MEASURED, NOT WORTH IT HERE** | tool results are 0.51% of the corpus, 0.05% of this session |
-| 6 | Never read a whole file when a range will do | **ENFORCED, EFFECT UNKNOWN** | asked for in `raw-code-full`, enforced by `hooks/pre-tool-use.py`; still untested — every benchmark task is too short to punish it |
+| 6 | Never read a whole file when a range will do | **ENFORCED, EFFECT UNKNOWN** | asked for in `raw-code-full`, enforced by `hooks/cursor-pre-tool-use.py`; still untested — every benchmark task is too short to punish it |
 | 7 | Do not let the agent loop; set a done condition | **DONE** | `--max-budget-usd`, verify script as arbiter |
 | 8 | Do not ask the model what code can answer | **DONE** | graphify, `agent-spec-tokens.py`, the SessionStart digest |
+| 8b | Audit harness config before blaming the model | **DONE (Cursor)** | `agent-spec-tokens.py audit` / `audit --scan` — hooks, rules, skill twins, memory tree |
+| 8c | Measure harness re-send in transcripts | **DONE (Claude JSONL)** | `agent-spec-tokens.py overhead` — needs `.jsonl` with hook attachments |
 
 ## Tier 2 — architecture
 
@@ -160,7 +162,7 @@ cached. Neither figure alone is the answer.
 
 ## Why a hook and not a skill
 
-Items 3b and 6 moved from a skill body to `hooks/pre-tool-use.py` for a reason that the
+Items 3b and 6 moved from a skill body to `hooks/cursor-pre-tool-use.py` for a reason that the
 rest of this document makes unavoidable. A skill is text the model reads and may or may
 not act on; every reading rule in `raw-code-full` has always been a request. A hook runs
 in the harness before the tool call happens, so it is the only mechanism that can decline
@@ -183,13 +185,6 @@ Four items, in order of how much they could still be worth.
 3. **Items 6 and 10 — reading discipline and cheap subagents.** Both are untested because
    every benchmark task runs eight turns against a small context.
    `04-long-session.task` exists for exactly this and has never completed a run.
-   Two new tasks address the missing complexity quadrants:
-   - `05-needle-in-haystack.task` — large context (1,000-line file), trivial answer: tests whether
-     the agent uses `grep` or the graph (152 B) instead of reading the file (35,966 B).
-   - `06-hard-algorithm.task` — small context, schema migration across multiple call sites:
-     tests whether the agent correctly activates the Complexity Override in `raw-code-full`
-     rather than producing a cheaper wrong answer under strict terse mode.
-   These cover the two off-diagonal quadrants previously missing from the suite.
 
 4. **Input quality, which nothing here addresses.** Every item above makes the input
    smaller. None of them makes it better, and the rule at the foot of this document says
@@ -231,7 +226,7 @@ Ollama is not installed on this machine, and neither is a proxy. Setting it up m
 ollama serve && ollama pull qwen2.5-coder:7b
 pip install 'litellm[proxy]'
 litellm --model ollama/qwen2.5-coder:7b --port 4000
-ANTHROPIC_BASE_URL=http://localhost:4000 bin/agent-spec-benchmark.sh --repeats 3
+ANTHROPIC_BASE_URL=http://localhost:4000 agent-spec-benchmark.sh --repeats 3
 ```
 
 A 7B model will fail tasks a frontier model passes, so completion rate is not comparable
@@ -246,3 +241,4 @@ the chance of a correct first pass, and measure the result in cost per verified 
 
 Our own numbers are the best argument for it: the mode that used 10.5% fewer tokens cost
 2.3% more.
+> **Note (algosec-agent-spec):** Off-diagonal benchmark tasks `05-needle-in-haystack` and `06-hard-algorithm` live in upstream agent-spec only; this Cursor-only package does not ship `benchmarks/`.

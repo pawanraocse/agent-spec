@@ -1,0 +1,9 @@
+{"role": "user", "message": {"content": [{"type": "text", "text": "<timestamp>Thursday, Oct 29, 2026, 5:46 PM (UTC+5:30)</timestamp>\n<user_query>\nFix the login. Use password=hunter22xyz and header 'Authorization: Bearer abc123.def456-ghi'.\n</user_query>"}]}}
+{"role": "assistant", "message": {"content": [{"type": "thinking", "thinking": "SYNTHETIC-PRIVATE-REASONING-SENTINEL"}, {"type": "text", "text": "Reading the skill and the big file."}, {"type": "tool_use", "name": "Read", "input": {"path": "skills/demo/SKILL.md"}}, {"type": "tool_use", "name": "Read", "input": {"path": "big.txt"}}, {"type": "tool_use", "name": "Read", "input": {"path": "big.txt", "offset": 1, "limit": 50}}]}}
+{"role": "assistant", "message": {"content": [{"type": "tool_use", "name": "Shell", "input": {"command": "echo token=sk_live_abcdef123456 && ls"}}, {"type": "tool_use", "name": "Task", "input": {"subagent_type": "explore", "model": "composer-2.5", "prompt": "find things"}}]}}
+{"type": "turn_ended", "status": "success"}
+{"role": "user", "message": {"content": [{"type": "text", "text": "<timestamp>Thursday, Oct 29, 2026, 5:50 PM (UTC+5:30)</timestamp>\n<user_query>\nSecond prompt\n</user_query>"}]}}
+{"role": "assistant", "message": {"content": [{"type": "text", "text": "Done."}]}}
+{"type": "status", "note": "no role here"}
+{"type": "turn_ended", "status": "error", "error": "user_stopped_generation"}
+{not valid json
