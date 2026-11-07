@@ -90,10 +90,28 @@ report their real output. Typo or comment-only edits: declaration only.
 
 ## Context discipline
 
-Prefer graph/query and ranged reads over whole-file dumps. Broad sweeps → Task
-`agent-spec-search`. Noisy builds/tests → Task `agent-spec-verify`. At task boundaries
+Prefer graph/query and ranged reads over whole-file dumps. At task boundaries
 run `/agent-spec-snapshot` then `/agent-spec-compact` (new Cursor chat — not Claude
 `/compact`).
+
+### Subagent Auto-Delegation
+
+To keep the main conversation context compact, automatically delegate noisy operations:
+
+1. **Broad Discovery → Task `agent-spec-search`**:
+   - Searches across >= 3 files or directory trees.
+   - Symbol definition or caller sweeps across the repo.
+   - *Contract*: Returns only `path:line` citations (max 10) — never raw file dumps.
+
+2. **Noisy Builds & Test Suites → Task `agent-spec-verify`**:
+   - Full test suite runs (`pytest`, `mvn test`, `npm test`) or builds (`npm run build`).
+   - Any command producing > 30 lines of terminal output.
+   - *Contract*: Executes command, discards raw stdout, returns `VERDICT: PASS|FAIL`,
+     summary, and only failing assertions (`assert — file:line`).
+
+3. **Session Review & Governance → Task `agent-spec-reviewer`**:
+   - Evaluating compliance or auditing session events against the governance rubric.
+   - *Contract*: Produces `.agent-spec/metrics/reviews/<session>.json` with AI-judged evidence.
 
 ### Tool discipline
 
