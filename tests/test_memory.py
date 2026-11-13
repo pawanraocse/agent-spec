@@ -83,6 +83,17 @@ def test_add_warns_on_near_duplicate():
         assert "CONFLICT" in r2.stdout or "DUP" in r2.stdout, r2.stdout
 
 
+def test_add_records_addresses_for_learning_view():
+    with tempfile.TemporaryDirectory() as t:
+        os.makedirs(os.path.join(t, ".agent-spec", "memory", "facts"))
+        r = run(t, "add", "--type", "constraint", "--subject", "input discipline",
+                "--addresses", "whole_file_read, No-Graph-Query", "Query the graph before reading a large file.")
+        assert r.returncode == 0, r.stderr
+        facts = os.listdir(os.path.join(t, ".agent-spec", "memory", "facts"))
+        body = open(os.path.join(t, ".agent-spec", "memory", "facts", facts[0])).read()
+        assert "addresses: whole_file_read, no_graph_query\n" in body, body
+
+
 def test_index_one_line_per_fact_and_check():
     with tempfile.TemporaryDirectory() as t:
         write_fact(t, "a", "decision", "database", "We use PostgreSQL 16 for orders storage.")
@@ -265,3 +276,35 @@ if __name__ == "__main__":
         fn()
         print("  ok", fn.__name__)
     print("%d memory tests passed" % len(tests))
+
+
+def test_rotate_splits_dated_headings_and_merges_index():
+    """rotate must treat '## <date>' and '## Session <date>' as sections, not only
+    '# Session Snapshot', and must rebuild one index rather than stack a second."""
+    with tempfile.TemporaryDirectory() as t:
+        spec = os.path.join(t, ".agent-spec")
+        os.makedirs(spec)
+        pad = "- filler line for size\n" * 150
+        text = ("# Session Snapshot — 2026-10-28T13:56\n\n## Session Summary\nFirst one.\n\n" + pad
+                + "\n## 2026-10-29 — second\n\n### Done\n- Second section.\n" + pad
+                + "\n## Archived sections\n> Moved to `old.md`. Nothing is deleted.\n"
+                + "- **2026-10-27** — earliest.\n\n"
+                + "## Session 2026-10-31 — third\n\n### Done\n- Third section.\n" + pad
+                + "\n## 2026-11-13 — fourth\n\n### Done\n- Fourth section.\n" + pad)
+        live = os.path.join(spec, "SESSION-SNAPSHOT.md")
+        with open(live, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        out = run(t, "rotate")
+        assert out.returncode == 0 and "archived 2 sections" in out.stdout, out.stdout + out.stderr
+        body = open(live, encoding="utf-8").read()
+        assert body.count("## Archived sections") == 1, body
+        assert body.rstrip().endswith("Second section."), body[-300:]
+        assert "- **2026-10-27** — earliest." in body
+        assert "- **2026-10-28T13:56** — First one." in body
+        assert "## Session 2026-10-31 — third" in body and "## 2026-11-13 — fourth" in body
+        assert "## 2026-10-29 — second" not in body
+        archive = os.listdir(os.path.join(spec, "memory", "snapshots"))
+        assert len(archive) == 1, archive
+        arch = open(os.path.join(spec, "memory", "snapshots", archive[0]), encoding="utf-8").read()
+        assert "## 2026-10-29 — second" in arch and "First one." in arch
+        assert "Third section." not in arch

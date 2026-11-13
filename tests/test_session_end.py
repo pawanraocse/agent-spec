@@ -91,9 +91,13 @@ def test_merge_registers_events_with_timeouts_idempotently():
         assert subprocess.run([sys.executable, MERGE, path]).returncode == 0
     hooks = json.load(open(path))["hooks"]
     for event in ("sessionStart", "preToolUse", "sessionEnd", "stop"):
-        mine = [h for h in hooks[event] if "agent-spec" in h["command"]]
+        mine = [h for h in hooks[event] if "agent-spec" in h["command"] and "cursor-event" not in h["command"]]
         assert len(mine) == 1, (event, hooks[event])
         assert isinstance(mine[0]["timeout"], int) and mine[0]["timeout"] >= 5
+    # DV-001: the event spine is registered once per traced event, `stop` included.
+    for event in ("beforeSubmitPrompt", "postToolUse", "subagentStop", "afterAgentResponse", "stop"):
+        spine = [h for h in hooks[event] if "agent-spec-cursor-event" in h["command"]]
+        assert len(spine) == 1, (event, hooks[event])
     assert hooks["sessionStart"][0]["timeout"] >= 10, "digest worst case is ~5 s"
     assert any(h["command"] == "./foreign.sh" for h in hooks["stop"]), "foreign handler must survive"
     subprocess.run([sys.executable, UNMERGE, path], check=True)

@@ -2,6 +2,11 @@
 name: "agent-spec-wf-rca"
 description: >-
   Root-cause a Jira bug: Jira via MCP, graph context and blast radius, log parse, cited root cause. Run via /agent-spec-hub-runner. Input is a Jira key.
+dashboard:
+  category: Workflow
+  icon: bug
+  emits: [workflow, run_step]
+  steps: [fetch, graph, logs, rca]
 ---
 
 # agent-spec-wf-rca

@@ -13,7 +13,7 @@ from .common import agent_spec_dir
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Append-only. SCHEMA_VERSION == len(MIGRATIONS); never edit a shipped migration.
-MIGRATIONS = ["schema.sql", "schema_v2_demo_seed.sql"]
+MIGRATIONS = ["schema.sql", "schema_v2_demo_seed.sql", "schema_v3_traces.sql"]
 SCHEMA_VERSION = len(MIGRATIONS)
 BUSY_TIMEOUT_MS = 5000
 

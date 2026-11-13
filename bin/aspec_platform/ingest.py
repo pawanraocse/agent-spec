@@ -39,7 +39,7 @@ TASK_TOOLS = ("Task", "Subagent")
 SKILL_TOOLS = ("Skill", "skill")
 PROMPT_CAP = 2000
 VALUE_CAP = 300
-ALL = ("events", "transcripts", "gates", "memory", "graph", "quarantine", "runs", "experiences")
+ALL = ("events", "transcripts", "gates", "memory", "graph", "quarantine", "runs", "experiences", "traces")
 
 _USER_QUERY = re.compile(r"<user_query>\s*(.*?)\s*</user_query>", re.S)
 _TS_TAG = re.compile(r"<timestamp>.*?</timestamp>\s*", re.S)
@@ -596,7 +596,41 @@ def _ingest_run_dir(conn, rd, stats) -> None:
                                     "skill": actor.get("skill"), "attempt": p.get("attempt"),
                                     "error": p.get("error")}))))
         stats["steps"] += 1
+    _run_trace(conn, run, rid, steps)
     stats["runs"] += 1
+
+
+def _run_trace(conn, run, rid, steps) -> None:
+    """DV-011: a workflow run is a trace; each step a `run_step` span under a `workflow` span.
+    When run.json carries the triggering `generation_id`, the API shows the run inside that
+    request's trace (traces.all_traces)."""
+    from . import traces as tr
+    tid = "run-%s" % rid
+    start, end = tr.ms(_to_utc(run["started"])) if run.get("started") else None, \
+        tr.ms(_to_utc(run["finished"])) if run.get("finished") else None
+    root = "%s#wf:%s" % (tid, rid)
+    spans = [{"span_id": root, "trace_id": tid, "parent_span_id": None, "kind": "workflow",
+              "name": str(run.get("workflow_id") or "workflow"), "start": tr.iso(start), "end": tr.iso(end),
+              "duration_ms": (end - start) if start and end else None, "status": str(run.get("status") or "running"),
+              "seq": 0, "attributes": {"run_id": rid, "workflow_version": run.get("workflow_version"),
+                                       "generation_id": run.get("generation_id")}}]
+    for n, s in enumerate(steps):
+        p, actor = s.get("payload") or {}, s.get("actor") or {}
+        fin, dur = tr.ms(s.get("ts")), int(s.get("duration_ms") or 0)
+        spans.append({"span_id": "%s:%s" % (root, s["step_id"]), "trace_id": tid, "parent_span_id": root,
+                      "kind": "run_step", "name": str(s["step_id"]), "start": tr.iso(fin - dur) if fin else None,
+                      "end": tr.iso(fin), "duration_ms": dur, "status": str(p.get("status") or "success"), "seq": n + 1,
+                      "attributes": redact_obj({"agent": actor.get("agent"), "skill": actor.get("skill"),
+                                                "model": actor.get("model"), "attempt": p.get("attempt"),
+                                                "error": p.get("error")})})
+    trace = {"trace_id": tid, "session_id": str(run.get("conversation_id") or "run-%s" % rid), "source": "run",
+             "prompt": redact(str(run.get("request") or ""))[:PROMPT_CAP], "start": tr.iso(start), "end": tr.iso(end),
+             "duration_ms": spans[0]["duration_ms"], "status": spans[0]["status"], "span_count": len(spans),
+             "tool_count": 0, "subagent_count": 0, "guard_count": 0, "edit_count": 0,
+             "error_count": sum(1 for x in spans if x["status"] in ("failed", "error")), "skills": [],
+             "provenance": "measured"}
+    conn.execute("DELETE FROM spans WHERE trace_id = ?", (tid,))
+    tr.persist(conn, [trace], spans, [])
 
 
 def ingest_runs(conn, project) -> dict:
@@ -693,7 +727,27 @@ def ingest_events(conn, project) -> dict:
     return dict(stats)
 
 
-SOURCES = {"events": ingest_events, "transcripts": ingest_transcripts, "gates": ingest_gates, "memory": ingest_memory,
+def ingest_traces(conn, project) -> dict:
+    """DV-010: hook events and (unless AGENT_SPEC_CURSOR_STORE=0) Cursor's local store -> traces/spans.
+
+    Derived data, rebuilt whole each run. The API serves hook traces live from events.jsonl;
+    the persisted copy is for SQL consumers and survives log rotation."""
+    from . import traces as tr
+    stats = Counter({"hook_traces": 0, "store_traces": 0, "spans": 0})
+    rows, _ = tr.read_events(tr.events_path(project))
+    h_traces, h_spans = tr.build_from_events(rows)
+    tr.persist(conn, h_traces, h_spans, ["hook"])
+    stats["hook_traces"], stats["spans"] = len(h_traces), len(h_spans)
+    if os.environ.get("AGENT_SPEC_CURSOR_STORE", "1") != "0":
+        from . import cursor_sessions
+        s_traces, s_spans = tr.build_from_store(cursor_sessions.store_conversations())
+        tr.persist(conn, s_traces, s_spans, ["cursor_store"])
+        stats["store_traces"] = len(s_traces)
+        stats["spans"] += len(s_spans)
+    return dict(stats)
+
+
+SOURCES = {"traces": ingest_traces, "events": ingest_events, "transcripts": ingest_transcripts, "gates": ingest_gates, "memory": ingest_memory,
            "graph": ingest_graph, "quarantine": ingest_quarantine, "runs": ingest_runs,
            "experiences": ingest_experiences, "compact": ingest_compact}
 

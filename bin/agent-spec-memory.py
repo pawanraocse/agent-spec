@@ -404,6 +404,11 @@ def cmd_add(args):
         extra += "expires: %s\n" % args.expires
     if args.provenance:
         extra += "provenance: %s\n" % " ".join(args.provenance.split())
+    addresses = [a for a in re.split(r"[,\s]+", (getattr(args, "addresses", None) or "").lower()) if a]
+    if addresses:
+        # DV-050: which review-finding classes this fact should make rarer. The model picks them
+        # at /agent-spec-remember; the dashboard only counts findings before and after `created`.
+        extra += "addresses: %s\n" % ", ".join(re.sub(r"[^a-z0-9_]", "_", a) for a in addresses)
     if old is not None:
         old_version = int(old["version"]) if re.match(r"\d+$", old.get("version", "")) else 1
         extra += "version: %d\nsupersedes: %s\n" % (old_version + 1, old["id"])
@@ -570,18 +575,57 @@ def cmd_prune(args):
     return 0
 
 
+# The snapshot skill has written three heading shapes over time: '# Session Snapshot …',
+# '## <date> …' and '## Session <date> …'. All three start a section. '## Archived
+# sections' starts the index a rotation leaves behind; later snapshots append after it,
+# so it can sit mid-file.
+SECTION_RE = re.compile(r"(?m)^(?=# Session Snapshot\b"
+                        r"|##[ \t]+(?:Session[ \t]+)?\d{4}-\d{2}-\d{2}"
+                        r"|## Archived sections[ \t]*$)")
+INDEX_HEADING = "## Archived sections"
+
+
+def _split_snapshot(text):
+    """Split a snapshot file into (preamble, sections, index_lines).
+
+    Each section keeps its heading line and its trailing newlines, so joining the
+    preamble and the sections reproduces the file minus the index blocks. Every
+    '## Archived sections' block is pulled out, so a rotation rebuilds one index
+    instead of stacking a new one after each run.
+    """
+    chunks = SECTION_RE.split(text)
+    preamble, sections, index = chunks[0], [], []
+    for chunk in chunks[1:]:
+        if chunk.startswith(INDEX_HEADING):
+            index.extend(l for l in chunk.split("\n")[1:] if l.strip())
+        else:
+            sections.append(chunk)
+    return preamble, sections, index
+
+
+def _heading_name(heading):
+    return re.sub(r"^#+\s*(?:Session Snapshot|Session)?\s*", "", heading).strip(" —")
+
+
 def _sections(text):
-    """Split a snapshot file into (heading, body) pairs."""
-    parts = re.split(r"(?m)^# Session Snapshot", text)
-    return [("# Session Snapshot" + p).split("\n", 1) for p in parts[1:]]
+    """Split a snapshot file into (heading, body) pairs, index blocks excluded."""
+    return [sec.partition("\n")[::2] for sec in _split_snapshot(text)[1]]
 
 
 def _summary_line(body):
-    """The first real sentence under '## Session Summary', for an index line."""
+    """The first real sentence of a section, for an index line.
+
+    Older sections carry a '## Session Summary'; dated sections start straight into
+    '### Done' and a bullet list, so fall back to the first line of content.
+    """
     m = re.search(r"(?ms)^## Session Summary\s*\n+(.+?)(?:\n\s*\n|\Z)", body)
-    if not m:
-        return ""
-    return " ".join(m.group(1).split())
+    if m:
+        return " ".join(m.group(1).split())
+    for line in body.split("\n"):
+        line = line.strip()
+        if line and not line.startswith(("#", ">")):
+            return " ".join(line.lstrip("-* ").replace("**", "").split())
+    return ""
 
 
 def cmd_snapshots(args):
@@ -592,13 +636,13 @@ def cmd_snapshots(args):
     if os.path.exists(SNAPSHOT):
         text = open(SNAPSHOT, encoding="utf-8").read()
         for head, body in _sections(text):
-            rows.append(("live", head.replace("# Session Snapshot", "").strip(" —"),
+            rows.append(("live", _heading_name(head),
                          len(body.encode("utf-8")), _summary_line(body)))
     for f in sorted(glob.glob(os.path.join(ARCHIVE, "*.md"))):
         text = open(f, encoding="utf-8").read()
         for head, body in _sections(text):
             rows.append((os.path.basename(f)[:28],
-                         head.replace("# Session Snapshot", "").strip(" —"),
+                         _heading_name(head),
                          len(body.encode("utf-8")), _summary_line(body)))
     if not rows:
         print("no snapshot sections")
@@ -631,14 +675,13 @@ def cmd_rotate(args):
         print("%d B, under the %d B threshold — nothing to rotate." % (size, SNAPSHOT_BYTES))
         return 0
 
-    parts = re.split(r"(?m)^# Session Snapshot", text)
-    head, sections = parts[0], ["# Session Snapshot" + p for p in parts[1:]]
+    preamble, sections, old_index = _split_snapshot(text)
     if len(sections) <= SNAPSHOT_KEEP:
         print("only %d sections — nothing to archive." % len(sections))
         return 0
 
     os.makedirs(ARCHIVE, exist_ok=True)
-    archived = sections[:-SNAPSHOT_KEEP]
+    archived, kept = sections[:-SNAPSHOT_KEEP], sections[-SNAPSHOT_KEEP:]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     target = os.path.join(ARCHIVE, "snapshots-through-%s.md" % stamp)
     with open(target, "w", encoding="utf-8") as fh:
@@ -646,19 +689,18 @@ def cmd_rotate(args):
                  "> Rotated out of SESSION-SNAPSHOT.md on %s. Nothing here is deleted;\n"
                  "> it is moved so the live file stays small enough to load in full.\n\n"
                  % datetime.now().strftime("%Y-%m-%d"))
-        fh.write("\n".join(archived))
+        fh.write("".join(archived))
     # Moving sections out without saying so is how a record quietly stops being
-    # one. The live file keeps a one-line index of everything that left.
-    index = ["\n## Archived sections\n",
-             "> Moved to `%s`. Nothing is deleted.\n"
-             % os.path.relpath(target, ROOT)]
+    # one. The live file keeps a one-line index of everything that left, earlier
+    # rotations included.
+    index = [INDEX_HEADING] + old_index
+    index.append("> Moved to `%s`. Nothing is deleted." % os.path.relpath(target, ROOT))
     for sec in archived:
         h, _, body = sec.partition("\n")
-        index.append("- **%s** — %s\n"
-                     % (h.replace("# Session Snapshot", "").strip(" —"),
-                        (_summary_line(body) or "no summary")[:110]))
+        index.append("- **%s** — %s" % (_heading_name(h),
+                                         (_summary_line(body) or "no summary")[:110]))
     with open(SNAPSHOT, "w", encoding="utf-8") as fh:
-        fh.write(head + "\n".join(sections[-SNAPSHOT_KEEP:]) + "".join(index))
+        fh.write(preamble + "".join(kept).rstrip("\n") + "\n\n" + "\n".join(index) + "\n")
     print("archived %d sections to %s; %d kept."
           % (len(archived), os.path.relpath(target, ROOT), SNAPSHOT_KEEP))
     return 0
@@ -675,6 +717,8 @@ def main():
     p.add_argument("--confidence", default=None, help="HIGH|MEDIUM|LOW (optional)")
     p.add_argument("--expires", default=None, help="YYYY-MM-DD; non-active after this date (optional)")
     p.add_argument("--provenance", default=None, help="session/run id or file this came from (optional)")
+    p.add_argument("--addresses", default=None,
+                   help="comma-separated review finding categories this fact should prevent (optional)")
     p.add_argument("--supersedes", default=None,
                    help="id of the fact this replaces; it is marked superseded, version bumps")
     p.add_argument("text", nargs="+")

@@ -2,6 +2,10 @@
 name: "agent-spec-investigate"
 description: >-
   Diagnose before editing — name the cause with evidence, write no fix. Use for "why is X happening" and failed first attempts.
+dashboard:
+  category: Diagnose
+  icon: search
+  emits: [subagent, tool]
 ---
 
 # investigate

@@ -95,6 +95,52 @@ def cmd_seed(args) -> int:
     return 0
 
 
+def cmd_trace(args) -> int:
+    """DV-040: the review skill's read tool. Prints traces as compact span trees (or JSON)."""
+    from aspec_platform import traces
+    project = common.find_project(args.project)
+    try:
+        conn = db.connect(db.db_path(project), readonly=True) if os.path.isfile(db.db_path(project)) else None
+    except Exception:
+        conn = None
+    all_t, spans = traces.all_traces(project, conn)
+    if args.request:
+        picked = [t for t in all_t if t["trace_id"] == args.request]
+    elif args.session:
+        picked = sorted((t for t in all_t if t["session_id"] == args.session), key=lambda t: t.get("start") or "")
+    else:
+        picked = all_t[:args.list]
+    if args.json:
+        ids = {t["trace_id"] for t in picked}
+        print(json.dumps({"traces": picked, "spans": [s for s in spans if s["trace_id"] in ids]}, indent=1))
+        return 0 if picked else 1
+    if not args.request and not args.session:
+        for t in picked:
+            print("%s  %s  %-9s %6s ms  tools=%d sub=%d guard=%d err=%d  %s" % (
+                t["trace_id"], t["session_id"][:12], t.get("status"), t.get("duration_ms") or "-", t["tool_count"],
+                t["subagent_count"], t["guard_count"], t["error_count"], (t.get("prompt") or "")[:60].replace("\n", " ")))
+        return 0
+    for t in picked:
+        print("# trace %s  session=%s  source=%s  status=%s  duration=%sms  skills=%s" % (
+            t["trace_id"], t["session_id"], t["source"], t.get("status"), t.get("duration_ms"), ",".join(t.get("skills") or [])))
+        print("# prompt: %s" % (t.get("prompt") or "")[:300].replace("\n", " "))
+        mine = [s for s in spans if s["trace_id"] == t["trace_id"]]
+        kids = {}
+        for s in mine:
+            kids.setdefault(s.get("parent_span_id"), []).append(s)
+
+        def walk(parent, depth):
+            for s in sorted(kids.get(parent, []), key=lambda x: (x.get("start") or "", x.get("seq") or 0)):
+                a = s.get("attributes") or {}
+                note = a.get("target") or a.get("task") or a.get("summary") or a.get("text") or a.get("error_message") or ""
+                print("%s%s  %s %s  %s  %sms  in=%s out=%s  %s" % (
+                    "  " * depth, s["span_id"], s["kind"], s["name"][:40], s.get("status"), s.get("duration_ms"),
+                    a.get("bytes_in", "-"), a.get("bytes_out", "-"), str(note)[:120].replace("\n", " ")))
+                walk(s["span_id"], depth + 1)
+        walk(None, 0)
+    return 0 if picked else 1
+
+
 def cmd_serve(args) -> int:
     from aspec_platform import serve
     return serve.main(args)
@@ -112,7 +158,7 @@ def main(argv=None) -> int:
     p.set_defaults(fn=cmd_status)
     p = sub.add_parser("ingest", help="import files into platform.db (idempotent)")
     p.add_argument("what", nargs="*",
-                   help="transcripts gates memory graph backlog runs quarantine experiences (default: all)")
+                   help="events transcripts gates memory graph quarantine runs experiences traces (default: all)")
     p.add_argument("--project")
     p.add_argument("--rebuild", action="store_true", help="drop and recreate the database first")
     p.set_defaults(fn=cmd_ingest)
@@ -125,6 +171,13 @@ def main(argv=None) -> int:
     p.add_argument("--project")
     p.add_argument("--remove", action="store_true")
     p.set_defaults(fn=cmd_seed)
+    p = sub.add_parser("trace", help="print request traces as span trees (the review skill reads this)")
+    p.add_argument("--project")
+    p.add_argument("--session", help="every request of one conversation_id, in order")
+    p.add_argument("--request", help="one request (generation_id / trace id)")
+    p.add_argument("--list", type=int, default=20, help="latest N requests, one line each")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_trace)
     p = sub.add_parser("serve", help="start the dashboard")
     p.add_argument("--project")
     p.add_argument("--host", default="127.0.0.1")

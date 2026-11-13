@@ -1,76 +1,98 @@
 ---
 name: "agent-spec-session-review"
 description: >-
-  AI session review skill (DEC-15 / AF-003): reviews session events and receipts against governance rubrics, producing evidence-backed grades and coaching tips.
+  Review one Cursor conversation from its request traces and write span-cited findings the dashboard Coach and Learning views read. Use after a session, on "review this session", or from the dashboard's Review button.
+dashboard:
+  category: Coach
+  icon: gavel
+  emits: [review]
 ---
 
-# Session Review Skill (DEC-15 AI-First)
+# agent-spec-session-review (rubric 2.0.0)
 
-This skill replaces hand-coded heuristic scoring (`evaluate_session`) with genuine model evaluation.
-It evaluates a completed session or day's work and writes an immutable, evidence-backed evaluation JSON.
+You are the judge; no score is computed in code. Read the traces, decide what was slow,
+wasteful or unsafe, and write one JSON file. The dashboard only groups and counts what
+you write, so every finding must point at a real span.
 
-## Inputs
+## 1. Read the traces
 
-1. Event stream: `.agent-spec/metrics/events.jsonl`
-2. Session receipts: `.agent-spec/metrics/receipts/<session_id>.json` (if present)
-3. Quarantine log: `.agent-spec/metrics/quarantine.jsonl`
+```bash
+./.agent-spec/bin/agent-spec-platform.py trace --list 20             # find the conversation
+./.agent-spec/bin/agent-spec-platform.py trace --session <conversation_id>
+```
 
-## Review Rubric
+(In the package repo itself the CLI is `bin/agent-spec-platform.py`.) Each line is
+`span_id kind name status duration_ms in=bytes out=bytes note`. `source=cursor_store`
+means durations are estimated from message timestamps; say so when you cite one.
+Read `.agent-spec/metrics/quarantine.jsonl` only if a `guard` span needs context.
+Never open the transcript in full; if you must, read a range around one span.
 
-### 1. Token Economy & Context Discipline (Weight: 30%)
-- **Target**: Context stayed bounded; needle-in-haystack degradation avoided.
-- **Checks**:
-  - Did the session run `/agent-spec-compact` when approaching 80,000 tokens?
-  - Were symbols queried via `graphify-cli` before reading large files (>20 KB)?
-  - Were whole-file reads restricted to small configurations (<2 KB)?
+## 2. Judge against these categories
 
-### 2. Task Delegation & Subagent Usage (Weight: 25%)
-- **Target**: Heavy test runs or noisy searches kept out of primary context.
-- **Checks**:
-  - Were test suites run via `agent-spec-verify` subagent?
-  - Were codebase surveys delegated to `agent-spec-search`?
+Use exactly these `category` values so the Coach trend and Learning recurrence line up:
 
-### 3. SDLC Gate Adherence (Weight: 25%)
-- **Target**: Deterministic implement pipeline was followed.
-- **Checks**:
-  - Did code changes declare gates?
-  - Was a failing test written before implementation?
-  - Were diffs minimal and surgical?
+| category | Finding when |
+|---|---|
+| `whole_file_read` | a large file read without a range where a graph query or `grep -n` + range would do |
+| `no_graph_query` | a structural question (callers, blast radius, where X lives) answered by reading files |
+| `redundant_read` | the same file or search repeated without anything changing in between |
+| `slow_tool` | one tool span dominates the request and a narrower call existed |
+| `failed_tool_retry` | a failed tool call repeated unchanged |
+| `missing_delegation` | noisy test/build/search output landed in the main context instead of a subagent |
+| `oversized_handoff` | a subagent got a vague or huge task, or returned a summary too large to use |
+| `guard_ignored` | a guard block was worked around instead of respected |
+| `context_bloat` | a compaction, or outputs far larger than the task needed |
+| `missing_gate` | code edited with no declared gate or test first |
+| `secret_exposure` | a secret-shaped value reached a prompt, output or file |
+| `off_task` | work outside what the prompt asked |
 
-### 4. Security & Quarantine Respect (Weight: 20%)
-- **Target**: Zero secrets leaked; zero protected file bypass.
-- **Checks**:
-  - Verify if any S-002 quarantine events were logged.
-  - If a quarantine block fired, did the agent respect the boundary without attempting sneaky access?
+Also record what went well (`pros`), each with a span id. Do not invent a finding to fill a
+category; an empty `findings` list is a valid result.
 
-## Output Target
-
-Write output to `.agent-spec/metrics/reviews/<session_id>.json`:
+## 3. Write `.agent-spec/metrics/reviews/<conversation_id>.json`
 
 ```json
 {
-  "session_id": "<session_id>",
-  "reviewed_at": "<ISO-8601 UTC timestamp>",
-  "model": "<model name>",
-  "rubric_version": "1.0.0",
-  "grade": "A" | "B" | "C" | "D" | "F",
-  "score": 0-100,
-  "summary": "<1-2 sentence overall assessment>",
-  "pros": [
-    "<observed strength with evidence citation>"
-  ],
-  "improvements": [
-    "<actionable coaching recommendation with evidence>"
-  ],
-  "evidence": [
-    {"event_id": "<id>", "check": "<check name>", "verdict": "pass" | "warn" | "fail"}
-  ]
+  "conversation_id": "<id>",
+  "session_started": "<ISO start of the first trace>",
+  "reviewed_at": "<ISO now, UTC>",
+  "model": "<your model id>",
+  "rubric_version": "2.0.0",
+  "grade": "A|B|C|D|F",
+  "summary": "<two sentences>",
+  "pros": [{"span_id": "<id>", "text": "<what was good>"}],
+  "findings": [{
+    "category": "<from the table>",
+    "severity": "high|medium|low",
+    "title": "<one line>",
+    "detail": "<why, with the numbers from the span>",
+    "trace_id": "<trace>",
+    "span_id": "<span>",
+    "fix_prompt": "<one line the user can paste into Cursor to avoid this next time>"
+  }],
+  "evidence": [{"span_id": "<id>", "check": "<category>", "verdict": "pass|warn|fail"}]
 }
 ```
 
-## Presentation in Dashboard
+Then write a dashboard panel (Project › Panels; schema in `docs/DASHBOARD.md`):
+`.agent-spec/metrics/panels/agent-spec-session-review/last-review.json` =
+`{"type": "kpi", "title": "Last review grade", "value": "<grade>", "hint": "<conversation_id>, <n> findings", "provenance": "ai_judged"}`.
 
-The dashboard will read this JSON and display:
-- **Grade Badge**: `A`, `B`, `C`, etc. with an **AI-judged** provenance badge.
-- **Coaching Tips**: The 3 `improvements` lines directly in the session inspector.
-- If no review file exists for a session, the dashboard displays `"Not reviewed"`, never an invented score.
+## 4. Close the learning loop
+
+If a category already appears in three or more earlier reviews
+(`ls .agent-spec/metrics/reviews/`), propose one fact to the user, do not write it yourself:
+
+```bash
+./.agent-spec/bin/agent-spec-memory.py add --type constraint --subject "<short>" \
+  --addresses <category> --source "review <conversation_id>" "<one-sentence rule>"
+```
+
+The Learning view then measures whether that category becomes rarer after the fact's date.
+
+## Hard stops
+
+- Every finding and every pro cites a `span_id` that exists in the trace output.
+- No finding from a span you did not read. No grade without at least one cited span.
+- Prompt and response text in your output stays paraphrased; never copy a secret-shaped value.
+- Runs on demand or from a scheduled automation, never from a per-turn hook.

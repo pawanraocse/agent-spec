@@ -18,9 +18,9 @@ import sqlite3
 import sys
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import agent_exec, common, db, demo_seed, insights, platform_data, savings, cursor_sessions
+from . import agent_exec, common, db, demo_seed, insights, observe, platform_data, savings, cursor_sessions, traces
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_DIR = os.path.join(HERE, "ui")
@@ -47,6 +47,33 @@ WF_START = re.compile(r"^/api/workflows/([^/]+)/start$")
 POST_MAX_BODY = 65536
 PROMPT_MAX = 16384
 CURSOR_SESSION_ID = re.compile(r"^/api/cursor/session/([^/]+)$")
+REQUEST_ID = re.compile(r"^/api/requests/([^/]{1,400})$")
+LIVE_POLL_S = 0.5
+LIVE_MAX_S = 600  # a stream closes after this; EventSource reconnects from Last-Event-ID
+LIVE_BATCH = 200
+
+
+def _filters(params):
+    return {k: _first(params, k) for k in ("session", "status", "skill", "source", "workspace", "since", "until", "q")
+            if _first(params, k)}
+
+
+def _offset(params) -> int:
+    try:
+        return max(0, int(_first(params, "offset") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+# DV-012/DV-041/DV-050/DV-056: read routes that need the project as well as the connection.
+PROJECT_ROUTES = {
+    "/api/requests": lambda project, conn, q: traces.list_requests(project, conn, _filters(q), _limit(q, 50), _offset(q)),
+    "/api/coach/lag": lambda project, conn, q: traces.lag(project, conn, _first(q, "since")),
+    "/api/coach/issues": lambda project, conn, q: observe.coach_issues(project, conn),
+    "/api/learning": lambda project, conn, q: observe.learning(project, conn, _limit(q, 10)),
+    "/api/panels": lambda project, conn, q: observe.panels(project),
+    "/api/catalog": lambda project, conn, q: observe.catalog(project, conn),
+}
 
 
 def _use_v2_ui() -> bool:
@@ -374,16 +401,31 @@ def make_handler(project: str, token: str):
                 return self._index(query)
             if not self._token_ok(False, query):
                 return self._json(401, {"error": "missing or invalid token"})
-            ast = AGENT_STREAM.match(path)
-            if ast:
-                return self._sse_stream(ast.group(1))
+            if path == "/api/live":
+                return self._live_stream(query)
+            if path in PROJECT_ROUTES or REQUEST_ID.match(path):
+                try:
+                    conn = self._open()
+                except (sqlite3.Error, ApiError):
+                    conn = None  # hook traces still come from events.jsonl
+                try:
+                    if path in PROJECT_ROUTES:
+                        payload = PROJECT_ROUTES[path](project, conn, query)
+                    else:
+                        payload = traces.request_detail(project, conn, unquote(REQUEST_ID.match(path).group(1)))
+                        if payload is None:
+                            return self._json(404, {"error": "request not found"})
+                finally:
+                    if conn is not None:
+                        conn.close()
+                return self._json(200, payload)
             handler = ROUTES.get(path)
             run = RUN_ID.match(path)
             session = SESSION_ID.match(path)
             c_session = CURSOR_SESSION_ID.match(path)
             if (handler is None and run is None and session is None and c_session is None and path != "/api/skills"
                     and path not in ("/api/graph", "/api/memory", "/api/experiences", "/api/gates", "/api/pricing", "/api/health/doctor", "/api/status_bar")
-                    and not GRAPH_BLAST.match(path) and not RUN_EVENTS.match(path) and not AGENT_STREAM.match(path)):
+                    and not GRAPH_BLAST.match(path) and not RUN_EVENTS.match(path)):
                 return self._json(404, {"error": "not found"})
             try:
                 conn = self._open()
@@ -430,6 +472,48 @@ def make_handler(project: str, token: str):
             except sqlite3.Error:
                 return self._json(503, {"error": "database unavailable; run: agent-spec-platform.py ingest"})
             self._json(200, payload)
+
+        def _live_stream(self, query):
+            """DV-013: Server-Sent Events tail of events.jsonl. Loopback + token guards already ran.
+            Resumes from `Last-Event-ID` or `?offset=`; default is the current end of file."""
+            path = traces.events_path(project)
+            resume = self.headers.get("Last-Event-ID") or _first(query, "offset")
+            try:
+                offset = int(resume) if resume is not None else os.path.getsize(path)
+            except (TypeError, ValueError, OSError):
+                offset = 0
+            try:
+                max_s = min(float(_first(query, "max_s") or LIVE_MAX_S), LIVE_MAX_S)
+            except ValueError:
+                max_s = LIVE_MAX_S
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", _csp())
+            self.end_headers()
+            import time as _time
+            started = last_beat = _time.monotonic()
+            try:
+                self.wfile.write(b"retry: 2000\nevent: hello\ndata: {\"offset\": %d}\n\n" % offset)
+                self.wfile.flush()
+                while _time.monotonic() - started < max_s:
+                    rows, new_offset = traces.read_events(path, offset)
+                    if new_offset != offset or rows:
+                        for i in range(0, len(rows), LIVE_BATCH) or [0]:
+                            chunk = rows[i:i + LIVE_BATCH]
+                            body = json.dumps({"rows": chunk, "offset": new_offset}, separators=(",", ":"))
+                            self.wfile.write(("id: %d\nevent: rows\ndata: %s\n\n" % (new_offset, body)).encode())
+                        self.wfile.flush()
+                        offset = new_offset
+                    elif _time.monotonic() - last_beat > 15:
+                        self.wfile.write(b": keep-alive\n\n")
+                        self.wfile.flush()
+                        last_beat = _time.monotonic()
+                    _time.sleep(LIVE_POLL_S)
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                pass
+            self.close_connection = True
 
         def _open(self):
             path = db.db_path(project)

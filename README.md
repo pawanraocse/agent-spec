@@ -3,7 +3,7 @@
 **Cursor-only** agent framework for AlgoSec — disciplined engineering on real codebases,
 with measured context discipline instead of vibe-coding.
 
-Version **1.1.0** (see [`VERSION`](VERSION)). Forked from
+Version **2.0.0** (see [`VERSION`](VERSION)). Forked from
 [agent-spec](https://github.com/pawanraocse/agent-spec); Claude Code, Gemini, and
 Antigravity surfaces are not shipped here. Commands stay `/agent-spec-*`.
 
@@ -26,7 +26,7 @@ Feature detail: [docs/features.md](docs/features.md).
 | **Memory** | Bounded facts + rotating `SESSION-SNAPSHOT.md`; digest on new chat |
 | **Hooks** | `sessionStart` digest (~1.7 KB); `preToolUse` input discipline (fail-open) |
 | **Measurement** | `agent-spec-tokens.py` on Cursor agent JSONL ([usage](#measuring-usage)) |
-| **Skills** | 34 commands → `~/.cursor/skills/` via `./install.sh` |
+| **Skills** | 41 commands → `~/.cursor/skills/` via `./install.sh` |
 | **Self-test** | `./bin/agent-spec-selftest.sh` — package shape, install idempotency, no Claude paths |
 
 ---

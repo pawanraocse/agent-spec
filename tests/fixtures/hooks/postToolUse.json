@@ -1,9 +1,24 @@
 {
-  "event": "postToolUse",
-  "sessionId": "sess-1234",
-  "toolName": "Read",
-  "toolInput": {"path": "src/app.py", "range": [1, 20]},
-  "durationMs": 45,
-  "status": "success",
-  "tokens": {"input": 120, "output": 40}
+  "conversation_id": "conv-fixture-1",
+  "generation_id": "gen-fixture-1",
+  "model": "claude-sonnet-4-5",
+  "model_id": "claude-sonnet-4-5",
+  "model_params": [],
+  "cursor_version": "2.1.0",
+  "workspace_roots": [
+    "/project"
+  ],
+  "user_email": null,
+  "transcript_path": "/home/u/.cursor/projects/p/agent-transcripts/conv-fixture-1.jsonl",
+  "hook_event_name": "postToolUse",
+  "tool_name": "Read",
+  "tool_input": {
+    "file_path": "/project/src/auth.ts",
+    "offset": 10,
+    "limit": 40
+  },
+  "tool_output": "{\"content\":\"export function login() {}\"}",
+  "tool_use_id": "tu-1",
+  "cwd": "/project",
+  "duration": 45
 }

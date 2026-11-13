@@ -81,15 +81,15 @@ export function Home() {
   const TOUR_STEPS = [
     {
       title: "1. Session Digest",
-      badge: "Measured",
+      badge: "Guide",
       subtitle: "What the agent knows at start",
-      desc: "Agent-Spec automatically injects project guidelines, active constraints, and graph status. The baseline digest is compact (1,841 B on this repository) so your agent starts with exact context without blowing the token budget.",
+      desc: "Agent-Spec automatically injects project guidelines, active constraints, and graph status. The digest is kept compact so the agent starts with exact context without spending the token budget; its live size is under Project › Health.",
       actionText: "Inspect Knowledge & Memory",
       action: () => navigate("/knowledge"),
     },
     {
       title: "2. Graphify Knowledge Graph",
-      badge: "Measured",
+      badge: "Guide",
       subtitle: "Blast radius & symbol dependencies",
       desc: "Instead of naive whole-file dumping, Graphify queries only symbol declarations, callers, and import dependencies. Blast radius traces all transitive dependents in sub-second time.",
       actionText: "View Interactive Graph",
@@ -97,7 +97,7 @@ export function Home() {
     },
     {
       title: "3. Input Discipline & Guards",
-      badge: "Measured",
+      badge: "Guide",
       subtitle: "Pre-tool-use quarantine & context threshold nudges",
       desc: "The preToolUse hook protects against unbounded whole-file reads and sensitive data leaks. When a session exceeds 80k tokens, an S-004 nudge prompts compaction to maintain needle-in-haystack reasoning accuracy.",
       actionText: "Review Guard Log in Governance",
@@ -105,7 +105,7 @@ export function Home() {
     },
     {
       title: "4. SDLC Rails & 6-Gate Pipeline",
-      badge: "Measured",
+      badge: "Guide",
       subtitle: "Deterministic governance & REQ traceability",
       desc: "Changes pass through the 6-gate implement pipeline (Declaration, Failing Test, Minimal Diff, Verification) alongside the 9-gate SDLC rail with immutable receipts and requirements traces.",
       actionText: "Explore SDLC Rails",
@@ -113,7 +113,7 @@ export function Home() {
     },
     {
       title: "5. Bounded Memory & Agent Console",
-      badge: "Measured",
+      badge: "Guide",
       subtitle: "Self-learning flywheel & live execution",
       desc: "Facts migrate from candidates to trusted rules. Drive your agent from the Agent Console in read-only Ask mode or confirmed Agent mode with live streaming.",
       actionText: "Launch Agent Console",

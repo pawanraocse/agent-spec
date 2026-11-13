@@ -1,118 +1,118 @@
 {
   "version": "5.0",
   "project": "agent-spec",
-  "generated": "2026-11-07T21:03:47.057908",
+  "generated": "2026-11-13T14:53:06.757003",
   "generator": "graphify-build",
   "stack": "Node.js + React",
   "stats": {
-    "files": 109,
-    "internal_edges": 108,
+    "files": 140,
+    "internal_edges": 203,
     "integration_edges": 0,
-    "external_packages": 78,
-    "test_files": 42,
+    "external_packages": 94,
+    "test_files": 48,
     "cycles": 0,
     "services": 2,
     "endpoints": 0,
     "topics": 0,
     "layer_violations": 0,
     "languages": {
-      "python": 92,
-      "typescript": 14,
+      "python": 96,
+      "typescript": 41,
       "javascript": 3
     },
     "layers": {
-      "unknown": 58,
-      "test": 42,
-      "config": 4,
-      "controller": 3,
-      "util": 2
+      "unknown": 79,
+      "test": 48,
+      "controller": 5,
+      "config": 5,
+      "util": 3
     },
     "most_depended": [
       [
+        "ui-src/src/api/client.ts",
+        16
+      ],
+      [
+        "ui-src/src/lib/utils.ts",
+        16
+      ],
+      [
         "bin/aspec_platform/__init__.py",
-        12
+        13
       ],
       [
         "bin/aspec_platform/db.py",
-        12
+        13
       ],
       [
         "bin/aspec_platform/common.py",
+        11
+      ],
+      [
+        "ui-src/src/api/traces.ts",
         9
       ],
       [
-        "ui-src/src/api/client.ts",
+        "ui-src/src/components/Num.tsx",
         8
+      ],
+      [
+        "bin/aspec_platform/ingest.py",
+        7
       ],
       [
         "tests/_ingest_support.py",
         7
       ],
       [
-        "bin/aspec_platform/ingest.py",
-        6
-      ],
-      [
-        "tests/_run_helpers.py",
-        6
-      ],
-      [
         "tests/_api_support.py",
-        5
-      ],
-      [
-        "bin/aspec_platform/insights.py",
-        4
-      ],
-      [
-        "ui-src/src/components/Metric.tsx",
-        4
+        6
       ]
     ],
     "top_external": [
       [
-        "sys",
-        75
+        "os",
+        78
       ],
       [
-        "os",
-        74
+        "sys",
+        78
       ],
       [
         "json",
-        65
+        69
       ],
       [
         "datetime",
-        32
+        41
       ],
       [
         "subprocess",
-        32
-      ],
-      [
-        "tempfile",
-        28
+        33
       ],
       [
         "__future__",
-        28
-      ],
-      [
-        "unittest",
-        28
+        32
       ],
       [
         "re",
-        26
+        29
       ],
       [
-        "argparse",
-        20
+        "tempfile",
+        29
+      ],
+      [
+        "unittest",
+        29
+      ],
+      [
+        "react",
+        26
       ]
     ]
   },
-  "orphan_count": 51,
+  "orphan_count": 56,
   "services": {
     "ui-src": "ui-src",
     "skills/agent-spec-mcp-builder/scripts": "scripts"
@@ -123,29 +123,23 @@
     "test framework": [
       [
         "pytest",
-        38
-      ]
-    ],
-    "dependency injection": [
-      [
-        "Spring annotations",
-        3
+        156
       ]
     ],
     "error handling": [
       [
         "custom exception types",
-        3
+        2
       ]
     ],
     "typing": [
       [
         "type hints",
-        102
+        55
       ],
       [
         "generics",
-        4
+        19
       ]
     ],
     "logging": [
@@ -388,6 +382,17 @@
       "consumes": []
     },
     {
+      "id": "bin/aspec_platform/observe.py",
+      "type": "file",
+      "path": "bin/aspec_platform/observe.py",
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "bin/aspec_platform/platform_data.py",
       "type": "file",
       "path": "bin/aspec_platform/platform_data.py",
@@ -424,6 +429,17 @@
       "id": "bin/aspec_platform/serve.py",
       "type": "file",
       "path": "bin/aspec_platform/serve.py",
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/aspec_platform/traces.py",
+      "type": "file",
+      "path": "bin/aspec_platform/traces.py",
       "lang": "python",
       "layer": "unknown",
       "service": null,
@@ -1158,12 +1174,67 @@
       "consumes": []
     },
     {
+      "id": "tests/test_traces.py",
+      "type": "test",
+      "path": "tests/test_traces.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "tests/test_workflow_validate.py",
       "type": "test",
       "path": "tests/test_workflow_validate.py",
       "lang": "python",
       "layer": "test",
       "service": null,
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/e2e/a11y.spec.ts",
+      "type": "test",
+      "path": "ui-src/e2e/a11y.spec.ts",
+      "lang": "typescript",
+      "layer": "test",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/e2e/make-fixture.py",
+      "type": "test",
+      "path": "ui-src/e2e/make-fixture.py",
+      "lang": "python",
+      "layer": "test",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/e2e/smoke.spec.ts",
+      "type": "test",
+      "path": "ui-src/e2e/smoke.spec.ts",
+      "lang": "typescript",
+      "layer": "test",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/playwright.config.ts",
+      "type": "file",
+      "path": "ui-src/playwright.config.ts",
+      "lang": "typescript",
+      "layer": "config",
+      "service": "ui-src",
       "endpoints": [],
       "produces": [],
       "consumes": []
@@ -1213,6 +1284,17 @@
       "consumes": []
     },
     {
+      "id": "ui-src/src/api/traces.ts",
+      "type": "file",
+      "path": "ui-src/src/api/traces.ts",
+      "lang": "typescript",
+      "layer": "controller",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "ui-src/src/components/Layout.tsx",
       "type": "file",
       "path": "ui-src/src/components/Layout.tsx",
@@ -1246,9 +1328,207 @@
       "consumes": []
     },
     {
+      "id": "ui-src/src/components/Num.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/Num.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/Shell.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/ui/badge.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/ui/badge.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/ui/button.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/ui/button.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/ui/card.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/ui/card.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/ui/sheet.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/ui/sheet.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/ui/tabs.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/ui/tabs.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/ui/tooltip.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/ui/tooltip.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/KnowledgeGraph.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/KnowledgeGraph.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/OrchestrationGraph.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/OrchestrationGraph.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/RequestFeed.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/RequestFeed.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/RequestView.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/RequestView.tsx",
+      "lang": "typescript",
+      "layer": "controller",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/SpanInspector.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/SpanInspector.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/Waterfall.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/Waterfall.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/kinds.tsx",
+      "type": "file",
+      "path": "ui-src/src/features/kinds.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts",
+      "type": "file",
+      "path": "ui-src/src/features/spanTree.ts",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/lib/utils.ts",
+      "type": "file",
+      "path": "ui-src/src/lib/utils.ts",
+      "lang": "typescript",
+      "layer": "util",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "ui-src/src/main.tsx",
       "type": "file",
       "path": "ui-src/src/main.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/pages/Coach.tsx",
+      "type": "file",
+      "path": "ui-src/src/pages/Coach.tsx",
       "lang": "typescript",
       "layer": "unknown",
       "service": "ui-src",
@@ -1301,6 +1581,39 @@
       "consumes": []
     },
     {
+      "id": "ui-src/src/pages/Learning.tsx",
+      "type": "file",
+      "path": "ui-src/src/pages/Learning.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/pages/Live.tsx",
+      "type": "file",
+      "path": "ui-src/src/pages/Live.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/pages/Project.tsx",
+      "type": "file",
+      "path": "ui-src/src/pages/Project.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "ui-src/src/pages/Runs.tsx",
       "type": "file",
       "path": "ui-src/src/pages/Runs.tsx",
@@ -1317,6 +1630,28 @@
       "path": "ui-src/src/pages/Sessions.tsx",
       "lang": "typescript",
       "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/test/fixtures.ts",
+      "type": "test",
+      "path": "ui-src/src/test/fixtures.ts",
+      "lang": "typescript",
+      "layer": "test",
+      "service": "ui-src",
+      "endpoints": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/test/honesty.test.tsx",
+      "type": "test",
+      "path": "ui-src/src/test/honesty.test.tsx",
+      "lang": "typescript",
+      "layer": "test",
       "service": "ui-src",
       "endpoints": [],
       "produces": [],
@@ -1393,6 +1728,11 @@
       "type": "imports"
     },
     {
+      "source": "bin/agent-spec-platform.py",
+      "target": "bin/aspec_platform/traces.py",
+      "type": "imports"
+    },
+    {
       "source": "bin/aspec_platform/agent_exec.py",
       "target": "bin/aspec_platform/common.py",
       "type": "imports"
@@ -1404,6 +1744,11 @@
     },
     {
       "source": "bin/aspec_platform/agent_exec.py",
+      "target": "bin/aspec_platform/redact.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py",
       "target": "bin/aspec_platform/redact.py",
       "type": "imports"
     },
@@ -1439,12 +1784,22 @@
     },
     {
       "source": "bin/aspec_platform/ingest.py",
+      "target": "bin/aspec_platform/cursor_sessions.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py",
       "target": "bin/aspec_platform/db.py",
       "type": "imports"
     },
     {
       "source": "bin/aspec_platform/ingest.py",
       "target": "bin/aspec_platform/redact.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py",
+      "target": "bin/aspec_platform/traces.py",
       "type": "imports"
     },
     {
@@ -1455,6 +1810,21 @@
     {
       "source": "bin/aspec_platform/insights.py",
       "target": "bin/aspec_platform/savings.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py",
+      "target": "bin/aspec_platform/common.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py",
+      "target": "bin/aspec_platform/insights.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py",
+      "target": "bin/aspec_platform/traces.py",
       "type": "imports"
     },
     {
@@ -1494,12 +1864,27 @@
     },
     {
       "source": "bin/aspec_platform/serve.py",
+      "target": "bin/aspec_platform/observe.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py",
       "target": "bin/aspec_platform/platform_data.py",
       "type": "imports"
     },
     {
       "source": "bin/aspec_platform/serve.py",
       "target": "bin/aspec_platform/savings.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py",
+      "target": "bin/aspec_platform/traces.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py",
+      "target": "bin/aspec_platform/common.py",
       "type": "imports"
     },
     {
@@ -1793,43 +2178,68 @@
       "type": "imports"
     },
     {
+      "source": "tests/test_traces.py",
+      "target": "tests/_api_support.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "bin/aspec_platform/__init__.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "bin/aspec_platform/cursor_sessions.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "bin/aspec_platform/db.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "bin/aspec_platform/ingest.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "bin/aspec_platform/observe.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "bin/aspec_platform/traces.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_traces.py",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
       "source": "tests/test_workflow_validate.py",
       "target": "tests/_run_helpers.py",
       "type": "imports"
     },
     {
       "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/components/Layout.tsx",
+      "target": "ui-src/src/components/Shell.tsx",
       "type": "imports"
     },
     {
       "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/pages/Console.tsx",
+      "target": "ui-src/src/components/ui/tooltip.tsx",
       "type": "imports"
     },
     {
       "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/pages/Governance.tsx",
+      "target": "ui-src/src/pages/Live.tsx",
       "type": "imports"
     },
     {
-      "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/pages/Home.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/pages/Knowledge.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/pages/Runs.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/App.tsx",
-      "target": "ui-src/src/pages/Sessions.tsx",
+      "source": "ui-src/src/api/traces.ts",
+      "target": "ui-src/src/api/client.ts",
       "type": "imports"
     },
     {
@@ -1848,6 +2258,236 @@
       "type": "imports"
     },
     {
+      "source": "ui-src/src/components/Num.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Num.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx",
+      "target": "ui-src/src/components/ui/sheet.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/ui/badge.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/ui/button.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/ui/card.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/ui/sheet.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/ui/tabs.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/KnowledgeGraph.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/KnowledgeGraph.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx",
+      "target": "ui-src/src/features/kinds.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx",
+      "target": "ui-src/src/features/spanTree.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx",
+      "target": "ui-src/src/features/kinds.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/components/ui/tabs.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/features/SpanInspector.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/features/Waterfall.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/features/kinds.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx",
+      "target": "ui-src/src/features/spanTree.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/components/ui/sheet.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx",
+      "target": "ui-src/src/features/kinds.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx",
+      "target": "ui-src/src/features/kinds.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx",
+      "target": "ui-src/src/features/spanTree.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/kinds.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/features/spanTree.ts",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
       "source": "ui-src/src/main.tsx",
       "target": "ui-src/src/App.tsx",
       "type": "imports"
@@ -1855,6 +2495,41 @@
     {
       "source": "ui-src/src/main.tsx",
       "target": "ui-src/src/App.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/features/kinds.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx",
+      "target": "ui-src/src/lib/utils.ts",
       "type": "imports"
     },
     {
@@ -1883,6 +2558,121 @@
       "type": "imports"
     },
     {
+      "source": "ui-src/src/pages/Learning.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Learning.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Learning.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Learning.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Learning.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Learning.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/api/traces.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/features/RequestFeed.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/features/RequestView.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/pages/Governance.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/pages/Home.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/pages/Knowledge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/pages/Runs.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/pages/Sessions.tsx",
+      "type": "imports"
+    },
+    {
       "source": "ui-src/src/pages/Runs.tsx",
       "target": "ui-src/src/api/client.ts",
       "type": "imports"
@@ -1895,6 +2685,26 @@
     {
       "source": "ui-src/src/pages/Sessions.tsx",
       "target": "ui-src/src/components/Metric.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/test/honesty.test.tsx",
+      "target": "ui-src/src/pages/Coach.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/test/honesty.test.tsx",
+      "target": "ui-src/src/pages/Learning.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/test/honesty.test.tsx",
+      "target": "ui-src/src/pages/Live.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/test/honesty.test.tsx",
+      "target": "ui-src/src/test/fixtures.ts",
       "type": "imports"
     }
   ],
@@ -2611,77 +3421,91 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 429
+      "line": 434
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 443
+      "line": 448
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_show",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 456
+      "line": 461
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 465
+      "line": 470
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_merge_team",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 506
+      "line": 511
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_prune",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 553
+      "line": 558
+    },
+    {
+      "id": "bin/agent-spec-memory.py::_split_snapshot",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-memory.py",
+      "line": 588
+    },
+    {
+      "id": "bin/agent-spec-memory.py::_heading_name",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-memory.py",
+      "line": 606
     },
     {
       "id": "bin/agent-spec-memory.py::_sections",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 573
+      "line": 610
     },
     {
       "id": "bin/agent-spec-memory.py::_summary_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 579
+      "line": 615
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_snapshots",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 587
+      "line": 631
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_rotate",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 617
+      "line": 661
     },
     {
       "id": "bin/agent-spec-memory.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 667
+      "line": 709
     },
     {
       "id": "bin/agent-spec-platform.py::cmd_init",
@@ -2719,18 +3543,25 @@
       "line": 87
     },
     {
-      "id": "bin/agent-spec-platform.py::cmd_serve",
+      "id": "bin/agent-spec-platform.py::cmd_trace",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-platform.py",
       "line": 98
     },
     {
+      "id": "bin/agent-spec-platform.py::cmd_serve",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-platform.py",
+      "line": 144
+    },
+    {
       "id": "bin/agent-spec-platform.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-platform.py",
-      "line": 103
+      "line": 149
     },
     {
       "id": "bin/agent-spec-receipt.py::load_tokens",
@@ -3832,53 +4663,158 @@
       "line": 118
     },
     {
-      "id": "bin/aspec_platform/cursor_sessions.py::_fmt_relative_time",
+      "id": "bin/aspec_platform/cursor_sessions.py::_is_wsl",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
-      "line": 19
+      "line": 24
     },
     {
-      "id": "bin/aspec_platform/cursor_sessions.py::_connect_ro",
+      "id": "bin/aspec_platform/cursor_sessions.py::user_dir_candidates",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
       "line": 34
     },
     {
+      "id": "bin/aspec_platform/cursor_sessions.py::cursor_user_dir",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 57
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_store_path",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 65
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::global_vscdb",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 70
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::search_db",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 74
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::ws_storage",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 78
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::folder_path",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 82
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_fmt_relative_time",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 100
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_connect_ro",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 115
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_workspace_composers",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 128
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_unc_to_path",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 148
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_rows_from_kv",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 156
+    },
+    {
       "id": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
-      "line": 47
+      "line": 190
     },
     {
       "id": "bin/aspec_platform/cursor_sessions.py::load_session_review",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
-      "line": 143
+      "line": 290
     },
     {
       "id": "bin/aspec_platform/cursor_sessions.py::evaluate_session",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
-      "line": 161
+      "line": 308
     },
     {
       "id": "bin/aspec_platform/cursor_sessions.py::build_pipeline_stages",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
-      "line": 168
+      "line": 315
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_messages_from_bubbles",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 495
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_header_row",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 527
     },
     {
       "id": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/cursor_sessions.py",
-      "line": 348
+      "line": 552
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::_iso_ms",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 718
+    },
+    {
+      "id": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/cursor_sessions.py",
+      "line": 731
     },
     {
       "id": "bin/aspec_platform/db.py::SchemaError",
@@ -4196,32 +5132,46 @@
       "line": 543
     },
     {
+      "id": "bin/aspec_platform/ingest.py::_run_trace",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/ingest.py",
+      "line": 603
+    },
+    {
       "id": "bin/aspec_platform/ingest.py::ingest_runs",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/ingest.py",
-      "line": 602
+      "line": 636
     },
     {
       "id": "bin/aspec_platform/ingest.py::ingest_experiences",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/ingest.py",
-      "line": 615
+      "line": 649
     },
     {
       "id": "bin/aspec_platform/ingest.py::ingest_events",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/ingest.py",
-      "line": 643
+      "line": 677
+    },
+    {
+      "id": "bin/aspec_platform/ingest.py::ingest_traces",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/ingest.py",
+      "line": 730
     },
     {
       "id": "bin/aspec_platform/ingest.py::run",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/ingest.py",
-      "line": 701
+      "line": 755
     },
     {
       "id": "bin/aspec_platform/insights.py::_now",
@@ -4299,6 +5249,104 @@
       "kind": "function",
       "file": "bin/aspec_platform/insights.py",
       "line": 253
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::_slug",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 27
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::_read_json",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 31
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::reviews",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 39
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::_week",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 71
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::coach_issues",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 80
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::_frontmatter",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 118
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::_list",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 136
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::learners",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 143
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::recurrence",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 162
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::learning",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 189
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::validate_panel",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 218
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::panels",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 237
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::_dashboard_block",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 252
+    },
+    {
+      "id": "bin/aspec_platform/observe.py::catalog",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/observe.py",
+      "line": 287
     },
     {
       "id": "bin/aspec_platform/platform_data.py::_graph_path",
@@ -4476,172 +5524,347 @@
       "line": 98
     },
     {
-      "id": "bin/aspec_platform/serve.py::_use_v2_ui",
-      "type": "symbol",
-      "kind": "function",
-      "file": "bin/aspec_platform/serve.py",
-      "line": 52
-    },
-    {
-      "id": "bin/aspec_platform/serve.py::_csp",
+      "id": "bin/aspec_platform/serve.py::_filters",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
       "line": 56
     },
     {
-      "id": "bin/aspec_platform/serve.py::_safe_dist_file",
+      "id": "bin/aspec_platform/serve.py::_offset",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
       "line": 61
     },
     {
+      "id": "bin/aspec_platform/serve.py::_use_v2_ui",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/serve.py",
+      "line": 79
+    },
+    {
+      "id": "bin/aspec_platform/serve.py::_csp",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/serve.py",
+      "line": 83
+    },
+    {
+      "id": "bin/aspec_platform/serve.py::_safe_dist_file",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/serve.py",
+      "line": 88
+    },
+    {
       "id": "bin/aspec_platform/serve.py::_inject_token_meta",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 77
+      "line": 104
     },
     {
       "id": "bin/aspec_platform/serve.py::ApiError",
       "type": "symbol",
       "kind": "class",
       "file": "bin/aspec_platform/serve.py",
-      "line": 86
+      "line": 113
     },
     {
       "id": "bin/aspec_platform/serve.py::ApiError.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/aspec_platform/serve.py",
-      "line": 87
+      "line": 114
     },
     {
       "id": "bin/aspec_platform/serve.py::_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 93
+      "line": 120
     },
     {
       "id": "bin/aspec_platform/serve.py::_first",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 101
+      "line": 128
     },
     {
       "id": "bin/aspec_platform/serve.py::api_health",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 106
+      "line": 133
     },
     {
       "id": "bin/aspec_platform/serve.py::api_runs",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 111
+      "line": 138
     },
     {
       "id": "bin/aspec_platform/serve.py::api_run_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 128
+      "line": 155
     },
     {
       "id": "bin/aspec_platform/serve.py::api_home",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 135
+      "line": 162
     },
     {
       "id": "bin/aspec_platform/serve.py::api_gaps",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 139
+      "line": 166
     },
     {
       "id": "bin/aspec_platform/serve.py::api_tasks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 143
+      "line": 170
     },
     {
       "id": "bin/aspec_platform/serve.py::api_savings",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 155
+      "line": 182
     },
     {
       "id": "bin/aspec_platform/serve.py::api_sessions",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 162
+      "line": 189
     },
     {
       "id": "bin/aspec_platform/serve.py::api_session_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 166
+      "line": 193
     },
     {
       "id": "bin/aspec_platform/serve.py::api_skills",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 173
+      "line": 200
     },
     {
       "id": "bin/aspec_platform/serve.py::api_compare",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 177
+      "line": 204
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_workspaces",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 189
+      "line": 216
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_session",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 193
+      "line": 220
     },
     {
       "id": "bin/aspec_platform/serve.py::make_handler",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 206
+      "line": 233
     },
     {
       "id": "bin/aspec_platform/serve.py::make_server",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 464
+      "line": 548
     },
     {
       "id": "bin/aspec_platform/serve.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
+      "line": 558
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::ms",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 34
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::iso",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 46
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 53
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder.__init__",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 54
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder.trace",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 58
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder.touch",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 74
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder.span",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 78
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder.skill",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 90
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_Builder.finish",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 99
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::build_from_events",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 142
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::build_from_store",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 247
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::events_path",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 332
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::read_events",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 336
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::hook_traces",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 361
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::db_traces",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 382
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::all_traces",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 397
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::persist",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 418
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_match",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 441
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::list_requests",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 463
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::load_review",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
       "line": 474
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::request_detail",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 486
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::_pct",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 507
+    },
+    {
+      "id": "bin/aspec_platform/traces.py::lag",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/traces.py",
+      "line": 515
     },
     {
       "id": "bin/graphify-build.py::_name_tokens",
@@ -4987,200 +6210,256 @@
       "line": 50
     },
     {
-      "id": "hooks/cursor-event.py::_utc_now",
+      "id": "hooks/cursor-event.py::_redact",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-event.py",
-      "line": 15
+      "line": 48
     },
     {
-      "id": "hooks/cursor-event.py::_safe_str",
+      "id": "hooks/cursor-event.py::_utc",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-event.py",
-      "line": 19
+      "line": 52
     },
     {
-      "id": "hooks/cursor-event.py::handle_event",
+      "id": "hooks/cursor-event.py::_int",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-event.py",
-      "line": 27
+      "line": 56
     },
     {
-      "id": "hooks/cursor-event.py::main",
+      "id": "hooks/cursor-event.py::_clip",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-event.py",
+      "line": 60
+    },
+    {
+      "id": "hooks/cursor-event.py::_as_dict",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-event.py",
+      "line": 65
+    },
+    {
+      "id": "hooks/cursor-event.py::_tool_target",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-event.py",
       "line": 75
     },
     {
+      "id": "hooks/cursor-event.py::handle_event",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-event.py",
+      "line": 87
+    },
+    {
+      "id": "hooks/cursor-event.py::workspace_root",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-event.py",
+      "line": 185
+    },
+    {
+      "id": "hooks/cursor-event.py::_record",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-event.py",
+      "line": 196
+    },
+    {
+      "id": "hooks/cursor-event.py::main",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-event.py",
+      "line": 210
+    },
+    {
       "id": "hooks/cursor-pre-tool-use.py::nudged_already",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 33
+      "line": 34
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_sweep",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 53
+      "line": 54
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::size_of",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 67
+      "line": 68
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::is_ranged",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 74
+      "line": 75
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::token_threshold",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 88
+      "line": 89
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::extract_tokens",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 97
+      "line": 98
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::track_session_tokens",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 116
+      "line": 117
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::hard_cap_bytes",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 142
+      "line": 143
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::hard_cap_hit",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 151
+      "line": 152
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::debug_enabled",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 167
+      "line": 168
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::shape",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 173
+      "line": 174
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::debug_log",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 185
+      "line": 186
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_name_rule",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 217
+      "line": 218
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_token_rule",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 237
+      "line": 238
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_match_text",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 251
+      "line": 252
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_strings",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 259
+      "line": 260
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_gather",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 270
+      "line": 271
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::quarantine_hit",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 293
+      "line": 294
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::quarantine_log",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 313
+      "line": 314
+    },
+    {
+      "id": "hooks/cursor-pre-tool-use.py::_remember_ctx",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-pre-tool-use.py",
+      "line": 332
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_payload_meta",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 331
+      "line": 345
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::check",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 342
+      "line": 358
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::allow",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 402
+      "line": 418
+    },
+    {
+      "id": "hooks/cursor-pre-tool-use.py::guard_event",
+      "type": "symbol",
+      "kind": "function",
+      "file": "hooks/cursor-pre-tool-use.py",
+      "line": 426
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::deny",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 407
+      "line": 451
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 420
+      "line": 465
     },
     {
       "id": "hooks/cursor-session-end.py::load_receipt_module",
@@ -5250,14 +6529,14 @@
       "type": "symbol",
       "kind": "function",
       "file": "hooks/merge-hooks-json.py",
-      "line": 29
+      "line": 36
     },
     {
       "id": "hooks/merge-hooks-json.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/merge-hooks-json.py",
-      "line": 42
+      "line": 49
     },
     {
       "id": "skills/agent-spec-mcp-builder/scripts/connections.py::MCPConnection",
@@ -6338,60 +7617,130 @@
       "line": 94
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest",
+      "id": "tests/test_cursor_event.py::fixture",
       "type": "symbol",
-      "kind": "class",
+      "kind": "function",
       "file": "tests/test_cursor_event.py",
       "line": 15
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.setUp",
+      "id": "tests/test_cursor_event.py::CursorEventTest",
       "type": "symbol",
-      "kind": "method",
+      "kind": "class",
       "file": "tests/test_cursor_event.py",
-      "line": 16
+      "line": 22
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.run_hook",
+      "id": "tests/test_cursor_event.py::CursorEventTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_event.py",
-      "line": 21
+      "line": 23
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.read_events",
+      "id": "tests/test_cursor_event.py::CursorEventTest.run_hook",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_event.py",
-      "line": 32
+      "line": 29
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.test_post_tool_use_event",
+      "id": "tests/test_cursor_event.py::CursorEventTest.one",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_event.py",
-      "line": 38
+      "line": 40
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.test_post_tool_use_failure",
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_before_submit_prompt_redacted",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_event.py",
-      "line": 51
+      "line": 52
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.test_subagent_events",
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_post_tool_use",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_event.py",
-      "line": 61
+      "line": 58
     },
     {
-      "id": "tests/test_cursor_event.py::CursorEventHookTest.test_fail_open_on_malformed_input",
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_post_tool_use_failure",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_event.py",
-      "line": 76
+      "line": 66
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_subagent_start",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 71
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_subagent_stop",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 77
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_after_file_edit",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 84
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_after_agent_response",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 89
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_pre_compact",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 94
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_stop",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 98
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_text_is_truncated",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 102
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_unharnessed_workspace_writes_nothing",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 109
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_fail_open_on_garbage",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 114
+    },
+    {
+      "id": "tests/test_cursor_event.py::CursorEventTest.test_record_mode_saves_payload",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_event.py",
+      "line": 118
     },
     {
       "id": "tests/test_cursor_sessions.py::CursorSessionsTest",
@@ -7605,109 +8954,123 @@
       "line": 74
     },
     {
-      "id": "tests/test_memory.py::test_index_one_line_per_fact_and_check",
+      "id": "tests/test_memory.py::test_add_records_addresses_for_learning_view",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
       "line": 86
     },
     {
-      "id": "tests/test_memory.py::test_add_and_prune_regenerate_index",
+      "id": "tests/test_memory.py::test_index_one_line_per_fact_and_check",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 101
+      "line": 97
     },
     {
-      "id": "tests/test_memory.py::test_audit_memory_counts_index_not_bodies",
+      "id": "tests/test_memory.py::test_add_and_prune_regenerate_index",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
       "line": 112
     },
     {
-      "id": "tests/test_memory.py::test_audit_memory_flags_oversized_index",
+      "id": "tests/test_memory.py::test_audit_memory_counts_index_not_bodies",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 130
+      "line": 123
     },
     {
-      "id": "tests/test_memory.py::_fid",
+      "id": "tests/test_memory.py::test_audit_memory_flags_oversized_index",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
       "line": 141
     },
     {
-      "id": "tests/test_memory.py::_read_fact",
-      "type": "symbol",
-      "kind": "function",
-      "file": "tests/test_memory.py",
-      "line": 145
-    },
-    {
-      "id": "tests/test_memory.py::test_v2_old_format_fact_still_valid",
+      "id": "tests/test_memory.py::_fid",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
       "line": 152
     },
     {
+      "id": "tests/test_memory.py::_read_fact",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_memory.py",
+      "line": 156
+    },
+    {
+      "id": "tests/test_memory.py::test_v2_old_format_fact_still_valid",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_memory.py",
+      "line": 163
+    },
+    {
       "id": "tests/test_memory.py::test_v2_add_writes_optional_fields_only_when_given",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 162
+      "line": 173
     },
     {
       "id": "tests/test_memory.py::test_v2_add_rejects_bad_values",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 176
+      "line": 187
     },
     {
       "id": "tests/test_memory.py::test_v2_supersedes_marks_old_and_bumps_version",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 188
+      "line": 199
     },
     {
       "id": "tests/test_memory.py::test_v2_expired_fact_is_reported_and_non_active",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 213
+      "line": 224
     },
     {
       "id": "tests/test_memory.py::test_v2_missing_supersedes_target_flagged",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 227
+      "line": 238
     },
     {
       "id": "tests/test_memory.py::test_v2_supersede_cycle_flagged",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 235
+      "line": 246
     },
     {
       "id": "tests/test_memory.py::test_v2_deprecated_status_excluded_from_digest",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 244
+      "line": 255
     },
     {
       "id": "tests/test_memory.py::test_v2_invalid_field_values_flagged",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_memory.py",
-      "line": 254
+      "line": 265
+    },
+    {
+      "id": "tests/test_memory.py::test_rotate_splits_dated_headings_and_merges_index",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_memory.py",
+      "line": 281
     },
     {
       "id": "tests/test_o020_framework_proof.py::O020ProofTest",
@@ -8732,6 +10095,216 @@
       "line": 168
     },
     {
+      "id": "tests/test_traces.py::hook_rows",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_traces.py",
+      "line": 19
+    },
+    {
+      "id": "tests/test_traces.py::BuilderTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_traces.py",
+      "line": 43
+    },
+    {
+      "id": "tests/test_traces.py::BuilderTest.test_hook_trace_tree",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 44
+    },
+    {
+      "id": "tests/test_traces.py::BuilderTest.test_running_until_stop",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 67
+    },
+    {
+      "id": "tests/test_traces.py::BuilderTest.test_without_generation_id_each_prompt_is_a_trace",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 72
+    },
+    {
+      "id": "tests/test_traces.py::BuilderTest.test_store_conversations",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 78
+    },
+    {
+      "id": "tests/test_traces.py::BuilderTest.test_lag_percentiles",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 103
+    },
+    {
+      "id": "tests/test_traces.py::ResolverTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_traces.py",
+      "line": 108
+    },
+    {
+      "id": "tests/test_traces.py::ResolverTest.test_candidates_per_os",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 109
+    },
+    {
+      "id": "tests/test_traces.py::ResolverTest.test_override_dir_is_used_when_store_exists",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 121
+    },
+    {
+      "id": "tests/test_traces.py::ResolverTest.test_folder_uris",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 128
+    },
+    {
+      "id": "tests/test_traces.py::IngestTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_traces.py",
+      "line": 136
+    },
+    {
+      "id": "tests/test_traces.py::IngestTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 137
+    },
+    {
+      "id": "tests/test_traces.py::IngestTest._restore",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 149
+    },
+    {
+      "id": "tests/test_traces.py::IngestTest.test_ingest_persists_hook_traces_idempotently",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 153
+    },
+    {
+      "id": "tests/test_traces.py::IngestTest.test_run_joins_its_request",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 162
+    },
+    {
+      "id": "tests/test_traces.py::LearningTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_traces.py",
+      "line": 179
+    },
+    {
+      "id": "tests/test_traces.py::LearningTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 182
+    },
+    {
+      "id": "tests/test_traces.py::LearningTest.test_recurrence_before_after",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 202
+    },
+    {
+      "id": "tests/test_traces.py::LearningTest.test_coach_issues_rank_and_fix_prompt",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 210
+    },
+    {
+      "id": "tests/test_traces.py::PanelTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_traces.py",
+      "line": 219
+    },
+    {
+      "id": "tests/test_traces.py::PanelTest.test_schema",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 220
+    },
+    {
+      "id": "tests/test_traces.py::PanelTest.test_dashboard_frontmatter",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 228
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_traces.py",
+      "line": 238
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 239
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest.test_list_filters_and_detail",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 249
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest.test_live_requests_follow_the_file_without_ingest",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 259
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest.test_coach_lag",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 265
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest.test_live_requires_token",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 271
+    },
+    {
+      "id": "tests/test_traces.py::RequestApiTest.test_live_stream_resumes_from_offset",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_traces.py",
+      "line": 276
+    },
+    {
       "id": "tests/test_workflow_validate.py::wf",
       "type": "symbol",
       "kind": "function",
@@ -8851,18 +10424,39 @@
       "line": 97
     },
     {
+      "id": "ui-src/scripts/check-gzip-budget.mjs::gz",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/scripts/check-gzip-budget.mjs",
+      "line": 11
+    },
+    {
       "id": "ui-src/scripts/check-gzip-budget.mjs::walk",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/scripts/check-gzip-budget.mjs",
-      "line": 9
+      "line": 19
+    },
+    {
+      "id": "ui-src/src/App.tsx::L",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/App.tsx",
+      "line": 13
+    },
+    {
+      "id": "ui-src/src/App.tsx::Moved",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/App.tsx",
+      "line": 18
     },
     {
       "id": "ui-src/src/App.tsx::App",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 10
+      "line": 25
     },
     {
       "id": "ui-src/src/api/client.ts::getToken",
@@ -8886,6 +10480,90 @@
       "line": 20
     },
     {
+      "id": "ui-src/src/api/traces.ts::Trace",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 8
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::Span",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 32
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::Finding",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 46
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::Review",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 56
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::RequestList",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 71
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::RequestDetail",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 79
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::Filters",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 87
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::qs",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 96
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::useRequests",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 105
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::useRequest",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 113
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::useLive",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 125
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::refresh",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 138
+    },
+    {
       "id": "ui-src/src/components/Layout.tsx::Layout",
       "type": "symbol",
       "kind": "function",
@@ -8897,14 +10575,336 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Metric.tsx",
-      "line": 9
+      "line": 10
     },
     {
       "id": "ui-src/src/components/Metric.tsx::Metric",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Metric.tsx",
-      "line": 36
+      "line": 37
+    },
+    {
+      "id": "ui-src/src/components/Num.tsx::Num",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Num.tsx",
+      "line": 18
+    },
+    {
+      "id": "ui-src/src/components/Num.tsx::Prov",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Num.tsx",
+      "line": 26
+    },
+    {
+      "id": "ui-src/src/components/Num.tsx::Stat",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Num.tsx",
+      "line": 35
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx::applyTheme",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Shell.tsx",
+      "line": 21
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx::readTheme",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Shell.tsx",
+      "line": 27
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx::Palette",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Shell.tsx",
+      "line": 35
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx::go",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Shell.tsx",
+      "line": 44
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx::Shell",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Shell.tsx",
+      "line": 82
+    },
+    {
+      "id": "ui-src/src/components/Shell.tsx::onKey",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Shell.tsx",
+      "line": 93
+    },
+    {
+      "id": "ui-src/src/components/ui/badge.tsx::Badge",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/badge.tsx",
+      "line": 19
+    },
+    {
+      "id": "ui-src/src/components/ui/button.tsx::ButtonProps",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/components/ui/button.tsx",
+      "line": 22
+    },
+    {
+      "id": "ui-src/src/components/ui/card.tsx::Card",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/card.tsx",
+      "line": 4
+    },
+    {
+      "id": "ui-src/src/components/ui/card.tsx::CardHeader",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/card.tsx",
+      "line": 8
+    },
+    {
+      "id": "ui-src/src/components/ui/card.tsx::Empty",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/card.tsx",
+      "line": 20
+    },
+    {
+      "id": "ui-src/src/components/ui/sheet.tsx::Sheet",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/sheet.tsx",
+      "line": 6
+    },
+    {
+      "id": "ui-src/src/components/ui/tabs.tsx::TabsList",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/tabs.tsx",
+      "line": 6
+    },
+    {
+      "id": "ui-src/src/components/ui/tabs.tsx::TabsTrigger",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/tabs.tsx",
+      "line": 9
+    },
+    {
+      "id": "ui-src/src/components/ui/tabs.tsx::TabsContent",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/tabs.tsx",
+      "line": 20
+    },
+    {
+      "id": "ui-src/src/components/ui/tooltip.tsx::Tip",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/ui/tooltip.tsx",
+      "line": 5
+    },
+    {
+      "id": "ui-src/src/features/KnowledgeGraph.tsx::KnowledgeGraph",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/KnowledgeGraph.tsx",
+      "line": 15
+    },
+    {
+      "id": "ui-src/src/features/KnowledgeGraph.tsx::jump",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/KnowledgeGraph.tsx",
+      "line": 42
+    },
+    {
+      "id": "ui-src/src/features/OrchestrationGraph.tsx::OrchestrationGraph",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/OrchestrationGraph.tsx",
+      "line": 63
+    },
+    {
+      "id": "ui-src/src/features/RequestFeed.tsx::RequestFeed",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/RequestFeed.tsx",
+      "line": 11
+    },
+    {
+      "id": "ui-src/src/features/RequestFeed.tsx::select",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/RequestFeed.tsx",
+      "line": 20
+    },
+    {
+      "id": "ui-src/src/features/RequestView.tsx::useReplay",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/RequestView.tsx",
+      "line": 19
+    },
+    {
+      "id": "ui-src/src/features/RequestView.tsx::tick",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/RequestView.tsx",
+      "line": 28
+    },
+    {
+      "id": "ui-src/src/features/RequestView.tsx::RequestView",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/RequestView.tsx",
+      "line": 65
+    },
+    {
+      "id": "ui-src/src/features/SpanInspector.tsx::Field",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/SpanInspector.tsx",
+      "line": 13
+    },
+    {
+      "id": "ui-src/src/features/SpanInspector.tsx::SpanInspector",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/SpanInspector.tsx",
+      "line": 24
+    },
+    {
+      "id": "ui-src/src/features/SpanInspector.tsx::copy",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/SpanInspector.tsx",
+      "line": 33
+    },
+    {
+      "id": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/Waterfall.tsx",
+      "line": 8
+    },
+    {
+      "id": "ui-src/src/features/kinds.tsx::kindMeta",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/kinds.tsx",
+      "line": 19
+    },
+    {
+      "id": "ui-src/src/features/kinds.tsx::statusTone",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/kinds.tsx",
+      "line": 23
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts::ViewNode",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/features/spanTree.ts",
+      "line": 3
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts::ms",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/spanTree.ts",
+      "line": 13
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts::buildView",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/spanTree.ts",
+      "line": 17
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts::walk",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/spanTree.ts",
+      "line": 28
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts::timeBounds",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/spanTree.ts",
+      "line": 68
+    },
+    {
+      "id": "ui-src/src/features/spanTree.ts::bytesOf",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/spanTree.ts",
+      "line": 81
+    },
+    {
+      "id": "ui-src/src/lib/utils.ts::cn",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/lib/utils.ts",
+      "line": 4
+    },
+    {
+      "id": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/lib/utils.ts",
+      "line": 8
+    },
+    {
+      "id": "ui-src/src/lib/utils.ts::fmtBytes",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/lib/utils.ts",
+      "line": 16
+    },
+    {
+      "id": "ui-src/src/lib/utils.ts::relTime",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/lib/utils.ts",
+      "line": 23
+    },
+    {
+      "id": "ui-src/src/lib/utils.ts::copyText",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/lib/utils.ts",
+      "line": 32
+    },
+    {
+      "id": "ui-src/src/pages/Coach.tsx::LagTable",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Coach.tsx",
+      "line": 24
+    },
+    {
+      "id": "ui-src/src/pages/Coach.tsx::Coach",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Coach.tsx",
+      "line": 58
     },
     {
       "id": "ui-src/src/pages/Console.tsx::Console",
@@ -8954,6 +10954,41 @@
       "kind": "function",
       "file": "ui-src/src/pages/Knowledge.tsx",
       "line": 93
+    },
+    {
+      "id": "ui-src/src/pages/Learning.tsx::Learning",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Learning.tsx",
+      "line": 26
+    },
+    {
+      "id": "ui-src/src/pages/Live.tsx::Live",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Live.tsx",
+      "line": 15
+    },
+    {
+      "id": "ui-src/src/pages/Project.tsx::Catalog",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Project.tsx",
+      "line": 20
+    },
+    {
+      "id": "ui-src/src/pages/Project.tsx::Panels",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Project.tsx",
+      "line": 56
+    },
+    {
+      "id": "ui-src/src/pages/Project.tsx::Project",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Project.tsx",
+      "line": 101
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::median",
@@ -9017,6 +11052,48 @@
       "kind": "function",
       "file": "ui-src/src/pages/Sessions.tsx",
       "line": 157
+    },
+    {
+      "id": "ui-src/src/test/fixtures.ts::span",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/test/fixtures.ts",
+      "line": 13
+    },
+    {
+      "id": "ui-src/src/test/fixtures.ts::fixtureFetch",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/test/fixtures.ts",
+      "line": 67
+    },
+    {
+      "id": "ui-src/src/test/honesty.test.tsx::unlabelledFigures",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/test/honesty.test.tsx",
+      "line": 13
+    },
+    {
+      "id": "ui-src/src/test/honesty.test.tsx::RO",
+      "type": "symbol",
+      "kind": "class",
+      "file": "ui-src/src/test/honesty.test.tsx",
+      "line": 28
+    },
+    {
+      "id": "ui-src/src/test/honesty.test.tsx::mount",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/test/honesty.test.tsx",
+      "line": 37
+    },
+    {
+      "id": "ui-src/tailwind.config.js::v",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/tailwind.config.js",
+      "line": 2
     }
   ],
   "calls": [
@@ -9686,6 +11763,16 @@
       "type": "calls"
     },
     {
+      "source": "bin/agent-spec-memory.py::_sections",
+      "target": "bin/agent-spec-memory.py::_split_snapshot",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_snapshots",
+      "target": "bin/agent-spec-memory.py::_heading_name",
+      "type": "calls"
+    },
+    {
       "source": "bin/agent-spec-memory.py::cmd_snapshots",
       "target": "bin/agent-spec-memory.py::_sections",
       "type": "calls"
@@ -9693,6 +11780,16 @@
     {
       "source": "bin/agent-spec-memory.py::cmd_snapshots",
       "target": "bin/agent-spec-memory.py::_summary_line",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_rotate",
+      "target": "bin/agent-spec-memory.py::_heading_name",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_rotate",
+      "target": "bin/agent-spec-memory.py::_split_snapshot",
       "type": "calls"
     },
     {
@@ -9783,6 +11880,26 @@
     {
       "source": "bin/agent-spec-platform.py::cmd_seed",
       "target": "bin/aspec_platform/demo_seed.py::seed",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-platform.py::cmd_trace",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-platform.py::cmd_trace",
+      "target": "bin/aspec_platform/db.py::connect",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-platform.py::cmd_trace",
+      "target": "bin/aspec_platform/db.py::db_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-platform.py::cmd_trace",
+      "target": "bin/aspec_platform/common.py::find_project",
       "type": "calls"
     },
     {
@@ -11016,6 +13133,61 @@
       "type": "calls"
     },
     {
+      "source": "bin/aspec_platform/cursor_sessions.py::user_dir_candidates",
+      "target": "bin/aspec_platform/cursor_sessions.py::_is_wsl",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::cursor_user_dir",
+      "target": "bin/aspec_platform/cursor_sessions.py::user_dir_candidates",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::_store_path",
+      "target": "bin/aspec_platform/cursor_sessions.py::cursor_user_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::global_vscdb",
+      "target": "bin/aspec_platform/cursor_sessions.py::_store_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::search_db",
+      "target": "bin/aspec_platform/cursor_sessions.py::_store_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::ws_storage",
+      "target": "bin/aspec_platform/cursor_sessions.py::_store_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::_workspace_composers",
+      "target": "bin/aspec_platform/cursor_sessions.py::_connect_ro",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::_workspace_composers",
+      "target": "bin/aspec_platform/cursor_sessions.py::ws_storage",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::_unc_to_path",
+      "target": "bin/aspec_platform/cursor_sessions.py::folder_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::_rows_from_kv",
+      "target": "bin/aspec_platform/cursor_sessions.py::_unc_to_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::_rows_from_kv",
+      "target": "bin/aspec_platform/cursor_sessions.py::_workspace_composers",
+      "type": "calls"
+    },
+    {
       "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
       "target": "bin/aspec_platform/cursor_sessions.py::_connect_ro",
       "type": "calls"
@@ -11023,6 +13195,26 @@
     {
       "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
       "target": "bin/aspec_platform/cursor_sessions.py::_fmt_relative_time",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
+      "target": "bin/aspec_platform/cursor_sessions.py::_rows_from_kv",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
+      "target": "bin/aspec_platform/cursor_sessions.py::folder_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
+      "target": "bin/aspec_platform/cursor_sessions.py::global_vscdb",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_workspaces",
+      "target": "bin/aspec_platform/cursor_sessions.py::ws_storage",
       "type": "calls"
     },
     {
@@ -11031,6 +13223,11 @@
       "type": "calls"
     },
     {
+      "source": "bin/aspec_platform/cursor_sessions.py::_messages_from_bubbles",
+      "target": "bin/aspec_platform/redact.py::redact",
+      "type": "calls"
+    },
+    {
       "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
       "target": "bin/aspec_platform/cursor_sessions.py::_connect_ro",
       "type": "calls"
@@ -11038,6 +13235,16 @@
     {
       "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
       "target": "bin/aspec_platform/cursor_sessions.py::_fmt_relative_time",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
+      "target": "bin/aspec_platform/cursor_sessions.py::_header_row",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
+      "target": "bin/aspec_platform/cursor_sessions.py::_messages_from_bubbles",
       "type": "calls"
     },
     {
@@ -11047,7 +13254,52 @@
     },
     {
       "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
+      "target": "bin/aspec_platform/cursor_sessions.py::global_vscdb",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
       "target": "bin/aspec_platform/cursor_sessions.py::load_session_review",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::get_cursor_session_detail",
+      "target": "bin/aspec_platform/cursor_sessions.py::search_db",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/cursor_sessions.py::_connect_ro",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/cursor_sessions.py::_iso_ms",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/cursor_sessions.py::_rows_from_kv",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/cursor_sessions.py::folder_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/cursor_sessions.py::global_vscdb",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/redact.py::redact",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/cursor_sessions.py::store_conversations",
+      "target": "bin/aspec_platform/cursor_sessions.py::ws_storage",
       "type": "calls"
     },
     {
@@ -11402,6 +13654,11 @@
     },
     {
       "source": "bin/aspec_platform/ingest.py::_ingest_run_dir",
+      "target": "bin/aspec_platform/ingest.py::_run_trace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_ingest_run_dir",
       "target": "bin/aspec_platform/ingest.py::_to_utc",
       "type": "calls"
     },
@@ -11417,6 +13674,36 @@
     },
     {
       "source": "bin/aspec_platform/ingest.py::_ingest_run_dir",
+      "target": "bin/aspec_platform/redact.py::redact_obj",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_run_trace",
+      "target": "bin/aspec_platform/ingest.py::_to_utc",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_run_trace",
+      "target": "bin/aspec_platform/traces.py::iso",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_run_trace",
+      "target": "bin/aspec_platform/traces.py::ms",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_run_trace",
+      "target": "bin/aspec_platform/traces.py::persist",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_run_trace",
+      "target": "bin/aspec_platform/redact.py::redact",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::_run_trace",
       "target": "bin/aspec_platform/redact.py::redact_obj",
       "type": "calls"
     },
@@ -11453,6 +13740,36 @@
     {
       "source": "bin/aspec_platform/ingest.py::ingest_events",
       "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::ingest_traces",
+      "target": "bin/aspec_platform/traces.py::build_from_events",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::ingest_traces",
+      "target": "bin/aspec_platform/traces.py::build_from_store",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::ingest_traces",
+      "target": "bin/aspec_platform/traces.py::events_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::ingest_traces",
+      "target": "bin/aspec_platform/traces.py::persist",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::ingest_traces",
+      "target": "bin/aspec_platform/traces.py::read_events",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/ingest.py::ingest_traces",
+      "target": "bin/aspec_platform/cursor_sessions.py::store_conversations",
       "type": "calls"
     },
     {
@@ -11528,6 +13845,121 @@
     {
       "source": "bin/aspec_platform/insights.py::session_detail",
       "target": "bin/aspec_platform/savings.py::savings",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::reviews",
+      "target": "bin/aspec_platform/observe.py::_read_json",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::reviews",
+      "target": "bin/aspec_platform/observe.py::_slug",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::reviews",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::coach_issues",
+      "target": "bin/aspec_platform/observe.py::_week",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::coach_issues",
+      "target": "bin/aspec_platform/observe.py::reviews",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::_list",
+      "target": "bin/aspec_platform/observe.py::_slug",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learners",
+      "target": "bin/aspec_platform/observe.py::_frontmatter",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learners",
+      "target": "bin/aspec_platform/observe.py::_list",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learners",
+      "target": "bin/aspec_platform/observe.py::_read_json",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learners",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::recurrence",
+      "target": "bin/aspec_platform/observe.py::learners",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::recurrence",
+      "target": "bin/aspec_platform/observe.py::reviews",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learning",
+      "target": "bin/aspec_platform/observe.py::learners",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learning",
+      "target": "bin/aspec_platform/observe.py::recurrence",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::learning",
+      "target": "bin/aspec_platform/observe.py::reviews",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::panels",
+      "target": "bin/aspec_platform/observe.py::_read_json",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::panels",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::panels",
+      "target": "bin/aspec_platform/observe.py::validate_panel",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::catalog",
+      "target": "bin/aspec_platform/observe.py::_dashboard_block",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::catalog",
+      "target": "bin/aspec_platform/insights.py::_skill_category",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::catalog",
+      "target": "bin/aspec_platform/insights.py::_skill_frontmatter",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::catalog",
+      "target": "bin/aspec_platform/insights.py::_skill_roots",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/observe.py::catalog",
+      "target": "bin/aspec_platform/traces.py::all_traces",
       "type": "calls"
     },
     {
@@ -11643,6 +14075,16 @@
     {
       "source": "bin/aspec_platform/savings.py::compare",
       "target": "bin/aspec_platform/savings.py::_transcript",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::_filters",
+      "target": "bin/aspec_platform/serve.py::_first",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::_offset",
+      "target": "bin/aspec_platform/serve.py::_first",
       "type": "calls"
     },
     {
@@ -11897,6 +14339,11 @@
     },
     {
       "source": "bin/aspec_platform/serve.py::make_handler",
+      "target": "bin/aspec_platform/traces.py::events_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::make_handler",
       "target": "bin/aspec_platform/insights.py::gaps",
       "type": "calls"
     },
@@ -11923,6 +14370,151 @@
     {
       "source": "bin/aspec_platform/serve.py::main",
       "target": "bin/aspec_platform/serve.py::make_server",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::_Builder.trace",
+      "target": "bin/aspec_platform/traces.py::_Builder.span",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::_Builder.skill",
+      "target": "bin/aspec_platform/traces.py::_Builder.span",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::_Builder.finish",
+      "target": "bin/aspec_platform/traces.py::iso",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::_Builder",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::_Builder.finish",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::ms",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::_Builder.skill",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::_Builder.span",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::_Builder.touch",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_events",
+      "target": "bin/aspec_platform/traces.py::_Builder.trace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_store",
+      "target": "bin/aspec_platform/traces.py::_Builder",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_store",
+      "target": "bin/aspec_platform/traces.py::_Builder.finish",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_store",
+      "target": "bin/aspec_platform/traces.py::_Builder.skill",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_store",
+      "target": "bin/aspec_platform/traces.py::_Builder.span",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_store",
+      "target": "bin/aspec_platform/traces.py::_Builder.touch",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::build_from_store",
+      "target": "bin/aspec_platform/traces.py::_Builder.trace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::events_path",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::hook_traces",
+      "target": "bin/aspec_platform/traces.py::build_from_events",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::hook_traces",
+      "target": "bin/aspec_platform/traces.py::events_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::hook_traces",
+      "target": "bin/aspec_platform/traces.py::read_events",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::all_traces",
+      "target": "bin/aspec_platform/traces.py::db_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::all_traces",
+      "target": "bin/aspec_platform/traces.py::hook_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::list_requests",
+      "target": "bin/aspec_platform/traces.py::_match",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::list_requests",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::load_review",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::request_detail",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::request_detail",
+      "target": "bin/aspec_platform/traces.py::load_review",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::lag",
+      "target": "bin/aspec_platform/traces.py::_pct",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/traces.py::lag",
+      "target": "bin/aspec_platform/traces.py::all_traces",
       "type": "calls"
     },
     {
@@ -12096,18 +14688,53 @@
       "type": "calls"
     },
     {
-      "source": "hooks/cursor-event.py::handle_event",
-      "target": "hooks/cursor-event.py::_safe_str",
+      "source": "hooks/cursor-event.py::_tool_target",
+      "target": "hooks/cursor-event.py::_as_dict",
       "type": "calls"
     },
     {
       "source": "hooks/cursor-event.py::handle_event",
-      "target": "hooks/cursor-event.py::_utc_now",
+      "target": "hooks/cursor-event.py::_as_dict",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::handle_event",
+      "target": "hooks/cursor-event.py::_clip",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::handle_event",
+      "target": "hooks/cursor-event.py::_int",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::handle_event",
+      "target": "hooks/cursor-event.py::_tool_target",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::handle_event",
+      "target": "hooks/cursor-event.py::_utc",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::_record",
+      "target": "hooks/cursor-event.py::_clip",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::main",
+      "target": "hooks/cursor-event.py::_record",
       "type": "calls"
     },
     {
       "source": "hooks/cursor-event.py::main",
       "target": "hooks/cursor-event.py::handle_event",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-event.py::main",
+      "target": "hooks/cursor-event.py::workspace_root",
       "type": "calls"
     },
     {
@@ -12176,6 +14803,11 @@
       "type": "calls"
     },
     {
+      "source": "hooks/cursor-pre-tool-use.py::_payload_meta",
+      "target": "hooks/cursor-pre-tool-use.py::_remember_ctx",
+      "type": "calls"
+    },
+    {
       "source": "hooks/cursor-pre-tool-use.py::check",
       "target": "hooks/cursor-pre-tool-use.py::is_ranged",
       "type": "calls"
@@ -12186,8 +14818,18 @@
       "type": "calls"
     },
     {
+      "source": "hooks/cursor-pre-tool-use.py::deny",
+      "target": "hooks/cursor-pre-tool-use.py::guard_event",
+      "type": "calls"
+    },
+    {
       "source": "hooks/cursor-pre-tool-use.py::main",
       "target": "hooks/cursor-pre-tool-use.py::_payload_meta",
+      "type": "calls"
+    },
+    {
+      "source": "hooks/cursor-pre-tool-use.py::main",
+      "target": "hooks/cursor-pre-tool-use.py::_remember_ctx",
       "type": "calls"
     },
     {
@@ -12964,38 +15606,93 @@
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_post_tool_use_event",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.read_events",
+      "source": "tests/test_cursor_event.py::CursorEventTest.one",
+      "target": "tests/test_cursor_event.py::fixture",
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_post_tool_use_event",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.run_hook",
+      "source": "tests/test_cursor_event.py::CursorEventTest.one",
+      "target": "tests/test_cursor_event.py::CursorEventTest.run_hook",
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_post_tool_use_failure",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.read_events",
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_before_submit_prompt_redacted",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_post_tool_use_failure",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.run_hook",
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_post_tool_use",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_subagent_events",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.read_events",
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_post_tool_use_failure",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_subagent_events",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.run_hook",
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_subagent_start",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
       "type": "calls"
     },
     {
-      "source": "tests/test_cursor_event.py::CursorEventHookTest.test_fail_open_on_malformed_input",
-      "target": "tests/test_cursor_event.py::CursorEventHookTest.read_events",
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_subagent_stop",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_after_file_edit",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_after_agent_response",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_pre_compact",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_stop",
+      "target": "tests/test_cursor_event.py::CursorEventTest.one",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_text_is_truncated",
+      "target": "tests/test_cursor_event.py::fixture",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_text_is_truncated",
+      "target": "tests/test_cursor_event.py::CursorEventTest.run_hook",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_unharnessed_workspace_writes_nothing",
+      "target": "tests/test_cursor_event.py::fixture",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_unharnessed_workspace_writes_nothing",
+      "target": "tests/test_cursor_event.py::CursorEventTest.run_hook",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_fail_open_on_garbage",
+      "target": "tests/test_cursor_event.py::CursorEventTest.run_hook",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_record_mode_saves_payload",
+      "target": "tests/test_cursor_event.py::fixture",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_event.py::CursorEventTest.test_record_mode_saves_payload",
+      "target": "tests/test_cursor_event.py::CursorEventTest.run_hook",
       "type": "calls"
     },
     {
@@ -14630,6 +17327,11 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_memory.py::test_add_records_addresses_for_learning_view",
+      "target": "tests/test_memory.py::run",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_memory.py::test_index_one_line_per_fact_and_check",
       "target": "tests/test_memory.py::run",
       "type": "calls"
@@ -14762,6 +17464,11 @@
     {
       "source": "tests/test_memory.py::test_v2_invalid_field_values_flagged",
       "target": "tests/test_memory.py::write_fact",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory.py::test_rotate_splits_dated_headings_and_merges_index",
+      "target": "tests/test_memory.py::run",
       "type": "calls"
     },
     {
@@ -16031,6 +18738,188 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_traces.py::hook_rows",
+      "target": "bin/aspec_platform/traces.py::iso",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_hook_trace_tree",
+      "target": "bin/aspec_platform/traces.py::build_from_events",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_hook_trace_tree",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_running_until_stop",
+      "target": "bin/aspec_platform/traces.py::build_from_events",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_running_until_stop",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_without_generation_id_each_prompt_is_a_trace",
+      "target": "bin/aspec_platform/traces.py::build_from_events",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_without_generation_id_each_prompt_is_a_trace",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_without_generation_id_each_prompt_is_a_trace",
+      "target": "bin/aspec_platform/traces.py::iso",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_without_generation_id_each_prompt_is_a_trace",
+      "target": "bin/aspec_platform/traces.py::ms",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_store_conversations",
+      "target": "bin/aspec_platform/traces.py::build_from_store",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::BuilderTest.test_lag_percentiles",
+      "target": "bin/aspec_platform/traces.py::_pct",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::ResolverTest.test_candidates_per_os",
+      "target": "bin/aspec_platform/cursor_sessions.py::user_dir_candidates",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::ResolverTest.test_override_dir_is_used_when_store_exists",
+      "target": "bin/aspec_platform/cursor_sessions.py::cursor_user_dir",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::ResolverTest.test_folder_uris",
+      "target": "bin/aspec_platform/cursor_sessions.py::_unc_to_path",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.setUp",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.test_ingest_persists_hook_traces_idempotently",
+      "target": "bin/aspec_platform/db.py::connect",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.test_ingest_persists_hook_traces_idempotently",
+      "target": "bin/aspec_platform/ingest.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.test_ingest_persists_hook_traces_idempotently",
+      "target": "bin/aspec_platform/db.py::schema_version",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.test_run_joins_its_request",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.test_run_joins_its_request",
+      "target": "bin/aspec_platform/db.py::connect",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::IngestTest.test_run_joins_its_request",
+      "target": "bin/aspec_platform/ingest.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::LearningTest.test_recurrence_before_after",
+      "target": "bin/aspec_platform/observe.py::learning",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::LearningTest.test_recurrence_before_after",
+      "target": "bin/aspec_platform/observe.py::recurrence",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::LearningTest.test_coach_issues_rank_and_fix_prompt",
+      "target": "bin/aspec_platform/observe.py::coach_issues",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::PanelTest.test_dashboard_frontmatter",
+      "target": "bin/aspec_platform/observe.py::_dashboard_block",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.setUp",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.setUp",
+      "target": "tests/test_traces.py::IngestTest.setUp",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.setUp",
+      "target": "tests/test_traces.py::LearningTest.setUp",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_list_filters_and_detail",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_list_filters_and_detail",
+      "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_live_requests_follow_the_file_without_ingest",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_live_requests_follow_the_file_without_ingest",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_coach_lag",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_live_requires_token",
+      "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_live_stream_resumes_from_offset",
+      "target": "tests/test_traces.py::hook_rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_traces.py::RequestApiTest.test_live_stream_resumes_from_offset",
+      "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_workflow_validate.py::ValidateTest.setUp",
       "target": "tests/_run_helpers.py::Sandbox",
       "type": "calls"
@@ -16151,6 +19040,11 @@
       "type": "calls"
     },
     {
+      "source": "ui-src/scripts/check-gzip-budget.mjs::walk",
+      "target": "ui-src/scripts/check-gzip-budget.mjs::gz",
+      "type": "calls"
+    },
+    {
       "source": "ui-src/src/api/client.ts::apiGet",
       "target": "ui-src/src/api/client.ts::getToken",
       "type": "calls"
@@ -16161,8 +19055,273 @@
       "type": "calls"
     },
     {
+      "source": "ui-src/src/api/traces.ts::useRequests",
+      "target": "ui-src/src/api/traces.ts::qs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Num.tsx::Num",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Num.tsx::Prov",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx::Shell",
+      "target": "ui-src/src/components/Shell.tsx::applyTheme",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx::onKey",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/badge.tsx::Badge",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/card.tsx::Card",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/card.tsx::CardHeader",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/sheet.tsx::Sheet",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/tabs.tsx::TabsList",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/tabs.tsx::TabsTrigger",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/ui/tabs.tsx::TabsContent",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx::OrchestrationGraph",
+      "target": "ui-src/src/features/spanTree.ts::buildView",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx::OrchestrationGraph",
+      "target": "ui-src/src/features/spanTree.ts::bytesOf",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx::OrchestrationGraph",
+      "target": "ui-src/src/lib/utils.ts::fmtBytes",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/OrchestrationGraph.tsx::OrchestrationGraph",
+      "target": "ui-src/src/features/kinds.tsx::statusTone",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx::select",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx::select",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx::select",
+      "target": "ui-src/src/lib/utils.ts::relTime",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx::select",
+      "target": "ui-src/src/features/kinds.tsx::statusTone",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx::useReplay",
+      "target": "ui-src/src/features/spanTree.ts::timeBounds",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx::RequestView",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx::RequestView",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx::RequestView",
+      "target": "ui-src/src/features/kinds.tsx::statusTone",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx::RequestView",
+      "target": "ui-src/src/features/RequestView.tsx::useReplay",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx::SpanInspector",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx::SpanInspector",
+      "target": "ui-src/src/features/kinds.tsx::kindMeta",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx::copy",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx::copy",
+      "target": "ui-src/src/lib/utils.ts::fmtBytes",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx::copy",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SpanInspector.tsx::copy",
+      "target": "ui-src/src/features/kinds.tsx::statusTone",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "target": "ui-src/src/features/spanTree.ts::buildView",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "target": "ui-src/src/features/kinds.tsx::kindMeta",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "target": "ui-src/src/features/kinds.tsx::statusTone",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/Waterfall.tsx::Waterfall",
+      "target": "ui-src/src/features/spanTree.ts::timeBounds",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/spanTree.ts::buildView",
+      "target": "ui-src/src/features/spanTree.ts::ms",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/spanTree.ts::timeBounds",
+      "target": "ui-src/src/features/spanTree.ts::ms",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx::LagTable",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx::LagTable",
+      "target": "ui-src/src/features/kinds.tsx::kindMeta",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx::Coach",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx::Coach",
+      "target": "ui-src/src/lib/utils.ts::fmtBytes",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx::Coach",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Coach.tsx::Coach",
+      "target": "ui-src/src/features/kinds.tsx::kindMeta",
+      "type": "calls"
+    },
+    {
       "source": "ui-src/src/pages/Home.tsx::Home",
       "target": "ui-src/src/api/client.ts::apiPost",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Learning.tsx::Learning",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx::Live",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx::Live",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx::Live",
+      "target": "ui-src/src/api/traces.ts::useLive",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx::Live",
+      "target": "ui-src/src/api/traces.ts::useRequest",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Live.tsx::Live",
+      "target": "ui-src/src/api/traces.ts::useRequests",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx::Panels",
+      "target": "ui-src/src/lib/utils.ts::relTime",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx::Project",
+      "target": "ui-src/src/lib/utils.ts::cn",
       "type": "calls"
     },
     {
@@ -16189,51 +19348,60 @@
       "source": "ui-src/src/pages/Sessions.tsx::SessionDetail",
       "target": "ui-src/src/api/client.ts::apiGet",
       "type": "calls"
+    },
+    {
+      "source": "ui-src/src/test/honesty.test.tsx::mount",
+      "target": "ui-src/src/test/honesty.test.tsx::unlabelledFigures",
+      "type": "calls"
     }
   ],
   "external": [
     [
-      "sys",
-      75
+      "os",
+      78
     ],
     [
-      "os",
-      74
+      "sys",
+      78
     ],
     [
       "json",
-      65
+      69
     ],
     [
       "datetime",
-      32
+      41
     ],
     [
       "subprocess",
-      32
-    ],
-    [
-      "tempfile",
-      28
+      33
     ],
     [
       "__future__",
-      28
-    ],
-    [
-      "unittest",
-      28
+      32
     ],
     [
       "re",
+      29
+    ],
+    [
+      "tempfile",
+      29
+    ],
+    [
+      "unittest",
+      29
+    ],
+    [
+      "react",
       26
     ],
     [
-      "argparse",
-      20
+      "time",
+      22
     ],
     [
-      "time",
+      "argparse",
       20
     ],
     [
@@ -16245,11 +19413,15 @@
       20
     ],
     [
-      "http",
-      13
+      "type",
+      15
     ],
     [
       "shutil",
+      14
+    ],
+    [
+      "http",
       13
     ],
     [
@@ -16257,11 +19429,19 @@
       13
     ],
     [
-      "react",
-      10
+      "react-router-dom",
+      12
+    ],
+    [
+      "lucide-react",
+      11
     ],
     [
       "mcp",
+      9
+    ],
+    [
+      "_api_support",
       9
     ],
     [
@@ -16269,16 +19449,20 @@
       8
     ],
     [
+      "@tanstack",
+      8
+    ],
+    [
       "importlib",
       7
     ],
     [
-      "_api_support",
+      "urllib",
       7
     ],
     [
-      "react-router-dom",
-      7
+      "glob",
+      6
     ],
     [
       "hashlib",
@@ -16293,23 +19477,15 @@
       6
     ],
     [
-      "glob",
-      4
-    ],
-    [
-      "csv",
-      4
-    ],
-    [
       "threading",
-      4
+      5
     ],
     [
       "",
-      4
+      5
     ],
     [
-      "urllib",
+      "csv",
       4
     ],
     [
@@ -16341,11 +19517,31 @@
       3
     ],
     [
+      "uuid",
+      3
+    ],
+    [
       "abc",
       3
     ],
     [
       "concurrent",
+      3
+    ],
+    [
+      "@playwright",
+      3
+    ],
+    [
+      "path",
+      3
+    ],
+    [
+      "vitest",
+      3
+    ],
+    [
+      "@radix-ui",
       3
     ],
     [
@@ -16358,38 +19554,6 @@
     ],
     [
       "statistics",
-      2
-    ],
-    [
-      "math",
-      2
-    ],
-    [
-      "mimetypes",
-      2
-    ],
-    [
-      "ast",
-      2
-    ],
-    [
-      "stat",
-      2
-    ],
-    [
-      "contextlib",
-      2
-    ],
-    [
-      "anthropic",
-      2
-    ],
-    [
-      "functools",
-      2
-    ],
-    [
-      "webbrowser",
       2
     ]
   ],

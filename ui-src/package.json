@@ -7,17 +7,31 @@
     "dev": "vite",
     "build": "vite build && node scripts/check-gzip-budget.mjs",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "playwright test"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.8",
+    "@radix-ui/react-dialog": "^1.3.1",
+    "@radix-ui/react-tabs": "^1.2.1",
+    "@radix-ui/react-tooltip": "^1.4.1",
+    "@tanstack/react-query": "^5.107.1",
+    "@xyflow/react": "^12.12.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "lucide-react": "^0.469.0",
+    "motion": "^11.18.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-force-graph-2d": "^1.29.2",
     "react-router-dom": "^7.0.2",
-    "recharts": "^2.15.0"
+    "recharts": "^2.15.0",
+    "tailwind-merge": "^2.6.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.0",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

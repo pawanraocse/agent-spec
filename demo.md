@@ -10,16 +10,34 @@ Agent-spec is a **harness** that wraps Cursor (and Gemini CLI) with structural a
 
 ---
 
-## ⏱️ 3-Minute Pitch Script
+## ⏱️ 3-Minute Demo — the request-trace control plane (DEC-16, §14.8)
 
-| Time | Action | What the Audience Sees |
-|------|--------|------------------------|
-| 0:00–0:30 | Install the harness on a live project | `./install.sh --register /path/to/project` — hooks, rules, skills, subagents all land in one command. |
-| 0:30–1:00 | Open Cursor → new session auto-loads digest | ~1.7 KB context injected in <100ms via `sessionStart` hook. Agent knows: stack, graph stats, pipeline state, last session summary, remembered facts. No file reads burned. |
-| 1:00–1:30 | Ask the agent: *"What depends on `src/auth/TokenValidator.ts`?"* | `graphify-cli.py query --file src/auth/TokenValidator.ts` returns blast radius in **152 bytes**. Without it: agent reads the file tree → **35,966 bytes** (99.6% saving). |
-| 1:30–2:15 | Ask the agent to implement a change | 6-gate pipeline fires: Placement → Test First → Build → Boundary Check → Verify Clean → Self-Review. Agent posts pre-change declaration with confidence score. `preToolUse` hook nudges away from whole-file reads (fail-open). |
-| 2:15–2:45 | Show memory persistence & self-learning | `agent-spec-memory.py add --type decision "Auth tokens are JWTs"` — fact survives across sessions, auto-injects in next digest. Zero repeated mistakes. |
-| 2:45–3:00 | Show token measurement & dashboard control plane | `agent-spec-tokens.py session` — four-bucket cost breakdown. Preview dashboard showing session tracking, subagent health, and token savings. |
+Every number the audience sees is read live from this repository by the dashboard; none is
+written in this script. Each figure on screen carries a Measured, Estimated or AI-judged
+badge.
+
+**Before (2 minutes, off stage):**
+
+```bash
+./install.sh --register "$(pwd)"                      # hooks write every request to events.jsonl
+python3 bin/agent-spec-platform.py ingest             # history, memory, graph, runs
+python3 bin/agent-spec-platform.py serve              # open the printed URL; Cursor on the left
+python3 bin/agent-spec-platform.py trace --list 5     # pick a fallback request for Replay
+```
+
+| Time | Do | The audience sees |
+|---|---|---|
+| 0:00–1:00 **Live** | In Cursor type `/agent-spec-investigate why does <a real failing test> fail` | The request appears at the top of the feed and its graph grows as hooks fire: prompt → skill → `agent-spec-search` subagent → reads → a red guard node if a whole-file read is blocked → response. The waterfall marks the slowest step. |
+| 1:00–1:30 **Inspect** | Click the subagent node, then the Responses tab | Its task, summary, tool-call count, files touched and measured duration; then every response in order. "Copy investigate prompt" hands any span back to the agent. |
+| 1:30–2:15 **Coach** | Review tab → copy `/agent-spec-session-review <id>` into Cursor; then open Coach | The grade and findings land, each linked to a span (hovering highlights it). Coach shows the top three issues across reviewed sessions with their weekly trend, a copyable fix prompt each, and measured p50/p95 per span kind. |
+| 2:15–3:00 **Learning** | Open Learning | For each fact linked to a finding class (`/agent-spec-remember --addresses …`): findings per session before vs after it was recorded. A flat line is shown as flat. |
+
+**If Cursor or the network misbehaves:** open any request and press **Replay** — the
+recorded trace plays at real speed (1×/4×/16×) under a *Recorded* badge.
+
+**What is not shown as measured:** token counts (Cursor's hook payloads carry none; see
+`tests/fixtures/hooks/README.md`), and durations from Cursor's local store, which are
+estimated from message timestamps and badged so.
 
 ---
 

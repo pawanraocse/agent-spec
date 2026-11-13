@@ -14,6 +14,7 @@ import shlex
 import sys
 import tempfile
 import time
+import uuid
 
 READ_CAP = 20000
 # Optional hard cap: AGENT_SPEC_READ_HARD_CAP_KB=N denies every rangeless Read of N KB or
@@ -328,13 +329,28 @@ def quarantine_log(project_dir, tool, hit, session_id):
         pass
 
 
+def _remember_ctx(payload):
+    """Documented common fields (cursor.com/docs/hooks) for guard_event; never raises."""
+    try:
+        roots = payload.get("workspace_roots")
+        if isinstance(roots, list) and roots and isinstance(roots[0], str) and os.path.isdir(roots[0]):
+            _GUARD_CTX["root"] = roots[0]
+        for key in ("conversation_id", "generation_id", "tool_name", "tool_use_id"):
+            if payload.get(key):
+                _GUARD_CTX[key] = str(payload[key])[:128]
+    except Exception:
+        pass
+
+
 def _payload_meta(raw):
     """Best-effort (tool name, session id) for the log; never raises."""
     try:
         payload = json.loads(raw)
         tool = (payload.get("tool_name") or payload.get("toolName")
                 or (payload.get("tool") or {}).get("name") or "unknown")
-        return tool, payload.get("session_id") or payload.get("sessionId")
+        if isinstance(payload, dict):
+            _remember_ctx(payload)
+        return tool, payload.get("conversation_id") or payload.get("session_id") or payload.get("sessionId")
     except Exception:
         return "unknown", None
 
@@ -404,7 +420,36 @@ def allow():
     return 0
 
 
-def deny(message, user_message="algosec-agent-spec input discipline"):
+_GUARD_CTX = {}
+
+
+def guard_event(rule, target=""):
+    """DV-001 guard span: one row in events.jsonl per deny, keyed like every hook row so the
+    dashboard can place it inside its request trace. Never raises."""
+    try:
+        root = _GUARD_CTX.get("root") or os.getcwd()
+        if not os.path.isdir(os.path.join(root, ".agent-spec")):
+            return
+        metrics = os.path.join(root, ".agent-spec", "metrics")
+        os.makedirs(metrics, exist_ok=True)
+        now = time.time()
+        row = {"id": "g" + uuid.uuid4().hex[:15],
+               "ts": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime(now)) + ".%03dZ" % int((now % 1) * 1000),
+               "event": "guard", "decision": "deny", "rule": str(rule)[:64],
+               "conversation_id": _GUARD_CTX.get("conversation_id") or "unknown",
+               "generation_id": _GUARD_CTX.get("generation_id"),
+               "tool_name": _GUARD_CTX.get("tool_name") or "unknown",
+               "target": os.path.basename(str(target))[:120]}
+        if _GUARD_CTX.get("tool_use_id"):
+            row["tool_use_id"] = _GUARD_CTX["tool_use_id"]
+        with open(os.path.join(metrics, "events.jsonl"), "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+    except Exception:
+        pass
+
+
+def deny(message, user_message="algosec-agent-spec input discipline", rule="input-discipline", target=""):
+    guard_event(rule, target)
     sys.stdout.write(
         json.dumps(
             {
@@ -429,11 +474,13 @@ def main():
     if hit:
         tool_name, session_id = _payload_meta(raw)
         quarantine_log(os.getcwd(), tool_name, hit, session_id)
+        _GUARD_CTX.setdefault("tool_name", tool_name)
         return deny(
             "Quarantine rule %s (S-002): this tool call touches a secrets/credentials path. "
             "Do not read, edit, list or copy it; ask the user to handle it manually "
             "(use .env.example for templates)." % hit[0],
             "algosec-agent-spec quarantine: blocked sensitive path (%s)" % hit[0],
+            rule="S-002-" + str(hit[0]), target=hit[1],
         )
     if not os.path.isdir("./.agent-spec"):
         return allow()
@@ -443,6 +490,7 @@ def main():
         return allow()
     if not isinstance(payload, dict):
         return allow()
+    _remember_ctx(payload)
 
     tool = (
         payload.get("tool_name")
@@ -465,7 +513,8 @@ def main():
         return allow()
 
     session_id = (
-        payload.get("session_id")
+        payload.get("conversation_id")
+        or payload.get("session_id")
         or payload.get("sessionId")
         or "none"
     )
@@ -483,6 +532,7 @@ def main():
                 "Retry as-is if you wish to continue without compacting."
                 % (session_tokens, threshold),
                 "algosec-agent-spec context threshold nudge (>80k tokens)",
+                rule="S-004-threshold",
             )
 
     try:
@@ -491,7 +541,7 @@ def main():
         hard = None
     if hard:
         debug_log(tool, payload, args, "deny-hard-cap")
-        return deny(hard)
+        return deny(hard, rule="hard-cap", target=args.get("file_path") or args.get("path") or "")
 
     try:
         hit = check(tool, args)
@@ -504,7 +554,8 @@ def main():
 
     key, message = hit
     session_id = (
-        payload.get("session_id")
+        payload.get("conversation_id")
+        or payload.get("session_id")
         or payload.get("sessionId")
         or "none"
     )
@@ -512,7 +563,7 @@ def main():
         debug_log(tool, payload, args, "allow-retry")
         return allow()
     debug_log(tool, payload, args, "deny-nudge")
-    return deny(message)
+    return deny(message, rule="whole-file-read", target=key)
 
 
 if __name__ == "__main__":

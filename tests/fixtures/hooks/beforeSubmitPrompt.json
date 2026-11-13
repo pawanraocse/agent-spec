@@ -1,0 +1,21 @@
+{
+  "conversation_id": "conv-fixture-1",
+  "generation_id": "gen-fixture-1",
+  "model": "claude-sonnet-4-5",
+  "model_id": "claude-sonnet-4-5",
+  "model_params": [],
+  "cursor_version": "2.1.0",
+  "workspace_roots": [
+    "/project"
+  ],
+  "user_email": null,
+  "transcript_path": "/home/u/.cursor/projects/p/agent-transcripts/conv-fixture-1.jsonl",
+  "hook_event_name": "beforeSubmitPrompt",
+  "prompt": "/agent-spec-investigate why does the login test fail? api_key=sk-test-0123456789abcdef",
+  "attachments": [
+    {
+      "type": "file",
+      "file_path": "/project/src/auth.ts"
+    }
+  ]
+}

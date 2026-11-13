@@ -4,6 +4,7 @@ const LABEL: Record<Provenance, string> = {
   measured: "Measured",
   estimated: "Estimated",
   demo_seed: "Demo seed",
+  ai_judged: "AI-judged",
 };
 
 function Sparkline({ data }: { data: number[] }) {
@@ -58,7 +59,7 @@ export function Metric({
         </span>
       </div>
       <div className="mt-1 flex items-baseline justify-between gap-2">
-        <div className="text-2xl font-semibold tabular-nums text-slate-100">{value}</div>
+        <div className="text-2xl font-semibold tabular-nums text-slate-100" data-provenance={provenance}>{value}</div>
         {sparkline ? <Sparkline data={sparkline} /> : null}
       </div>
       {provenance === "estimated" && formula ? (

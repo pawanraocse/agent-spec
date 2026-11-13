@@ -35,7 +35,7 @@ PATH_RE = re.compile(
     BOUNDARY + r"(?:%s)/[A-Za-z0-9_.*<>-]+(?:/[A-Za-z0-9_.*<>-]+)*" % "|".join(TOP))
 SKILL_RE = re.compile(BOUNDARY + r"/(agent-spec(?:-[a-z0-9]+)*)(?![A-Za-z0-9_./-])")
 
-SKIP_DIRS = {".git", "node_modules", "__pycache__", ".agent-spec"}
+SKIP_DIRS = {".git", "node_modules", "__pycache__", ".agent-spec", ".agents"}
 SKIP_FILES = {"CHANGELOG.md", "IMPLEMENTATION-GUIDE.md"}
 
 

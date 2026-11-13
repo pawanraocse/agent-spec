@@ -23,7 +23,14 @@ TIMEOUTS = {
     "subagentStart": 3,
     "subagentStop": 3,
     "preCompact": 3,
+    "beforeSubmitPrompt": 3,
+    "afterFileEdit": 3,
+    "afterAgentResponse": 3,
 }
+
+# DV-001: every event the trace model needs. `stop` also keeps the session-end handler.
+EVENT_HOOKS = ("beforeSubmitPrompt", "postToolUse", "postToolUseFailure", "subagentStart",
+               "subagentStop", "afterFileEdit", "afterAgentResponse", "preCompact", "stop")
 
 
 def ours(h):
@@ -52,20 +59,14 @@ def main():
     cfg["version"] = 1
     hooks = cfg.setdefault("hooks", {})
 
-    def merge(event, cmd):
+    wanted = {"sessionStart": [SESSION_CMD], "preToolUse": [PRE_CMD], "sessionEnd": [END_CMD],
+              "stop": [END_CMD]}
+    for event in EVENT_HOOKS:
+        wanted.setdefault(event, []).append(EVENT_CMD)
+    for event, cmds in wanted.items():
         handlers = [h for h in hooks.get(event, []) if not ours(h)]
-        handlers.append({"command": cmd, "timeout": TIMEOUTS.get(event, 3)})
+        handlers.extend({"command": c, "timeout": TIMEOUTS.get(event, 3)} for c in cmds)
         hooks[event] = handlers
-
-    merge("sessionStart", SESSION_CMD)
-    merge("preToolUse", PRE_CMD)
-    merge("sessionEnd", END_CMD)
-    merge("stop", END_CMD)
-    merge("postToolUse", EVENT_CMD)
-    merge("postToolUseFailure", EVENT_CMD)
-    merge("subagentStart", EVENT_CMD)
-    merge("subagentStop", EVENT_CMD)
-    merge("preCompact", EVENT_CMD)
 
     with open(path, "w") as fh:
         json.dump(cfg, fh, indent=2)

@@ -50,6 +50,12 @@ is known from then on, without anyone reading anything.
 Always cite `--source`: a file and line, a commit, a URL, or `conversation`. A fact whose
 origin nobody can check cannot be re-verified when it starts to look wrong.
 
+When the fact exists to stop a mistake the session reviewer reports, add
+`--addresses <category>` (one or more of the categories in `agent-spec-session-review`, for
+example `whole_file_read`). You choose the category; the dashboard's Learning view then
+counts that finding in the sessions before and after this fact, so the fact's effect is
+measured rather than assumed.
+
 ## Read back
 
 ```bash

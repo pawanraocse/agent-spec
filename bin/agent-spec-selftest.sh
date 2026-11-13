@@ -65,7 +65,7 @@ COUNT2="$($PY -c "import json;d=json.load(open('$P/.cursor/hooks.json'));print(l
 [ "$COUNT2" = "1" ] && ok "preToolUse not duplicated ($COUNT2)" || bad "preToolUse count=$COUNT2"
 
 echo "[4] digest --cursor-hook JSON"
-OUT="$(cd "$P" && $PY ./.agent-spec/bin/agent-spec-digest.py --cursor-hook)"
+OUT="$(cd "$P" && $PY ./.agent-spec/bin/agent-spec-digest.py --cursor-hook < /dev/null)"
 $PY -c "import json,sys; json.loads(sys.argv[1])" "$OUT" && ok "digest JSON" || bad "digest JSON"
 
 echo "[5] preToolUse fail-open / nudge"
@@ -142,13 +142,14 @@ if grep -q "YYYY-MM-DD" "${HOME_DIR}/context/TECH-DEBT-REGISTER.md"; then bad "d
 grep -q '^\*\*Code change\*\*' "${HOME_DIR}/CURSOR.md" && ok "CURSOR.md auto-harness rule (T-052)" || bad "CURSOR.md lacks the Code change rule"
 CURSOR_BYTES="$(wc -c < "${HOME_DIR}/CURSOR.md" | tr -d ' ')"
 [ "$CURSOR_BYTES" -lt 4600 ] && ok "CURSOR.md ${CURSOR_BYTES} B (<4600)" || bad "CURSOR.md ${CURSOR_BYTES} B grew past the 4600 B always-on budget"
-LINT="$("$PY" "${HOME_DIR}/bin/agent-spec-lint-refs.py" "${HOME_DIR}" 2>&1 | tail -1)"
+LINT="$("$PY" "${HOME_DIR}/bin/agent-spec-lint-refs.py" "${HOME_DIR}" 2>&1 | tail -1 || true)"
 [ "$LINT" = "every path and skill name resolves" ] && ok "doc refs: 0 dangling (T-059)" || bad "doc refs: ${LINT}"
 echo "[13] platform (Phase 2): data layer, ingest, API, run plumbing (stdlib only, DEC-12)"
 while read -r t; do
   case "$t" in ""|\#*) continue;; esac
   [ -f "${HOME_DIR}/tests/${t}.py" ] || { bad "${t}.py missing"; continue; }
-  if PYTHONDONTWRITEBYTECODE=1 "$PY" "${HOME_DIR}/tests/${t}.py" >"${WORK}/${t}.log" 2>&1; then
+  # </dev/null: a suite that reads stdin would otherwise swallow the rest of this list.
+  if PYTHONDONTWRITEBYTECODE=1 "$PY" "${HOME_DIR}/tests/${t}.py" >"${WORK}/${t}.log" 2>&1 </dev/null; then
     ok "${t}: $(tail -1 "${WORK}/${t}.log")"
   else
     bad "${t} failed — $(tail -5 "${WORK}/${t}.log" | tr '\n' ' ')"

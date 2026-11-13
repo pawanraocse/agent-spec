@@ -123,7 +123,7 @@ export function SessionDetail() {
     story?: { request_id: string; prompt: string; steps?: { name: string; kind: string }[]; tokens_input?: number; tokens_output?: number }[];
   } | null>(null);
 
-  const [tab, setTab] = useState<"timeline" | "savings" | "tokenflow" | "compare">("timeline");
+  const [tab, setTab] = useState<"timeline" | "savings" | "compare">("timeline");
   const [savingsData, setSavingsData] = useState<SavingsData | null>(null);
   const [readWeight, setReadWeight] = useState(1.0);
   const [compareTarget, setCompareTarget] = useState("");
@@ -253,17 +253,6 @@ export function SessionDetail() {
         <button
           type="button"
           className={`pb-2 font-medium border-b-2 transition-colors ${
-            tab === "tokenflow"
-              ? "border-indigo-500 text-indigo-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
-          }`}
-          onClick={() => setTab("tokenflow")}
-        >
-          Token Flow (CP-025)
-        </button>
-        <button
-          type="button"
-          className={`pb-2 font-medium border-b-2 transition-colors ${
             tab === "compare"
               ? "border-indigo-500 text-indigo-400"
               : "border-transparent text-slate-400 hover:text-slate-200"
@@ -369,62 +358,6 @@ export function SessionDetail() {
         </div>
       )}
 
-      {/* Tab: Token Flow (CP-025) */}
-      {tab === "tokenflow" && (
-        <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-5 text-xs">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-100">Token Flow Distribution</h3>
-              <p className="text-slate-400">Inferred token consumption across session lifecycle</p>
-            </div>
-            <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase font-bold text-amber-300">
-              Estimated
-            </span>
-          </div>
-
-          <div className="space-y-3 pt-2">
-            <div>
-              <div className="flex justify-between text-slate-300 mb-1">
-                <span>Session Digest Context (~1.8 KB)</span>
-                <span className="font-mono">~450 tokens (2%)</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-sky-500" style={{ width: "2%" }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-slate-300 mb-1">
-                <span>AST Graph Queries & Symbols</span>
-                <span className="font-mono">~3,200 tokens (18%)</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-emerald-500" style={{ width: "18%" }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-slate-300 mb-1">
-                <span>Tool Outputs & Subagent Handoffs</span>
-                <span className="font-mono">~9,800 tokens (55%)</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-indigo-500" style={{ width: "55%" }} />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-slate-300 mb-1">
-                <span>Model Output Generation</span>
-                <span className="font-mono">~4,500 tokens (25%)</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
-                <div className="h-full bg-amber-500" style={{ width: "25%" }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Tab: A/B Compare */}
       {tab === "compare" && (

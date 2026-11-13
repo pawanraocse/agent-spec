@@ -1,9 +1,25 @@
 {
-  "event": "subagentStop",
-  "sessionId": "sess-1234",
-  "subagentId": "sub-999",
-  "agent": "agent-spec-search",
+  "conversation_id": "conv-fixture-1",
+  "generation_id": "gen-fixture-1",
+  "model": "claude-sonnet-4-5",
+  "model_id": "claude-sonnet-4-5",
+  "model_params": [],
+  "cursor_version": "2.1.0",
+  "workspace_roots": [
+    "/project"
+  ],
+  "user_email": null,
+  "transcript_path": "/home/u/.cursor/projects/p/agent-transcripts/conv-fixture-1.jsonl",
+  "hook_event_name": "subagentStop",
+  "subagent_type": "agent-spec-search",
   "status": "completed",
-  "durationMs": 1450,
-  "outputBytes": 420
+  "task": "Find every caller of login()",
+  "description": "Callers of login",
+  "summary": "3 callers: src/app.ts:12, src/cli.ts:40, tests/auth.test.ts:8",
+  "duration_ms": 1450,
+  "message_count": 6,
+  "tool_call_count": 4,
+  "loop_count": 0,
+  "modified_files": [],
+  "agent_transcript_path": "/home/u/.cursor/projects/p/agent-transcripts/sub-1.jsonl"
 }

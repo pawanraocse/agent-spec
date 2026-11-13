@@ -1,3 +1,79 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* DV-020 design tokens (shadcn-style HSL triplets). Dark is the default; .light flips them. */
+:root, .dark {
+  --background: 224 30% 6%;
+  --foreground: 213 31% 92%;
+  --card: 224 28% 9%;
+  --muted: 223 22% 14%;
+  --muted-foreground: 215 16% 62%;
+  --border: 222 20% 18%;
+  --ring: 199 89% 60%;
+  --primary: 199 89% 60%;
+  --primary-foreground: 222 47% 8%;
+  --accent: 262 90% 78%;
+  --success: 152 60% 50%;
+  --warning: 38 92% 56%;
+  --danger: 0 78% 63%;
+  --k-prompt: 210 20% 70%;
+  --k-skill: 262 90% 78%;
+  --k-subagent: 199 89% 60%;
+  --k-tool: 172 66% 50%;
+  --k-guard: 0 78% 63%;
+  --k-edit: 38 92% 56%;
+  --k-response: 152 60% 48%;
+  --k-compact: 290 60% 65%;
+  --k-workflow: 330 75% 65%;
+  color-scheme: dark;
+}
+.light {
+  --background: 0 0% 100%;
+  --foreground: 224 30% 12%;
+  --card: 220 20% 98%;
+  --muted: 220 16% 94%;
+  --muted-foreground: 220 9% 36%;
+  --border: 220 13% 86%;
+  --ring: 199 89% 40%;
+  --primary: 199 89% 30%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 262 70% 42%;
+  --success: 152 75% 23%;
+  --warning: 28 95% 30%;
+  --danger: 0 72% 38%;
+  --k-prompt: 215 20% 40%;
+  --k-skill: 262 70% 50%;
+  --k-subagent: 199 89% 38%;
+  --k-tool: 172 70% 30%;
+  --k-guard: 0 72% 46%;
+  --k-edit: 32 95% 38%;
+  --k-response: 152 65% 32%;
+  --k-compact: 290 55% 45%;
+  --k-workflow: 330 70% 45%;
+  color-scheme: light;
+}
+
+html, body, #root { height: 100%; }
+body { @apply bg-background text-foreground antialiased; font-feature-settings: "cv11", "ss01"; }
+* { @apply border-border; }
+::selection { background: hsl(var(--primary) / 0.3); }
+.tabular { font-variant-numeric: tabular-nums; }
+.scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
+
+/* Older v2 pages (Project › Sessions/Runs/Knowledge/Health) use slate utilities; in light mode
+   remap the darkest surfaces so they stay readable without rewriting those pages. */
+.light .bg-slate-950, .light .bg-slate-950\/80 { background-color: hsl(var(--background)); }
+.light .bg-slate-900, .light .bg-slate-900\/60, .light .bg-slate-900\/40 { background-color: hsl(var(--card)); }
+.light .text-slate-100, .light .text-slate-200, .light .text-white { color: hsl(var(--foreground)); }
+.light .text-slate-300, .light .text-slate-400 { color: hsl(var(--muted-foreground)); }
+.light .border-slate-800 { border-color: hsl(var(--border)); }
+
+.react-flow__attribution { display: none; }
+.react-flow__edge-text { fill: hsl(var(--muted-foreground)); font-size: 10px; }
+.react-flow__edge-textbg { fill: hsl(var(--background)); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

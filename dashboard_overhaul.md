@@ -2,7 +2,7 @@
 
 > **Document type:** Product architecture and UX plan
 > **Scope:** `bin/aspec_platform/` (server, ingest, UI) and the docs that govern it
-> **Status:** v2 Control Plane fully shipped & v1 retired (2026-11-07): React SPA as the sole UI bundle, read/action APIs, Console prompt composer, 5 spaces, status bar with graph/doctor/hook dots, 7-day sparklines, guided 5-step tour, savings calculator, context gauge, gaps audit, team-fact filter, and S-004 nudge logging (all CP-002–050 complete; CP-042 legacy v1 retired). Phase 4/5 panels deferred per MASTER-PLAN. AI-first realignment (DEC-15, §13): observer & governance focus.
+> **Status (2026-11-13):** v3 request-trace plan proposed in §14 (DEC-16); the §14.1 review found v2 rows closed without meeting acceptance (CP-015, CP-021, CP-025, CP-031, CP-040, AF-001). Previous status line, kept for history — v2 Control Plane fully shipped & v1 retired (2026-11-07): React SPA as the sole UI bundle, read/action APIs, Console prompt composer, 5 spaces, status bar with graph/doctor/hook dots, 7-day sparklines, guided 5-step tour, savings calculator, context gauge, gaps audit, team-fact filter, and S-004 nudge logging (all CP-002–050 complete; CP-042 legacy v1 retired). Phase 4/5 panels deferred per MASTER-PLAN. AI-first realignment (DEC-15, §13): observer & governance focus.
 > **Supersedes:** v1 of this file (2026-11-05 draft)
 > **Related:** [`docs/DASHBOARD.md`](docs/DASHBOARD.md) · [`todo-plan.md`](todo-plan.md) Slice 6 · [`demo.md`](demo.md) · [`docs/IMPLEMENTATION-GUIDE.md`](docs/IMPLEMENTATION-GUIDE.md)
 
@@ -670,4 +670,192 @@ CP-025, CP-043, CP-023 launch path).
 
 ---
 
-*Algosec Cursor AI · Last updated: 2026-11-07*
+## 14. v3 — Request-trace control plane for the demo (2026-11-13, DEC-16 proposed)
+
+**Goal:** one dashboard that makes a room say "wow" in three minutes and stays useful after
+the demo. A developer types a prompt in Cursor; the dashboard draws, live, every step the
+harness took to answer it — skill, subagent, tool call, guard decision, file edit,
+response — then an AI reviewer says what was slow or wasteful, and the Learning view shows
+the harness making fewer of those mistakes over time. Every number is measured or
+explicitly labelled.
+
+**Status 2026-11-13:** built. 22 of 29 DV rows are `[x]` with `docs/evidence/DV-*.md`; six are
+`[~]` (DV-002 live recording, DV-004 CURSOR.md budget, DV-005 v2 pages, DV-020 v2 port,
+DV-055 graph use of `emits`, DV-060 recorded trace) and DV-057 is open. Beyond the plan:
+Cursor's local store is read on schemas without `composerHeaders` (cursorDiskKV), so
+history appears as estimated traces next to live hook traces.
+
+Where this section conflicts with §4–§13, §14 wins. DEC-15's AI-first rules (§13.4) still
+apply: code only for security, exact computation, latency or plumbing; judgement comes
+from skills.
+
+### 14.1 Review of all open work `[CONFIDENCE: HIGH]` (read from source 2026-11-13)
+
+**Tracker totals (`todo-plan.md`):** 118 `[x]`, 25 `[-]`, 3 `[~]` (T-057, T-058, CP-001),
+51 `[ ]`. Every open row is Phase 3–5 (P3-*, P4-*, P5-*, T-042..T-044). Phases 1–2 are
+closed on paper, but the rows below are closed without meeting their acceptance criteria.
+
+| # | Finding | Evidence | Consequence for the demo |
+|---|---|---|---|
+| 1 | **The event spine records almost nothing.** `merge-hooks-json.py` registers `cursor-event.py` for `postToolUse` only. `subagentStart/Stop`, `beforeSubmitPrompt`, `afterAgentResponse`, `afterFileEdit`, `preCompact` are not registered | `hooks/merge-hooks-json.py:17-21,60-64` | No request can be traced; no subagent, prompt or response is captured |
+| 2 | **The spine reads the wrong field names.** It reads `event`/`type` and `session_id`/`sessionId`. Cursor sends `hook_event_name`, `conversation_id`, `generation_id` on every hook (cursor.com/docs/hooks, "Common schema"), so every row gets session `"unknown"` | `hooks/cursor-event.py:35-36`; `hooks/cursor-session-end.py:51-53` already uses the real names | All live data collapses into one fake session |
+| 3 | **Hook fixtures are synthetic.** `tests/fixtures/hooks/*.json` use `"sessionId": "sess-1234"` and a `tokens` object Cursor does not document; `afterFileEdit` is missing. AF-001 step 1 ("record real payloads") did not happen | fixture files | Tests pass against a contract Cursor does not implement |
+| 4 | **Cursor store paths are macOS-only.** `GLOBAL_VSCDB`, `SEARCH_DB`, `WS_STORAGE` point at `~/Library/Application Support/Cursor` | `bin/aspec_platform/cursor_sessions.py:14-16` | On Windows, WSL and Linux the Sessions history is empty |
+| 5 | **Visuals marked done do not exist.** CP-031 force graph is a file list; CP-021 step graph is a raw JSON `<pre>`; CP-015 and CP-025 are `[x]` in Slice 6b though Slice 6c cut them | `Knowledge.tsx`, `Runs.tsx:333` | The two most visual screens are text dumps |
+| 6 | **"Measured" badges on fixed text.** All five tour steps and `Sessions.tsx:388` hard-code figures | `Home.tsx:80+` | One question from the audience breaks the honesty story |
+| 7 | **Honesty test is a unit test of one component.** | `Metric.test.tsx` | Rule in §Design rules is unenforced |
+| 8 | **Docs drift.** README "Version 1.1.0" vs `VERSION` 2.0.0; "34 commands" vs 43 skill dirs; selftest fails on `CURSOR.md` 5607 B > 4600 B | `README.md`, selftest | First impression on GitHub is wrong |
+
+**Phase 3–5 backlog (51 rows):** keep frozen until v3 ships, except three rows that this
+plan needs and pulls forward: **P4-013** typed handoff schema (gives subagent spans a typed
+input/output to display), **P3-017** experience browser (becomes the Learning view), and
+**P3-016** Langfuse optional stack (becomes a free side-effect of 14.3's OpenTelemetry-shaped
+spans). The rest (marketplace, federation, daemon, cloud sandbox) has no demo value yet.
+
+### 14.2 What the user sees — four spaces, one story
+
+| Space | Question it answers | Primary visual | Data |
+|---|---|---|---|
+| **Live** (home) | "What is my agent doing right now, and what did it do?" | Request feed + the selected request as an animated orchestration graph | Hook events, streamed |
+| **Coach** | "Where is it slow or wasteful, and what should change?" | Top-3 issues with trend, each linked to the exact span | AI reviews (AI-judged) + exact latency/byte metrics (Measured) |
+| **Learning** | "Is it actually getting better?" | Recurrence chart: each mistake class before vs after the fact that fixed it | Memory facts, experiences, review findings |
+| **Project** | "What does the harness know and have?" | Skill and workflow catalog, knowledge graph, health | Graph, `SKILL.md` frontmatter, doctor |
+
+The Console page leaves the navigation (frozen since AF-005). Governance folds into
+Project › Health and Coach. Settings, pricing and seed live in one drawer.
+
+**Request detail (the centrepiece):**
+
+1. Header: prompt (redacted, first 200 chars), model, Cursor version, duration, outcome.
+2. **Orchestration graph** (React Flow, auto-laid out): prompt → skills → subagents → tool
+   calls → guard decisions → file edits → response. Nodes animate in while the request is
+   running. Colour = status; edge label = bytes handed over.
+3. **Waterfall** under the graph: one bar per span on a shared time axis, so the slowest step
+   is visible without reading anything.
+4. **Inspector drawer:** click any node → its input, output (redacted), duration, the
+   subagent's task, summary, `tool_call_count`, `modified_files`, and a link to its
+   transcript file.
+5. **Responses tab:** every `afterAgentResponse` text in order, so "check every response" is
+   one click.
+6. **Review card:** the AI reviewer's grade and findings for this request, each finding
+   anchored to a span id (highlighted in the graph when hovered).
+
+### 14.3 Data model — a request is a trace
+
+Built only from documented Cursor hook fields (cursor.com/docs/hooks):
+
+| Concept | Key | Source |
+|---|---|---|
+| Session | `conversation_id` | every hook |
+| **Request (trace)** | `generation_id` — changes on every user message | every hook |
+| Prompt | `prompt`, `attachments` | `beforeSubmitPrompt` |
+| Tool span | `tool_name`, `tool_input`, `tool_output` | `preToolUse` / `postToolUse` / `postToolUseFailure` |
+| Subagent span | `subagent_type`, `task`, `summary`, `status`, `duration_ms`, `message_count`, `tool_call_count`, `modified_files`, `agent_transcript_path`; parent via `parent_conversation_id` | `subagentStart` / `subagentStop` |
+| Guard span | decision + rule id | `cursor-pre-tool-use.py` (already logs quarantine/nudges) |
+| Edit span | `file_path`, edit count | `afterFileEdit` |
+| Response | text | `afterAgentResponse` |
+| Skill span | `/agent-spec-*` in the prompt, or a tool read of a `SKILL.md` | derived — **confirm in DV-002 how Cursor loads a skill** `[CONFIDENCE: MEDIUM]` |
+| Run (workflow) | `run_id`, steps | hub-runner `events.jsonl` (existing), linked by `generation_id` |
+| Session metadata | `model`, `cursor_version`, `workspace_roots`, `transcript_path` | every hook |
+
+Span records use OpenTelemetry/OpenInference field names (`trace_id`, `span_id`,
+`parent_span_id`, `kind`, `start`, `end`, `attributes`). That costs nothing now and makes a
+Langfuse or Phoenix export (P3-016, §9) a mapping rather than a rewrite.
+
+Durations are measured as the time between paired hook events (start/stop, pre/post), or
+taken from `duration_ms` where Cursor provides it. Token counts are **not** in the
+documented hook payloads; they stay *Estimated* (chars ÷ 4) unless DV-002 finds a real field.
+
+The `state.vscdb` reader (`cursor_sessions.py`) remains a fallback for history from before
+the hooks were installed, behind a per-OS path resolver, and every row it produces is
+labelled "Cursor local store (unofficial)".
+
+### 14.4 Live updates
+
+One SSE route, `GET /api/live`, tails `.agent-spec/metrics/events.jsonl` from a byte offset
+and pushes new spans. It is GET-only, loopback-only and token-checked like every other route,
+so it reverses nothing in DEC-14's guard list. The UI falls back to polling every 2 s if the
+stream drops. **Replay mode** plays a recorded trace at real speed; it is the safety net if
+the network or Cursor misbehaves on stage, and it is badged *Recorded*.
+
+### 14.5 Libraries
+
+| Need | Choice | Why |
+|---|---|---|
+| Components and look | **shadcn/ui** (Radix primitives + Tailwind, copied into `ui-src/src/components/ui/`) | Professional default look, accessible, no runtime dependency to version-lock, stays on our Tailwind |
+| Orchestration graph | **@xyflow/react** (React Flow) + **@dagrejs/dagre** for layout | The standard for node graphs in React; custom nodes are plain components |
+| Charts | **Recharts** (kept) via shadcn chart wrappers | Already in the bundle; one charting library only |
+| Tables | **@tanstack/react-table** | Sorting, filtering and virtualisation for request lists |
+| Server state | **@tanstack/react-query** | Caching, refetch and SSE merge without hand-written effects |
+| Motion | **motion** (formerly framer-motion) | Nodes entering the graph, drawers; honours `prefers-reduced-motion` |
+| Knowledge graph | **react-force-graph-2d**, lazy-loaded | Only on Project › Graph; excluded from the initial budget |
+| Command palette, icons, routing | cmdk, lucide-react, react-router (kept) | Already in use |
+
+Rejected: a second chart library (ECharts, Nivo) — Recharts covers every chart here; Tremor —
+overlaps shadcn; three.js 3D graph — weight with no information gain. Budget stays
+400 KB gzip for the initial bundle; React Flow and the force graph load as separate chunks.
+
+### 14.6 Extensibility — new skills and orchestration need no dashboard code
+
+1. **Skill self-description.** A skill may add a `dashboard:` block to its `SKILL.md`
+   frontmatter: `category`, `icon`, `emits` (span kinds it produces) and, for workflows,
+   `steps`. `insights.skills_catalog` already reads frontmatter; the catalog and the
+   orchestration graph render these automatically. A skill without the block still appears,
+   with defaults.
+2. **Generic panels.** A skill can write `.agent-spec/metrics/panels/<skill>/<name>.json`
+   in one of three shapes — `kpi`, `table`, `timeline` — each with a required
+   `provenance`. Project › Panels renders any file it finds. Adding a dashboard panel for a
+   new skill is a JSON write in the skill, never a React change.
+3. **Workflows are traces.** Hub-runner runs already write `events.jsonl`; DV-012 maps each
+   run step to a span with the triggering request's `generation_id` as parent, so any new
+   workflow appears in Live without code.
+4. **Typed handoffs (P4-013, pulled forward).** Subagent spans display a typed input and
+   output when the schema exists, raw text when it does not.
+5. **One how-to.** `docs/DASHBOARD.md` gains "Make your skill show up in five minutes".
+
+### 14.7 AI feedback and self-learning — what is judged and what is measured
+
+**Coach** combines two sources, each badged:
+
+- *Measured:* slowest span types (p50/p95 duration), retries and `postToolUseFailure`
+  rate, guard blocks, whole-file reads, subagent `tool_call_count` and `loop_count`, bytes
+  handed to subagents, compactions (`preCompact`).
+- *AI-judged:* `agent-spec-session-review` reads the trace for a conversation and writes
+  `.agent-spec/metrics/reviews/<conversation_id>.json` with findings that cite span ids.
+  Coach groups findings across sessions into the top three issues and shows each one's
+  trend. Each issue has a "copy fix prompt" button that puts the suggested slash command
+  on the clipboard (the composer from AF-005).
+
+**Learning** proves improvement with one measured chart: for each memory fact or trusted
+experience, the number of matching review findings in the N sessions before it was created
+against the N sessions after. A flat line is shown as flat. Supporting tiles: facts by
+type over time, candidate → trusted promotions, fact injections per session.
+
+### 14.8 The three-minute demo
+
+1. **Live (60 s):** Cursor and the dashboard side by side. Type `/agent-spec-investigate why
+   does X fail`. The graph grows in real time: skill → `agent-spec-search` subagent → reads
+   → guard blocks a whole-file read (red node) → response.
+2. **Inspect (30 s):** click the subagent node — its task, summary, files touched,
+   duration. Click Responses — every answer in order.
+3. **Coach (45 s):** the review lands after `stop`: grade, two findings, each highlighting
+   its span. Top issues across the week with trend.
+4. **Learning (45 s):** the recurrence chart for one real fact — e.g. whole-file reads
+   before and after the input-discipline fact — with the numbers measured from this repo.
+
+A recorded trace of the same run is preloaded for Replay mode.
+
+### 14.9 Rules for v3 work
+
+1. Nothing marked `[x]` without a `docs/evidence/<ID>.md` that shows the acceptance check
+   passing (test output or screenshot).
+2. No figure in any component that is not read from an API response; the page-level
+   honesty test (DV-005) enforces it.
+3. Hook payload fields are used only after DV-002 has recorded them from a live Cursor.
+4. The existing deletion rule (§13.4 rule 4) stands.
+
+Tasks: [`todo-plan.md`](todo-plan.md) Slice 6d (DV-000…DV-062).
+
+---
+
+*Algosec Cursor AI · Last updated: 2026-11-13*

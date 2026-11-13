@@ -1,4 +1,4 @@
-export type Provenance = "measured" | "estimated" | "demo_seed";
+export type Provenance = "measured" | "estimated" | "demo_seed" | "ai_judged";
 
 let cachedToken = "";
 

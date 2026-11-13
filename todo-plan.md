@@ -41,6 +41,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | 6 | **Dashboard UI** (v1 thin) | D-010..D-022 done; v1 static page shipped | localhost showcase, stdlib + one static page |
 | 6b | **Control plane v2** (DEC-14) | CP-000..CP-050 in `dashboard_overhaul.md` §12 | React SPA, Agent Console, five spaces, guided tour |
 | 6c | **AI-first realignment** (DEC-15) | AF-001…AF-008 | Hook event spine, AI session review, Console frozen, grading out of Python |
+| 6d | **v3 request-trace control plane** (DEC-16, proposed) | DV-000…DV-062 | Live request tracing, AI coach, measured learning, extensible panels |
 | 7 | Flywheel + security | L-*, S-* | Trends + quarantine in UI |
 | 8 | RCA + 3 workflow skills | B-001…B-010 | `agent-spec-wf-*` skills + AUTO-3807 eval |
 | 9 | Orchestration (skill-driven) | O-001…O-020 | `agent-spec-hub-runner` skill + `agent-spec-run.py` plumbing; live run of `agent-spec-wf-example` |
@@ -222,22 +223,22 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | `[x]` | CP-013 | **Agent routes: new, resume, cancel, stream** | Work against the shim; CLI-missing returns `cli_missing` and spawns nothing | 1d |
 | `[x]` | CP-014 | **Console UI** | Streaming, chips, meter, Stop, modes (Agent needs confirm), persona, workspace | 2d |
 | `[x]` | CP-020 | **Sessions explorer + detail + compare** | Search and filters; grade and tips; A/B deltas from `savings.compare` | 1.5d |
-| `[x]` | CP-021 | **Run events route + live step graph** | `/api/runs/<id>/events`; states ok, self-healed, failed, waiting; parallel branches | 2d |
+| `[-]` | CP-021 | **Run events route + live step graph** (superseded by DV-011 + DV-031 (runs as workflow spans in the orchestration graph)) | `/api/runs/<id>/events`; states ok, self-healed, failed, waiting; parallel branches | 2d |
 | `[x]` | CP-022 | **Inspector drawer + subagent health tab** | Step input/output/tokens/latency; failure rate and median bytes per type | 1d |
 | `[x]` | CP-023 | **Workflow launch cards** | Five cards with input validation and dry-run; copy-command fallback + API launch | 0.5d |
 | `[x]` | CP-030 | **Knowledge read routes** | `/api/graph`, `/api/graph/blast`, `/api/memory`, `/api/experiences` with tests | 1d |
-| `[x]` | CP-031 | **Graph view** | 2D force graph, lazy chunk; click shows blast halo and callers; search jumps to node | 1.5d |
+| `[-]` | CP-031 | **Graph view** (superseded by DV-058) | 2D force graph, lazy chunk; click shows blast halo and callers; search jumps to node | 1.5d |
 | `[x]` | CP-032 | **Memory, flywheel, skills and personas views** | Facts by type with injections; experience tiers; "Use in Console" inserts the command | 1d |
 | `[x]` | CP-033 | **Governance routes** | `/api/gates`, `/api/health/doctor` (cached), `/api/pricing` with tests | 0.5d |
 | `[x]` | CP-034 | **Governance views** | SDLC rail + REQ trace, implement audit, guard log, health, proof pack, backlog, debt | 2d |
 | `[x]` | CP-035 | **`pricing.json`** | Placeholder presets; "set pricing" shown at zero rates; `as_of` age warning | 0.5d |
-| `[x]` | CP-040 | **Guided tour** | Five steps with live numbers following demo.md script | 1.5d |
+| `[-]` | CP-040 | **Guided tour** (superseded by DV-060) | Five steps with live numbers following demo.md script | 1.5d |
 | `[x]` | CP-041 | **Budget and accessibility pass** | Under 400 KB gzip (105.4 kB achieved); WCAG AA in both themes; prefers-reduced-motion | 0.5d |
 | `[x]` | CP-042 | **Retire v1 UI + docs** | Parity checklist signed (Gaps, Savings, trend, freshness, every v1 view); old UI files deleted on confirmation; `DASHBOARD.md` and `demo.md` updated | 0.5d |
 | `[x]` | CP-007 | **KPI sparklines + status bar** | 7-day sparkline per KPI from `insights.home`; status bar shows graph age, hook dots, doctor dot, job count | 1d |
-| `[x]` | CP-015 | **Agent-mode diff cards** | Each edit tool call renders a diff card with approve/reject actions | 1d |
+| `[-]` | CP-015 | **Agent-mode diff cards** (cut by DEC-15) | Each edit tool call renders a diff card with approve/reject actions | 1d |
 | `[x]` | CP-024 | **Savings tab + context gauge** | v1 D-010 calculator ported with weights; gauge shows peak context vs threshold | 1d |
-| `[x]` | CP-025 | **Token flow Sankey** | Token flow distribution across digest, graph, tools, and model outputs | 1d |
+| `[-]` | CP-025 | **Token flow Sankey** (cut by DEC-15; the fabricated Token Flow tab was removed) | Token flow distribution across digest, graph, tools, and model outputs | 1d |
 | `[x]` | CP-036 | **Gaps tab ("caught by the harness")** | All v1 D-022 rules shown, each linking to its session; Home count matches | 0.5d |
 | `[x]` | CP-037 | **Team-fact filter + health lines** | Memory filter on `scope`; health shows snapshot size, rotation due, team import date | 0.5d |
 | `[-]` | CP-043 | **Cross-cutting UX** (cut, DEC-15; reopen only for a named demo need) | Virtualized lists over 200 rows, skeletons, job-done toast, opt-in notification, shareable URLs, print stylesheet, `?` shortcut sheet | 1.5d |
@@ -260,6 +261,81 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | `[x]` | AF-006 | **Split gaps: facts vs judgement** *(exact)* | `insights.gaps` keeps `step_failed`, `run_failed`, `secret_path_blocked`; `whole_file_no_graph`, `token_spike`, `missing_gate` move to reviewer findings; Home "caught" count = facts + findings with evidence | 0.5d |
 | `[x]` | AF-007 | **Logic audit** | One-page verdict per file (keep / shrink / replace with skill) for `agent-spec-tokens.py`, `agent-spec-memory.py` (dedup, conflict lint: let the model judge at `/agent-spec-remember`, CLI keeps storage), `agent-spec-receipt.py`, `savings.py`, `cursor_sessions.build_pipeline_stages`; follow-up rows added here | 0.5d |
 | `[x]` | AF-008 | **AI-first code-task gate** | `agent-spec-prompt-audit` / selftest check: every new todo row that adds `bin/` or `hooks/` code states an allowed-code reason; one line added to `/agent-spec-implement` declaration. Always-on rule text changes ship only at a planned rules release (prefix stability) | 0.5d |
+
+## Slice 6d — v3 request-trace control plane (DEC-16, proposed 2026-11-13)
+
+> Design: `dashboard_overhaul.md` §14. Phases in order A → H; within a phase, rows are independent unless `Depends` says otherwise. Every row needs `docs/evidence/<ID>.md` before `[x]` (§14.9). Code rows name their allowed-code reason. Critical path: DV-001 → DV-002 → DV-010 → DV-012 → DV-030 → DV-031 → DV-060.
+
+### Phase A — Truth (before any new UI)
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[x]` | DV-000 | **Record DEC-16** | DEC-16 in `docs/MASTER-PLAN.md` decisions; §14 linked from `docs/DASHBOARD.md` | 0.25d | — |
+| `[x]` | DV-001 | **Event spine on the documented contract** *(plumbing)* | `cursor-event.py` reads `hook_event_name`, `conversation_id`, `generation_id`, `model`, `cursor_version`, `workspace_roots`, `transcript_path` and the per-event fields in §14.3; prompt and response text redacted and truncated; writes under `workspace_roots[0]`, not `cwd`; `merge-hooks-json.py` registers it for `beforeSubmitPrompt`, `postToolUse`, `postToolUseFailure`, `subagentStart`, `subagentStop`, `afterFileEdit`, `afterAgentResponse`, `preCompact`, `stop`; fail-open kept; unit test per event | 1d | — |
+| `[~]` | DV-002 | **Live payload recording** *(spike, no code; closes T-057, AF-001 step 1)* (Recorder built (`AGENT_SPEC_HOOK_RECORD=1` saves one payload per event); fixtures replaced with documented-contract payloads (tests/fixtures/hooks/README.md). Left: record from a live Cursor session) | One real payload per event in DV-001 recorded from Cursor into `tests/fixtures/hooks/`, replacing the synthetic files; note whether any token field exists and how a skill invocation is observable | 0.5d | DV-001 |
+| `[x]` | DV-003 | **Cursor store path resolver** *(plumbing)* | `cursor_sessions.py` finds `state.vscdb` on macOS, Windows (`%APPDATA%\Cursor`), WSL (`/mnt/c/Users/*/AppData/Roaming/Cursor`) and Linux (`~/.config/Cursor`); override via env var; test per OS layout | 0.5d | — |
+| `[~]` | DV-004 | **Tracker and docs truth** (CP rows corrected, README version and skill count fixed, selftest suite loop fixed. Left: CURSOR.md 5607 B > 4600 B, deferred to the next rules release (prefix stability)) | CP-015, CP-025 → `[-]`; CP-021, CP-031, CP-040 → `[ ]` with a pointer to DV-031/DV-041/DV-060; README version and skill count from files; `CURSOR.md` under 4600 B at the next rules release; selftest green | 0.5d | — |
+| `[~]` | DV-005 | **No fixed figures; page-level honesty test** (Fabricated Token Flow tab removed; tour figures removed; page-level honesty test covers Live, Coach, Learning. Left: v2 pages under Project (Sessions, Runs, Memory, Health, Overview)) | Tour and `Sessions.tsx` read every number from the API; a Vitest test renders each page with fixture data and fails on any numeric text outside a `<Metric>` with provenance | 0.5d | — |
+
+### Phase B — Trace model and API
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[x]` | DV-010 | **Trace and span tables** *(plumbing)* | Schema migration: `traces` (`generation_id`), `spans` (OTel-shaped: `trace_id`, `span_id`, `parent_span_id`, `kind`, `start`, `end`, `status`, `attributes` JSON); ingest builds them from `events.jsonl`; subagent spans parented via `parent_conversation_id`; durations from paired events or `duration_ms` | 1.5d | DV-002 |
+| `[x]` | DV-011 | **Workflow runs as traces** *(plumbing)* | Hub-runner run steps become spans under the triggering `generation_id`; existing run tests green | 0.5d | DV-010 |
+| `[x]` | DV-012 | **Request API** *(plumbing)* | `/api/requests` (filters: session, status, skill, date; paginated) and `/api/requests/<id>` (span tree, responses, review) with tests; read-only connection | 1d | DV-010 |
+| `[x]` | DV-013 | **Live stream** *(latency)* | `GET /api/live` SSE tails `events.jsonl` from an offset; loopback + token guards; test for reconnect from offset; UI polling fallback | 1d | DV-010 |
+
+### Phase C — UI foundation
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[~]` | DV-020 | **shadcn/ui, TanStack Query/Table, motion** (Radix + cva primitives in the shadcn pattern, TanStack Query, motion; initial bundle 149.6 KB gzip. TanStack Table dropped as unused. Left: port v2 pages onto the primitives) | Components copied into `ui-src/src/components/ui/`; existing pages compile on them; bundle under 400 KB gzip | 1d | — |
+| `[x]` | DV-021 | **Four-space shell** | Live, Coach, Learning, Project; Console removed from nav (route kept behind the flag); settings drawer; light/dark; Cmd-K over requests and skills | 1d | DV-020 |
+
+### Phase D — Live and request detail (centrepiece)
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[x]` | DV-030 | **Request feed** | Live list updating over DV-013; filters; status, duration, skills, subagent count per row | 1d | DV-012, DV-013, DV-021 |
+| `[x]` | DV-031 | **Orchestration graph** | React Flow + dagre; node per span kind with custom components; nodes animate in while running; edge labels show handed-over bytes; lazy chunk | 2d | DV-030 |
+| `[x]` | DV-032 | **Waterfall + inspector** | Shared time axis; click any span → drawer with input, output, duration, subagent task/summary/files, transcript link | 1d | DV-031 |
+| `[x]` | DV-033 | **Responses tab** | Every `afterAgentResponse` for the request in order, redacted | 0.5d | DV-012 |
+| `[x]` | DV-034 | **Replay mode** | A recorded trace plays at real speed, badged *Recorded* | 0.5d | DV-031 |
+
+### Phase E — Coach (AI feedback)
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[x]` | DV-040 | **Review skill reads traces** *(AI)* | `agent-spec-session-review` rubric consumes spans; every finding cites a `span_id`; writes `reviews/<conversation_id>.json` with `model`, `rubric_version`, `evidence[]` | 1d | DV-010 |
+| `[x]` | DV-041 | **Coach view** | Measured lag panel (p50/p95 per span kind, failure rate, guard blocks, compactions); AI top-3 issues with trend; hover highlights spans; "copy fix prompt" | 1.5d | DV-040, DV-031 |
+
+### Phase F — Learning
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[x]` | DV-050 | **Recurrence metric** *(exact)* | For each fact/experience: matching findings in N sessions before vs after creation; API + test with fixed fixtures | 1d | DV-040 |
+| `[x]` | DV-051 | **Learning view** (absorbs P3-017) | Recurrence chart; facts over time; promotions; injections per session; flat results shown as flat | 1d | DV-050 |
+
+### Phase G — Extensibility
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[~]` | DV-055 | **Skill `dashboard:` frontmatter** (Catalog reads `dashboard:` (three skills annotated); Left: orchestration graph does not use `emits`/`steps` yet) | Catalog and graph use `category`, `icon`, `emits`, `steps`; skills without it get defaults; three existing skills annotated | 0.5d | DV-021 |
+| `[x]` | DV-056 | **Generic panels** *(plumbing)* | `metrics/panels/<skill>/*.json` in `kpi`/`table`/`timeline` shapes with required `provenance` render in Project › Panels; schema validated; one example skill writes one | 1d | DV-021 |
+| `[ ]` | DV-057 | **Typed handoff display** (pulls P4-013 forward) | Subagent spans show typed input/output when a schema exists | 1d | DV-032 |
+| `[x]` | DV-058 | **Knowledge graph view** (redoes CP-031) | `react-force-graph-2d`, lazy; click shows blast halo and callers; search jumps to node | 1d | DV-021 |
+| `[x]` | DV-059 | **"Show your skill in five minutes" doc** | Section in `docs/DASHBOARD.md` that a new skill author follows end to end | 0.25d | DV-055, DV-056 |
+
+### Phase H — Demo
+
+| Status | ID | Task | Acceptance criteria | Effort | Depends |
+|---|---|---|---|---|---|
+| `[~]` | DV-060 | **Demo script + recorded trace** (demo.md rewritten to §14.8 with no fixed figures; Replay works on any stored trace. Left: a recorded live hook trace (needs DV-002)) | `demo.md` rewritten to §14.8; recorded trace for Replay; numbers in the script read from this repo | 0.5d | DV-034, DV-041, DV-051 |
+| `[x]` | DV-061 | **Playwright smoke** | Live → request → inspector → Coach → Learning runs green against fixture data | 1d | DV-060 |
+| `[x]` | DV-062 | **Accessibility and budget pass** | WCAG AA both themes; reduced motion; initial bundle under 400 KB gzip | 0.5d | DV-061 |
+
+Total ≈ 24.5 days. Minimum demo cut (≈ 17 d): Phase A, DV-010, DV-012, DV-013, DV-020, DV-021, DV-030–DV-034, DV-040, DV-041, DV-060.
 
 ## Slice 7 — Flywheel + security (dashboard surfaces)
 
