@@ -1,11 +1,12 @@
 import { Copy, FileText } from "lucide-react";
 import { useState } from "react";
-import type { Span, Trace } from "../api/traces";
+import type { Handoff, Span, Trace } from "../api/traces";
 import { Num, Prov } from "../components/Num";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Sheet } from "../components/ui/sheet";
 import { copyText, fmtBytes, fmtMs } from "../lib/utils";
+import { HandoffView } from "./HandoffView";
 import { kindMeta, statusTone } from "./kinds";
 
 const TEXT_KEYS = ["task", "summary", "text", "target", "error_message", "description", "detail"];
@@ -27,6 +28,9 @@ export function SpanInspector({ span, members, trace, onClose }: { span: Span | 
   const meta = kindMeta(span.kind);
   const a = span.attributes || {};
   const prov = trace?.provenance ?? "measured";
+  const handoff = (a.handoff as Handoff | undefined) ?? null;
+  // A typed side replaces its raw text; an untyped side keeps it (DV-057).
+  const typedKeys = new Set([handoff?.input?.typed ? "task" : "", handoff?.output?.typed ? "summary" : ""]);
   const files = Array.isArray(a.modified_files) ? (a.modified_files as string[]) : [];
   const transcript = (a.agent_transcript_path as string) || trace?.transcript_path || "";
   const investigate = `/agent-spec-investigate In request ${span.trace_id}, the ${meta.label.toLowerCase()} span "${span.name}" (${span.span_id}) took ${fmtMs(span.duration_ms)} with status ${span.status}. Read it with \`agent-spec-platform.py trace --request ${span.trace_id}\` and explain why, citing span ids.`;
@@ -70,7 +74,8 @@ export function SpanInspector({ span, members, trace, onClose }: { span: Span | 
           <ul className="space-y-0.5 font-mono text-[11px]">{files.map((f) => <li key={f} className="truncate">{f}</li>)}</ul>
         </Field>
       ) : null}
-      {TEXT_KEYS.filter((k) => a[k]).map((k) => (
+      {handoff ? <HandoffView handoff={handoff} /> : null}
+      {TEXT_KEYS.filter((k) => a[k] && !typedKeys.has(k)).map((k) => (
         <div key={k} className="mt-3">
           <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">{k.replace("_", " ")}</p>
           <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-2 font-mono text-[11px] leading-relaxed">{String(a[k])}</pre>

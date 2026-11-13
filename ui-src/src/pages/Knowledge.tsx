@@ -1,3 +1,4 @@
+import { Num } from "../components/Num";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiGet } from "../api/client";
@@ -110,10 +111,10 @@ export function Knowledge() {
       <div className="flex gap-2 border-b border-slate-800 text-xs">
         {[
           ["graph", "Knowledge Graph & Blast Radius"],
-          ["memory", `Bounded Memory (${memory?.facts?.length ?? 0})`],
-          ["flywheel", `Flywheel Experiences (${exp?.experiences?.length ?? 0})`],
-          ["skills", `Skills & Personas (${skills?.skills?.length ?? 0})`],
-        ].map(([t, label]) => (
+          ["memory", "Bounded Memory", memory?.facts?.length ?? 0],
+          ["flywheel", "Flywheel Experiences", exp?.experiences?.length ?? 0],
+          ["skills", "Skills & Personas", skills?.skills?.length ?? 0],
+        ].map(([t, label, count]) => (
           <button
             key={t}
             type="button"
@@ -124,7 +125,7 @@ export function Knowledge() {
                 : "border-transparent text-slate-400 hover:text-slate-200"
             }`}
           >
-            {label}
+            <span data-figure-exempt>{label}</span>{count !== undefined ? <> (<Num p="measured">{count}</Num>)</> : null}
           </button>
         ))}
       </div>
@@ -239,7 +240,7 @@ export function Knowledge() {
               ))}
             </div>
             <span className="text-xs text-slate-500">
-              Showing {filteredFacts.length} fact(s)
+              Showing <Num p="measured">{filteredFacts.length}</Num> fact(s)
             </span>
           </div>
 

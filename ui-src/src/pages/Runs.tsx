@@ -1,8 +1,9 @@
+import { Num, rowProv } from "../components/Num";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet, apiPost } from "../api/client";
 
-type RunRow = { request_id: string; status: string; tokens_total: number; workflow_id?: string };
+type RunRow = { request_id: string; status: string; tokens_total: number; workflow_id?: string; source?: string; tokens_estimated?: number };
 type Step = {
   step_id: string;
   ordinal: number;
@@ -176,11 +177,11 @@ export function Runs() {
       <ul className="divide-y divide-slate-800 rounded-lg border border-slate-800 text-sm">
         {(runs?.runs ?? []).map((r) => (
           <li key={r.request_id} className="flex justify-between px-3 py-2">
-            <Link to={`/runs/${r.request_id}`} className="text-sky-400">
+            <Link to={`/runs/${r.request_id}`} className="font-mono text-sky-400">
               {r.request_id}
             </Link>
             <span className="text-slate-500">
-              {r.status} · {r.tokens_total} tok
+              {r.status} · <Num p={rowProv(r)}>{r.tokens_total}</Num> tok
               {r.workflow_id ? ` · ${r.workflow_id}` : ""}
             </span>
           </li>
@@ -227,6 +228,7 @@ export function RunDetail() {
   }, [detail?.subagents]);
 
   const waterfall = detail?.waterfall ?? [];
+  const stepProv = rowProv(detail?.run as { source?: string; tokens_estimated?: number } | undefined);
 
   return (
     <div className="space-y-4">
@@ -246,7 +248,7 @@ export function RunDetail() {
                   if (full) setSelectedStep(full);
                 }}
               >
-                {s.ordinal}. {s.name}{" "}
+                <span className="font-mono">{s.ordinal}.</span> {s.name}{" "}
                 <span className={s.status === "failed" ? "text-rose-400" : "text-emerald-400"}>({s.status})</span>
               </button>
             </li>
@@ -287,19 +289,19 @@ export function RunDetail() {
               </div>
               <div>
                 <dt className="text-slate-500">Latency</dt>
-                <dd>{selectedStep.duration_ms ?? "—"} ms</dd>
+                <dd><Num p="measured">{selectedStep.duration_ms ?? "—"}</Num> ms</dd>
               </div>
               <div>
                 <dt className="text-slate-500">Tokens in</dt>
-                <dd>{selectedStep.tokens_input ?? 0}</dd>
+                <dd><Num p={stepProv}>{selectedStep.tokens_input ?? 0}</Num></dd>
               </div>
               <div>
                 <dt className="text-slate-500">Tokens out</dt>
-                <dd>{selectedStep.tokens_output ?? 0}</dd>
+                <dd><Num p={stepProv}>{selectedStep.tokens_output ?? 0}</Num></dd>
               </div>
               <div>
                 <dt className="text-slate-500">Bytes in</dt>
-                <dd>{selectedStep.bytes_in ?? 0}</dd>
+                <dd><Num p="measured">{selectedStep.bytes_in ?? 0}</Num></dd>
               </div>
             </dl>
           )}
@@ -317,9 +319,9 @@ export function RunDetail() {
                 {health.map((h) => (
                   <tr key={h.agent} className="border-t border-slate-800">
                     <td className="py-1">{h.agent}</td>
-                    <td>{h.failureRate}%</td>
-                    <td>{h.medianLatencyMs} ms</td>
-                    <td>{h.samples}</td>
+                    <td><Num p="measured">{h.failureRate}%</Num></td>
+                    <td><Num p="measured">{h.medianLatencyMs}</Num> ms</td>
+                    <td><Num p="measured">{h.samples}</Num></td>
                   </tr>
                 ))}
                 {!health.length && <tr><td colSpan={4} className="py-2 text-slate-500">No subagent runs</td></tr>}
@@ -329,7 +331,7 @@ export function RunDetail() {
         </div>
       </div>
       <div className="rounded-lg border border-slate-800 p-3 text-xs">
-        <p className="mb-2 text-slate-500">Live events ({events?.events?.length ?? 0})</p>
+        <p className="mb-2 text-slate-500">Live events (<Num p="measured">{events?.events?.length ?? 0}</Num>)</p>
         <pre className="max-h-48 overflow-auto">{JSON.stringify(events?.events?.slice(0, 20), null, 2)}</pre>
       </div>
     </div>

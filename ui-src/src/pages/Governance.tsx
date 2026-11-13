@@ -1,3 +1,4 @@
+import { Num } from "../components/Num";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiGet } from "../api/client";
@@ -101,7 +102,7 @@ export function Governance() {
       {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-slate-100">Governance & Rail Audits</h1>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400" data-figure-exempt>
           9-gate SDLC, 6-gate implement audit, harness gaps, doctor health, and proof pack
         </p>
       </div>
@@ -141,11 +142,11 @@ export function Governance() {
       <div className="flex gap-2 border-b border-slate-800 text-xs">
         {[
           ["gates", "9-Gate SDLC Rail"],
-          ["gaps", `Caught by Harness (${gapsData.length})`],
+          ["gaps", "Caught by Harness", gapsData.length],
           ["guards", "Guard Log & Quarantine"],
           ["health", "Doctor Health & Snapshot"],
-          ["tasks", `Backlog (${tasksData.length})`],
-        ].map(([t, label]) => (
+          ["tasks", "Backlog", tasksData.length],
+        ].map(([t, label, count]) => (
           <button
             key={t}
             type="button"
@@ -156,7 +157,7 @@ export function Governance() {
                 : "border-transparent text-slate-400 hover:text-slate-200"
             }`}
           >
-            {label}
+            <span data-figure-exempt>{label}</span>{count !== undefined ? <> (<Num p="measured">{count}</Num>)</> : null}
           </button>
         ))}
       </div>
@@ -241,7 +242,7 @@ export function Governance() {
                         </Link>
                       )}
                     </div>
-                    <p className="text-slate-300">{gap.detail}</p>
+                    <p className="text-slate-300" data-provenance="measured">{gap.detail}</p>
                   </div>
                   {gap.ts && (
                     <span className="font-mono text-slate-500 text-[11px]">
@@ -258,7 +259,7 @@ export function Governance() {
       {/* TAB 3: Guard Log & Quarantine */}
       {tab === "guards" && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-xs text-slate-400">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-xs text-slate-400" data-figure-exempt>
             S-002 Quarantine filters sensitive files (credentials, .env) and S-004 context threshold
             nudges guard against prompt cache blowups.
           </div>
@@ -273,7 +274,7 @@ export function Governance() {
                 .map((gap, i) => (
                   <div key={i} className="flex items-center justify-between p-3.5">
                     <span className="font-mono text-amber-300">{gap.rule}</span>
-                    <span className="text-slate-300">{gap.detail}</span>
+                    <span className="text-slate-300" data-provenance="measured">{gap.detail}</span>
                   </div>
                 ))
             )}
@@ -327,7 +328,7 @@ export function Governance() {
                     {chk.status}
                   </span>
                 </div>
-                <p className="text-slate-300">{chk.message}</p>
+                <p className="text-slate-300" data-provenance="measured">{chk.message}</p>
                 {chk.fix && <p className="font-mono text-[11px] text-slate-500">Fix: {chk.fix}</p>}
               </div>
             ))}

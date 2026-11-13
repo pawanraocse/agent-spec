@@ -260,6 +260,11 @@ install_agents() {
   mkdir -p "${project_root}/.cursor/agents"
   if [ -d "${REPO_DIR}/agents" ]; then
     cp "${REPO_DIR}/agents/"*.md "${project_root}/.cursor/agents/" 2>/dev/null || true
+    if [ -d "${REPO_DIR}/agents/handoffs" ]; then
+      # Typed handoff schemas (DV-057): the dashboard reads them; Cursor ignores them.
+      mkdir -p "${project_root}/.cursor/agents/handoffs"
+      cp "${REPO_DIR}/agents/handoffs/"*.json "${project_root}/.cursor/agents/handoffs/" 2>/dev/null || true
+    fi
     echo -e "  ${GREEN}✓${NC} .cursor/agents/ ($(ls "${REPO_DIR}/agents"/*.md 2>/dev/null | wc -l | tr -d ' ') subagents)"
   fi
 }

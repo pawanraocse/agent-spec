@@ -6,6 +6,7 @@ import { Num, Prov } from "../components/Num";
 import { Badge } from "../components/ui/badge";
 import { Card, CardHeader, Empty } from "../components/ui/card";
 import { cn, relTime } from "../lib/utils";
+import { skillIcon, type Skill } from "../features/skillMeta";
 import { Governance } from "./Governance";
 import { Home } from "./Home";
 import { Knowledge } from "./Knowledge";
@@ -14,7 +15,6 @@ import { SessionDetail, Sessions } from "./Sessions";
 
 const KnowledgeGraph = lazy(() => import("../features/KnowledgeGraph"));
 
-type Skill = { id: string; name: string; description: string; category: string; icon: string; emits: string[]; steps: string[]; self_described: boolean; is_workflow: boolean; uses: number };
 type Panel = { skill: string; file: string; mtime: number; panel: { type: "kpi" | "table" | "timeline"; title: string; provenance: "measured" | "estimated" | "ai_judged" | "demo_seed"; value?: string | number; unit?: string; hint?: string; columns?: string[]; rows?: (string | number)[][]; events?: { ts: string; label: string; detail?: string }[] } };
 
 function Catalog() {
@@ -33,6 +33,7 @@ function Catalog() {
             {list.map((s) => (
               <div key={s.id} className="rounded-lg border border-border bg-card p-3">
                 <div className="flex items-center gap-2">
+                  {(() => { const I = skillIcon(s.icon); return I ? <I size={14} className="shrink-0 text-k-skill" aria-hidden /> : null; })()}
                   <span className="truncate text-sm font-medium">/{s.name}</span>
                   {s.is_workflow ? <Badge tone="accent">workflow</Badge> : null}
                   <span className="ml-auto text-[11px] text-muted-foreground"><Num p="measured">{s.uses}</Num> uses</span>

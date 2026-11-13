@@ -1,3 +1,5 @@
+import { V2_ROUTES } from "./fixtures-v2";
+
 // Fixture API payloads for the page-level honesty test (DV-005) and the Playwright smoke (DV-061).
 export const requestList = {
   total: 1, limit: 100, offset: 0,
@@ -56,11 +58,14 @@ export const learning = {
 };
 
 export const ROUTES: Record<string, unknown> = {
+  ...V2_ROUTES,
   "/api/requests": requestList,
   "/api/requests/gen-1": requestDetail,
   "/api/coach/lag": lag,
   "/api/coach/issues": issues,
   "/api/learning": learning,
+  "/api/catalog": { self_described: 1, skills: [{ id: "agent-spec-investigate", name: "agent-spec-investigate", description: "", category: "Diagnose",
+    icon: "search", emits: ["subagent", "tool", "edit"], steps: [], self_described: true, is_workflow: false, uses: 1 }] },
   "/api/status_bar": { graph: { text: "2m old" }, doctor: { status: "ok" }, hooks: { a: true } },
 };
 

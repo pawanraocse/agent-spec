@@ -31,6 +31,12 @@ export function Prov({ p, className }: { p: Provenance; className?: string }) {
   );
 }
 
+/** Provenance of a v2 run or session row: demo seed rows say so, estimated token counts say so. */
+export function rowProv(r: { source?: string; tokens_estimated?: number | boolean } | null | undefined): Provenance {
+  if (r?.source === "demo_seed") return "demo_seed";
+  return r?.tokens_estimated ? "estimated" : "measured";
+}
+
 /** KPI tile: label, value, provenance badge, optional hint. */
 export function Stat({ label, value, p, hint }: { label: string; value: React.ReactNode; p: Provenance; hint?: React.ReactNode }) {
   return (

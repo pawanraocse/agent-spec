@@ -23,7 +23,7 @@ import re
 import threading
 from datetime import datetime, timezone
 
-from . import common
+from . import common, handoffs
 
 SKILL_PROMPT = re.compile(r"^\s*/([a-z0-9][a-z0-9_:-]{1,63})(?=\s|$)", re.I)
 SKILL_PATH = re.compile(r"skills(?:-cursor)?[/\\]([a-z0-9][a-z0-9_-]+)[/\\]SKILL\.md", re.I)
@@ -489,6 +489,7 @@ def request_detail(project, conn, trace_id):
     if trace is None:
         return None
     mine = sorted((s for s in spans if s["trace_id"] == trace_id), key=lambda s: (s.get("start") or "", s.get("seq") or 0))
+    mine = handoffs.annotate(mine, handoffs.load_schemas(project))
     responses = [{"span_id": s["span_id"], "ts": s.get("end") or s.get("start"), "text": s["attributes"].get("text"),
                   "text_chars": s["attributes"].get("text_chars")} for s in mine if s["kind"] == "response"]
     review = load_review(project, trace["session_id"])

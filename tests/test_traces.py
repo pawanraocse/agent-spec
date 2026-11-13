@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DV-003, DV-010..DV-013, DV-041, DV-050, DV-055, DV-056: trace model, ingest, read API, live stream."""
+"""DV-003, DV-010..DV-013, DV-041, DV-050, DV-055..DV-057: trace model, ingest, read API, live stream."""
 import http.client
 import json
 import os
@@ -11,7 +11,7 @@ import unittest
 TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, TESTS_DIR)
 from _api_support import ApiCase, REPO_DIR  # noqa: E402
-from aspec_platform import cursor_sessions, db, ingest, observe, traces  # noqa: E402
+from aspec_platform import cursor_sessions, db, handoffs, ingest, observe, traces  # noqa: E402
 
 FIXTURES = os.path.join(TESTS_DIR, "fixtures", "hooks")
 
@@ -235,6 +235,54 @@ class PanelTest(unittest.TestCase):
                          {"category": "Diagnose", "icon": "search", "emits": ["subagent", "tool"], "steps": ["collect", "judge"]})
 
 
+class HandoffTest(unittest.TestCase):
+    """DV-057: subagent spans carry a typed input/output when a schema exists, raw text otherwise."""
+
+    def test_shipped_schemas_load_and_are_self_consistent(self):
+        schemas = handoffs.load_schemas(REPO_DIR)
+        self.assertEqual(sorted(schemas), ["agent-spec-reviewer", "agent-spec-search", "agent-spec-verify"])
+        for name, doc in schemas.items():
+            self.assertTrue(doc.get("version"), name)
+            self.assertEqual((doc["input"]["type"], doc["output"]["type"]), ("object", "object"), name)
+
+    def test_extract_json_whole_text_or_last_fence(self):
+        self.assertEqual(handoffs.extract_json('{"a": 1}'), {"a": 1})
+        self.assertEqual(handoffs.extract_json('Done.\n```json\n{"a": 1}\n```\n```json\n{"a": 2}\n```'), {"a": 2})
+        self.assertIsNone(handoffs.extract_json("3 callers"))
+        self.assertIsNone(handoffs.extract_json("[1, 2]"))
+
+    def test_validate_reports_paths(self):
+        schema = handoffs.load_schemas(REPO_DIR)["agent-spec-verify"]["output"]
+        ok = {"command": "npm test", "verdict": "FAIL", "summary": "1 failed", "failures": [{"test": "t", "error": "e"}]}
+        self.assertEqual(handoffs.validate(ok, schema), [])
+        bad = {"command": "npm test", "verdict": "MOSTLY", "failures": [{"test": 3}]}
+        self.assertEqual(handoffs.validate(bad, schema), [
+            "$.summary: required", "$.verdict: not one of PASS, FAIL, ERROR",
+            "$.failures[0].error: required", "$.failures[0].test: expected string"])
+        self.assertEqual(handoffs.validate({"line": True}, {"properties": {"line": {"type": "integer"}}}),
+                         ["$.line: expected integer"])
+
+    def test_annotate_typed_untyped_and_unknown_agent(self):
+        schemas = handoffs.load_schemas(REPO_DIR)
+        out_ok = '```json\n{"matches": [{"path": "a.py", "line": 3}]}\n```'
+        spans = [
+            {"span_id": "s1", "kind": "subagent", "name": "agent-spec-search",
+             "attributes": {"task": '{"question": "who calls login"}', "summary": out_ok}},
+            {"span_id": "s2", "kind": "subagent", "name": "agent-spec-search", "attributes": {"task": "find callers", "summary": "3 callers"}},
+            {"span_id": "s3", "kind": "subagent", "name": "other-agent", "attributes": {"task": "x"}},
+            {"span_id": "s4", "kind": "tool", "name": "agent-spec-search", "attributes": {}},
+        ]
+        got = handoffs.annotate(spans, schemas)
+        h = got[0]["attributes"]["handoff"]
+        self.assertEqual((h["input"]["typed"], h["output"]["typed"], h["version"]), (True, True, "1.0.0"))
+        self.assertEqual(h["output"]["value"]["matches"][0]["line"], 3)
+        h2 = got[1]["attributes"]["handoff"]
+        self.assertEqual((h2["input"]["typed"], h2["input"]["errors"]), (False, ["not JSON"]))
+        self.assertNotIn("handoff", got[2]["attributes"])
+        self.assertNotIn("handoff", got[3]["attributes"])
+        self.assertNotIn("handoff", spans[0]["attributes"])  # input spans are not mutated
+
+
 class RequestApiTest(ApiCase):
     def setUp(self):
         os.environ["AGENT_SPEC_CURSOR_STORE"] = "0"
@@ -254,7 +302,18 @@ class RequestApiTest(ApiCase):
         self.assertEqual(len(detail["spans"]), 9)  # root, skill, 2 tools, subagent + its tool, guard, edit, response
         self.assertEqual(detail["responses"][0]["text"], "done")
         self.assertIsNone(detail["review"])
+        sub = next(x for x in detail["spans"] if x["kind"] == "subagent")
+        self.assertIsNone(sub["attributes"].get("handoff"))  # the temp project ships no schemas
         self.assertEqual(self.request("/api/requests/nope")[0], 404)
+
+    def test_detail_attaches_handoff_when_schema_installed(self):
+        dest = os.path.join(self.project, ".cursor", "agents", "handoffs")
+        os.makedirs(dest, exist_ok=True)
+        shutil.copy(os.path.join(REPO_DIR, "agents", "handoffs", "agent-spec-search.json"), dest)
+        sub = next(x for x in self.get_json("/api/requests/gen-1")["spans"] if x["kind"] == "subagent")
+        h = sub["attributes"]["handoff"]
+        self.assertEqual((h["agent"], h["input"]["typed"], h["output"]["errors"]), ("agent-spec-search", False, ["not JSON"]))
+        self.assertEqual(sub["attributes"]["summary"], "3 callers")  # raw text stays
 
     def test_live_requests_follow_the_file_without_ingest(self):
         with open(self.events, "a") as fh:

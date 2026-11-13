@@ -80,7 +80,11 @@ run one.
 
 1. **Describe it.** Add a `dashboard:` block to the skill's frontmatter. Project › Skills
    and the catalog pick it up on reload; without the block the skill still appears with
-   defaults.
+   defaults. In Live's orchestration graph the skill's node takes its `icon` and
+   `category`, shows each `emits` kind lit when a span of that kind ran under it and dim
+   when none did, and a workflow gets a dashed *planned · not run* node for every `steps`
+   id with no matching run step. Icons come from a fixed set in
+   `ui-src/src/features/skillMeta.ts`; an unknown name keeps the span kind's icon.
 
    ```yaml
    dashboard:
@@ -107,7 +111,16 @@ run one.
    `SKILL.md` creates a skill span; its subagents, tools and edits nest under it. A
    hub-runner workflow appears as a `workflow` span with one `run_step` per step.
 
-4. **Check it.** `bin/agent-spec-platform.py trace --list 5`, then open the request in Live.
+4. **Type a subagent's handoff (optional).** If the skill delegates to a subagent, add
+   `agents/handoffs/<agent-name>.json` with `{"version", "input": <JSON Schema>, "output":
+   <JSON Schema>}` and have the subagent answer with one fenced `json` block in that shape.
+   The inspector then shows the subagent's task and reply as fields with a *typed* badge;
+   a reply that does not parse or match is shown raw, with the first mismatches listed.
+   The validator supports `type`, `required`, `properties`, `additionalProperties`,
+   `items`, `enum` and `maxItems`. `install.sh` copies the schemas to
+   `.cursor/agents/handoffs/`.
+
+5. **Check it.** `bin/agent-spec-platform.py trace --list 5`, then open the request in Live.
 
 ## Develop
 

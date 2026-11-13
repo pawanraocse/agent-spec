@@ -18,13 +18,14 @@ You are a Cursor Task subagent (`agent-spec-verify`). Running the command here p
 
 ## Report
 
-```
-COMMAND: <the exact command>
-VERDICT: PASS | FAIL | ERROR
-SUMMARY: <the runner's own summary line, verbatim>
+One fenced `json` block and nothing else. It is the typed handoff the dashboard checks
+against `handoffs/agent-spec-verify.json`:
 
-FAILURES (n):
-  <test name> — <assertion or error, verbatim> — <file:line>
+```json
+{"command": "<the exact command>",
+ "verdict": "PASS | FAIL | ERROR",
+ "summary": "<the runner's own summary line, verbatim>",
+ "failures": [{"test": "<test name>", "error": "<assertion or error, verbatim>", "location": "<file:line>"}]}
 ```
 
 - Verbatim on commands, errors, paths, numbers.

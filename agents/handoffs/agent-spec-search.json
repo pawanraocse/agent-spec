@@ -1,0 +1,32 @@
+{
+  "$comment": "Typed handoff for agent-spec-search (DV-057, P4-013). The dashboard validates the subagent's task and summary against this; text that does not parse is shown raw.",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "required": ["question"],
+    "properties": {
+      "question": {"type": "string"},
+      "scope": {"type": "string"}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["matches"],
+    "properties": {
+      "matches": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "required": ["path", "line"],
+          "properties": {
+            "path": {"type": "string"},
+            "line": {"type": "integer"},
+            "note": {"type": "string"}
+          }
+        }
+      },
+      "not_found": {"type": "array", "items": {"type": "string"}}
+    }
+  }
+}

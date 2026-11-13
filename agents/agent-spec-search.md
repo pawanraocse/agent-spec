@@ -27,7 +27,13 @@ session pays for its context on every remaining turn; yours is discarded when yo
 
 ## Report
 
-Paths and line numbers, with one line of context each. Nothing else.
+One fenced `json` block and nothing else. It is the typed handoff the dashboard checks
+against `handoffs/agent-spec-search.json`:
+
+```json
+{"matches": [{"path": "src/auth/login.ts", "line": 42, "note": "one line of context"}],
+ "not_found": ["where you looked, when something was not found"]}
+```
 
 - **Never paste file contents back.**
 - **Never guess a path.** If not found, say `not found` and where you looked.

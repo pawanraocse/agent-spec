@@ -1,15 +1,21 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { Coach } from "../pages/Coach";
+import { Governance } from "../pages/Governance";
+import { Home } from "../pages/Home";
+import { Knowledge } from "../pages/Knowledge";
+import { RunDetail, Runs } from "../pages/Runs";
+import { SessionDetail, Sessions } from "../pages/Sessions";
 import { Learning } from "../pages/Learning";
 import { Live } from "../pages/Live";
 import { fixtureFetch } from "./fixtures";
 
 /** DV-005: no figure on a v3 page unless it comes with provenance. A text node containing a
  *  digit must sit inside an element carrying data-provenance; identifiers, timestamps and
- *  code (font-mono, <code>, <pre>, <time>, aria-hidden chart internals) are not figures. */
+ *  code (font-mono, <code>, <pre>, <time>, aria-hidden chart internals) and headings are not
+ *  figures; anything else that is a label rather than a measurement says so with data-figure-exempt. */
 function unlabelledFigures(root: HTMLElement): string[] {
   const bad: string[] = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -19,7 +25,7 @@ function unlabelledFigures(root: HTMLElement): string[] {
     if (!/(^|[^A-Za-z0-9])\d/.test(text)) continue; // "p95" is a label, not a figure
     const el = node.parentElement;
     if (!el) continue;
-    if (el.closest("[data-provenance], code, pre, time, .font-mono, svg, [data-figure-exempt]")) continue;
+    if (el.closest("[data-provenance], code, pre, time, .font-mono, svg, h1, h2, h3, [data-figure-exempt]")) continue;
     bad.push(text.trim().slice(0, 60));
   }
   return bad;
@@ -51,6 +57,12 @@ describe("page-level honesty (DV-005)", () => {
     await findAllByText(/why does login fail/);
     await waitFor(() => expect(container.querySelector('[aria-label="Orchestration graph"], .text-xs')).toBeTruthy());
     expect(unlabelledFigures(container)).toEqual([]);
+    // DV-055: the skill node carries its catalog category and declared kinds, seen or not
+    await waitFor(() => expect(container.querySelector('[aria-label="Declared span kinds"]')).toBeTruthy());
+    const declared = [...container.querySelectorAll('[aria-label="Declared span kinds"] [aria-label]')].map((e) => e.getAttribute("aria-label"));
+    expect(declared).toEqual(["declares subagent: seen in this request", "declares tool: seen in this request", "declares edit: not seen in this request"]);
+    expect(container.textContent).toContain("Diagnose");
+    expect(unlabelledFigures(container)).toEqual([]);
   });
 
   it("Coach: every figure carries provenance", async () => {
@@ -64,6 +76,31 @@ describe("page-level honesty (DV-005)", () => {
     await findByText("input discipline");
     expect(unlabelledFigures(container)).toEqual([]);
   });
+
+  const settle = () => new Promise((r) => setTimeout(r, 50));
+  // [name, path, element, route pattern, tab buttons to visit after the default view]
+  const v2: [string, string, React.ReactNode, string | undefined, RegExp[]][] = [
+    ["Sessions", "/sessions", <Sessions />, undefined, []],
+    ["Session detail", "/sessions/conv-1", <SessionDetail />, "/sessions/:id", [/^Savings Calculator/, /Compare$/]],
+    ["Runs", "/runs", <Runs />, undefined, []],
+    ["Run detail", "/runs/req-1", <RunDetail />, "/runs/:id", [/^Subagent health$/]],
+    ["Memory", "/memory", <Knowledge />, undefined, [/^Bounded Memory/, /^Flywheel Experiences/, /^Skills & Personas/]],
+    ["Health", "/health", <Governance />, undefined, [/^Caught by Harness/, /^Guard Log/, /^Doctor Health/, /^Backlog/]],
+    ["Overview", "/overview", <Home />, undefined, []],
+  ];
+  for (const [name, path, el, route, tabs] of v2) {
+    it(`${name}: every figure carries provenance, on every tab`, async () => {
+      const { container, getByRole } = mount(path, el, route);
+      await waitFor(() => expect(fetch).toHaveBeenCalled());
+      await settle();
+      expect(unlabelledFigures(container)).toEqual([]);
+      for (const tab of tabs) {
+        fireEvent.click(getByRole("button", { name: tab }));
+        await settle();
+        expect({ tab: String(tab), bad: unlabelledFigures(container) }).toEqual({ tab: String(tab), bad: [] });
+      }
+    });
+  }
 
   it("the check catches a bare number", () => {
     const { container } = render(<div><span>42 requests</span><span data-provenance="measured">7</span></div>);

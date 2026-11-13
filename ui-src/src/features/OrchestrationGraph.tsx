@@ -5,8 +5,9 @@ import dagre from "@dagrejs/dagre";
 import { motion, useReducedMotion } from "motion/react";
 import type { Span } from "../api/traces";
 import { cn, fmtBytes, fmtMs } from "../lib/utils";
-import { buildView, bytesOf, type ViewNode } from "./spanTree";
-import { kindMeta, statusTone, STATUS_RING } from "./kinds";
+import { buildView, bytesOf, planView, type ViewNode } from "./spanTree";
+import { KIND, kindMeta, statusTone, STATUS_RING } from "./kinds";
+import { skillIcon, useCatalog } from "./skillMeta";
 
 type NodeData = { view: ViewNode; provenance: "measured" | "estimated" };
 // Hover/selection travel by context so a hover never rebuilds the node array (a rebuild
@@ -23,7 +24,7 @@ const SpanNode = memo(function SpanNode({ data }: NodeProps<Node<NodeData>>) {
   const dimmed = false;
   const s = view.span;
   const meta = kindMeta(s.kind);
-  const Icon = meta.icon;
+  const Icon = skillIcon(view.skill?.icon) ?? meta.icon;
   const tone = statusTone(s.status);
   const reduce = useReducedMotion();
   const total = view.members.reduce((a, m) => a + (m.duration_ms ?? 0), 0);
@@ -35,6 +36,7 @@ const SpanNode = memo(function SpanNode({ data }: NodeProps<Node<NodeData>>) {
       className={cn(
         "relative flex h-[62px] w-[210px] cursor-pointer flex-col justify-center rounded-lg border border-border bg-card px-3 shadow-sm ring-1",
         STATUS_RING[tone],
+        view.planned && "border-dashed bg-card/40 opacity-60 ring-0",
         highlighted && "ring-2 ring-primary",
         s.status === "running" && "animate-pulse-ring",
       )}
@@ -48,10 +50,27 @@ const SpanNode = memo(function SpanNode({ data }: NodeProps<Node<NodeData>>) {
         {view.count > 1 ? <span className="ml-auto rounded bg-muted px-1 text-[10px] text-muted-foreground">×{view.count}</span> : null}
       </div>
       <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-        <span className={cn("uppercase", meta.color)}>{meta.label}</span>
-        <span data-provenance={provenance} className="tabular">{fmtMs(view.count > 1 ? total : s.duration_ms)}</span>
+        <span className={cn("truncate uppercase", meta.color)}>{view.skill?.category ?? meta.label}</span>
+        {view.planned ? (
+          <span title="Declared in the workflow's dashboard.steps; no run step recorded">planned · not run</span>
+        ) : (
+          <span data-provenance={provenance} className="tabular">{fmtMs(view.count > 1 ? total : s.duration_ms)}</span>
+        )}
         {tone === "danger" ? <span className="text-danger">{s.status}</span> : null}
         {s.status === "running" ? <span className="text-primary">running</span> : null}
+        {view.emits?.length ? (
+          <span className="ml-auto flex shrink-0 items-center gap-0.5" aria-label="Declared span kinds">
+            {view.emits.map(({ kind, seen }) => {
+              const k = KIND[kind as keyof typeof KIND];
+              const title = `declares ${kind}: ${seen ? "seen in this request" : "not seen in this request"}`;
+              return k ? (
+                <k.icon key={kind} size={10} className={seen ? k.color : "text-muted-foreground/40"} aria-label={title}><title>{title}</title></k.icon>
+              ) : (
+                <span key={kind} title={title} className={seen ? "text-foreground" : "text-muted-foreground/50"}>{kind}</span>
+              );
+            })}
+          </span>
+        ) : null}
       </div>
       <Handle type="source" position={Position.Right} className="!h-1.5 !w-1.5 !border-0 !bg-border" />
     </motion.div>
@@ -68,7 +87,8 @@ export default function OrchestrationGraph({ spans, provenance, selected, hovere
   onSelect: (s: Span, members: Span[]) => void;
   onHover?: (id: string | null) => void;
 }) {
-  const view = useMemo(() => buildView(spans), [spans]);
+  const catalog = useCatalog();
+  const view = useMemo(() => planView(buildView(spans), catalog), [spans, catalog]);
   const { nodes, edges } = useMemo(() => {
     const g = new dagre.graphlib.Graph();
     g.setGraph({ rankdir: "LR", nodesep: 14, ranksep: 70, marginx: 10, marginy: 10 });
@@ -130,7 +150,7 @@ export default function OrchestrationGraph({ spans, provenance, selected, hovere
         nodesDraggable={false}
         nodesConnectable={false}
         proOptions={{ hideAttribution: true }}
-        onNodeClick={(_, n) => onSelect((n.data as NodeData).view.span, (n.data as NodeData).view.members)}
+        onNodeClick={(_, n) => !(n.data as NodeData).view.planned && onSelect((n.data as NodeData).view.span, (n.data as NodeData).view.members)}
         onNodeMouseEnter={(_, n) => onHover?.(n.id)}
         onNodeMouseLeave={() => onHover?.(null)}
       >

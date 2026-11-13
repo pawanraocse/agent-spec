@@ -50,7 +50,7 @@ export function Metric({
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs uppercase tracking-wide text-slate-500">{label}</span>
+        <span className="text-xs uppercase tracking-wide text-slate-500" data-figure-exempt>{label}</span>
         <span
           className="rounded px-1.5 py-0.5 text-[10px] font-medium uppercase text-amber-200/90 ring-1 ring-amber-500/40"
           title={formula}

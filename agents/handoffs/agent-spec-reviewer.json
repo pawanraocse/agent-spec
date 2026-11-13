@@ -1,0 +1,20 @@
+{
+  "$comment": "Typed handoff for agent-spec-reviewer (DV-057, P4-013). The dashboard validates the subagent's task and summary against this; text that does not parse is shown raw.",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "required": ["conversation_id"],
+    "properties": {
+      "conversation_id": {"type": "string"}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["grade", "findings", "path"],
+    "properties": {
+      "grade": {"type": "string"},
+      "findings": {"type": "object", "additionalProperties": {"type": "integer"}},
+      "path": {"type": "string"}
+    }
+  }
+}

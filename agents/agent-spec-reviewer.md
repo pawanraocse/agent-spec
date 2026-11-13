@@ -11,8 +11,10 @@ the rubric, the category list and the output schema.
    `bin/agent-spec-platform.py`). Never read the full transcript.
 2. Judge each request against the skill's categories. Every finding and pro cites a
    `span_id` from that output; an empty findings list is a valid result.
-3. Write the review JSON. Return to the caller only: grade, finding count by category, and
-   the path written. Never return the trace text.
+3. Write the review JSON. Return to the caller only one fenced `json` block, the typed
+   handoff checked against `handoffs/agent-spec-reviewer.json`:
+   `{"grade": "B", "findings": {"<category>": <count>}, "path": "<path written>"}`.
+   Never return the trace text.
 
 Hard stops: no finding without a span you read; no invented numbers; no secret-shaped value
 in the output; propose memory facts, never write them.

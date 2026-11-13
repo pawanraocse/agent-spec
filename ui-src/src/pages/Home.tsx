@@ -1,3 +1,4 @@
+import { Num } from "../components/Num";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiGet, apiPost } from "../api/client";
@@ -198,7 +199,7 @@ export function Home() {
           <ShieldAlert size={15} className="text-amber-400" />
           <span>
             Caught by the harness:{" "}
-            <strong className="text-slate-100 font-semibold">{gaps?.gaps?.length ?? 0}</strong>{" "}
+            <strong className="text-slate-100 font-semibold"><Num p="measured">{gaps?.gaps?.length ?? 0}</Num></strong>{" "}
             potential rule gap(s) or nudges detected.
           </span>
         </div>
@@ -221,12 +222,12 @@ export function Home() {
             className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200">
+              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
                 1. Digest
               </span>
               <FileCode size={14} className="text-slate-500" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200">1,841 B</div>
+            <div className="mt-2 text-lg font-semibold text-slate-200">sessionStart</div>
             <p className="mt-1 text-[11px] text-slate-500">injected start context</p>
           </Link>
 
@@ -235,13 +236,13 @@ export function Home() {
             className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200">
+              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
                 2. Graphify
               </span>
               <GitBranch size={14} className="text-slate-500" />
             </div>
             <div className="mt-2 text-lg font-semibold text-slate-200">
-              {home?.graph?.files ?? "—"} files
+              <Num p="measured">{home?.graph?.files ?? "—"}</Num> files
             </div>
             <p className="mt-1 text-[11px] text-slate-500">AST symbols & blast radius</p>
           </Link>
@@ -251,12 +252,12 @@ export function Home() {
             className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200">
+              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
                 3. Guard
               </span>
               <ShieldAlert size={14} className="text-slate-500" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200">S-002 / S-004</div>
+            <div className="mt-2 font-mono text-lg font-semibold text-slate-200">S-002 / S-004</div>
             <p className="mt-1 text-[11px] text-slate-500">preToolUse & context nudges</p>
           </Link>
 
@@ -265,12 +266,12 @@ export function Home() {
             className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200">
+              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
                 4. Memory
               </span>
               <Brain size={14} className="text-slate-500" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200">{factsCount} facts</div>
+            <div className="mt-2 text-lg font-semibold text-slate-200"><Num p="measured">{factsCount}</Num> facts</div>
             <p className="mt-1 text-[11px] text-slate-500">bounded memory flywheel</p>
           </Link>
 
@@ -279,12 +280,12 @@ export function Home() {
             className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200">
+              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
                 5. Subagents
               </span>
               <Cpu size={14} className="text-slate-500" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200">5 workflows</div>
+            <div className="mt-2 font-mono text-lg font-semibold text-slate-200">agent-spec-wf-*</div>
             <p className="mt-1 text-[11px] text-slate-500">isolated task execution</p>
           </Link>
         </div>
@@ -320,8 +321,8 @@ export function Home() {
                   </span>
                 </div>
                 <div className="text-slate-500 tabular-nums">
-                  {r.tokens_total ? `${r.tokens_total.toLocaleString()} tokens` : ""}
-                  {r.started ? ` · ${r.started.slice(11, 16)} UTC` : ""}
+                  {r.tokens_total ? <><Num p={prov}>{r.tokens_total.toLocaleString()}</Num> tokens</> : null}
+                  {r.started ? <> · <time dateTime={r.started}>{r.started.slice(11, 16)} UTC</time></> : null}
                 </div>
               </div>
             ))

@@ -60,6 +60,9 @@ unregister_workspace() {
   rm -f "$root/.cursor/hooks/agent-spec-digest.py"
   rm -f "$root/.cursor/agents/agent-spec-search.md"
   rm -f "$root/.cursor/agents/agent-spec-verify.md"
+  rm -f "$root/.cursor/agents/agent-spec-reviewer.md"
+  rm -f "$root/.cursor/agents/handoffs/agent-spec-"*.json
+  rmdir "$root/.cursor/agents/handoffs" 2>/dev/null || true
 
   if [ -f "$root/.cursor/hooks.json" ]; then
     PY=python3

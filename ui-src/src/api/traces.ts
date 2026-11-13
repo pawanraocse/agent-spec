@@ -43,6 +43,20 @@ export interface Span {
   attributes: Record<string, unknown>;
 }
 
+/** DV-057: one side of a typed subagent handoff, checked server-side against agents/handoffs/<agent>.json. */
+export interface HandoffSide {
+  typed: boolean;
+  value: Record<string, unknown> | null;
+  errors: string[];
+}
+
+export interface Handoff {
+  agent: string;
+  version?: string | null;
+  input: HandoffSide | null;
+  output: HandoffSide | null;
+}
+
 export interface Finding {
   category: string;
   severity: string;

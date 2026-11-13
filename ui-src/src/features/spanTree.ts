@@ -1,4 +1,5 @@
 import type { Span } from "../api/traces";
+import type { Skill } from "./skillMeta";
 
 export interface ViewNode {
   id: string;
@@ -8,6 +9,12 @@ export interface ViewNode {
   members: Span[];
   parent: string | null;
   depth: number;
+  /** DV-055: a step the workflow declares in its `dashboard.steps` that has no run_step span. */
+  planned?: boolean;
+  /** DV-055: the catalog entry for a skill or workflow node, when it has one. */
+  skill?: Skill;
+  /** DV-055: each kind the skill declares in `dashboard.emits`, and whether a descendant span has it. */
+  emits?: { kind: string; seen: boolean }[];
 }
 
 const ms = (iso?: string | null) => (iso ? new Date(iso).getTime() : NaN);
@@ -62,6 +69,45 @@ export function buildView(spans: Span[], foldAbove = 40): ViewNode[] {
     }
   };
   walk(null, null, 0);
+  return out;
+}
+
+/** DV-055: join the view with the skill catalog. Skill and workflow nodes get their catalog
+ *  entry and the declared `emits` checked against the kinds found below them; a workflow's
+ *  declared `steps` without a matching run_step become `planned` nodes, so the graph shows
+ *  the whole plan and what of it ran. Nodes without a catalog entry are returned unchanged. */
+export function planView(view: ViewNode[], catalog: Map<string, Skill>): ViewNode[] {
+  if (!catalog.size) return view;
+  const kids = new Map<string, ViewNode[]>();
+  for (const v of view) if (v.parent) kids.set(v.parent, [...(kids.get(v.parent) ?? []), v]);
+  const kindsBelow = (id: string, acc = new Set<string>()): Set<string> => {
+    for (const c of kids.get(id) ?? []) {
+      acc.add(c.span.kind);
+      kindsBelow(c.id, acc);
+    }
+    return acc;
+  };
+  const out: ViewNode[] = [];
+  for (const v of view) {
+    const skill = v.span.kind === "skill" || v.span.kind === "workflow" ? catalog.get(v.span.name) : undefined;
+    if (!skill) {
+      out.push(v);
+      continue;
+    }
+    const below = kindsBelow(v.id);
+    out.push({ ...v, skill, emits: skill.emits.map((kind) => ({ kind, seen: below.has(kind) })) });
+    if (v.span.kind !== "workflow" || !skill.steps.length) continue;
+    const ran = new Set((kids.get(v.id) ?? []).filter((c) => c.span.kind === "run_step").map((c) => c.span.name));
+    skill.steps.forEach((step, i) => {
+      if (ran.has(step)) return;
+      const id = `${v.id}#planned:${step}`;
+      out.push({
+        id, count: 1, members: [], parent: v.id, depth: v.depth + 1, planned: true,
+        span: { span_id: id, trace_id: v.span.trace_id, parent_span_id: v.id, kind: "run_step", name: step,
+                status: "planned", seq: 1000 + i, start: null, end: null, duration_ms: null, attributes: {} },
+      });
+    });
+  }
   return out;
 }
 

@@ -1,3 +1,4 @@
+import { Num } from "../components/Num";
 import { useEffect, useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { apiGet } from "../api/client";
@@ -97,9 +98,9 @@ export function Sessions() {
                 </Link>
               </div>
               <div className="flex items-center gap-4 text-xs text-slate-400 tabular-nums">
-                <span>{s.runs} turns</span>
+                <span><Num p="measured">{s.runs}</Num> turns</span>
                 <span>·</span>
-                <span>{(s.tokens || 0).toLocaleString()} tokens</span>
+                <span><Num p="measured">{(s.tokens || 0).toLocaleString()}</Num> tokens</span>
                 <Link
                   to={`/sessions/${encodeURIComponent(s.session_id)}`}
                   className="text-slate-400 hover:text-white"
@@ -193,7 +194,7 @@ export function SessionDetail() {
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-300">Context Gauge</span>
-            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">
+            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400" data-figure-exempt>
               S-004 Nudge Rule
             </span>
           </div>
@@ -248,7 +249,7 @@ export function SessionDetail() {
           }`}
           onClick={() => setTab("savings")}
         >
-          Savings Calculator (D-010)
+          Savings Calculator <span className="font-mono">(D-010)</span>
         </button>
         <button
           type="button"
@@ -336,7 +337,7 @@ export function SessionDetail() {
 
           <div className="space-y-2 pt-2">
             <div className="flex items-center justify-between text-slate-400">
-              <span>Read weight sensitivity: {readWeight.toFixed(1)}x</span>
+              <span data-figure-exempt>Read weight sensitivity: {readWeight.toFixed(1)}x</span>
               <button
                 type="button"
                 className="text-indigo-400 hover:underline flex items-center gap-1"
@@ -379,7 +380,7 @@ export function SessionDetail() {
               {allSessions
                 .filter((s) => s.session_id !== id)
                 .map((s) => (
-                  <option key={s.session_id} value={s.session_id}>
+                  <option key={s.session_id} value={s.session_id} data-provenance="measured">
                     {s.session_id} ({s.runs} turns, {s.tokens.toLocaleString()} tok)
                   </option>
                 ))}
