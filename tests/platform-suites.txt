@@ -24,4 +24,9 @@ test_insights
 test_agent_exec
 test_platform_data
 test_traces
+test_context_budget
 test_cursor_event
+test_hook_logs
+test_graph_mesh
+test_graph_signals
+test_automations

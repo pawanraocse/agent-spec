@@ -37,6 +37,59 @@ def load_json(path):
         return None
 
 
+RESUME_CAP = 600  # bytes of the digest spent on warm resume; the full snapshot costs ~9 KB to read
+DATED_SECTION = re.compile(r"^## (\d{4}-\d{2}-\d{2}.*)$", re.M)
+
+
+def _bullets(body, heading, limit):
+    """The first `limit` bullet lines under a `### heading`, bold markers stripped."""
+    m = re.search(r"^### " + re.escape(heading) + r"\s*$(.*?)(?=^### |\Z)", body, re.M | re.S)
+    if not m:
+        return []
+    out = []
+    for line in m.group(1).splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        out.append(line.lstrip("-* ").replace("**", ""))
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _clip_text(text, cap):
+    return text if len(text) <= cap else text[:cap - 1].rstrip() + "…"
+
+
+def resume_lines():
+    """Warm resume (P4-009): the newest dated snapshot section's title, open items and the
+    files it says to load, so a new chat does not open SESSION-SNAPSHOT.md to find them.
+
+    Snapshots append dated `## YYYY-MM-DD …` sections before `## Archived sections`; the
+    newest is the last dated heading in the file. Returns [] for the older format.
+    """
+    text = read(os.path.join(SPEC, "SESSION-SNAPSHOT.md"))
+    heads = list(DATED_SECTION.finditer(text or ""))
+    if not heads:
+        return []
+    last = heads[-1]
+    end = re.search(r"^## ", text[last.end():], re.M)
+    body = text[last.end(): last.end() + end.start()] if end else text[last.end():]
+    lines = ["last session: " + _clip_text(last.group(1).strip(), 150)]
+    load = _bullets(body, "Load next session", 1)
+    if load:  # the files to open beat a third open item when the cap bites
+        lines.append("  load: " + _clip_text(load[0], 200))
+    for item in _bullets(body, "Open", 3):
+        lines.append("  open: " + _clip_text(item, 140))
+    out, used = [], 0
+    for line in lines:
+        if used + len(line) + 1 > RESUME_CAP:
+            break
+        out.append(line)
+        used += len(line) + 1
+    return out
+
+
 def last_snapshot_summary():
     """The most recent snapshot's summary — snapshots append, so take the last section."""
     text = read(os.path.join(SPEC, "SESSION-SNAPSHOT.md"))
@@ -256,8 +309,11 @@ def build_digest():
     if doctor:
         out.append(doctor)
 
-    summary = last_snapshot_summary()
-    if summary:
+    resume = resume_lines()
+    summary = "" if resume else last_snapshot_summary()
+    if resume:
+        out.extend(resume)
+    elif summary:
         out.append("last session: " + summary)
 
     facts = remembered()

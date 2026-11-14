@@ -679,9 +679,10 @@ response — then an AI reviewer says what was slow or wasteful, and the Learnin
 the harness making fewer of those mistakes over time. Every number is measured or
 explicitly labelled.
 
-**Status 2026-11-13:** built. 22 of 29 DV rows are `[x]` with `docs/evidence/DV-*.md`; six are
-`[~]` (DV-002 live recording, DV-004 CURSOR.md budget, DV-005 v2 pages, DV-020 v2 port,
-DV-055 graph use of `emits`, DV-060 recorded trace) and DV-057 is open. Beyond the plan:
+**Status 2026-11-13:** complete. All 29 DV rows are `[x]` with `docs/evidence/DV-*.md`. DV-002
+and DV-060 closed on a live IDE session; the only event never recorded live is `preCompact`,
+which fires only when Cursor compacts a long chat and is shown as missing in the dashboard.
+Beyond the plan:
 Cursor's local store is read on schemas without `composerHeaders` (cursorDiskKV), so
 history appears as estimated traces next to live hook traces.
 

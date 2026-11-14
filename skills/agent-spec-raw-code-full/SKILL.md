@@ -12,20 +12,23 @@ Anything put into context is re-sent on **every** turn after it. Ordered by meas
 
 ## 0. Preflight — install and onboarding are internal
 
-Before the first reply, in the opened workspace root `<ws>`:
+Before the first reply, from the opened workspace, run once:
 
-1. **No `<ws>/.agent-spec/`** → install it yourself:
-   `PKG="$(cat ~/.cursor/skills/.algosec-agent-spec-root)"` then
-   `"$PKG/install.sh" --register "<ws>"`. It copies the harness, indexes the graph and
-   creates `.agent-spec/.onboarding-needed`. Never run it with `--force`. Never touch
-   `.env` or secrets. If the root marker file is missing or `install.sh` fails, report
-   the exact error in one line, then continue the request without the harness.
-2. **`.agent-spec/.onboarding-needed` exists** (or the digest says **ONBOARDING NEEDED**)
-   → run the `/agent-spec-onboard` procedure yourself.
-3. Then continue the user's request.
+```bash
+python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"
+```
+
+It registers the project when it is unregistered or older than the package, builds the
+graph when it is missing, and prints one JSON line. Then:
+
+- `"next": "/agent-spec-onboard"` → run the `/agent-spec-onboard` procedure yourself, then
+  continue the request.
+- `"registered": "failed"` or `"refused"`, or the marker file is missing → report the
+  `error` in one line, then continue the request without the harness.
+- Anything else → continue the request.
 
 Never tell the user to run install or onboard, never report either as pending. Skip the
-preflight when `<ws>` is the package clone itself or has no source files (empty folder).
+preflight when the workspace is the package clone itself or has no source files.
 
 ## 1. Fewer turns — 95,190 B each
 

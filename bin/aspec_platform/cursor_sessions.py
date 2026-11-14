@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sqlite3
+import threading
 import time
 
 import glob
@@ -112,17 +113,105 @@ def _fmt_relative_time(ts_ms):
     return f"{days}d ago"
 
 
+_SNAPSHOT_LOCK = threading.Lock()
+_LEGACY_SNAPSHOT_SWEPT = False
+
+
+def _cache_dir():
+    """A per-user 0700 directory for store copies: they hold every chat Cursor recorded, so
+    they must never sit in a shared, world-readable temp directory."""
+    global _LEGACY_SNAPSHOT_SWEPT
+    base = os.environ.get("XDG_CACHE_HOME") or os.path.join(os.path.expanduser("~"), ".cache")
+    cache = os.path.join(base, "agent-spec", "cursor-snapshot")
+    os.makedirs(cache, mode=0o700, exist_ok=True)
+    os.chmod(cache, 0o700)
+    if not _LEGACY_SNAPSHOT_SWEPT:  # earlier builds copied into /tmp with the default umask
+        import shutil
+        import tempfile
+        shutil.rmtree(os.path.join(tempfile.gettempdir(), "agent-spec-cursor-snapshot"), ignore_errors=True)
+        _LEGACY_SNAPSHOT_SWEPT = True
+    return cache
+
+
+def _snapshot(path):
+    """Copy a live WAL database (and its -wal file) to a private cache and return the copy.
+
+    Cursor keeps state.vscdb in WAL mode. On a WSL drvfs mount (/mnt/c) SQLite cannot take
+    the shared-memory lock, so even a read-only open fails with "disk I/O error". A copy
+    of the main file plus the WAL reads consistently, including the newest sessions that
+    `immutable=1` would miss. The copy is refreshed only when either source file changes.
+
+    The copy is built under a unique temporary name, its WAL folded into the main file
+    (journal_mode=DELETE), and only then renamed over the previous copy. A reader therefore
+    always opens one complete, self-contained file, whether the copy is being rebuilt by
+    another thread (the server's backfill loop) or another process (the stop hook).
+    """
+    import shutil
+
+    with _SNAPSHOT_LOCK:
+        cache = _cache_dir()
+        tag = re.sub(r"[^A-Za-z0-9]+", "_", path)[-120:]
+        dst = os.path.join(cache, tag + ".vscdb")
+        stamp = []
+        for suffix in ("", "-wal"):
+            try:
+                st = os.stat(path + suffix)
+                stamp.append(f"{st.st_mtime_ns}:{st.st_size}")
+            except OSError:
+                stamp.append("-")
+        stamp_file = dst + ".stamp"
+        try:
+            with open(stamp_file, encoding="utf-8") as fh:
+                fresh = fh.read() == "|".join(stamp)
+        except OSError:
+            fresh = False
+        if fresh and os.path.isfile(dst):
+            return dst
+        tmp = "%s.%d.%d.tmp" % (dst, os.getpid(), threading.get_ident())
+        try:
+            shutil.copyfile(path, tmp)
+            os.chmod(tmp, 0o600)
+            if os.path.isfile(path + "-wal"):
+                shutil.copyfile(path + "-wal", tmp + "-wal")
+                os.chmod(tmp + "-wal", 0o600)
+            conn = sqlite3.connect(tmp)
+            try:
+                conn.execute("PRAGMA journal_mode=DELETE").fetchall()  # checkpoints the WAL in
+            finally:
+                conn.close()
+            os.replace(tmp, dst)
+        finally:
+            for leftover in (tmp, tmp + "-wal", tmp + "-shm", tmp + "-journal"):
+                try:
+                    os.remove(leftover)
+                except OSError:
+                    pass
+        for suffix in ("-wal", "-shm"):  # a copy made by an earlier build kept its WAL beside it
+            try:
+                os.remove(dst + suffix)
+            except OSError:
+                pass
+        with open(stamp_file, "w", encoding="utf-8") as fh:
+            fh.write("|".join(stamp))
+        return dst
+
+
 def _connect_ro(path):
+    """Open one of Cursor's databases without ever writing to it. None when unreadable."""
     if not os.path.isfile(path):
         return None
     try:
-        uri = f"file:{path}?mode=ro"
-        return sqlite3.connect(uri, uri=True)
-    except Exception:
-        try:
-            return sqlite3.connect(path)
-        except Exception:
-            return None
+        conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchall()
+        return conn
+    except sqlite3.Error:
+        pass
+    try:
+        conn = sqlite3.connect(_snapshot(path))
+        conn.execute("SELECT 1 FROM sqlite_master LIMIT 1").fetchall()
+        return conn
+    except (sqlite3.Error, OSError):
+        return None
 
 
 def _workspace_composers(ws_ids) -> dict:
@@ -303,193 +392,6 @@ def load_session_review(composer_id: str, project: str | None = None) -> dict | 
         except Exception:
             return None
     return None
-
-
-def evaluate_session(*args, **kwargs) -> dict | None:
-    """Deprecated: replaced by AI-judged review (DEC-15). Use load_session_review instead."""
-    if args and isinstance(args[0], str):
-        return load_session_review(args[0])
-    return None
-
-
-def build_pipeline_stages(session_name, messages, subagents, tools, comp_data, evaluation=None):
-    """Constructs the exact multi-step execution pipeline stages:
-    User Prompt -> Prompt Guard & Rules -> Skills -> Subagents -> Subagent Responses -> Tools/Agents -> Collect Response -> Final Synthesis
-    """
-    first_user_msg = next((m["text"] for m in messages if m.get("role") == "user"), session_name)
-    last_ai_msg = next((m["text"] for m in reversed(messages) if m.get("role") == "assistant"), "")
-
-    skills = [w for w in first_user_msg.split() if w.startswith("/agent-spec-")]
-    skill_name = skills[0] if skills else "agent-spec-raw-code"
-
-    tokens_used = comp_data.get("contextTokensUsed") or 0
-    token_limit = comp_data.get("contextTokenLimit") or 200000
-    usage_pct = (tokens_used / token_limit * 100) if token_limit else 0.0
-    if evaluation and isinstance(evaluation, dict) and "usage_pct" in evaluation:
-        usage_str = f"{evaluation['usage_pct']}%"
-    else:
-        usage_str = f"{usage_pct:.1f}%"
-
-    stages = []
-
-    # 1. User Prompt
-    stages.append({
-        "id": "stage_1_prompt",
-        "number": 1,
-        "type": "prompt",
-        "icon": "👤",
-        "name": "User Prompt Sent",
-        "status": "COMPLETED",
-        "summary": "Developer submitted request to Cursor orchestrator",
-        "badge": "INPUT",
-        "color": "#38bdf8",
-        "details": {
-            "Prompt Text": first_user_msg,
-            "Tokens Burned": tokens_used,
-            "Timestamp": "Recorded"
-        }
-    })
-
-    # 2. Prompt Improvement & Guard
-    stages.append({
-        "id": "stage_2_guard",
-        "number": 2,
-        "type": "guard",
-        "icon": "🛡️",
-        "name": "Prompt Guard & Policy Enforcement",
-        "status": "PASSED",
-        "summary": "S-002 Quarantine validated · AST slicing active · 0 secret leaks",
-        "badge": "GUARDED",
-        "color": "#14b8a6",
-        "details": {
-            "Quarantine Status": "S-002 Quarantine Active (no protected files leaked)",
-            "Context Optimization": "AST Symbol Extraction enforced (avoids >20 KB whole file dumps)",
-            "Token Margin": f"Usage: {usage_str} of context limit",
-            "Policy Evaluation": "All safety predicates satisfied"
-        }
-    })
-
-    # 3. Skills & Routing
-    stages.append({
-        "id": "stage_3_skill",
-        "number": 3,
-        "type": "skill",
-        "icon": "🎯",
-        "name": f"Skill Router: {skill_name}",
-        "status": "ACTIVE",
-        "summary": f"Selected {skill_name} based on task intent and repository map",
-        "badge": "ROUTED",
-        "color": "#6366f1",
-        "details": {
-            "Skill Invoked": skill_name,
-            "Routing Strategy": "Surgical code modification with line citation rules",
-            "Subagent Authority": "Authorized to spawn background workers"
-        }
-    })
-
-    # 4. Subagents Spawned (Parallel / Multi-agent)
-    sub_count = len(subagents)
-    sub_names = ", ".join(s.get("type", "agent") for s in subagents) if sub_count else "In-process Agent"
-    stages.append({
-        "id": "stage_4_subagents_dispatch",
-        "number": 4,
-        "type": "subagent_dispatch",
-        "icon": "🤖",
-        "name": f"Subagent Orchestration ({sub_count} Spawned)",
-        "status": "DISPATCHED",
-        "summary": f"Spawning isolated background agents: {sub_names}",
-        "badge": "MULTI-AGENT",
-        "color": "#a855f7",
-        "subagents": [
-            {
-                "id": s["id"],
-                "name": s["name"],
-                "type": s["type"],
-                "status": s["status"],
-                "task": s["prompt"]
-            } for s in subagents
-        ]
-    })
-
-    # 5. Subagent Responses & Findings
-    stages.append({
-        "id": "stage_5_subagents_response",
-        "number": 5,
-        "type": "subagent_response",
-        "icon": "📨",
-        "name": "Subagent Intermediate Findings",
-        "status": "COLLECTED",
-        "summary": "Subagents executed in background, isolating noise and preserving parent tokens",
-        "badge": "ISOLATED",
-        "color": "#8b5cf6",
-        "subagents": [
-            {
-                "id": s["id"],
-                "name": s["name"],
-                "type": s["type"],
-                "status": s["status"],
-                "response": s["response"] or "Task finished successfully."
-            } for s in subagents
-        ]
-    })
-
-    # 6. Additional Tools & System Operations
-    tool_cases = list({t.get("case", "toolCall") for t in tools})
-    stages.append({
-        "id": "stage_6_tools",
-        "number": 6,
-        "type": "tools",
-        "icon": "🛠️",
-        "name": f"System Tools Executed ({len(tools)} calls)",
-        "status": "COMPLETED",
-        "summary": f"Tool types: {', '.join(tool_cases[:4]) if tool_cases else 'readToolCall, grepToolCall'}",
-        "badge": "EXECUTED",
-        "color": "#f59e0b",
-        "details": {
-            "Total Tool Calls": len(tools),
-            "Tool Operations": tool_cases,
-            "Sample Executions": tools[:8]
-        }
-    })
-
-    # 7. Collect & Reconcile Responses
-    stages.append({
-        "id": "stage_7_reconcile",
-        "number": 7,
-        "type": "reconcile",
-        "icon": "📊",
-        "name": "Collect & Reconcile Responses",
-        "status": "VERIFIED",
-        "summary": "Aggregated subagent outputs and AST diffs into coherent context",
-        "badge": "RECONCILED",
-        "color": "#3b82f6",
-        "details": {
-            "Reconciliation Strategy": "Unified subagent findings into target patch plan",
-            "Conflict Resolution": "0 Diffs conflicting",
-            "Verification Gate": "Exit gate checks validated"
-        }
-    })
-
-    # 8. Final Synthesis & Output
-    stages.append({
-        "id": "stage_8_synthesis",
-        "number": 8,
-        "type": "synthesis",
-        "icon": "🏁",
-        "name": "Final Synthesis & Output",
-        "status": "DONE",
-        "summary": "Generated surgical solution formatted with line citations and explanation",
-        "badge": "DELIVERED",
-        "color": "#10b981",
-        "details": {
-            "Resolution Text": last_ai_msg[:1200] if last_ai_msg else "Resolution complete.",
-            "Lines Added": comp_data.get("totalLinesAdded") or 0,
-            "Lines Removed": comp_data.get("totalLinesRemoved") or 0,
-            "Final Status": "Success"
-        }
-    })
-
-    return stages
 
 
 def _messages_from_bubbles(c, composer_id, comp_data, limit=300, cap=4000):
@@ -687,9 +589,6 @@ def get_cursor_session_detail(composer_id):
         # Load AI-judged review if available (honest by construction; None if unreviewed)
         evaluation = load_session_review(composer_id)
 
-        # Build interactive pipeline stages (user prompt -> guard -> skill -> subagents -> response -> tools -> reconcile -> final)
-        pipeline_stages = build_pipeline_stages(name, messages, subagents, tools_executed, comp_data, evaluation)
-
         return {
             "composerId": composer_id,
             "workspaceId": wid,
@@ -707,7 +606,6 @@ def get_cursor_session_detail(composer_id):
             "subagents": subagents,
             "tools": tools_executed,
             "evaluation": evaluation,
-            "pipeline": pipeline_stages,
             "messages": messages,
             "messageCount": len(messages)
         }
@@ -726,6 +624,56 @@ def _iso_ms(value):
         except ValueError:
             return None
     return None
+
+
+def context_usage(path=None) -> dict:
+    """Cursor's own context counters for every top-level chat (context budget, exact).
+
+    Returns {"by_id": {composer_id: {"used", "limit", "percent", "name", "updated",
+    "breakdown"}}, "floor": int | None} where breakdown is Cursor's own `promptTokenBreakdown`
+    ({category id: tokens}, Cursor labels them estimated) and
+    floor is the smallest non-zero `contextTokensUsed` of any top-level chat: the measured
+    size of a fresh chat. Subagent composers are excluded (they start from a task, not the
+    rules). json_extract keeps the read to three fields per row. {} when unreadable.
+    """
+    conn = _connect_ro(path or global_vscdb())
+    if not conn:
+        return {}
+    try:
+        rows = conn.execute(
+            "SELECT substr(key, 14), json_extract(value, '$.contextTokensUsed'), "
+            "json_extract(value, '$.contextTokenLimit'), json_extract(value, '$.contextUsagePercent'), "
+            "json_extract(value, '$.subagentComposerIds'), json_extract(value, '$.name'), "
+            "json_extract(value, '$.lastUpdatedAt'), json_extract(value, '$.promptTokenBreakdown.categories') "
+            "FROM cursorDiskKV "
+            "WHERE key LIKE 'composerData:%' AND json_valid(value)").fetchall()
+    except sqlite3.Error:
+        return {}
+    finally:
+        conn.close()
+    children = set()
+    for row in rows:
+        try:
+            children.update(json.loads(row[4]) if row[4] else [])
+        except (ValueError, TypeError):
+            continue
+    by_id = {}
+    for cid, used, limit, pct, _subs, name, updated, cats in rows:
+        if cid in children or not isinstance(used, int) or used <= 0:
+            continue
+        breakdown = {}
+        try:
+            for c in json.loads(cats) if cats else []:
+                if isinstance(c, dict) and isinstance(c.get("estimatedTokens"), int):
+                    breakdown[str(c.get("id") or c.get("label"))] = c["estimatedTokens"]
+        except (ValueError, TypeError):
+            breakdown = {}
+        by_id[cid] = {"used": used, "limit": limit if isinstance(limit, int) else None,
+                      "percent": round(pct, 1) if isinstance(pct, (int, float)) else None,
+                      "name": name if isinstance(name, str) else None,
+                      "updated": _iso_ms(updated) if isinstance(updated, (int, float)) else None,
+                      "breakdown": breakdown or None}
+    return {"by_id": by_id, "floor": min((v["used"] for v in by_id.values()), default=None)}
 
 
 def store_conversations(limit: int = 200, bubble_cap: int = 600) -> list:

@@ -359,6 +359,31 @@ def test_token_threshold_custom_env_and_dict_tokens():
     assert out2["permission"] == "allow", out2
 
 
+def test_cursor_read_allowed_because_range_is_unobservable():
+    """Cursor sends tool_input = {file_path} even for ranged Reads (B20, 2026-11-13), so
+    neither the nudge nor the hard cap may fire on a Cursor Read."""
+    p = project()
+    payload = {"tool_name": "Read", "tool_input": {"file_path": os.path.join(p, "big.txt")},
+               "conversation_id": "c1", "cursor_version": "2026.11.11"}
+    assert call(p, payload)["permission"] == "allow"
+    assert call(p, payload, AGENT_SPEC_READ_HARD_CAP_KB="10")["permission"] == "allow"
+    # The skipped cap is recorded, so a user who set it can see it did not apply.
+    open(os.path.join(p, ".agent-spec", ".hook-debug"), "w").close()
+    call(p, payload, AGENT_SPEC_READ_HARD_CAP_KB="10")
+    log = os.path.join(p, "tmp", "algosec-agent-spec-hook-debug.jsonl")
+    assert json.loads(open(log).read().splitlines()[-1])["decision"] == "allow-unobservable-over-cap"
+
+
+def test_cursor_write_allowed_because_strreplace_arrives_as_write():
+    """Cursor reports a StrReplace as Write {file_path, content=whole new file} (live, 2026-11-13)."""
+    p = project()
+    payload = {"tool_name": "Write", "conversation_id": "c1", "cursor_version": "2026.11.11",
+               "tool_input": {"file_path": os.path.join(p, "big.txt"), "content": "y" * 30000}}
+    assert call(p, payload)["permission"] == "allow"
+    payload.pop("cursor_version")
+    assert call(p, payload)["permission"] == "deny", "outside Cursor the rewrite nudge still applies"
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

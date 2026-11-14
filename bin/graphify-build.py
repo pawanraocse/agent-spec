@@ -218,6 +218,37 @@ def gitignored_dirs():
     return out
 
 
+DESCRIPTORS = []  # web.xml files seen by collect_files (not graph nodes; P3-002 step 1)
+
+
+def _xml_text(block, tag):
+    return [t.strip() for t in re.findall(r"<%s>\s*([^<]+?)\s*</%s>" % (tag, tag), block)]
+
+
+def web_xml_routes(by_dotted):
+    """{servlet file: ["ANY <url-pattern>"]} from every web.xml, by exact servlet-class FQN."""
+    out = defaultdict(set)
+    for rel in DESCRIPTORS:
+        try:
+            with open(os.path.join(PROJECT_ROOT, rel), encoding="utf-8", errors="ignore") as fh:
+                text = re.sub(r"<!--.*?-->", "", fh.read(), flags=re.S)
+        except OSError:
+            continue
+        classes = {}
+        for block in re.findall(r"<servlet>(.*?)</servlet>", text, re.S):
+            name, cls = _xml_text(block, "servlet-name"), _xml_text(block, "servlet-class")
+            if name and cls:
+                classes[name[0]] = cls[0]
+        for block in re.findall(r"<servlet-mapping>(.*?)</servlet-mapping>", text, re.S):
+            name = _xml_text(block, "servlet-name")
+            hits = by_dotted.get(classes.get(name[0], "") if name else "") or []
+            if len(hits) != 1:  # unknown or ambiguous servlet class: no guessed owner
+                continue
+            for pattern in _xml_text(block, "url-pattern"):
+                out[hits[0]].add("ANY " + (pattern if pattern.startswith("*") else _join("", pattern)))
+    return out
+
+
 def collect_files():
     excluded = EXCLUDE_DIRS | gitignored_dirs()
     files, skipped_big, truncated = [], 0, False
@@ -232,6 +263,8 @@ def collect_files():
 
         dirs[:] = [d for d in dirs if d not in excluded and not d.startswith('.')]
         for name in names:
+            if name == "web.xml":
+                DESCRIPTORS.append(os.path.relpath(os.path.join(root, name), PROJECT_ROOT).replace(os.sep, "/"))
             ext = os.path.splitext(name)[1]
             if ext not in ALLOWED_EXTS or name.endswith(SKIP_SUFFIXES):
                 continue
@@ -284,6 +317,23 @@ def build_index(files):
             for i in range(len(parts)):
                 by_dotted[".".join(parts[i:])].append(rel)
     return by_path, by_dotted
+
+
+PLATFORM_NAMESPACES = ("java", "javax", "jakarta", "kotlin", "sun", "jdk", "android")
+FILE_SUFFIXES = {"h", "hh", "hpp", "hxx", "c", "cc", "cpp", "js", "jsx", "ts", "tsx", "mjs", "cjs",
+                 "css", "scss", "json", "html", "vue", "svelte", "py", "java", "go", "rs"}
+_IDENT = re.compile(r"^[A-Za-z_$][\w$]*$")
+
+
+def mesh_candidate(token: str) -> bool:
+    """An unresolved import another repo in a mesh could define exactly (P3-001): at least two
+    dotted segments, no path separator, not a platform namespace."""
+    token = token.replace("::", ".")
+    parts = token.split(".")
+    return ("/" not in token and len(parts) >= 2
+            and all(_IDENT.match(p) for p in parts)
+            and parts[0] not in PLATFORM_NAMESPACES
+            and parts[-1] not in FILE_SUFFIXES)
 
 
 def resolve(token, importer, by_path, by_dotted):
@@ -519,16 +569,201 @@ def service_of(rel, service_roots):
 # carry the traffic: what each file serves, what it calls, and what it publishes
 # or consumes.
 # ---------------------------------------------------------------------------
-ENDPOINT_PATTERNS = [
-    r'@(?:Get|Post|Put|Delete|Patch|Request)Mapping\s*\(\s*(?:(?:value|path)\s*=\s*)?["\']([^"\']*)',
-    r'@(?:Get|Post|Put|Delete|Patch)\s*\(\s*["\']([^"\']*)',          # NestJS
-    r'@(?:app|router|api)\.(?:get|post|put|delete|patch|route)\s*\(\s*["\']([^"\']+)',
-    r'(?:app|router)\.(?:get|post|put|delete|patch|use)\s*\(\s*["\']([/][^"\']*)',
-    r'(?:mux|r|http)\.HandleFunc\s*\(\s*["\']([^"\']+)',
+# Function-style frameworks: (verb, path) straight from the call site.
+ROUTE_PATTERNS = [
+    r'@(?:app|router|api|bp|blueprint)\.(get|post|put|delete|patch|route)\s*\(\s*["\']([^"\']+)',  # Flask/FastAPI
+    r'\b(?:app|router)\.(get|post|put|delete|patch|use|all)\s*\(\s*["\'](/[^"\']*)',               # Express
+    r'(?:mux|r|http)\.(HandleFunc)\s*\(\s*["\']([^"\']+)',                                          # Go
 ]
+VERBS = ("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS")
+MAX_ROUTES_PER_FILE = 200
+
+# Annotation frameworks are read as annotation runs: a run before a `class` sets the
+# prefix, a run before a member emits routes under it (LLD addendum, P3-002 step 1).
+_ANNOTATION = re.compile(r'@([A-Za-z_]\w*)(\s*\((?:[^()]|\([^()]*\))*\))?')
+_RUN_GAP = re.compile(r'^\s*(?://[^\n]*\s*)*$')
+_CLASS_DECL = re.compile(r'^\s*(?:(?:public|protected|private|abstract|final|static|sealed|open|data|'
+                         r'export|default|internal)\s+)*(?:class|interface|enum|record|object)\s+\w+')
+_STR = re.compile(r'"((?:[^"\\]|\\.)*)"|\'((?:[^\'\\]|\\.)*)\'')
+SPRING_MAPPINGS = {"GetMapping": "GET", "PostMapping": "POST", "PutMapping": "PUT",
+                   "DeleteMapping": "DELETE", "PatchMapping": "PATCH", "RequestMapping": None}
+SHORT_VERBS = {"Get": "GET", "Post": "POST", "Put": "PUT", "Delete": "DELETE", "Patch": "PATCH",
+               "Head": "HEAD", "Options": "OPTIONS", "All": "ANY"}
+
+
+def _strings(text):
+    return [a or b for a, b in _STR.findall(text or "")]  # findall gives "" for the unused group
+
+
+def _ann_paths(args, keys=("value", "path"), positional=True):
+    """String values an annotation names as paths: a keyed value/path, else its first literal(s)."""
+    if not args:
+        return []
+    body = args.strip()[1:-1]
+    for key in keys:
+        m = re.search(r'\b%s\s*=\s*(\{[^}]*\}|"(?:[^"\\]|\\.)*"|\'[^\']*\')' % key, body)
+        if m:
+            return _strings(m.group(1))
+    if not positional or re.match(r'\s*\w+\s*=', body):  # only other keys: no path given
+        return []
+    m = re.match(r'\s*(\{[^}]*\}|"(?:[^"\\]|\\.)*"|\'[^\']*\')', body)
+    return _strings(m.group(1)) if m else []
+
+
+def _join(prefix, path):
+    parts = [p for p in (prefix or "").split("/") + (path or "").split("/") if p]
+    out = "/" + "/".join(parts)
+    return out[:120]
+
+
+def _annotation_routes(content):
+    jaxrs = "ws.rs" in content
+    short = "io.micronaut" in content or "@nestjs/" in content
+    runs, run, last_end = [], [], None
+    for m in _ANNOTATION.finditer(content):
+        if run and not _RUN_GAP.match(content[last_end:m.start()]):
+            runs.append((run, last_end))
+            run = []
+        run.append((m.group(1), m.group(2)))
+        last_end = m.end()
+    if run:
+        runs.append((run, last_end))
+
+    out, client_calls, prefix, client = [], [], "", None
+    for anns, end in runs:
+        tail = content[end:end + 300].lstrip()
+        names = {n for n, _ in anns}
+        if "WebServlet" in names:
+            for n, a in anns:
+                if n == "WebServlet":
+                    out.extend(("ANY", _join("", p)) for p in _ann_paths(a, ("urlPatterns", "value")))
+        if _CLASS_DECL.match(tail):
+            prefix, client = "", _client_of(anns)
+            for n, a in anns:
+                if client and n == "FeignClient":
+                    paths = _ann_paths(a, ("path",), positional=False)
+                    prefix = paths[0] if paths else ""
+                    break
+                if (n == "Path" and jaxrs) or n == "RequestMapping" or (n == "Controller" and short):
+                    paths = _ann_paths(a)
+                    prefix = paths[0] if paths else ""
+                    break
+            continue
+        verb, paths, routed = None, None, False
+        for n, a in anns:
+            if jaxrs and n in VERBS:
+                verb, routed = n, True
+            elif jaxrs and n == "Path":
+                paths, routed = _ann_paths(a), True
+            elif n in SPRING_MAPPINGS:
+                routed = True
+                verb = SPRING_MAPPINGS[n] or verb
+                if n == "RequestMapping" and a:
+                    vm = re.search(r'RequestMethod\.([A-Z]+)', a)
+                    verb = vm.group(1) if vm else verb
+                paths = _ann_paths(a)
+            elif short and n in SHORT_VERBS:
+                verb, paths, routed = SHORT_VERBS[n], _ann_paths(a), True
+        if routed:
+            found = [(verb or "ANY", _join(prefix, p)) for p in (paths or [""])]
+            if client:  # a client interface declares calls, it serves nothing
+                client_calls.extend(_call(v, client[0], p, client[1]) for v, p in found)
+            else:
+                out.extend(found)
+    return out, client_calls
+
+
+MAX_CALLS_PER_FILE = 100
+_URL_LITERAL = re.compile(r'["\'`]((?:https?|lb)://[^"\'`\s]+)["\'`]')
+_LINE_VERB = re.compile(r'(?:HttpMethod\.([A-Z]+))|\.(get|post|put|delete|patch)(?:For\w*|Entity|Object)?\s*\(|'
+                        r'\b(getFor|postFor|patchFor)\w*\s*\(')
+_REL_FETCH = re.compile(r'\bfetch\s*\(\s*["\']((?:/)[^"\'\s]*)["\']')
+_REL_AXIOS = re.compile(r'\baxios\.(get|post|put|delete|patch)\s*\(\s*["\']((?:/)[^"\'\s]*)["\']')
+
+
+def _target(raw):
+    """A call target: `config:<key>` for a placeholder, else the lowercased host or name."""
+    raw = (raw or "").strip()
+    m = re.match(r'^\$\{([^}:]+)', raw)
+    if m:
+        return "config:" + m.group(1)
+    host = raw.split("//", 1)[-1].split("/", 1)[0].split(":", 1)[0]
+    return host.lower()
+
+
+def _call(verb, target, path, via):
+    return {"verb": verb, "target": target, "path": _join("", path.split("?", 1)[0]), "via": via}
+
+
+def _client_of(anns):
+    """(target, via) when this class run declares an HTTP client interface, else None."""
+    for n, a in anns:
+        if n == "FeignClient":
+            url = _ann_paths(a, ("url",), positional=False)
+            name = _ann_paths(a, ("name", "value"))
+            return (_target(url[0] if url else (name[0] if name else "")), "feign")
+        if n == "RegisterRestClient":
+            key = _ann_paths(a, ("configKey",), positional=False)
+            base = _ann_paths(a, ("baseUri",), positional=False)
+            return (_target(key[0] if key else (base[0] if base else "")), "rest-client")
+    return None
+
+
+_HTTP_CLIENT = re.compile(r'restTemplate|RestTemplate|webClient|WebClient|axios|fetch\s*\(|requests\.|httpx|'
+                          r'HttpClient|ClientBuilder|RestClientBuilder|HttpURLConnection|OkHttpClient|'
+                          r'urllib\.request|aiohttp|http\.(?:Get|Post|NewRequest)|HttpRequest')
+
+
+def extract_http_calls(content):
+    """Structured outbound calls: client interfaces, literal URLs, relative fetch/axios.
+
+    A URL literal counts only in a file that makes HTTP calls; elsewhere it is an XML
+    namespace, a schema id or a doc link, and a phantom call would become a false edge."""
+    _, calls = _annotation_routes(content)
+    literal_lines = content.splitlines() if _HTTP_CLIENT.search(content) else []
+    for line in literal_lines:
+        if "@FeignClient" in line or "@RegisterRestClient" in line:
+            continue  # the client's own target, already recorded per method above
+        for m in _URL_LITERAL.finditer(line):
+            url = m.group(1)
+            if "${" in url or "{{" in url:
+                continue
+            verb = "ANY"
+            explicit = re.search(r'HttpMethod\.([A-Z]+)', line)  # exchange(url, HttpMethod.X, ...)
+            for v in ([] if explicit else _LINE_VERB.finditer(line[:m.start()])):
+                verb = (v.group(1) or v.group(2) or v.group(3)[:-3] or "").upper() or verb
+            verb = explicit.group(1) if explicit else verb
+            if verb not in VERBS:
+                verb = "ANY"
+            rest = url.split("//", 1)[1]
+            path = "/" + rest.split("/", 1)[1] if "/" in rest else "/"
+            calls.append(_call(verb, _target(url), path, "url"))
+    for m in _REL_FETCH.finditer(content):
+        calls.append(_call("GET", "", m.group(1), "fetch"))
+    for m in _REL_AXIOS.finditer(content):
+        calls.append(_call(m.group(1).upper(), "", m.group(2), "fetch"))
+    seen, out = set(), []
+    for c in sorted(calls, key=lambda c: (c["verb"], c["target"], c["path"], c["via"])):
+        key = (c["verb"], c["target"], c["path"], c["via"])
+        if key not in seen:
+            seen.add(key)
+            out.append(c)
+    return out[:MAX_CALLS_PER_FILE]
+
+
+def extract_routes(content):
+    """`["<VERB> <path>"]` this file serves, sorted and de-duplicated."""
+    found, _ = _annotation_routes(content)
+    for pattern in ROUTE_PATTERNS:
+        for m in re.finditer(pattern, content):
+            verb = m.group(1).upper()
+            found.append((verb if verb in VERBS else "ANY", _join("", m.group(2))))
+    return sorted({"%s %s" % (v, p) for v, p in found})[:MAX_ROUTES_PER_FILE]
+
 
 HTTP_CALL_PATTERNS = [
     r'@FeignClient\s*\(\s*(?:name\s*=\s*)?["\']([^"\']+)',
+    r'@RegisterRestClient\s*\([^)]*configKey\s*=\s*["\']([^"\']+)',   # MicroProfile / Quarkus
     r'["\'](https?://[\w.\-]+(?::\d+)?)[/"\']',
     r'(?:restTemplate|webClient|httpClient|http)\.\s*(?:get|post|put|delete|exchange|patch)',
     r'(?:axios|fetch|requests|httpx)\s*\.?\s*(?:get|post|put|delete|patch)?\s*\(',
@@ -562,11 +797,19 @@ def extract_signals(content):
 
     calls = set(hits(HTTP_CALL_PATTERNS))
     # A bare client call with no literal URL still proves this file talks outward.
-    if not calls and re.search(r'(restTemplate|webClient|axios\.|requests\.(get|post)|fetch\()', content):
+    if not calls and re.search(r'(restTemplate|webClient|axios\.|requests\.(get|post)|fetch\(|'
+                               r'HttpClient\.new|ClientBuilder\.new|RestClientBuilder|HttpURLConnection|'
+                               r'OkHttpClient)', content):
         calls.add("[dynamic]")
 
+    routes = extract_routes(content)
+    http_calls = extract_http_calls(content)
+    calls |= {c["target"] for c in http_calls if c["target"] and not c["target"].startswith("config:")}
+    calls.discard("[dynamic]") if len(calls) > 1 else None
     return {
-        "endpoints": hits(ENDPOINT_PATTERNS),
+        "routes": routes,
+        "http_calls": http_calls,
+        "endpoints": sorted({r.split(" ", 1)[1] for r in routes}),
         "calls": sorted(calls),
         "produces": hits(TOPIC_PRODUCE_PATTERNS),
         "consumes": hits(TOPIC_CONSUME_PATTERNS),
@@ -619,7 +862,7 @@ def wire_edges(file_signals, service_by_file, service_roots, aliases=None):
 # The cache is keyed by the parser version, so changing a pattern above
 # invalidates every entry rather than silently serving stale extractions.
 # ---------------------------------------------------------------------------
-PARSER_VERSION = "5.1"
+PARSER_VERSION = "5.3.1"  # bump on ANY extractor change: the cache is keyed by it
 CACHE_PATH = os.path.join(OUTPUT_DIR, ".cache.json")
 
 
@@ -981,7 +1224,14 @@ def main():
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--rebuild", action="store_true",
                         help="Ignore the incremental cache and re-parse every file")
+    parser.add_argument("--out", metavar="DIR",
+                        help="Write the graph, cache and reports to DIR instead of .agent-spec/graph, "
+                             "and leave the project's PROJECT-INDEX.md alone (P3-001 mesh members)")
     args = parser.parse_args()
+    if args.out:
+        global OUTPUT_DIR, CACHE_PATH
+        OUTPUT_DIR = os.path.abspath(args.out)
+        CACHE_PATH = os.path.join(OUTPUT_DIR, ".cache.json")
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     started = time.monotonic()
@@ -1014,6 +1264,7 @@ def main():
 
     nodes, edges = [], []
     external = Counter()
+    unresolved = defaultdict(list)  # P3-001: full tokens the mesh can resolve in another repo
     lang_counts = Counter()
     test_files = 0
     reparsed = 0
@@ -1048,6 +1299,8 @@ def main():
                       "path": rel, "lang": LANG_BY_EXT.get(ext, "other"),
                       "layer": layer, "service": service,
                       "endpoints": signals["endpoints"],
+                      "routes": signals.get("routes", []),
+                      "http_calls": signals.get("http_calls", []),
                       "produces": signals["produces"],
                       "consumes": signals["consumes"]})
 
@@ -1065,8 +1318,19 @@ def main():
                                   "confidence": "low"})
             else:
                 external[token.split(".")[0].split("/")[0]] += 1
+                if mesh_candidate(token) and len(unresolved[token]) < 25:
+                    unresolved[token].append(rel)
 
     save_cache(fresh_cache)
+
+    descriptor_routes = web_xml_routes(by_dotted)
+    if descriptor_routes:
+        for node in nodes:
+            extra = descriptor_routes.get(node["id"])
+            if extra:
+                node["routes"] = sorted(set(node["routes"]) | extra)[:MAX_ROUTES_PER_FILE]
+                node["endpoints"] = sorted({r.split(" ", 1)[1] for r in node["routes"]})
+        endpoint_index = [(n["id"], n["endpoints"]) for n in nodes if n["endpoints"]]
 
     integration_edges, topics = wire_edges(file_signals, service_by_file, service_roots,
                                            load_service_aliases())
@@ -1110,7 +1374,7 @@ def main():
     conventions = detect_conventions(files)
 
     graph = {
-        "version": "5.0",
+        "version": "5.3",
         "project": os.path.basename(PROJECT_ROOT),
         "generated": datetime.now().isoformat(),
         "generator": "graphify-build",
@@ -1126,6 +1390,7 @@ def main():
         "symbols": symbol_nodes,
         "calls": call_edges,
         "external": external.most_common(50),
+        "unresolved_imports": {t: unresolved[t] for t in sorted(unresolved)},
         "note": ("Edges are resolved to node ids. type=imports is a confident source "
                  "dependency; type=http and type=message are integration edges recovered "
                  "from call and broker signals, which no import graph can see; "
@@ -1138,8 +1403,9 @@ def main():
         json.dump(graph, fh, indent=2)
     os.replace(tmp_graph, target_graph)
 
-    write_project_index(stack, top_modules(files), stats,
-                        os.path.join(PROJECT_ROOT, ".agent-spec", "PROJECT-INDEX.md"))
+    if not args.out:
+        write_project_index(stack, top_modules(files), stats,
+                            os.path.join(PROJECT_ROOT, ".agent-spec", "PROJECT-INDEX.md"))
     write_graph_md(stack, stats, hot, cycles,
                    os.path.join(OUTPUT_DIR, "KNOWLEDGE-GRAPH.md"))
     write_conventions(conventions, service_roots, endpoint_index, violations,

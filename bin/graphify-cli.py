@@ -264,7 +264,7 @@ def cmd_endpoints(graph, args):
     print(f"=== {total} endpoints in {len(nodes)} files ===")
     for n in sorted(nodes, key=lambda x: (x.get("service") or "", x["id"])):
         print(f"  [{n.get('service') or '-'}] {n['id']}")
-        for ep in n["endpoints"]:
+        for ep in n.get("routes") or n["endpoints"]:  # routes carry the verb (graph 5.2+)
             print(f"      {ep}")
     if not nodes:
         print("  (none detected)")

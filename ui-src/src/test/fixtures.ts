@@ -31,6 +31,7 @@ export const requestDetail = {
   responses: [{ span_id: "e8", ts: "2026-11-13T10:00:06.000Z", text: "The session is undefined after expiry.", text_chars: 38 }],
   review: null,
   session_requests: ["gen-1"],
+  context: undefined as unknown,
 };
 
 export const lag = {
@@ -57,15 +58,67 @@ export const learning = {
   facts_by_month: [{ month: "2026-10", count: 2 }], experience_tiers: { trusted: 1 }, injections: [],
 };
 
+export const contextBudget = {
+  used: 120000, floor: 18000, limit: 200000, percent: 60, growth: 6.67, carried_tokens: 102000, carry_per_call: 12000,
+  reset_once: 22500, saving_per_call: 10200, breakeven_calls: 2.2, verdict: "reset", floor_source: "this chat's fixed categories",
+  breakdown: { system_prompt: 500, tools: 8500, rules: 5600, skills: 3400, conversation: 102000 }, nudged: true,
+  weights: { read: 0.1, write: 1.25 }, provenance: "measured",
+};
+export const contextInfo = {
+  budget: contextBudget,
+  billed: { requests: 2, input_total: 193809, output_total: 20, cache_read_share: 0.806, points: [36176, 157633], generations: ["gen-0", "gen-1"] },
+};
+requestDetail.context = contextInfo;
+export const contextOverview = {
+  floor: 18000, chats: 2, by_verdict: { reset: 1, carry: 1, fresh: 0 }, carried_tokens: 109000, reset_saving_per_call: 10200,
+  breakeven_calls: 5, weights: { read: 0.1, write: 1.25 }, provenance: "measured", source: "fixture",
+  top: [
+    { session_id: "conv-1", name: "Login bug", workspace: "/p", latest_trace_id: "gen-1", ...contextInfo },
+    { session_id: "conv-2", name: "Short chat", workspace: "/p", latest_trace_id: null,
+      budget: { ...contextBudget, used: 25000, percent: 12.5, growth: 1.39, carried_tokens: 7000, carry_per_call: 2500, saving_per_call: 700,
+        breakeven_calls: 32.1, verdict: "carry", breakdown: null, nudged: false, floor_source: "smallest chat on this machine" }, billed: null },
+  ],
+};
+
 export const ROUTES: Record<string, unknown> = {
+  "/api/context": contextOverview,
   ...V2_ROUTES,
   "/api/requests": requestList,
   "/api/requests/gen-1": requestDetail,
+  "/api/conversations": {
+    total: 1, limit: 500, offset: 0, facets: { workspaces: ["/p"] },
+    conversations: [{
+      session_id: "conv-1", name: "Login bug", first_prompt: "/agent-spec-investigate why does login fail",
+      last_prompt: "/agent-spec-investigate why does login fail", workspace: "/p", sources: ["hook"], provenance: "measured",
+      start: "2026-11-13T10:00:00.000Z", end: "2026-11-13T10:00:06.100Z", requests: 1, running: 0,
+      skills: ["agent-spec-investigate"], models: ["claude-sonnet-4-5"], reviewed: false, has_transcript: false,
+      latest_trace_id: "gen-1", tool_count: 2, subagent_count: 1, error_count: 1, guard_count: 1, edit_count: 0, duration_ms: 6100,
+      context: contextInfo,
+    }],
+  },
   "/api/coach/lag": lag,
   "/api/coach/issues": issues,
   "/api/learning": learning,
   "/api/catalog": { self_described: 1, skills: [{ id: "agent-spec-investigate", name: "agent-spec-investigate", description: "", category: "Diagnose",
     icon: "search", emits: ["subagent", "tool", "edit"], steps: [], self_described: true, is_workflow: false, uses: 1 }] },
+  "/api/automations": {
+    config: ".agent-spec/automation.json", log: ".agent-spec/metrics/automation.jsonl",
+    totals: { runs: 3, succeeded: 2, failed: 1, last_24h: 3, enabled: 4, count: 5 },
+    automations: [
+      { id: "graph-refresh", title: "Refresh the knowledge graph", trigger: "stop after an edit", kind: "script", replaces: "re-running the indexer",
+        env: null, enabled: true, switched_off: false, env_off: false, runs: 2, succeeded: 1, failed: 1, duration_ms_total: null,
+        last: { ts: "2026-11-14T02:00:00Z", name: "graph-refresh", status: "failed", reason: "could not start the builder" } },
+      { id: "context-nudge", title: "Suggest a fresh chat", trigger: "stop past break-even", kind: "skill", replaces: "guessing when a reset pays",
+        env: "AGENT_SPEC_CONTEXT_NUDGE", enabled: false, switched_off: false, env_off: true, runs: 0, succeeded: 0, failed: 0, duration_ms_total: null, last: null },
+      { id: "snapshot-rotate", title: "Rotate the session snapshot", trigger: "sessionEnd", kind: "script", replaces: "rotate by hand",
+        env: null, enabled: true, switched_off: false, env_off: false, runs: 1, succeeded: 1, failed: 0, duration_ms_total: 40,
+        last: { ts: "2026-11-14T03:00:00Z", name: "snapshot-rotate", status: "ok", reason: "12000 B, under the 40000 B threshold", duration_ms: 40 } },
+    ],
+    recent: [
+      { ts: "2026-11-14T03:00:00Z", name: "snapshot-rotate", status: "ok", reason: "12000 B, under the 40000 B threshold", duration_ms: 40 },
+      { ts: "2026-11-14T02:00:00Z", name: "graph-refresh", status: "failed", reason: "could not start the builder" },
+    ],
+  },
   "/api/status_bar": { graph: { text: "2m old" }, doctor: { status: "ok" }, hooks: { a: true } },
 };
 

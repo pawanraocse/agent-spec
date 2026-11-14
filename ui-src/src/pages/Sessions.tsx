@@ -1,18 +1,10 @@
-import { Num } from "../components/Num";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import { useEffect, useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { apiGet } from "../api/client";
 import { Metric } from "../components/Metric";
 import {
-  Search,
-  Sliders,
-  Sparkles,
-  GitCompare,
-  ArrowRight,
-  TrendingDown,
-  Layers,
-  CheckCircle,
-  AlertTriangle,
   Play,
   RotateCcw,
 } from "lucide-react";
@@ -42,79 +34,7 @@ type CompareResult = {
   delta_runs?: number;
 };
 
-export function Sessions() {
-  const [sessions, setSessions] = useState<SessionRow[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiGet<{ sessions: SessionRow[] }>("/api/sessions")
-      .then((res) => setSessions(res.sessions || []))
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filtered = useMemo(() => {
-    return sessions.filter((s) => s.session_id.toLowerCase().includes(search.toLowerCase()));
-  }, [sessions, search]);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-100">Sessions</h1>
-          <p className="text-xs text-slate-400">
-            Explorer, context threshold audits, and session efficiency
-          </p>
-        </div>
-        <div className="relative w-64">
-          <Search size={14} className="absolute left-3 top-2.5 text-slate-500" />
-          <input
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 py-1.5 pl-9 pr-3 text-xs text-slate-200 placeholder-slate-500 focus:border-indigo-500 focus:outline-none"
-            placeholder="Search session IDs..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="divide-y divide-slate-800/80 rounded-xl border border-slate-800 bg-slate-900/30 text-sm">
-        {loading ? (
-          <div className="p-6 text-center text-xs text-slate-500">Loading sessions...</div>
-        ) : filtered.length === 0 ? (
-          <div className="p-6 text-center text-xs text-slate-500">No sessions match search.</div>
-        ) : (
-          filtered.map((s) => (
-            <div key={s.session_id} className="flex items-center justify-between p-3.5 hover:bg-slate-900/50 transition-colors">
-              <div className="flex items-center gap-3">
-                <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-xs font-mono font-medium text-indigo-300">
-                  {s.session_id.slice(0, 8)}...
-                </span>
-                <Link
-                  to={`/sessions/${encodeURIComponent(s.session_id)}`}
-                  className="font-mono text-xs text-sky-400 hover:underline"
-                >
-                  {s.session_id}
-                </Link>
-              </div>
-              <div className="flex items-center gap-4 text-xs text-slate-400 tabular-nums">
-                <span><Num p="measured">{s.runs}</Num> turns</span>
-                <span>·</span>
-                <span><Num p="measured">{(s.tokens || 0).toLocaleString()}</Num> tokens</span>
-                <Link
-                  to={`/sessions/${encodeURIComponent(s.session_id)}`}
-                  className="text-slate-400 hover:text-white"
-                >
-                  Inspect →
-                </Link>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
+export { ConversationList as Sessions } from "../features/ConversationList";
 
 export function SessionDetail() {
   const { id = "" } = useParams();
@@ -165,76 +85,76 @@ export function SessionDetail() {
   return (
     <div className="space-y-6">
       {/* Detail Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <Link to="/sessions" className="text-xs text-slate-500 hover:text-slate-300">
+            <Link to="/sessions" className="text-xs text-muted-foreground hover:text-foreground">
               ← Sessions
             </Link>
-            <span className="text-slate-600">/</span>
-            <span className="font-mono text-xs font-semibold text-slate-300">{id}</span>
+            <span className="text-muted-foreground/70">/</span>
+            <span className="font-mono text-xs font-semibold text-foreground/85">{id}</span>
           </div>
-          <h1 className="mt-1 text-xl font-semibold text-slate-100">Session Analysis</h1>
+          <h1 className="mt-1 text-xl font-semibold text-foreground">Session Analysis</h1>
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 transition-colors"
+            size="sm"
             onClick={() => navigate("/console")}
           >
             <Play size={13} />
             Continue chat in Console
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Context Gauge (§4.2 / CP-024) */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 space-y-2">
+      <Card className="p-4 space-y-2">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-slate-300">Context Gauge</span>
-            <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400" data-figure-exempt>
+            <span className="font-medium text-foreground/85">Context Gauge</span>
+            <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground" data-figure-exempt>
               S-004 Nudge Rule
             </span>
           </div>
-          <span className="font-mono tabular-nums text-slate-300">
+          <span className="font-mono tabular-nums text-foreground/85">
             {peakContext.toLocaleString()} / {contextThreshold.toLocaleString()} tokens ({contextPct}%)
           </span>
         </div>
-        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted">
           <div
             className={`h-full transition-all ${
-              contextPct > 90 ? "bg-amber-400" : "bg-indigo-500"
+              contextPct > 90 ? "bg-warning" : "bg-primary"
             }`}
             style={{ width: `${contextPct}%` }}
           />
           {/* Nudge marker at 100% */}
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-rose-500"
+            className="absolute top-0 bottom-0 w-0.5 bg-danger"
             style={{ left: "100%" }}
             title="S-004 Nudge threshold (80k)"
           />
         </div>
         {contextPct >= 100 ? (
-          <p className="text-[11px] text-amber-400">
+          <p className="text-[11px] text-warning">
             Session passed the 80k threshold; S-004 compact nudge was triggered.
           </p>
         ) : (
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-muted-foreground">
             Healthy context window; needle-in-haystack degradation avoided.
           </p>
         )}
-      </div>
+      </Card>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b border-slate-800 text-xs">
+      <div className="flex gap-2 border-b border-border text-xs">
         <button
           type="button"
           className={`pb-2 font-medium border-b-2 transition-colors ${
             tab === "timeline"
-              ? "border-indigo-500 text-indigo-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
           onClick={() => setTab("timeline")}
         >
@@ -244,8 +164,8 @@ export function SessionDetail() {
           type="button"
           className={`pb-2 font-medium border-b-2 transition-colors ${
             tab === "savings"
-              ? "border-indigo-500 text-indigo-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
           onClick={() => setTab("savings")}
         >
@@ -255,8 +175,8 @@ export function SessionDetail() {
           type="button"
           className={`pb-2 font-medium border-b-2 transition-colors ${
             tab === "compare"
-              ? "border-indigo-500 text-indigo-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "border-primary text-primary"
+              : "border-transparent text-muted-foreground hover:text-foreground"
           }`}
           onClick={() => setTab("compare")}
         >
@@ -268,17 +188,17 @@ export function SessionDetail() {
       {tab === "timeline" && (
         <div className="space-y-3">
           {(data?.story || []).map((req, i) => (
-            <div
+            <Card
               key={req.request_id || i}
-              className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 space-y-2 text-xs"
+              className="p-4 space-y-2 text-xs"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-slate-400">Turn #{i + 1}</span>
-                <span className="font-mono text-slate-500">
+                <span className="font-mono text-muted-foreground">Turn #{i + 1}</span>
+                <span className="font-mono text-muted-foreground">
                   {((req.tokens_input || 0) + (req.tokens_output || 0)).toLocaleString()} tokens
                 </span>
               </div>
-              <p className="font-sans text-slate-200 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800">
+              <p className="font-sans text-foreground bg-background p-2.5 rounded-lg border border-border">
                 {req.prompt || "(no prompt recorded)"}
               </p>
               {req.steps && req.steps.length > 0 && (
@@ -286,29 +206,29 @@ export function SessionDetail() {
                   {req.steps.map((st, j) => (
                     <span
                       key={j}
-                      className="rounded bg-slate-800 px-2 py-0.5 text-[11px] font-mono text-slate-300"
+                      className="rounded bg-muted px-2 py-0.5 text-[11px] font-mono text-foreground/85"
                     >
                       {st.name}
                     </span>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Tab: Savings Calculator (CP-024 / D-010 parity) */}
       {tab === "savings" && (
-        <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-5 text-xs">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <Card className="space-y-4 p-5 text-xs">
+          <div className="flex items-center justify-between border-b border-border pb-3">
             <div>
-              <h3 className="text-sm font-semibold text-slate-100">Context Savings Calculator</h3>
-              <p className="text-slate-400">
+              <h3 className="text-sm font-semibold text-foreground">Context Savings Calculator</h3>
+              <p className="text-muted-foreground">
                 Naive whole-file dumps vs Graphify symbol AST queries with configurable weights
               </p>
             </div>
-            <span className="rounded bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase font-bold text-amber-300">
+            <span className="rounded bg-warning/10 px-2 py-0.5 text-[10px] uppercase font-bold text-warning">
               Estimated
             </span>
           </div>
@@ -336,11 +256,11 @@ export function SessionDetail() {
           </div>
 
           <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-muted-foreground">
               <span data-figure-exempt>Read weight sensitivity: {readWeight.toFixed(1)}x</span>
               <button
                 type="button"
-                className="text-indigo-400 hover:underline flex items-center gap-1"
+                className="text-primary hover:underline flex items-center gap-1"
                 onClick={() => setReadWeight(1.0)}
               >
                 <RotateCcw size={11} /> Reset weight
@@ -353,26 +273,26 @@ export function SessionDetail() {
               step="0.1"
               value={readWeight}
               onChange={(e) => setReadWeight(parseFloat(e.target.value))}
-              className="w-full accent-indigo-500 cursor-pointer"
+              className="w-full accent-primary cursor-pointer"
             />
           </div>
-        </div>
+        </Card>
       )}
 
 
       {/* Tab: A/B Compare */}
       {tab === "compare" && (
-        <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-5 text-xs">
+        <Card className="space-y-4 p-5 text-xs">
           <div>
-            <h3 className="text-sm font-semibold text-slate-100">A/B Session Comparison</h3>
-            <p className="text-slate-400">
+            <h3 className="text-sm font-semibold text-foreground">A/B Session Comparison</h3>
+            <p className="text-muted-foreground">
               Pick another session to calculate deltas in tokens, turns, and duration
             </p>
           </div>
 
           <div className="flex gap-2">
             <select
-              className="flex-1 rounded-lg border border-slate-800 bg-slate-900 p-2 text-xs text-slate-200"
+              className="flex-1 rounded-lg border border-border bg-card p-2 text-xs text-foreground"
               value={compareTarget}
               onChange={(e) => setCompareTarget(e.target.value)}
             >
@@ -385,18 +305,18 @@ export function SessionDetail() {
                   </option>
                 ))}
             </select>
-            <button
+            <Button
               type="button"
-              className="rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+              size="sm"
               disabled={!compareTarget}
               onClick={runCompare}
             >
               Compare
-            </button>
+            </Button>
           </div>
 
           {compareResult && (
-            <div className="grid gap-3 sm:grid-cols-3 pt-3 border-t border-slate-800">
+            <div className="grid gap-3 sm:grid-cols-3 pt-3 border-t border-border">
               <Metric
                 label="Delta Tokens"
                 value={compareResult.delta_tokens?.toLocaleString() ?? "0"}
@@ -416,7 +336,7 @@ export function SessionDetail() {
               />
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -236,6 +236,28 @@ def count_demo_seed(conn) -> int:
         return 0
 
 
+_HOOK_COVERAGE_CACHE: dict = {}
+
+
+def _hook_coverage(project: str, ttl: float = 60.0) -> dict | None:
+    """Fired/registered hook events plus the known fix, cached: the status bar polls and the
+    Cursor log lives on a slow mount under WSL. None when the log cannot be read."""
+    hit = _HOOK_COVERAGE_CACHE.get(project)
+    if hit and time.time() - hit[0] < ttl:
+        return hit[1]
+    try:
+        from . import hook_logs
+        entries = hook_logs.harvest(project)
+        cov = hook_logs.coverage(entries, project)
+        diag = hook_logs.diagnose(entries)
+        cov.update(failing_now=diag["failing_now"], failing_events=diag["failing_events"],
+                   action_needed=diag["action_needed"], fix=diag["fix"], invocations=diag["invocations"])
+    except Exception:
+        cov = None
+    _HOOK_COVERAGE_CACHE[project] = (time.time(), cov)
+    return cov
+
+
 def api_status_bar(project: str, conn, active_jobs: int = 0) -> dict:
     # 1. Graph freshness
     graph_row = conn.execute("SELECT ts, age_s FROM graph_stats ORDER BY ts DESC LIMIT 1").fetchone()
@@ -282,7 +304,10 @@ def api_status_bar(project: str, conn, active_jobs: int = 0) -> dict:
     else:
         hooks_info["git_reindex"] = True  # Not a git repo, so not missing
 
-    # 3. Doctor dot
+    # 3. Which registered hooks Cursor actually ran (from its own hook log, not hooks.json)
+    hook_coverage = _hook_coverage(project)
+
+    # 4. Doctor dot
     doc = api_doctor(project)
     doc_status = "ok"
     if not doc.get("ok"):
@@ -292,7 +317,7 @@ def api_status_bar(project: str, conn, active_jobs: int = 0) -> dict:
         elif any(c.get("status") == "WARN" for c in checks):
             doc_status = "warn"
 
-    # 4. Snapshot health
+    # 5. Snapshot health
     snap_path = os.path.join(common.agent_spec_dir(project), "SESSION-SNAPSHOT.md")
     snap_size = os.path.getsize(snap_path) if os.path.isfile(snap_path) else 0
     rotation_due = snap_size > 40 * 1024
@@ -304,6 +329,7 @@ def api_status_bar(project: str, conn, active_jobs: int = 0) -> dict:
             "stale": stale_graph,
         },
         "hooks": hooks_info,
+        "hook_coverage": hook_coverage,
         "doctor": {
             "status": doc_status,
             "ok": doc_status == "ok",

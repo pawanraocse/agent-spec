@@ -110,8 +110,17 @@ Optional CI step: `python3 .agent-spec/bin/agent-spec-tokens.py audit --scan .` 
 job when a hook is duplicated or missing, rules stack, or memory is oversized.
 Methodology: [token-efficiency.md](token-efficiency.md).
 
-Optional guard rail: `export AGENT_SPEC_READ_HARD_CAP_KB=40` denies rangeless Reads of
-40 KB or more every time (default off: one nudge, retry goes through). To see what Cursor
+Context check: when Cursor's own counter shows a chat has grown past the point where a new
+chat pays for itself in under five model calls, the `stop` hook suggests `/agent-spec-compact`
+once, with the numbers. Coach › Context budget ranks every chat the same way. Turn the
+suggestion off with `export AGENT_SPEC_CONTEXT_NUDGE=0`.
+
+Optional guard rail outside Cursor: `export AGENT_SPEC_READ_HARD_CAP_KB=40` denies rangeless
+Reads of 40 KB or more every time (default off: one nudge, retry goes through). Under Cursor
+the Read and Write nudges and the hard cap do not apply: Cursor strips a Read's offset/limit
+and reports a StrReplace as a Write of the whole file before the hook runs, so the hook
+cannot tell them apart. Whole-file reads are instead measured after the fact from
+`tool_output.content_length` (Coach › Whole-file reads). To see what Cursor
 actually sends the hook: `AGENT_SPEC_HOOK_DEBUG=1` (or, without restarting Cursor,
 `touch .agent-spec/.hook-debug`) writes payload key names, value types and the hook's
 decision (never strings) to `$TMPDIR/algosec-agent-spec-hook-debug.jsonl`.
@@ -192,5 +201,6 @@ Full step-by-step series: [PHASE1-VERIFICATION.md](PHASE1-VERIFICATION.md).
 - [ ] New chat includes digest (or manual digest works)
 - [ ] `/agent-spec-onboard` runs
 - [ ] Task can start `agent-spec-search` / `agent-spec-verify`
-- [ ] Large rangeless Read gets one preToolUse nudge, retry succeeds
+- [ ] Outside Cursor: large rangeless Read gets one preToolUse nudge, retry succeeds
+- [ ] Under Cursor: ranged and whole Reads are both allowed; `events.jsonl` marks the whole one `ranged: false`
 - [ ] Re-running `--register` does not duplicate hook entries in `hooks.json`

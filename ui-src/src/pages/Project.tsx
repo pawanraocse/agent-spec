@@ -7,6 +7,7 @@ import { Badge } from "../components/ui/badge";
 import { Card, CardHeader, Empty } from "../components/ui/card";
 import { cn, relTime } from "../lib/utils";
 import { skillIcon, type Skill } from "../features/skillMeta";
+import { Automations } from "./Automations";
 import { Governance } from "./Governance";
 import { Home } from "./Home";
 import { Knowledge } from "./Knowledge";
@@ -63,7 +64,7 @@ function Panels() {
     <div className="grid gap-4 p-6 lg:grid-cols-2">
       {(q.data?.panels ?? []).map(({ skill, file, mtime, panel }) => (
         <Card key={file}>
-          <CardHeader title={<span className="flex items-center gap-2">{panel.title}<Prov p={panel.provenance} /></span>} subtitle={<>/{skill} · updated {relTime(new Date(mtime * 1000).toISOString())}</>} />
+          <CardHeader title={<span className="flex items-center gap-2">{panel.title}<Prov p={panel.provenance} /></span>} subtitle={<>/{skill} · updated <time dateTime={new Date(mtime * 1000).toISOString()}>{relTime(new Date(mtime * 1000).toISOString())}</time></>} />
           <div className="p-4 text-xs">
             {panel.type === "kpi" ? (
               <div className="text-2xl font-semibold"><Num p={panel.provenance}>{panel.value}</Num>{panel.unit ? <span className="ml-1 text-sm text-muted-foreground">{panel.unit}</span> : null}{panel.hint ? <p className="mt-1 text-xs font-normal text-muted-foreground">{panel.hint}</p> : null}</div>
@@ -88,6 +89,7 @@ function Panels() {
 }
 
 const TABS = [
+  { to: "automations", label: "Automations" },
   { to: "skills", label: "Skills & workflows" },
   { to: "graph", label: "Knowledge graph" },
   { to: "panels", label: "Panels" },
@@ -114,6 +116,7 @@ export function Project() {
           <Route index element={<Navigate to="skills" replace />} />
           <Route path="skills" element={<Catalog />} />
           <Route path="graph" element={<div className="h-full"><Suspense fallback={<p className="p-6 text-xs text-muted-foreground">Loading graph…</p>}><KnowledgeGraph /></Suspense></div>} />
+          <Route path="automations" element={<Automations />} />
           <Route path="panels" element={<Panels />} />
           <Route path="sessions" element={<div className="p-6"><Sessions /></div>} />
           <Route path="sessions/:id" element={<div className="p-6"><SessionDetail /></div>} />

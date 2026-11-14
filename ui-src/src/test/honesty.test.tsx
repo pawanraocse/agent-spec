@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { Automations } from "../pages/Automations";
 import { Coach } from "../pages/Coach";
 import { Governance } from "../pages/Governance";
 import { Home } from "../pages/Home";
@@ -52,6 +53,14 @@ function mount(path: string, element: React.ReactNode, route = path) {
 }
 
 describe("page-level honesty (DV-005)", () => {
+  it("Automations: every figure carries provenance, and an env switch locks the toggle (HA-006)", async () => {
+    const { container, findByText, getByRole } = mount("/automations", <Automations />);
+    await findByText("Refresh the knowledge graph");
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(getByRole("switch", { name: /Suggest a fresh chat/ })).toHaveProperty("disabled", true);
+    expect(getByRole("switch", { name: /Refresh the knowledge graph: on/ }).getAttribute("aria-checked")).toBe("true");
+  });
+
   it("Live: every figure carries provenance", async () => {
     const { container, findAllByText } = mount("/requests/gen-1", <Live />, "/requests/:id");
     await findAllByText(/why does login fail/);
@@ -68,6 +77,19 @@ describe("page-level honesty (DV-005)", () => {
   it("Coach: every figure carries provenance", async () => {
     const { container, findByText } = mount("/coach", <Coach />);
     await findByText("Whole-file read of a large module");
+    await findByText("Short chat");   // context budget panel
+    expect(unlabelledFigures(container)).toEqual([]);
+  });
+
+  it("Live › Context tab: the reset arithmetic carries provenance", async () => {
+    const { container, findAllByText, getByRole, findByText } = mount("/requests/gen-1", <Live />, "/requests/:id");
+    await findAllByText(/why does login fail/);
+    fireEvent.mouseDown(getByRole("tab", { name: /^Context/ }));
+    fireEvent.click(getByRole("tab", { name: /^Context/ }));
+    await findByText(/Start a new chat/);
+    fireEvent.click(getByRole("button", { name: /Show the arithmetic/ }));
+    await findByText(/Break-even/);
+    expect(container.textContent).toContain("Hook nudged");
     expect(unlabelledFigures(container)).toEqual([]);
   });
 

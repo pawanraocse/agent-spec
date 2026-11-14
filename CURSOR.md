@@ -1,8 +1,6 @@
 # CURSOR.md — algosec-agent-spec (canonical always-on rules)
 
-> Loaded into `.cursor/rules/agent-spec.mdc` (`alwaysApply: true`) by `./install.sh`.
-> Edit this file in the **package**, then re-run install/register to refresh projects.
-> Do not maintain a second copy in AGENTS.md.
+> Installed as `.cursor/rules/agent-spec.mdc` (`alwaysApply`). Edit here, re-run install.
 
 ---
 
@@ -16,15 +14,9 @@ sessions do not** — then your first action is:
 ./.agent-spec/bin/agent-spec-digest.py
 ```
 
-~1,700 bytes: stack, graph size, pipeline gate, last session, remembered constraints.
-**Once you have it, do not re-read** `PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md`, or
-`SESSION-SNAPSHOT.md` for those facts.
-
-Also needed sometimes:
-
-- `.agent-spec/CONSTITUTION.md` — before the first code edit of the session.
-- Structure — query, do not read whole files:
-  `./.agent-spec/bin/graphify-cli.py query --file <path>`
+Once you have it, do not re-read `PROJECT-INDEX.md`, `KNOWLEDGE-GRAPH.md` or
+`SESSION-SNAPSHOT.md` for those facts. Read `.agent-spec/CONSTITUTION.md` before the
+first code edit.
 
 If the digest says **ONBOARDING NEEDED** (or `.agent-spec/.onboarding-needed` exists), the
 agent runs `/agent-spec-onboard` itself, silently, before answering. Never ask the user to
@@ -32,12 +24,13 @@ run it or report it as pending.
 If the digest says **learning candidate:**, prompt the developer once:
 `"I noticed a learning candidate from last session: '<candidate>'. Save as memory fact? [Yes / No]"`
 If yes, run `agent-spec-memory.py add` (or `/agent-spec-learn distill`).
-If there is no `.agent-spec/`, install it yourself, then onboard (never ask the user):
+If there is no `.agent-spec/`, register and onboard it yourself (never ask the user):
 
 ```bash
-"$(cat ~/.cursor/skills/.algosec-agent-spec-root)/install.sh" --register "<absolute path of the opened Cursor folder>"
+python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"
 ```
 
+It prints one JSON line; `"next": "/agent-spec-onboard"` means run that skill now.
 If that marker file is missing, the global skills were never installed: report that in one line.
 
 ---
@@ -95,38 +88,24 @@ Prefer graph/query and ranged reads over whole-file dumps. At task boundaries
 run `/agent-spec-snapshot` then `/agent-spec-compact` (new Cursor chat — not Claude
 `/compact`).
 
-### Subagent Auto-Delegation
+### Subagent auto-delegation
 
-To keep the main conversation context compact, automatically delegate noisy operations:
+Delegate unasked; each contract lives in `.cursor/agents/<name>.md`:
 
-1. **Broad Discovery → Task `agent-spec-search`**:
-   - Searches across >= 3 files or directory trees.
-   - Symbol definition or caller sweeps across the repo.
-   - *Contract*: Returns only `path:line` citations (max 10) — never raw file dumps.
-
-2. **Noisy Builds & Test Suites → Task `agent-spec-verify`**:
-   - Full test suite runs (`pytest`, `mvn test`, `npm test`) or builds (`npm run build`).
-   - Any command producing > 30 lines of terminal output.
-   - *Contract*: Executes command, discards raw stdout, returns `VERDICT: PASS|FAIL`,
-     summary, and only failing assertions (`assert — file:line`).
-
-3. **Session Review & Governance → Task `agent-spec-reviewer`**:
-   - Evaluating compliance or auditing session events against the governance rubric.
-   - *Contract*: Produces `.agent-spec/metrics/reviews/<session>.json` with AI-judged evidence.
+- Search across ≥3 files, or a symbol/caller sweep → Task `agent-spec-search`.
+- Test suite, build, or any command over ~30 lines → Task `agent-spec-verify`.
+- Session compliance audit → Task `agent-spec-reviewer`.
 
 ### Tool discipline
 
-1. Structure before content: `graphify-cli.py query --file <path>` before reading a file you
-   have not seen; `context --task "<task>"` before touching several files.
-2. Never read a file over ~20 KB whole — `grep -n`, then Read with `offset`/`limit`.
-3. `git diff --stat` before any full diff; `--name-only` to list files.
-4. Batch independent tool calls in one message; do not poll.
-5. Edit with a targeted replace; never rewrite a file to change a few lines.
-6. Cap noisy output (`| head -50`, `-q`); build/test runs go to `agent-spec-verify`.
-7. Do not re-read a file to confirm an edit landed, or re-read the digest facts.
+1. `graphify-cli.py query --file <path>` before reading an unseen file; `context --task`
+   before touching several.
+2. Over ~20 KB: `grep -n`, then a ranged Read. `git diff --stat` before a full diff.
+3. Batch independent tool calls; never poll; cap output (`| head -50`, `-q`).
+4. Targeted replace, never a rewrite. Never re-read to confirm an edit landed.
 
-`preToolUse` may nudge once toward cheaper tool use; retry as-is if intentional. A team can
-make it a hard stop with `AGENT_SPEC_READ_HARD_CAP_KB=<n>` (rangeless Read ≥ n KB denied).
+`preToolUse` may nudge once toward cheaper tool use; retry as-is if intentional. Cursor hides a
+Read's range and reports an edit as a full Write, so those two are measured, never nudged.
 
 ---
 

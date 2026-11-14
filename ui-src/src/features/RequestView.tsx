@@ -8,6 +8,7 @@ import { Empty } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { copyText, fmtMs } from "../lib/utils";
 import { statusTone } from "./kinds";
+import { ContextChip, ContextMeter } from "./ContextMeter";
 import { SpanInspector } from "./SpanInspector";
 import { timeBounds } from "./spanTree";
 import { Waterfall } from "./Waterfall";
@@ -84,6 +85,7 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
               {trace.model ? <span>Model <span className="font-mono text-foreground">{trace.model}</span></span> : null}
               {trace.cursor_version ? <span>Cursor <span className="font-mono text-foreground">{trace.cursor_version}</span></span> : null}
               <span>Spans <Num p="measured" className="text-foreground">{trace.span_count}</Num></span>
+              {detail.context?.budget ? <span className="inline-flex items-center gap-1">Context <ContextChip b={detail.context.budget} /></span> : null}
               {trace.skills.map((s) => <Badge key={s} tone="accent" className="normal-case">/{s}</Badge>)}
               <Prov p={prov} />
               {trace.source === "cursor_store" ? <span title="Read from Cursor's local database; not a documented interface">Cursor local store (unofficial)</span> : null}
@@ -115,6 +117,7 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
             <TabsTrigger value="graph">Orchestration</TabsTrigger>
             <TabsTrigger value="waterfall">Waterfall</TabsTrigger>
             <TabsTrigger value="responses">Responses <span className="ml-1 text-muted-foreground"><Num p="measured">{responses.length}</Num></span></TabsTrigger>
+            <TabsTrigger value="context">Context {detail.context?.budget?.verdict === "reset" ? <Badge tone="danger" className="ml-1">reset</Badge> : null}</TabsTrigger>
             <TabsTrigger value="review">Review {review?.grade ? <Badge tone="accent" className="ml-1">{review.grade}</Badge> : null}</TabsTrigger>
           </TabsList>
         </div>
@@ -144,6 +147,11 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
                 </li>
               ))}
             </ol>
+          )}
+        </TabsContent>
+        <TabsContent value="context" className="scrollbar-thin min-h-0 flex-1 overflow-auto px-5 py-4">
+          {detail.context ? <div className="max-w-3xl"><ContextMeter ctx={detail.context} currentGeneration={trace.trace_id} /></div> : (
+            <Empty title="No context data for this chat" hint="Cursor reports the context size in its local store, and token counts on afterAgentResponse; neither was found for this conversation." />
           )}
         </TabsContent>
         <TabsContent value="review" className="scrollbar-thin min-h-0 flex-1 overflow-auto px-5 py-4">

@@ -57,6 +57,7 @@ Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd
 - `/agent-spec` — picks one skill from pipeline state
 - `/agent-spec-persona <role>` — expert lens with Absolute Rules
 - `/agent-spec-self-review` `/agent-spec-solid-check` `/agent-spec-debt`
+- `/agent-spec-hook-probe` — one command fires every registered Cursor hook, harvests the payloads and reports coverage
 - `/agent-spec-doc-coauthoring` `/agent-spec-prompt-audit` `/agent-spec-skill-creator` `/agent-spec-mcp-builder`
 
 ## Authoring

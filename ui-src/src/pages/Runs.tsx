@@ -1,3 +1,5 @@
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import { Num, rowProv } from "../components/Num";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -117,50 +119,50 @@ function WorkflowCards() {
 
   return (
     <section className="mb-8 space-y-3">
-      <h2 className="text-sm font-medium text-slate-400">Launch workflow</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">Launch workflow</h2>
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {WORKFLOWS.map((wf) => {
           const raw = inputs[wf.id] ?? "";
           const valid = wf.validate(raw);
           return (
-            <div key={wf.id} className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 text-sm">
+            <Card key={wf.id} className="p-3 text-sm">
               <p className="mb-1 font-medium">{wf.label}</p>
-              <p className="mb-2 text-xs text-slate-500">{wf.hint}</p>
+              <p className="mb-2 text-xs text-muted-foreground">{wf.hint}</p>
               <input
-                className="mb-2 w-full rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs"
+                className="mb-2 w-full rounded border border-border bg-background px-2 py-1 text-xs"
                 placeholder={wf.placeholder}
                 value={raw}
                 onChange={(e) => setInputs((m) => ({ ...m, [wf.id]: e.target.value }))}
               />
               {dryId === wf.id && (
-                <pre className="mb-2 max-h-24 overflow-auto rounded bg-slate-950 p-2 text-[10px] text-slate-400">
+                <pre className="mb-2 max-h-24 overflow-auto rounded bg-background p-2 text-[10px] text-muted-foreground">
                   {wf.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}
                 </pre>
               )}
               <div className="flex gap-2">
-                <button
+                <Button
                   type="button"
-                  className="rounded bg-slate-800 px-2 py-1 text-xs hover:bg-slate-700"
+                  size="sm" variant="subtle"
                   onClick={() => onDryRun(wf.id)}
                   disabled={!valid}
                 >
                   Dry-run
-                </button>
+                </Button>
                 <button
                   type="button"
-                  className="rounded bg-sky-700 px-2 py-1 text-xs hover:bg-sky-600 disabled:opacity-40"
+                  className="rounded bg-primary px-2 py-1 text-xs hover:bg-primary/90 disabled:opacity-40"
                   onClick={() => onLaunch(wf.id)}
                   disabled={!valid}
                 >
                   Launch
                 </button>
               </div>
-              {!valid && raw.length > 0 && <p className="mt-1 text-xs text-amber-500">Invalid input</p>}
-            </div>
+              {!valid && raw.length > 0 && <p className="mt-1 text-xs text-warning">Invalid input</p>}
+            </Card>
           );
         })}
       </div>
-      {launchMsg && <p className="text-xs text-slate-400">{launchMsg}</p>}
+      {launchMsg && <p className="text-xs text-muted-foreground">{launchMsg}</p>}
     </section>
   );
 }
@@ -168,19 +170,19 @@ function WorkflowCards() {
 export function Runs() {
   const [runs, setRuns] = useState<{ runs: RunRow[] }>();
   useEffect(() => {
-    apiGet("/api/runs?limit=50").then(setRuns).catch(console.error);
+    apiGet<{ runs: RunRow[] }>("/api/runs?limit=50").then(setRuns).catch(console.error);
   }, []);
   return (
     <div>
       <h1 className="mb-4 text-xl font-semibold">Runs & workflows</h1>
       <WorkflowCards />
-      <ul className="divide-y divide-slate-800 rounded-lg border border-slate-800 text-sm">
+      <ul className="divide-y divide-border rounded-lg border border-border text-sm">
         {(runs?.runs ?? []).map((r) => (
           <li key={r.request_id} className="flex justify-between px-3 py-2">
-            <Link to={`/runs/${r.request_id}`} className="font-mono text-sky-400">
+            <Link to={`/runs/${r.request_id}`} className="font-mono text-primary">
               {r.request_id}
             </Link>
-            <span className="text-slate-500">
+            <span className="text-muted-foreground">
               {r.status} · <Num p={rowProv(r)}>{r.tokens_total}</Num> tok
               {r.workflow_id ? ` · ${r.workflow_id}` : ""}
             </span>
@@ -200,7 +202,7 @@ export function RunDetail() {
 
   useEffect(() => {
     apiGet<RunDetailPayload>(`/api/runs/${id}`).then(setDetail).catch(console.error);
-    apiGet(`/api/runs/${id}/events`).then(setEvents).catch(() => setEvents({ events: [] }));
+    apiGet<{ events: unknown[] }>(`/api/runs/${id}/events`).then(setEvents).catch(() => setEvents({ events: [] }));
   }, [id]);
 
   useEffect(() => {
@@ -233,15 +235,15 @@ export function RunDetail() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Run {id}</h1>
-      <div className="rounded-lg border border-slate-800 p-3">
-        <p className="mb-2 text-xs text-slate-500">Step graph (waterfall)</p>
+      <div className="rounded-lg border border-border p-3">
+        <p className="mb-2 text-xs text-muted-foreground">Step graph (waterfall)</p>
         <ol className="flex flex-wrap gap-2 text-xs">
           {waterfall.map((s) => (
             <li key={`${s.ordinal}-${s.name}`}>
               <button
                 type="button"
                 className={`rounded border px-2 py-1 ${
-                  selectedStep?.name === s.name ? "border-sky-500 bg-sky-950/50" : "border-slate-700"
+                  selectedStep?.name === s.name ? "border-primary bg-primary/10" : "border-border"
                 }`}
                 onClick={() => {
                   const full = detail?.steps?.find((st) => st.name === s.name && st.ordinal === s.ordinal);
@@ -249,24 +251,24 @@ export function RunDetail() {
                 }}
               >
                 <span className="font-mono">{s.ordinal}.</span> {s.name}{" "}
-                <span className={s.status === "failed" ? "text-rose-400" : "text-emerald-400"}>({s.status})</span>
+                <span className={s.status === "failed" ? "text-danger" : "text-success"}>({s.status})</span>
               </button>
             </li>
           ))}
         </ol>
       </div>
-      <div className="rounded-lg border border-slate-800">
-        <div className="flex border-b border-slate-800 text-xs">
+      <div className="rounded-lg border border-border">
+        <div className="flex border-b border-border text-xs">
           <button
             type="button"
-            className={`px-3 py-2 ${tab === "inspector" ? "border-b border-sky-500 text-sky-300" : "text-slate-500"}`}
+            className={`px-3 py-2 ${tab === "inspector" ? "border-b border-primary text-primary" : "text-muted-foreground"}`}
             onClick={() => setTab("inspector")}
           >
             Inspector
           </button>
           <button
             type="button"
-            className={`px-3 py-2 ${tab === "subagents" ? "border-b border-sky-500 text-sky-300" : "text-slate-500"}`}
+            className={`px-3 py-2 ${tab === "subagents" ? "border-b border-primary text-primary" : "text-muted-foreground"}`}
             onClick={() => setTab("subagents")}
           >
             Subagent health
@@ -276,38 +278,38 @@ export function RunDetail() {
           {tab === "inspector" && selectedStep && (
             <dl className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <div>
-                <dt className="text-slate-500">Step</dt>
+                <dt className="text-muted-foreground">Step</dt>
                 <dd>{selectedStep.name}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Kind</dt>
+                <dt className="text-muted-foreground">Kind</dt>
                 <dd>{selectedStep.kind}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Status</dt>
+                <dt className="text-muted-foreground">Status</dt>
                 <dd>{selectedStep.status}</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Latency</dt>
+                <dt className="text-muted-foreground">Latency</dt>
                 <dd><Num p="measured">{selectedStep.duration_ms ?? "—"}</Num> ms</dd>
               </div>
               <div>
-                <dt className="text-slate-500">Tokens in</dt>
+                <dt className="text-muted-foreground">Tokens in</dt>
                 <dd><Num p={stepProv}>{selectedStep.tokens_input ?? 0}</Num></dd>
               </div>
               <div>
-                <dt className="text-slate-500">Tokens out</dt>
+                <dt className="text-muted-foreground">Tokens out</dt>
                 <dd><Num p={stepProv}>{selectedStep.tokens_output ?? 0}</Num></dd>
               </div>
               <div>
-                <dt className="text-slate-500">Bytes in</dt>
+                <dt className="text-muted-foreground">Bytes in</dt>
                 <dd><Num p="measured">{selectedStep.bytes_in ?? 0}</Num></dd>
               </div>
             </dl>
           )}
           {tab === "subagents" && (
             <table className="w-full text-left">
-              <thead className="text-slate-500">
+              <thead className="text-muted-foreground">
                 <tr>
                   <th className="py-1">Type</th>
                   <th>Failure %</th>
@@ -317,21 +319,21 @@ export function RunDetail() {
               </thead>
               <tbody>
                 {health.map((h) => (
-                  <tr key={h.agent} className="border-t border-slate-800">
+                  <tr key={h.agent} className="border-t border-border">
                     <td className="py-1">{h.agent}</td>
                     <td><Num p="measured">{h.failureRate}%</Num></td>
                     <td><Num p="measured">{h.medianLatencyMs}</Num> ms</td>
                     <td><Num p="measured">{h.samples}</Num></td>
                   </tr>
                 ))}
-                {!health.length && <tr><td colSpan={4} className="py-2 text-slate-500">No subagent runs</td></tr>}
+                {!health.length && <tr><td colSpan={4} className="py-2 text-muted-foreground">No subagent runs</td></tr>}
               </tbody>
             </table>
           )}
         </div>
       </div>
-      <div className="rounded-lg border border-slate-800 p-3 text-xs">
-        <p className="mb-2 text-slate-500">Live events (<Num p="measured">{events?.events?.length ?? 0}</Num>)</p>
+      <div className="rounded-lg border border-border p-3 text-xs">
+        <p className="mb-2 text-muted-foreground">Live events (<Num p="measured">{events?.events?.length ?? 0}</Num>)</p>
         <pre className="max-h-48 overflow-auto">{JSON.stringify(events?.events?.slice(0, 20), null, 2)}</pre>
       </div>
     </div>

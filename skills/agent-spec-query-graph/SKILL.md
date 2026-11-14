@@ -48,6 +48,15 @@ call sites and broker annotations — two services that talk over Kafka share no
 these are the only edges that show the coupling at all. Treat a `message` edge as real
 and an `http` edge as strong evidence: it is matched on a service name appearing in a URL.
 
+## Across repos
+
+If `.agent-spec/mesh.json` exists, this project is a mesh hub. Run
+`./.agent-spec/bin/graphify-mesh.py stats` to see which repos depend on which. For one file,
+run `graphify-mesh.py query --file <repo_id>:<path>`: its cross-repo edges and the files in
+other repos that reach it. `imports`, `http` and `message` are facts. An `http` target that is
+a bare repo id means the service is known but the handler is not. Any `*_ambiguous` edge is
+unresolved: report it as such, never as a dependency.
+
 ## Rules
 
 - **Never invent a dependency the graph does not show.** If `query` returns `(none)`,

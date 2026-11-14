@@ -1,15 +1,9 @@
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import { useState } from "react";
 import {
   Copy,
   Check,
-  Sparkles,
-  Terminal,
-  Layers,
-  Brain,
-  Cpu,
-  ChevronRight,
-  ShieldCheck,
-  ExternalLink,
 } from "lucide-react";
 
 const PERSONAS = [
@@ -60,24 +54,24 @@ export function Console() {
   return (
     <div className="space-y-6 max-w-4xl">
       {/* Header */}
-      <div className="border-b border-slate-800 pb-4">
+      <div className="border-b border-border pb-4">
         <div className="flex items-center gap-2">
-          <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold uppercase text-indigo-400">
+          <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold uppercase text-primary">
             DEC-15 AI-First
           </span>
-          <span className="text-xs text-slate-500">Cursor is the Console</span>
+          <span className="text-xs text-muted-foreground">Cursor is the Console</span>
         </div>
-        <h1 className="mt-1 text-xl font-semibold text-slate-100">Prompt & Workflow Composer</h1>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <h1 className="mt-1 text-xl font-semibold text-foreground">Prompt & Workflow Composer</h1>
+        <p className="text-xs text-muted-foreground mt-0.5">
           Compose structured harness commands, personas, and workflows to drive Cursor natively.
         </p>
       </div>
 
       {/* Composer Grid */}
-      <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/40 p-5 text-xs">
+      <Card className="space-y-4 p-5 text-xs">
         {/* Step 1: Select Persona */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
             1. Select Agent Persona
           </label>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -87,13 +81,13 @@ export function Console() {
                 type="button"
                 className={`rounded-lg border p-2.5 text-left transition-colors ${
                   selectedPersona === p.cmd
-                    ? "border-indigo-500 bg-indigo-950/30 text-white"
-                    : "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-900"
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-background text-foreground/85 hover:bg-muted/60"
                 }`}
                 onClick={() => setSelectedPersona(p.cmd)}
               >
-                <div className="font-medium text-slate-200">{p.label}</div>
-                <div className="font-mono text-[10px] text-slate-500 mt-0.5">
+                <div className="font-medium text-foreground">{p.label}</div>
+                <div className="font-mono text-[10px] text-muted-foreground mt-0.5">
                   {p.cmd || "(default)"}
                 </div>
               </button>
@@ -103,7 +97,7 @@ export function Console() {
 
         {/* Step 2: Quick Workflow or Command */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
             2. Choose Skill or Workflow (Optional)
           </label>
           <div className="grid gap-2 sm:grid-cols-3">
@@ -113,8 +107,8 @@ export function Console() {
                 type="button"
                 className={`rounded-lg border p-2 text-left transition-colors ${
                   selectedCmd === qc.cmd
-                    ? "border-sky-500 bg-sky-950/30 text-white"
-                    : "border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-900"
+                    ? "border-primary bg-primary/10 text-foreground"
+                    : "border-border bg-background text-foreground/85 hover:bg-muted/60"
                 }`}
                 onClick={() => {
                   if (selectedCmd === qc.cmd) {
@@ -126,15 +120,15 @@ export function Console() {
                   }
                 }}
               >
-                <div className="font-mono text-[11px] font-semibold text-slate-200">{qc.cmd}</div>
-                <div className="text-[10px] text-slate-500">{qc.label}</div>
+                <div className="font-mono text-[11px] font-semibold text-foreground">{qc.cmd}</div>
+                <div className="text-[10px] text-muted-foreground">{qc.label}</div>
               </button>
             ))}
           </div>
           {selectedCmd && (
             <div className="mt-2">
               <input
-                className="w-full rounded-lg border border-slate-800 bg-slate-950 px-3 py-1.5 font-mono text-xs text-slate-200 placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-lg border border-border bg-background px-3 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 placeholder="Workflow arguments (e.g. Jira issue key or file path)..."
                 value={promptArg}
                 onChange={(e) => setPromptArg(e.target.value)}
@@ -145,33 +139,33 @@ export function Console() {
 
         {/* Step 3: Instructions */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-2">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
             3. Task & Intent Description
           </label>
           <textarea
-            className="w-full min-h-24 rounded-lg border border-slate-800 bg-slate-950 p-3 text-xs text-slate-200 placeholder-slate-600 focus:border-indigo-500 focus:outline-none"
+            className="w-full min-h-24 rounded-lg border border-border bg-background p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             placeholder="Describe the task or instructions for the agent..."
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Generated Preview & Copy Trigger */}
-      <div className="space-y-3 rounded-xl border border-indigo-900/40 bg-indigo-950/10 p-5">
+      <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/10 p-5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-slate-300">Generated Command Preview</span>
-          <span className="text-[11px] text-slate-500 font-mono">paste into Cursor chat</span>
+          <span className="text-xs font-semibold text-foreground/85">Generated Command Preview</span>
+          <span className="text-[11px] text-muted-foreground font-mono">paste into Cursor chat</span>
         </div>
 
-        <pre className="overflow-auto rounded-lg border border-slate-800 bg-slate-950 p-3 font-mono text-xs text-indigo-300 whitespace-pre-wrap max-h-40">
+        <pre className="overflow-auto rounded-lg border border-border bg-background p-3 font-mono text-xs text-primary whitespace-pre-wrap max-h-40">
           {fullCommand || "(select options above to build command)"}
         </pre>
 
         <div className="flex items-center justify-between pt-1">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted-foreground">
             {copied ? (
-              <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+              <span className="text-success font-medium flex items-center gap-1.5">
                 <Check size={14} /> Copied to clipboard! Switch to Cursor and paste (Cmd+V).
               </span>
             ) : (
@@ -179,14 +173,14 @@ export function Console() {
             )}
           </p>
 
-          <button
+          <Button
             type="button"
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 shadow transition-colors"
+            size="sm"
             onClick={copyToClipboard}
           >
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? "Copied!" : "Copy for Cursor"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

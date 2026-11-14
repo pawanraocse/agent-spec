@@ -146,6 +146,44 @@ def cmd_serve(args) -> int:
     return serve.main(args)
 
 
+def cmd_hooks(args) -> int:
+    from aspec_platform import hook_logs
+    project = os.path.abspath(common.find_project(args.project))
+    entries = hook_logs.harvest(project)
+    report = hook_logs.diagnose(entries)
+    report["coverage"] = hook_logs.coverage(entries, project)
+    hook = hook_logs.load_hook(project, os.path.dirname(HERE))
+    redact = getattr(hook, "_redact", None) or (lambda s: s)
+    metrics = os.path.join(common.agent_spec_dir(project), "metrics")
+    if args.payloads:
+        report["payloads"] = hook_logs.write_payloads(entries, os.path.join(metrics, "hook-payloads"), redact)
+    if args.fixtures:
+        report["fixtures"] = hook_logs.write_payloads(entries, args.fixtures, redact, project, fixture=True)
+    if args.backfill:
+        report["backfilled"] = hook_logs.backfill(entries, os.path.join(metrics, "events.jsonl"), hook) if hook else 0
+    if args.json:
+        print(json.dumps(report, indent=2))
+        return 0
+    print("hook invocations: %d (%d failed) | events: %s | cursor %s" % (
+        report["invocations"], report["failed"], ", ".join(report["events"]) or "none",
+        report["cursor_version"] or "?"))
+    for reason, n in report["reasons"].items():
+        print("  %3d x %s" % (n, reason))
+    if report["fix"]:
+        print("fix: " + report["fix"])
+    cov = report["coverage"]
+    print("coverage: %d/%d registered events fired%s" % (
+        cov["fired"], cov["registered"], "" if cov["missing"] else " — complete"))
+    for ev in cov["missing"]:
+        print("  missing %-20s %s" % (ev, cov["hints"][ev]))
+    for key in ("payloads", "fixtures"):
+        if key in report:
+            print("%s: %d file(s)" % (key, len(report[key])))
+    if "backfilled" in report:
+        print("backfilled: %d row(s) into events.jsonl" % report["backfilled"])
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="agent-spec-platform.py", description=__doc__.split("\n")[0])
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -178,6 +216,13 @@ def main(argv=None) -> int:
     p.add_argument("--list", type=int, default=20, help="latest N requests, one line each")
     p.add_argument("--json", action="store_true")
     p.set_defaults(fn=cmd_trace)
+    p = sub.add_parser("hooks", help="read Cursor's hook log: why hooks fail, payloads, backfill")
+    p.add_argument("--project")
+    p.add_argument("--payloads", action="store_true", help="latest payload per event -> metrics/hook-payloads/")
+    p.add_argument("--fixtures", metavar="DIR", help="scrubbed payloads (email, paths masked) -> DIR")
+    p.add_argument("--backfill", action="store_true", help="append missing rows to metrics/events.jsonl")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_hooks)
     p = sub.add_parser("serve", help="start the dashboard")
     p.add_argument("--project")
     p.add_argument("--host", default="127.0.0.1")

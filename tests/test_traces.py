@@ -41,6 +41,20 @@ def hook_rows(conv="conv-1", gen="gen-1", t0=1_700_000_000_000):
 
 
 class BuilderTest(unittest.TestCase):
+    def test_recorded_shape_nests_child_conversation_under_its_subagent(self):
+        # Cursor 3.30.8: subagent_id is the Task tool-call id, the child's rows use their own
+        # conversation id and point back with parent_tool_call_id (only on some rows).
+        rows = hook_rows()
+        sid = "call-4ea9\nfc_950f_0"
+        rows[2] = dict(rows[2], subagent_id=sid)
+        rows[3] = dict(rows[3], conversation_id="child-conv", generation_id="child-gen", parent_tool_call_id=sid)
+        rows.insert(4, dict(rows[3], id="e4b", parent_tool_call_id=None))
+        trs, spans = traces.build_from_events(rows)
+        self.assertEqual([t["trace_id"] for t in trs], ["gen-1"], "no orphan trace for the child conversation")
+        by = {s["span_id"]: s for s in spans}
+        self.assertEqual((by["e4"]["parent_span_id"], by["e4b"]["parent_span_id"]), ("e3", "e3"))
+
+
     def test_hook_trace_tree(self):
         trs, spans = traces.build_from_events(hook_rows())
         self.assertEqual(len(trs), 1)
@@ -103,6 +117,45 @@ class BuilderTest(unittest.TestCase):
     def test_lag_percentiles(self):
         self.assertEqual(traces._pct([10, 20, 30, 40], 0.5), 25)
         self.assertIsNone(traces._pct([], 0.5))
+
+
+class SnapshotTest(unittest.TestCase):
+    def test_unlockable_store_is_read_through_a_snapshot_including_wal(self):
+        """WSL /mnt/c: a read-only open of Cursor's WAL database fails with "disk I/O error"."""
+        import sqlite3
+        from unittest import mock
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        src = os.path.join(tmp, "state.vscdb")
+        live = sqlite3.connect(src)
+        live.execute("PRAGMA journal_mode=WAL")
+        live.execute("PRAGMA wal_autocheckpoint=0")
+        live.execute("CREATE TABLE cursorDiskKV (key TEXT, value TEXT)")
+        live.execute("INSERT INTO cursorDiskKV VALUES ('composerData:a', '{}')")
+        live.commit()  # the row lives only in state.vscdb-wal while `live` stays open
+        self.addCleanup(live.close)
+        real = sqlite3.connect
+
+        def flaky(target, *a, **k):
+            if k.get("uri"):
+                raise sqlite3.OperationalError("disk I/O error")
+            return real(target, *a, **k)
+
+        cache = os.path.join(tmp, "cache")
+        with mock.patch.dict(os.environ, {"XDG_CACHE_HOME": cache}), \
+                mock.patch.object(cursor_sessions.sqlite3, "connect", side_effect=flaky):
+            conn = cursor_sessions._connect_ro(src)
+        self.assertIsNotNone(conn)
+        self.assertEqual(conn.execute("SELECT count(*) FROM cursorDiskKV").fetchone()[0], 1)
+        conn.close()
+        # Review fix: the copy holds every chat, so it lives in a private per-user directory
+        # as one self-contained file (WAL folded in), never in the shared temp directory.
+        snap_dir = os.path.join(cache, "agent-spec", "cursor-snapshot")
+        self.assertEqual(os.stat(snap_dir).st_mode & 0o777, 0o700)
+        copies = [f for f in os.listdir(snap_dir) if f.endswith(".vscdb")]
+        self.assertEqual(len(copies), 1)
+        self.assertEqual(os.stat(os.path.join(snap_dir, copies[0])).st_mode & 0o077, 0)
+        self.assertFalse([f for f in os.listdir(snap_dir) if f.endswith(("-wal", ".tmp"))])
 
 
 class ResolverTest(unittest.TestCase):
@@ -320,6 +373,22 @@ class RequestApiTest(ApiCase):
             for r in hook_rows(gen="gen-2", t0=1_700_000_100_000):
                 fh.write(json.dumps(r) + "\n")
         self.assertEqual(self.get_json("/api/requests")["total"], 2)
+
+    def test_conversations_roll_up_requests_per_chat(self):
+        with open(self.events, "a") as fh:
+            for r in hook_rows(gen="gen-2", t0=1_700_000_100_000):
+                fh.write(json.dumps(r) + "\n")
+            for r in hook_rows(conv="conv-2", gen="gen-3", t0=1_700_000_200_000):
+                fh.write(json.dumps(r) + "\n")
+        body = self.get_json("/api/conversations")
+        self.assertEqual([c["session_id"] for c in body["conversations"]], ["conv-2", "conv-1"])  # newest first
+        one = body["conversations"][1]
+        self.assertEqual((one["requests"], one["tool_count"], one["subagent_count"], one["provenance"]),
+                         (2, 6, 2, "measured"))
+        self.assertEqual((one["latest_trace_id"], one["skills"]), ("gen-2", ["agent-spec-investigate"]))
+        self.assertEqual(self.get_json("/api/conversations?q=conv-2")["total"], 1)
+        self.assertEqual(self.get_json("/api/conversations?source=cursor_store")["total"], 0)
+        self.assertEqual(self.get_json("/api/requests?session=conv-1")["total"], 2)
 
     def test_coach_lag(self):
         lag = self.get_json("/api/coach/lag")

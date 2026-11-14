@@ -122,7 +122,7 @@ cached. Neither figure alone is the answer.
 | 1 | Prompt caching is on and the prefix is stable | **MEASURED, DONE** | cache reads are 56–69% of the bill, which only happens when caching works |
 | 2 | Keep the session warm; do not restart for no reason | **UNKNOWN** | cache TTL reported as ~1h; never measured here |
 | 3 | Do not switch model or effort mid-session | **DONE** | `claude-opus-5`, `CLAUDE_EFFORT=high`, no auto-switching mode in use |
-| 3b | Enforce input discipline rather than asking for it | **SHIPPED, EFFECT UNKNOWN** | `hooks/cursor-pre-tool-use.py` refuses a rangeless `Read`, a `Write` over an existing file, `git diff` without `--stat` and `cat` of a large file — once per target per session, so the retry always passes |
+| 3b | Enforce input discipline rather than asking for it | **SHIPPED, EFFECT UNKNOWN** | `hooks/cursor-pre-tool-use.py` refuses (outside Cursor only, since Cursor hides Read ranges and reports StrReplace as Write: T-057) a rangeless `Read`, a `Write` over an existing file, `git diff` without `--stat` and `cat` of a large file — once per target per session, so the retry always passes |
 | 4 | Compact or reset a long session | **MEASURED, LARGEST** | 480,083 → 53,191 (−88.9%); 308,223 → 46,101 (−85.0%) |
 | 4b | Whether compact beats a clean reset | **UNKNOWN** | the summary's own output cost has never been isolated |
 | 5 | Filter tool output at source (`head`, `--stat`, `-q`) | **MEASURED, NOT WORTH IT HERE** | tool results are 0.51% of the corpus, 0.05% of this session |

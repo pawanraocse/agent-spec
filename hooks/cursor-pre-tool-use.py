@@ -535,6 +535,24 @@ def main():
                 rule="S-004-threshold",
             )
 
+    if payload.get("cursor_version") and (
+            (tool in ("Read", "read_file") and not is_ranged(args))
+            or (tool in ("Write", "write") and "old_string" not in args)):
+        # Cursor rewrites tool calls before preToolUse (docs/PHASE1-VERIFICATION.md §F): it
+        # strips offset/limit from a Read, and reports a StrReplace as Write with the whole
+        # new file as content. A ranged and a whole read, or a targeted edit and a rewrite,
+        # look the same here. Follow Cursor's harness: allow, and let the postToolUse and
+        # afterFileEdit spine rows judge the call from what actually happened.
+        # The hard cap cannot apply either: Cursor's ranged reads of a large file would be
+        # denied with advice (read a range) the agent has no way to follow. Record when it
+        # would have fired, so a user who set the cap can see it was skipped, not missed.
+        try:
+            over_cap = hard_cap_hit(tool, args) is not None
+        except Exception:
+            over_cap = False
+        debug_log(tool, payload, args, "allow-unobservable-over-cap" if over_cap else "allow-unobservable")
+        return allow()
+
     try:
         hard = hard_cap_hit(tool, args)
     except Exception:

@@ -127,6 +127,28 @@ def test_team_yaml_bad_value_is_ignored_not_fatal():
         shutil.rmtree(t)
 
 
+def test_digest_carries_warm_resume_from_newest_dated_snapshot():
+    """P4-009: title, files to load and open items of the newest dated section, so a new
+    chat does not open SESSION-SNAPSHOT.md (about 9 KB) to find them."""
+    t = make_project()
+    try:
+        old = "## 2026-11-12 — older\n\n### Open\n- stale item\n\n### Load next session\n`old.py`\n\n"
+        new = ("## 2026-11-13 (night) — newest work\n\n### Done\n- **Built** the thing\n\n### Open\n"
+               "- **First** open item\n- second open item " + "x" * 300 + "\n\n### Load next session\n"
+               "`bin/a.py` (`fn`), `hooks/b.py`\n\n")
+        with open(os.path.join(t, ".agent-spec", "SESSION-SNAPSHOT.md"), "w") as fh:
+            fh.write(old + new + "## Archived sections\n- 2026-10-01 — rotated\n")
+        out = digest(t)
+        assert "last session: 2026-11-13 (night) — newest work" in out, out
+        assert "  load: `bin/a.py` (`fn`), `hooks/b.py`" in out, out
+        assert "  open: First open item" in out, out
+        assert "stale item" not in out and "older" not in out, out
+        block = [ln for ln in out.splitlines() if ln.startswith(("last session:", "  load:", "  open:"))]
+        assert sum(len(ln) + 1 for ln in block) <= 600, block
+    finally:
+        shutil.rmtree(t)
+
+
 def test_digest_size_cap():
     t = make_project()
     try:

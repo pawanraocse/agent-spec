@@ -1,0 +1,15 @@
+{
+  "composer_mode": "agent",
+  "conversation_id": "conv-recorded-1",
+  "cursor_version": "3.6.21",
+  "generation_id": "",
+  "hook_event_name": "sessionStart",
+  "is_background_agent": false,
+  "model": "composer-2.5-fast",
+  "session_id": "conv-recorded-1",
+  "transcript_path": null,
+  "user_email": "developer@example.com",
+  "workspace_roots": [
+    "/workspace/project"
+  ]
+}

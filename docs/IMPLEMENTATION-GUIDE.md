@@ -833,6 +833,162 @@ Each task must produce a short LLD addendum appended to this section before codi
 | P3.18 | P3-018 | P3.11–P3.15 | Leadership walkthrough script | Walkthrough rehearsed | — |
 | P3.19 | T-042 | all P3 | Release v3.0.0 | MASTER-PLAN P3 exit met | MASTER-PLAN |
 
+#### LLD addendum — P3-001 multi-repo Graphify (2026-11-13)
+
+**Decision.** A hub project holds `.agent-spec/mesh.json` and one graph per member repo at
+`.agent-spec/mesh/<repo_id>/knowledge-graph.json`. Member graphs are built by
+`graphify-build.py --out <dir>` run with the member repo as the working directory, so a
+member repo's working tree is never written to. `graphify-mesh.py build` merges the member
+graphs into `.agent-spec/graph/mesh-graph.json`.
+
+**Manifest** `.agent-spec/mesh.json`:
+`{"version": 1, "repos": [{"repo_id", "path", "graph_sha", "updated"}]}`. `repo_id` is the
+directory name unless `--id` gives one: lowercase, `[a-z0-9-]`, and unique. `graph_sha` is the
+sha1 of the member's `knowledge-graph.json` at its last build. `updated` is ISO-8601 UTC.
+
+**Merged graph.** Node ids become `<repo_id>:<path>`, and every node carries `repo`. Intra-repo
+edges are kept with prefixed ids. Cross-repo edges are `type: "imports"` with
+`cross_repo: true` and `detail: <import token>`.
+
+**Cross-repo resolution (exact, no suffix guessing).** `graphify-build` now records
+`unresolved_imports: {token: [source files, at most 25]}`. It skips tokens with fewer than
+two dotted segments, tokens that contain `/`, and platform namespaces (`java.`, `javax.`,
+`jakarta.`, `kotlin.`, `sun.`, `jdk.`, `android.`). An unresolved token in repo A resolves
+to file F in repo B only when the whole token equals a dotted name of F in B: the Java FQN,
+or the Python module path. A token that matches files in two or more other repos is
+recorded as `imports_ambiguous`. Suffix matching is deliberately not used across repos,
+because `util.Strings` would join unrelated repos.
+
+**Connectivity.** `graphify-mesh.py stats` reports, for each repo pair, the number of
+cross-repo edges, plus the connected components of the repo-level graph. P3-001 is met when
+at least 3 repos fall in one component.
+
+**Out of scope here.** HTTP and message endpoint matching is P3-002. The MCP aggregator is
+P3-003. `mesh add` from the platform CLI and the UI is P3-007. npm cross-repo resolution by
+`package.json` name is a follow-up: `@scope/pkg` tokens contain `/` and are skipped.
+
+**Allowed-code reason.** Exact computation: graph merge and name resolution. Explaining a
+cross-repo blast radius remains the `agent-spec-query-graph` skill's job.
+
+#### LLD addendum — P3-002 step 1: endpoint and client coverage (2026-11-13)
+
+**Why first.** Cross-repo HTTP matching can only link endpoints the graph actually has. Before
+this step the extractor knew Spring method mappings, NestJS, Flask/FastAPI, Express and Go. It
+missed JAX-RS (Quarkus, RESTEasy, Jersey), servlets and Micronaut, and it never joined a
+class-level prefix to a method path. On the local Java repos that meant 0 endpoints across 174
+`@Path` files and 515 servlet files.
+
+**Routes.** Graph 5.2 adds `routes: ["<METHOD> <path>", ...]` to every node. `METHOD` is
+`GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS|ANY`. `endpoints` stays a sorted list of distinct
+paths, so existing consumers keep working.
+
+- Annotation frameworks are parsed as annotation runs. A run that precedes a `class`
+  declaration sets the prefix for the members that follow; a run that precedes a member
+  emits routes joined to that prefix.
+  - JAX-RS: `@Path` plus `@GET`/`@POST`/...; a method `@Path` with no verb is `ANY`. Only in
+    files that reference `ws.rs`.
+  - Spring: a class `@RequestMapping` is the prefix; `@GetMapping` and the other `*Mapping`
+    annotations, or `@RequestMapping(method = RequestMethod.X)`, give the verb.
+  - Micronaut and NestJS: `@Controller(prefix)` with `@Get(...)` and the other verbs. Only in
+    files that import `io.micronaut` or `@nestjs/`; in Spring, `@Controller("x")` is a bean
+    name, not a path.
+  - Servlets: `@WebServlet` value or `urlPatterns` gives `ANY` routes.
+- Function frameworks keep line patterns, now with the verb: Flask/FastAPI decorators,
+  Express `app|router.<verb>`, Go `HandleFunc`.
+- `web.xml`: `<servlet-mapping>` url-patterns attach `ANY` routes to the servlet-class file,
+  resolved by full FQN. The descriptor itself is not a graph node.
+- Paths are normalised: a leading `/`, single slashes, no trailing `/` (except the root),
+  at most 120 characters, at most 200 routes per file.
+
+**Clients.** `calls` also recognises MicroProfile/Quarkus
+`@RegisterRestClient(configKey = "x")` (recorded as `x`, so it matches a service named `x`).
+JAX-RS `ClientBuilder`, Java `HttpClient`, `HttpURLConnection` and OkHttp count as dynamic
+callers. Persisting structured calls and matching across repos are steps 2–3.
+
+**Cache.** `PARSER_VERSION` becomes 5.2, so every cached file is re-parsed once.
+
+#### LLD addendum — P3-002 step 2: structured outbound calls (2026-11-13)
+
+**Decision.** Graph 5.3 adds `http_calls` to each node: a list of
+`{"verb", "target", "path", "via"}`.
+
+| Field | Meaning |
+|---|---|
+| `verb` | `GET`, `POST`, ... or `ANY` when the verb cannot be read |
+| `target` | lowercased host without the port, a Feign or rest-client service name, `config:<key>` for a `${...}` placeholder, or `""` for a same-origin relative call |
+| `path` | normalised like a route, with the query string stripped |
+| `via` | `url`, `feign`, `rest-client` or `fetch` |
+
+The legacy `calls` strings stay as the input to in-repo `http` wiring.
+
+**Client interfaces are not servers.** An annotation run before a class that carries
+`@FeignClient` or `@RegisterRestClient` puts that class in client mode. Its member mappings
+(`@GetMapping`, `@GET @Path`, ...) become `http_calls` aimed at the client's target, with the
+class `path=` / `@Path` as the prefix. They are no longer counted as `routes`. Step 1 counted
+them as endpoints, which was wrong.
+
+**Literal calls.**
+- `http(s)://` and `lb://` literals become calls.
+- The verb comes from the nearest client verb before the literal on the same line:
+  `getForObject`/`.get(` give `GET`, `postFor*`/`.post(` give `POST`, `HttpMethod.X` gives `X`.
+- JS `fetch('/p')` is `GET`, and `axios.<verb>('/p')` gives that verb.
+- Template or concatenated URLs are left as `[dynamic]` in `calls`; a guessed path would be a
+  false edge in step 3.
+
+**Limits.** At most 100 calls per file. `PARSER_VERSION` becomes 5.3.
+
+#### LLD addendum — P3-002 step 3: cross-repo matching and mesh query (2026-11-13)
+
+**Decision.** `graphify-mesh.py build` adds cross-repo `http` and `message` edges to
+`mesh-graph.json`, matched from the member graphs' `http_calls`, `routes`, `produces` and
+`consumes`. Member graphs are not rebuilt for this; a member graph older than 5.3 has no
+`http_calls` and is listed in `stale_members`.
+
+**Service identity.** Each repo answers to these names, all lowercased:
+- its `repo_id`;
+- every `service` value on its nodes (the directory-derived service names);
+- every key of the hub's optional `.agent-spec/mesh-aliases.json`
+  (`{"<host, client name or config:key>": "<repo_id>"}`) whose value is a repo in the mesh.
+  An alias to an unknown repo is ignored, so a typo yields no edge rather than a phantom.
+
+A call's `target` is looked up as written. A Kubernetes service host
+(`name.ns.svc` or `name.ns.svc.cluster.local`) is also looked up by its first label. No other
+host is shortened, because `api.example.com` must never resolve to a repo named `api`.
+
+**HTTP matching, per call in repo A.**
+1. Loopback targets (`localhost`, `127.0.0.1`, `0.0.0.0`, `::1`) never match.
+2. **Identity first.** If the target names exactly one other repo B, the call is matched
+   against B's routes. Path segments in `{x}`, `:x` or `<x>` form match any one segment on
+   either side, and a servlet route ending `/*` matches by prefix. `ANY` matches every verb.
+   When no route matches whole, a route that is a suffix of the call path is accepted (a
+   gateway or context-root prefix). Each matching file gets an `http` edge. When B has no
+   matching route, one `http` edge goes to the repo itself (`target: "<repo_id>"`,
+   `resolution: "service"`), because the dependency is real even though the handler is unknown.
+   A name shared by two or more repos gives `http_ambiguous` edges to each.
+3. **Path second.** A call with no usable identity (a same-origin `""` target or an
+   unaliased `config:` key) is matched by path alone, and only when the path has at least two
+   literal segments and the caller's own repo does not serve it. Every hit is
+   `http_ambiguous` with `confidence: "low"`.
+4. A call to any other host is a third-party dependency and gets no edge.
+
+**Message matching.** A topic produced in repo A and consumed in repo B, by exactly the same
+string, gives a `message` edge from each producer file to each consumer file. A topic that
+contains `${` is configuration, not a name, and is skipped.
+
+Every cross-repo edge carries `cross_repo: true`. HTTP edges have `detail: "<VERB> <path>"`
+and `via`. Message edges have the topic as `detail`.
+
+**Stats.** `cross_repo_edges` counts the confident types (`imports`, `http`, `message`).
+Pairs are reported per type. Connected components use the confident types only.
+
+**Query.** `graphify-mesh.py query --file <repo_id>:<path> [--depth N] [--json]` prints the
+file's outgoing and incoming cross-repo edges, then its cross-repo blast radius: a reverse
+walk over confident edges, to depth 3 by default, listing the files in other repos that reach
+it. A repo-level `http` edge reaches every file of that repo that serves a route.
+
+**Allowed-code reason.** Exact computation: string and path matching over recorded signals.
+Explaining the result is the `agent-spec-query-graph` skill's job.
+
 ### Parallelism map (for the orchestrator)
 
 ```mermaid

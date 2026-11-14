@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Copy } from "lucide-react";
+import { Copy, RotateCcw } from "lucide-react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { apiGet } from "../api/client";
 import { Num, Prov, Stat } from "../components/Num";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardHeader, Empty } from "../components/ui/card";
+import { useContextOverview, type ContextOverview } from "../api/traces";
+import { CONTEXT_CATEGORIES, CompositionBar } from "../features/ContextMeter";
 import { kindMeta } from "../features/kinds";
-import { copyText, fmtBytes, fmtMs } from "../lib/utils";
+import { copyText, fmtBytes, fmtMs, fmtTokens } from "../lib/utils";
 
 type LagRow = { key: string; count: number; failure_rate: number; p50_ms: number | null; p95_ms: number | null; total_ms: number; provenance: "measured" | "estimated" };
 type Lag = {
@@ -54,10 +56,72 @@ function LagTable({ rows, title }: { rows: LagRow[]; title: string }) {
   );
 }
 
+/** Context budget: what each chat re-sends per model call, from Cursor's own counters. */
+function ContextBudgetCard({ data }: { data: ContextOverview | undefined }) {
+  return (
+    <Card>
+      <CardHeader
+        title={<span className="flex items-center gap-2"><RotateCcw size={14} className="text-primary" />Context budget <Prov p="measured" /></span>}
+        subtitle="Every model call re-sends the whole chat. Ranked by what each chat sends now; the line marks a fresh chat."
+        right={<Button size="sm" variant="outline" onClick={() => copyText("/agent-spec-compact")} title="Writes the state to disk; continue in a new chat"><Copy size={12} />Copy /agent-spec-compact</Button>}
+      />
+      {!data ? <p className="p-4 text-xs text-muted-foreground">Loading…</p> : data.chats === 0 ? (
+        <Empty title="No context readings yet" hint="Cursor writes each chat's context size to its local store as the chat runs. Nothing is shown until it has." />
+      ) : (
+        <div className="space-y-4 p-4">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-border bg-background px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Chats past break-even</p>
+              <p className={data.by_verdict.reset ? "text-xl font-semibold text-danger" : "text-xl font-semibold"}><Num p="measured">{data.by_verdict.reset}</Num><span className="text-sm text-muted-foreground"> / <Num p="measured">{data.chats}</Num></span></p>
+              <p className="text-[10px] text-muted-foreground">a new chat pays back in under <Num p="estimated">{data.breakeven_calls}</Num> calls</p>
+            </div>
+            <div className="rounded-lg border border-border bg-background px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Carried above a fresh chat</p>
+              <p className="text-xl font-semibold"><Num p="measured">{fmtTokens(data.carried_tokens)}</Num></p>
+              <p className="text-[10px] text-muted-foreground">tokens per call, summed over chats · fresh chat <Num p="measured">{fmtTokens(data.floor)}</Num></p>
+            </div>
+            <div className="rounded-lg border border-border bg-background px-3 py-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Saved per call by resetting</p>
+              <p className="text-xl font-semibold text-success"><Num p="estimated">{fmtTokens(data.reset_saving_per_call)}</Num></p>
+              <p className="text-[10px] text-muted-foreground">weighted tokens, chats past break-even only</p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {data.top.map((r) => {
+              const b = r.budget!;
+              const name = r.name || r.session_id.slice(0, 8);
+              return (
+                <li key={r.session_id} className="grid grid-cols-[minmax(0,14rem)_1fr_auto] items-center gap-3 text-xs">
+                  {r.latest_trace_id ? (
+                    <Link to={`/requests/${encodeURIComponent(r.latest_trace_id)}`} className="truncate text-primary hover:underline" title={r.session_id}>{name}</Link>
+                  ) : <span className="truncate" title={r.session_id}>{name}</span>}
+                  <CompositionBar b={b} height={8} />
+                  <span className="flex items-center gap-2 whitespace-nowrap">
+                    <Num p="measured" className="w-14 text-right font-medium">{fmtTokens(b.used)}</Num>
+                    <Num p="measured" className="w-10 text-right text-muted-foreground">{b.growth}×</Num>
+                    {b.verdict === "reset" ? <Badge tone="danger">reset · <Num p="estimated">{b.breakeven_calls}</Num></Badge> : <Badge tone={b.verdict === "fresh" ? "success" : "neutral"}>{b.verdict}</Badge>}
+                    {b.nudged ? <Badge tone="warning" title="The stop hook already suggested /agent-spec-compact in this chat">nudged</Badge> : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+            {CONTEXT_CATEGORIES.map((c) => (
+              <li key={c.id} className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm" style={{ background: c.color, opacity: c.fixed ? 0.75 : 1 }} />{c.label}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /** Coach space (§14.7, DV-041): measured lag + AI-judged top issues with trend and fix prompts. */
 export function Coach() {
   const lag = useQuery({ queryKey: ["lag"], queryFn: () => apiGet<Lag>("/api/coach/lag") });
   const issues = useQuery({ queryKey: ["issues"], queryFn: () => apiGet<Issues>("/api/coach/issues") });
+  const context = useContextOverview();
   const l = lag.data;
   const prov = l && l.sources.some((s) => s === "cursor_store") ? "estimated" : "measured";
   return (
@@ -73,6 +137,8 @@ export function Coach() {
         <Stat label="Compactions" value={l?.compactions ?? "—"} p="measured" />
         <Stat label="Handed to subagents" value={l ? fmtBytes(l.subagent_bytes_in) : "—"} p="measured" hint={l ? <>returned <Num p="measured">{fmtBytes(l.subagent_bytes_out)}</Num></> : undefined} />
       </div>
+
+      <ContextBudgetCard data={context.data} />
 
       <Card>
         <CardHeader

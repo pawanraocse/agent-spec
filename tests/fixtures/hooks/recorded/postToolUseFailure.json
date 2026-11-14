@@ -1,0 +1,25 @@
+{
+  "conversation_id": "conv-recorded-1",
+  "cursor_version": "3.30.8",
+  "duration": 1120,
+  "error_message": "Model unavailable on Free Free includes Grok 4.7, Grok 4.6, and Auto with fixed settings. Switch to an included model to continue.\n\nAgent ID: c1a1918a-f362-4734-b05d-5096eab829b8 (can be used with the `resume` parameter to send a follow-up)",
+  "failure_type": "error",
+  "generation_id": "gen-recorded-1",
+  "hook_event_name": "postToolUseFailure",
+  "is_interrupt": false,
+  "model": "composer-2.5-fast",
+  "session_id": "conv-recorded-1",
+  "tool_input": {
+    "description": "Locate hooks.json path",
+    "model": "composer-2.5-fast",
+    "prompt": "Return the path of `.cursor/hooks.json`. Nothing else.",
+    "subagent_type": "agent-spec-search"
+  },
+  "tool_name": "Task",
+  "tool_use_id": "call-c97fc767-cf32-4936-97eb-576f759e3470-9\nfc_efc83168-e0d4-955e-a7b7-986eb52692e2_4",
+  "transcript_path": "/home/developer/.cursor/projects/home-pawan-personal-agent-spec/agent-transcripts/conv-recorded-1/conv-recorded-1.jsonl",
+  "user_email": "developer@example.com",
+  "workspace_roots": [
+    "/workspace/project"
+  ]
+}

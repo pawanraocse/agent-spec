@@ -78,7 +78,7 @@ fi
 if [ -n "${PY:-}" ] || [ -x /usr/bin/python3 ]; then
   PY="${PY:-python3}"
   [ -x /usr/bin/python3 ] && PY=/usr/bin/python3
-  out="$(cd /tmp && "$PY" "$REPO_DIR/bin/agent-spec-digest.py" --cursor-hook 2>/dev/null || true)"
+  out="$(cd /tmp && "$PY" "$REPO_DIR/bin/agent-spec-digest.py" --cursor-hook </dev/null 2>/dev/null || true)"
   if echo "$out" | "$PY" -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then
     echo "OK: digest --cursor-hook emits JSON"
   else

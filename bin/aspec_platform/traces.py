@@ -23,7 +23,7 @@ import re
 import threading
 from datetime import datetime, timezone
 
-from . import common, handoffs
+from . import common, context_budget, handoffs
 
 SKILL_PROMPT = re.compile(r"^\s*/([a-z0-9][a-z0-9_:-]{1,63})(?=\s|$)", re.I)
 SKILL_PATH = re.compile(r"skills(?:-cursor)?[/\\]([a-z0-9][a-z0-9_-]+)[/\\]SKILL\.md", re.I)
@@ -154,8 +154,9 @@ def build_from_events(rows, source: str = "hook"):
         ev = row.get("event") or ""
         conv = str(row.get("conversation_id") or "unknown")
         sid = str(row.get("id") or "ev%d" % idx)
-        in_sub = sub_conv.get(conv)
+        in_sub = sub_conv.get(conv) or sub_conv.get(str(row.get("parent_tool_call_id") or ""))
         if in_sub:
+            sub_conv[conv] = in_sub   # later child rows may omit parent_tool_call_id
             tid = b.spans[in_sub]["trace_id"]
         elif row.get("generation_id"):
             tid = str(row["generation_id"])
@@ -233,7 +234,9 @@ def build_from_events(rows, source: str = "hook"):
             prev = t.get("_last") or b.spans[tid + "#root"]["start_ms"] or at
             b.span(tid, sid, in_sub or tid + "#root", "response", "response", min(prev, at), at, "ok", {
                 "text": row.get("text"), "text_chars": row.get("text_chars"), "bytes_out": row.get("text_chars"),
-                "timing": "gap since the previous step"})
+                "timing": "gap since the previous step",
+                **{k: row[k] for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens")
+                   if isinstance(row.get(k), int)}})
         elif ev == "preCompact":
             b.span(tid, sid, tid + "#root", "compact", "compaction (%s)" % (row.get("trigger") or "auto"), at, at, "ok", {
                 k: row.get(k) for k in ("trigger", "context_usage_percent", "context_tokens", "context_window_size",
@@ -374,7 +377,13 @@ def hook_traces(project: str):
             rows, entry["offset"] = read_events(path, entry["offset"])
             if rows:
                 entry["rows"].extend(rows)
-                entry["result"] = build_from_events(entry["rows"])
+                built = build_from_events(entry["rows"])
+                # cursor-event.py writes to <workspace_roots[0]>/.agent-spec, so this file's
+                # project is the workspace of every trace in it.
+                ws = os.path.abspath(project)
+                for t in built[0]:
+                    t["workspace"] = t.get("workspace") or ws
+                entry["result"] = built
         _CACHE[path] = entry
         return entry["result"]
 
@@ -471,6 +480,160 @@ def list_requests(project, conn, filters, limit=50, offset=0):
             "facets": facets}
 
 
+# ---- Context budget (exact: token arithmetic over Cursor's own counters) ------------------
+
+_USAGE = {"at": 0.0, "value": {}}
+_USAGE_LOCK = threading.Lock()
+USAGE_TTL_S = 10.0
+
+
+def context_usage():
+    """cursor_sessions.context_usage(), cached for USAGE_TTL_S: the store's WAL changes on
+    every turn, and each change costs a 0.3 s snapshot copy on WSL."""
+    import time
+    from . import cursor_sessions
+    if os.environ.get("AGENT_SPEC_CURSOR_STORE", "1") == "0":
+        return {}
+    with _USAGE_LOCK:
+        if time.time() - _USAGE["at"] > USAGE_TTL_S:
+            try:
+                _USAGE["value"] = cursor_sessions.context_usage() or {}
+            except Exception:  # unofficial store: never break the API over it
+                _USAGE["value"] = {}
+            _USAGE["at"] = time.time()
+        return _USAGE["value"]
+
+
+def _billed_by_session(traces, spans, sessions=None):
+    """session_id -> ordered per-request billed-token points from response spans (hooks).
+    `sessions` limits the work to those chats."""
+    session_of = {t["trace_id"]: t.get("session_id") for t in traces
+                  if sessions is None or t.get("session_id") in sessions}
+    out, seen = {}, set()
+    for s in spans:
+        a = s.get("attributes") or {}
+        if s.get("kind") != "response" or not isinstance(a.get("input_tokens"), int):
+            continue
+        sid = session_of.get(s["trace_id"])
+        if sid:
+            key = (s["trace_id"], a.get("input_tokens"), a.get("output_tokens"))
+            if key in seen:   # the hook and Cursor's hook log both record a generation
+                continue
+            seen.add(key)
+            out.setdefault(sid, []).append({"ts": s.get("end") or s.get("start"), "generation_id": s["trace_id"],
+                                            "input": context_budget.request_tokens(a), "output": a.get("output_tokens") or 0,
+                                            "cache_read": a.get("cache_read_tokens") or 0})
+    for pts in out.values():
+        pts.sort(key=lambda p: p.get("ts") or "")
+    return out
+
+
+def session_context(project, session_id, usage=None, billed=None):
+    """{"budget", "billed"} for one chat; either part may be None."""
+    usage = context_usage() if usage is None else usage
+    mine = (usage.get("by_id") or {}).get(session_id)
+    b = None
+    if mine:
+        fixed = context_budget.fixed_tokens(mine.get("breakdown"))
+        b = context_budget.budget(mine.get("used"), fixed or context_budget.machine_floor(usage), mine.get("limit"))
+    if b:
+        b["floor_source"] = "this chat's fixed categories" if fixed else "smallest chat on this machine"
+        b["breakdown"] = mine.get("breakdown")
+        b["nudged"] = os.path.exists(os.path.join(common.agent_spec_dir(project), ".context-nudged-%s" % session_id))
+    pts = billed or []
+    summary = context_budget.series_summary(pts)
+    if summary:
+        summary["generations"] = [p["generation_id"] for p in pts][::max(1, -(-len(pts) // context_budget.MAX_POINTS))]
+    if not b and not summary:
+        return None
+    return {"budget": b, "billed": summary}
+
+
+def context_overview(project, conn):
+    """Every chat Cursor reports a context for, ranked by what it re-sends per call."""
+    usage = context_usage()
+    convs = list_conversations(project, conn, {}, limit=100000)["conversations"]
+    rows = [c for c in convs if (c.get("context") or {}).get("budget")]
+    known = {c["session_id"] for c in rows}
+    floor = context_budget.machine_floor(usage)
+    for cid, v in (usage.get("by_id") or {}).items():   # chats with no trace yet still count
+        if cid not in known:
+            ctx = session_context(project, cid, usage)
+            if ctx and ctx.get("budget"):
+                rows.append({"session_id": cid, "name": v.get("name"), "context": ctx})
+    budgets = [r["context"]["budget"] for r in rows]
+    resets = [b for b in budgets if b["verdict"] == "reset"]
+    top = sorted(rows, key=lambda r: -r["context"]["budget"]["used"])[:12]
+    return {
+        "floor": floor,
+        "chats": len(budgets),
+        "by_verdict": {k: sum(1 for b in budgets if b["verdict"] == k) for k in ("reset", "carry", "fresh")},
+        "carried_tokens": sum(b["carried_tokens"] for b in budgets),
+        "reset_saving_per_call": sum(b["saving_per_call"] for b in resets),
+        "breakeven_calls": context_budget.RESET_BREAKEVEN_CALLS,
+        "weights": {"read": context_budget.READ_WEIGHT, "write": context_budget.WRITE_WEIGHT},
+        "top": [{"session_id": r["session_id"], "name": r.get("name"), "workspace": r.get("workspace"),
+                 "latest_trace_id": r.get("latest_trace_id"), **r["context"]} for r in top],
+        "provenance": "measured",
+        "source": "Cursor contextTokensUsed (local store); billed tokens from afterAgentResponse",
+    }
+
+
+def list_conversations(project, conn, filters, limit=200, offset=0):
+    """Every Cursor conversation with at least one trace, newest first, rolled up from its requests.
+
+    One row per session_id across sources, so a chat recorded by hooks and also read from
+    Cursor's local store appears once. Counts are sums of the per-request counts; the
+    provenance is "measured" only when every request came from hooks."""
+    traces, spans = all_traces(project, conn)
+    usage = context_usage()
+    sub = {k: v for k, v in filters.items() if k in ("source", "workspace", "skill", "status", "since", "until")}
+    groups = {}
+    for t in traces:
+        if not t.get("session_id") or not _match(t, sub):
+            continue
+        groups.setdefault(t["session_id"], []).append(t)
+    reviews_dir = os.path.join(common.agent_spec_dir(project), "metrics", "reviews")
+    rows = []
+    for sid, ts in groups.items():
+        ts.sort(key=lambda t: t.get("start") or "")
+        name = next((t.get("session_name") for t in ts if t.get("session_name")), None)
+        first_prompt = next((t.get("prompt") for t in ts if t.get("prompt")), None)
+        row = {
+            "session_id": sid,
+            "name": name or ((usage.get("by_id") or {}).get(sid) or {}).get("name"),
+            "first_prompt": first_prompt,
+            "last_prompt": next((t.get("prompt") for t in reversed(ts) if t.get("prompt")), None),
+            "workspace": next((t.get("workspace") for t in ts if t.get("workspace")), None),
+            "sources": sorted({t.get("source") or "" for t in ts}),
+            "provenance": "measured" if all(t.get("source") == "hook" for t in ts) else "estimated",
+            "start": ts[0].get("start"),
+            "end": max((t.get("end") or t.get("start") or "") for t in ts) or None,
+            "requests": len(ts),
+            "running": sum(1 for t in ts if t.get("status") == "running"),
+            "skills": sorted({s for t in ts for s in t.get("skills") or []}),
+            "models": sorted({t.get("model") for t in ts if t.get("model")}),
+            "reviewed": os.path.isfile(os.path.join(reviews_dir, "%s.json" % sid)),
+            "has_transcript": any(t.get("transcript_path") for t in ts),
+            "latest_trace_id": ts[-1]["trace_id"],
+        }
+        for k in ("tool_count", "subagent_count", "error_count", "guard_count", "edit_count", "duration_ms"):
+            row[k] = sum(t.get(k) or 0 for t in ts)
+        rows.append(row)
+    q = (filters.get("q") or "").lower()
+    if q:
+        rows = [r for r in rows if q in " ".join(str(r.get(k) or "") for k in
+                                                 ("name", "first_prompt", "last_prompt", "session_id", "workspace")).lower()]
+    rows.sort(key=lambda r: r.get("end") or r.get("start") or "", reverse=True)
+    page = rows[offset:offset + limit]
+    if page:  # the budget is per chat: compute it for the rows returned, not every chat
+        billed = _billed_by_session(traces, spans, {r["session_id"] for r in page})
+        for row in page:
+            row["context"] = session_context(project, row["session_id"], usage, billed.get(row["session_id"]))
+    return {"total": len(rows), "limit": limit, "offset": offset, "conversations": page,
+            "facets": {"workspaces": sorted({r["workspace"] for r in rows if r.get("workspace")})}}
+
+
 def load_review(project, session_id):
     path = os.path.join(common.agent_spec_dir(project), "metrics", "reviews", "%s.json" % session_id)
     if not re.match(r"^[\w.:-]{1,160}$", session_id or "") or not os.path.isfile(path):
@@ -500,7 +663,10 @@ def request_detail(project, conn, trace_id):
                       cites_this_request=bool(cited & {s["span_id"] for s in mine}))
     siblings = [t["trace_id"] for t in sorted((t for t in traces if t["session_id"] == trace["session_id"]),
                                                key=lambda t: t.get("start") or "")]
-    return {"trace": trace, "spans": mine, "responses": responses, "review": review, "session_requests": siblings}
+    ctx = session_context(project, trace["session_id"],
+                          billed=_billed_by_session(traces, spans, {trace["session_id"]}).get(trace["session_id"]))
+    return {"trace": trace, "spans": mine, "responses": responses, "review": review, "session_requests": siblings,
+            "context": ctx}
 
 
 # ---- Coach measurements (DV-041, exact) ------------------------------------------------------

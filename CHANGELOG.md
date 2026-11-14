@@ -1,5 +1,36 @@
 # Changelog — algosec-agent-spec
 
+## Unreleased
+
+- **Harness automation** (HA-001…HA-003): three scripts that someone had to remember to run now
+  run from hooks. The long-chat `stop` follow-up is `/agent-spec-snapshot` itself rather than a
+  sentence asking for it. An agent edit, a new or deleted file, or a shell command marks the
+  graph dirty (`.agent-spec/.graph-dirty`), and the next `stop` rebuilds it in the background, so
+  graph queries no longer lag a mid-session add, move or rename until the next session start.
+  `sessionEnd` runs `agent-spec-memory.py rotate`. Auto-advancing SDLC gates was considered and
+  dropped (HA-004): every gate is a separate human approval. Evidence: `docs/evidence/HA-001.md`.
+- **Any project is ready in one command** (HA-005): `bin/agent-spec-ensure.py` registers an
+  unregistered or outdated project, builds a missing graph, and reports whether
+  `/agent-spec-onboard` is due, as one JSON line. The `agent-spec-raw-code-full` preflight, the
+  router and `CURSOR.md` run it, so starting a skill in a new folder sets the harness up.
+- **Automations panel** (HA-006): Project › Automations lists every step the harness runs on its
+  own, with measured run counts, last status, a run log and an on/off switch for each. The
+  switches write `.agent-spec/automation.json`, which the hooks read on their next run. Runs are
+  logged to `.agent-spec/metrics/automation.jsonl`.
+- **Measured context budget** (CB-001…CB-005): reads Cursor's own `contextTokensUsed` and
+  `promptTokenBreakdown` and computes when a new chat pays for itself (the `agent-spec-tokens.py`
+  break-even). The `stop` hook suggests `/agent-spec-compact` once per chat when it does
+  (`AGENT_SPEC_CONTEXT_NUDGE=0` turns it off). The dashboard gains a Context tab on every request,
+  a Context budget panel in Coach, and a context chip on each conversation. The sessionStart
+  digest carries the last snapshot's title, files to load and open items again (its parser had
+  fallen behind the snapshot format). Fixed: the AF-004 snapshot nudge never fired (marker spent on
+  the first stop; a dict compared to an int). Evidence: `docs/evidence/CB-001.md`.
+- **preToolUse follows Cursor's harness** (T-057, DEBT-005): Cursor strips a Read's offset/limit
+  and reports StrReplace as a whole-file Write before the hook runs, so under Cursor the Read and
+  Write nudges and the read hard cap are skipped. The event spine now judges each Cursor Read from
+  `tool_output.content_length` against the file size, so Coach › Whole-file reads is measured.
+  Evidence: `docs/evidence/T-057.md`.
+
 ## 2.0.0 — Phase 2 Platform
 
 **Control Plane v2 & AI-First Realignment**

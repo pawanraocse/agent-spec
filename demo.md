@@ -35,7 +35,8 @@ python3 bin/agent-spec-platform.py trace --list 5     # pick a fallback request 
 **If Cursor or the network misbehaves:** open any request and press **Replay** — the
 recorded trace plays at real speed (1×/4×/16×) under a *Recorded* badge.
 
-**What is not shown as measured:** token counts (Cursor's hook payloads carry none; see
+**What is not shown as measured:** token counts on tool and subagent spans (only
+`afterAgentResponse` carries measured input, output and cache counts; see
 `tests/fixtures/hooks/README.md`), and durations from Cursor's local store, which are
 estimated from message timestamps and badged so.
 

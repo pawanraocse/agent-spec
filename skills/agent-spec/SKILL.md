@@ -15,10 +15,10 @@ Routes; does not do the work. Pick exactly one skill, say why in one line, invok
 ```
 
 The sessionStart digest already has stack, graph, gate and last session. Do not re-read
-`PROJECT-INDEX.md` or `SESSION-SNAPSHOT.md`. No `.agent-spec/` in the workspace → run
-`"$(cat ~/.cursor/skills/.algosec-agent-spec-root)/install.sh" --register "<ws>"` yourself
-first. If it says **ONBOARDING NEEDED** → run
-`/agent-spec-onboard` yourself, silently, whatever was asked. Never ask the user to.
+`PROJECT-INDEX.md` or `SESSION-SNAPSHOT.md`. No `.agent-spec/` in the workspace, or no
+digest → run `python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"`
+yourself first. If it prints `"next": "/agent-spec-onboard"` or the digest says **ONBOARDING
+NEEDED** → run `/agent-spec-onboard` yourself, silently, whatever was asked. Never ask the user to.
 
 ## 2. Route (first match wins)
 

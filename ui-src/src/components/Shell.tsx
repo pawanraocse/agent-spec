@@ -16,7 +16,8 @@ const NAV = [
 ];
 
 type Theme = "dark" | "light" | "system";
-type StatusBar = { graph?: { text?: string; stale?: boolean }; doctor?: { status?: string }; hooks?: Record<string, boolean>; active_jobs?: number };
+type StatusBar = { graph?: { text?: string; stale?: boolean }; doctor?: { status?: string }; hooks?: Record<string, boolean>; active_jobs?: number;
+  hook_coverage?: { registered: number; fired: number; missing: string[]; hints: Record<string, string>; failing_now: number; failing_events: string[]; action_needed: boolean; fix: string } | null };
 
 function applyTheme(t: Theme) {
   const dark = t === "dark" || (t === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
@@ -102,6 +103,7 @@ export function Shell() {
   }, []);
   const s = status.data;
   const hookOk = s?.hooks ? Object.values(s.hooks).filter(Boolean).length : 0;
+  const cov = s?.hook_coverage;
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
@@ -143,7 +145,20 @@ export function Shell() {
         <Link to="/project/health" className="flex items-center gap-1.5 hover:text-foreground">
           <span className={cn("h-1.5 w-1.5 rounded-full", s?.doctor?.status === "fail" ? "bg-danger" : s?.doctor?.status === "warn" ? "bg-warning" : "bg-success")} />doctor {s?.doctor?.status ?? "…"}
         </Link>
-        <span title="Registered Cursor hooks">hooks {hookOk}/{s?.hooks ? Object.keys(s.hooks).length : 0}</span>
+        {cov && cov.registered > 0 ? (
+          <span
+            className={cn("flex items-center gap-1.5", cov.action_needed ? "text-danger" : (cov.missing.length || cov.failing_now) && "text-warning")}
+            title={[
+              cov.failing_now ? `failing now: ${cov.failing_events.join(", ")}. ${cov.fix || "run agent-spec-platform.py hooks"}` : "",
+              ...cov.missing.map((ev) => `${ev}: ${cov.hints[ev]}`),
+            ].filter(Boolean).join("\n") || "Every registered hook has fired"}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", cov.action_needed ? "bg-danger" : cov.missing.length || cov.failing_now ? "bg-warning" : "bg-success")} />
+            hooks firing {cov.fired}/{cov.registered}
+          </span>
+        ) : (
+          <span title="Registered Cursor hooks">hooks {hookOk}/{s?.hooks ? Object.keys(s.hooks).length : 0}</span>
+        )}
         <span className="ml-auto">Ctrl/⌘-K to search</span>
       </footer>
       <Palette open={palette} setOpen={setPalette} />

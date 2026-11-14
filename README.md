@@ -26,7 +26,7 @@ Feature detail: [docs/features.md](docs/features.md).
 | **Memory** | Bounded facts + rotating `SESSION-SNAPSHOT.md`; digest on new chat |
 | **Hooks** | `sessionStart` digest (~1.7 KB); `preToolUse` input discipline (fail-open) |
 | **Measurement** | `agent-spec-tokens.py` on Cursor agent JSONL ([usage](#measuring-usage)) |
-| **Skills** | 41 commands → `~/.cursor/skills/` via `./install.sh` |
+| **Skills** | 42 commands → `~/.cursor/skills/` via `./install.sh` |
 | **Self-test** | `./bin/agent-spec-selftest.sh` — package shape, install idempotency, no Claude paths |
 
 ---
@@ -173,7 +173,7 @@ Enable **Hooks** or run `./.agent-spec/bin/agent-spec-digest.py` manually.
 | Piece | Role |
 |---|---|
 | **Digest** (`sessionStart`) | Stack, graph size, gate, last session, memory facts — do not re-read INDEX/graph for those |
-| **preToolUse** | One nudge on expensive reads/diffs/rewrites, then allow retry |
+| **preToolUse** | One nudge on expensive reads/diffs/rewrites, then allow retry. Under Cursor, Reads and Writes are measured instead (Cursor hides their range and edit shape) |
 | **Snapshot** | Append narrative to `SESSION-SNAPSHOT.md`; keep working in this chat |
 | **Compact** | Snapshot first, then open a **new chat** (no in-thread compression) |
 | **Remember** | Facts promoted into the next digest |

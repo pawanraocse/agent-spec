@@ -1,0 +1,21 @@
+{
+  "conversation_id": "conv-recorded-1",
+  "cursor_version": "3.30.8",
+  "cwd": "",
+  "generation_id": "gen-recorded-1",
+  "hook_event_name": "preToolUse",
+  "model": "grok-4.7",
+  "session_id": "conv-recorded-1",
+  "tool_input": {
+    "command": "python3 bin/agent-spec-platform.py hooks --fixtures tests/fixtures/hooks/recorded",
+    "cwd": "",
+    "timeout": 30000
+  },
+  "tool_name": "Shell",
+  "tool_use_id": "5a5145f5-5b05-4d01-b2b3-a9aaba16af99",
+  "transcript_path": "/home/developer/.cursor/projects/home-pawan-personal-agent-spec/agent-transcripts/conv-recorded-1/conv-recorded-1.jsonl",
+  "user_email": "developer@example.com",
+  "workspace_roots": [
+    "/workspace/project"
+  ]
+}

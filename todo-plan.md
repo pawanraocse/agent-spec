@@ -42,6 +42,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | 6b | **Control plane v2** (DEC-14) | CP-000..CP-050 in `dashboard_overhaul.md` §12 | React SPA, Agent Console, five spaces, guided tour |
 | 6c | **AI-first realignment** (DEC-15) | AF-001…AF-008 | Hook event spine, AI session review, Console frozen, grading out of Python |
 | 6d | **v3 request-trace control plane** (DEC-16, proposed) | DV-000…DV-062 | Live request tracing, AI coach, measured learning, extensible panels |
+| 6e | **Measured context budget** | CB-001…CB-005 | **Done** — reset break-even from Cursor's own counters, stop-hook nudge, warm-resume digest |
 | 7 | Flywheel + security | L-*, S-* | Trends + quarantine in UI |
 | 8 | RCA + 3 workflow skills | B-001…B-010 | `agent-spec-wf-*` skills + AUTO-3807 eval |
 | 9 | Orchestration (skill-driven) | O-001…O-020 | `agent-spec-hub-runner` skill + `agent-spec-run.py` plumbing; live run of `agent-spec-wf-example` |
@@ -147,7 +148,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | Status | ID | Task | Acceptance Criteria | Effort |
 |--------|----|------|---------------------|--------|
 | `[-]` | T-056 | **Create git repo + tag v1.1.0** *(deferred)* | Waived until workspace uses git; was T-040 criterion | — |
-| `[~]` | T-057 | **Live hook verification (DEBT-005)** — code hardened + debug marker; live run owed (PHASE1-VERIFICATION F) | Run PHASE1-VERIFICATION B18–B20 in Cursor; fix `RANGE_KEYS`; confirm digest hook within Cursor timeout (worst case ~5 s) | 0.5d |
+| `[x]` | T-057 | **Live hook verification (DEBT-005)** — run live 2026-11-13 (PHASE1-VERIFICATION F). Cursor strips a Read's offset/limit and reports StrReplace as a whole-file Write before `preToolUse`, so `RANGE_KEYS` was not the fault and no hook-side match can fix it. Decision: follow Cursor's harness. Under Cursor the Read and Write nudges and the hard cap are skipped, and the spine judges each Read afterwards from `tool_output.content_length`. Evidence: docs/evidence/T-057.md | Run PHASE1-VERIFICATION B18–B20 in Cursor; fix `RANGE_KEYS`; confirm digest hook within Cursor timeout (worst case ~5 s) | 0.5d |
 | `[~]` | T-058 | **Windows run (DEBT-006)** — run sheet written (PHASE1-VERIFICATION E); needs a Windows host | PHASE1-VERIFICATION B21 on real Windows Git Bash/WSL | 0.5d |
 | `[x]` | T-059 | **Dangling doc refs (DEBT-002)** | `agent-spec-lint-refs.py` reports 0 dangling (was 36); enforced by selftest [12] | 1d |
 
@@ -211,7 +212,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | Status | ID | Task | Acceptance Criteria | Effort |
 |--------|----|------|---------------------|--------|
 | `[x]` | CP-000 | **Record DEC-14; supersede guard memory fact; Slice 6b in `todo-plan.md`** | DEC-14 row in the guide; DEC-13 tables point to it; memory fact superseded | 0.5d |
-| `[~]` | CP-001 | **Spike: Cursor CLI contract** | Done 2026-11-06: R1, R2 resolved (§6.4); `ask-reconnect-loop.ndjson` recorded. Left: resume an IDE composer id (R3); hooks, Task subagents and Jira MCP headless (R4); a clean run off-proxy with a `result` event, a tool-call run, and an Agent propose-then-apply run (R8) | 0.5d |
+| `[~]` | CP-001 | **Spike: Cursor CLI contract** | Done 2026-11-06: R1, R2 resolved (§6.4); `ask-reconnect-loop.ndjson` recorded. Left: resume an IDE composer id (R3); R4 partly answered 2026-11-13: hooks fire headless (postToolUse, postToolUseFailure, afterFileEdit) and Task subagents run, but subagentStart/Stop, beforeSubmitPrompt, afterAgentResponse and stop do not fire in --print mode; Jira MCP headless still open; a clean run off-proxy with a `result` event, a tool-call run, and an Agent propose-then-apply run (R8) | 0.5d |
 | `[x]` | CP-002 | **UI build pipeline** | `ui-src/` builds to `ui/dist/`; budget check fails over 400 KB gzip; `install.sh` copies no `ui-src` or `node_modules` | 1d |
 | `[x]` | CP-003 | **SPA fallback, CSP, token meta** | Non-API GET serves `index.html` after token check; traversal test still green; new CSP on every response | 0.5d |
 | `[x]` | CP-004 | **Provenance `<Metric>` + honesty test** | Test fails if any KPI renders without a badge | 0.5d |
@@ -272,9 +273,9 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 |---|---|---|---|---|---|
 | `[x]` | DV-000 | **Record DEC-16** | DEC-16 in `docs/MASTER-PLAN.md` decisions; §14 linked from `docs/DASHBOARD.md` | 0.25d | — |
 | `[x]` | DV-001 | **Event spine on the documented contract** *(plumbing)* | `cursor-event.py` reads `hook_event_name`, `conversation_id`, `generation_id`, `model`, `cursor_version`, `workspace_roots`, `transcript_path` and the per-event fields in §14.3; prompt and response text redacted and truncated; writes under `workspace_roots[0]`, not `cwd`; `merge-hooks-json.py` registers it for `beforeSubmitPrompt`, `postToolUse`, `postToolUseFailure`, `subagentStart`, `subagentStop`, `afterFileEdit`, `afterAgentResponse`, `preCompact`, `stop`; fail-open kept; unit test per event | 1d | — |
-| `[~]` | DV-002 | **Live payload recording** *(spike, no code; closes T-057, AF-001 step 1)* (Recorder built (`AGENT_SPEC_HOOK_RECORD=1` saves one payload per event); fixtures replaced with documented-contract payloads (tests/fixtures/hooks/README.md). Left: record from a live Cursor session) | One real payload per event in DV-001 recorded from Cursor into `tests/fixtures/hooks/`, replacing the synthetic files; note whether any token field exists and how a skill invocation is observable | 0.5d | DV-001 |
+| `[x]` | DV-002 | **Live payload recording** *(spike, no code; closes T-057, AF-001 step 1)* (Recorder built (`AGENT_SPEC_HOOK_RECORD=1` saves one payload per event); fixtures replaced with documented-contract payloads (tests/fixtures/hooks/README.md). 2026-11-13: recording is automatic. `agent-spec-platform.py hooks` reads Cursor's own hook log, which keeps every payload even when a hook cannot start, and the dashboard backfills it every 60 s. Root cause of the missing live data: Cursor opens this repo over `\\wsl.localhost`, so every hook fails with `spawn powershell ENOENT`. Fixed by opening the folder through Remote-WSL; hooks now exit 0. Recorded live: beforeSubmitPrompt, preToolUse, postToolUse, afterAgentResponse (with measured input/output/cache token counts, now kept by the spine), stop, sessionStart and sessionEnd. postToolUseFailure and afterFileEdit then recorded through the Cursor CLI (cursor-agent 2026.11.11, --model auto). subagentStart and subagentStop then recorded live from the IDE (2026-11-13 19:16). Exception: preCompact fires only when Cursor compacts a long chat; it is parsed from the documented contract, the dashboard lists it as missing, and the 60 s backfill picks up the first real one without a code change) | One real payload per event in DV-001 recorded from Cursor into `tests/fixtures/hooks/`, replacing the synthetic files; note whether any token field exists and how a skill invocation is observable | 0.5d | DV-001 |
 | `[x]` | DV-003 | **Cursor store path resolver** *(plumbing)* | `cursor_sessions.py` finds `state.vscdb` on macOS, Windows (`%APPDATA%\Cursor`), WSL (`/mnt/c/Users/*/AppData/Roaming/Cursor`) and Linux (`~/.config/Cursor`); override via env var; test per OS layout | 0.5d | — |
-| `[~]` | DV-004 | **Tracker and docs truth** (CP rows corrected, README version and skill count fixed, selftest suite loop fixed. Left: CURSOR.md 5607 B > 4600 B, deferred to the next rules release (prefix stability)) | CP-015, CP-025 → `[-]`; CP-021, CP-031, CP-040 → `[ ]` with a pointer to DV-031/DV-041/DV-060; README version and skill count from files; `CURSOR.md` under 4600 B at the next rules release; selftest green | 0.5d | — |
+| `[x]` | DV-004 | **Tracker and docs truth** (CP rows corrected, README version and skill count fixed, selftest suite loop fixed; CURSOR.md cut from 5607 B to 4307 B on 2026-11-13 by pointing at the agent contracts in `.cursor/agents/` instead of restating them) | CP-015, CP-025 → `[-]`; CP-021, CP-031, CP-040 → `[ ]` with a pointer to DV-031/DV-041/DV-060; README version and skill count from files; `CURSOR.md` under 4600 B at the next rules release; selftest green | 0.5d | — |
 | `[x]` | DV-005 | **No fixed figures; page-level honesty test** (Fabricated Token Flow tab removed; tour figures removed; honesty test covers Live, Coach, Learning and every tab of the v2 Project pages; Overview's fixed `1,841 B` and `5 workflows` removed) | Tour and `Sessions.tsx` read every number from the API; a Vitest test renders each page with fixture data and fails on any numeric text outside a `<Metric>` with provenance | 0.5d | — |
 
 ### Phase B — Trace model and API
@@ -290,7 +291,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 
 | Status | ID | Task | Acceptance criteria | Effort | Depends |
 |---|---|---|---|---|---|
-| `[~]` | DV-020 | **shadcn/ui, TanStack Query/Table, motion** (Radix + cva primitives in the shadcn pattern, TanStack Query, motion; initial bundle 149.6 KB gzip. TanStack Table dropped as unused. Left: port v2 pages onto the primitives) | Components copied into `ui-src/src/components/ui/`; existing pages compile on them; bundle under 400 KB gzip | 1d | — |
+| `[x]` | DV-020 | **shadcn/ui, TanStack Query/Table, motion** (Radix + cva primitives in the shadcn pattern, TanStack Query, motion; initial bundle 150.4 KB gzip. TanStack Table dropped as unused. v2 pages ported onto the primitives and theme tokens 2026-11-13) | Components copied into `ui-src/src/components/ui/`; existing pages compile on them; bundle under 400 KB gzip | 1d | — |
 | `[x]` | DV-021 | **Four-space shell** | Live, Coach, Learning, Project; Console removed from nav (route kept behind the flag); settings drawer; light/dark; Cmd-K over requests and skills | 1d | DV-020 |
 
 ### Phase D — Live and request detail (centrepiece)
@@ -331,11 +332,36 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 
 | Status | ID | Task | Acceptance criteria | Effort | Depends |
 |---|---|---|---|---|---|
-| `[~]` | DV-060 | **Demo script + recorded trace** (demo.md rewritten to §14.8 with no fixed figures; Replay works on any stored trace. Left: a recorded live hook trace (needs DV-002)) | `demo.md` rewritten to §14.8; recorded trace for Replay; numbers in the script read from this repo | 0.5d | DV-034, DV-041, DV-051 |
+| `[x]` | DV-060 | **Demo script + recorded trace** (demo.md rewritten to §14.8 with no fixed figures; Replay works on any stored trace. Recorded live IDE trace with two subagents and a stop event is stored; see docs/evidence/DV-060.md) | `demo.md` rewritten to §14.8; recorded trace for Replay; numbers in the script read from this repo | 0.5d | DV-034, DV-041, DV-051 |
 | `[x]` | DV-061 | **Playwright smoke** | Live → request → inspector → Coach → Learning runs green against fixture data | 1d | DV-060 |
 | `[x]` | DV-062 | **Accessibility and budget pass** | WCAG AA both themes; reduced motion; initial bundle under 400 KB gzip | 0.5d | DV-061 |
 
 Total ≈ 24.5 days. Minimum demo cut (≈ 17 d): Phase A, DV-010, DV-012, DV-013, DV-020, DV-021, DV-030–DV-034, DV-040, DV-041, DV-060.
+
+## Slice 6e — Measured context budget (2026-11-13)
+
+> Evidence: [`docs/evidence/CB-001.md`](docs/evidence/CB-001.md) (one file for the five rows). Chosen from data, not a backlog row: cache reads are 69.5% of the weighted bill across 413 local sessions, and context grows 4.7x per session.
+
+| Status | ID | Task | Acceptance criteria | Effort |
+|---|---|---|---|---|
+| `[x]` | CB-001 | **Context budget arithmetic** *(exact)* | `bin/aspec_platform/context_budget.py` + `cursor_sessions.context_usage()`: Cursor's `contextTokensUsed` and `promptTokenBreakdown`, subagents excluded from the floor; break-even with the `agent-spec-tokens.py` weights; `/api/context`, `context` on `/api/conversations` rows and `/api/requests/<id>`; `tests/test_context_budget.py` | 0.5d |
+| `[x]` | CB-002 | **Stop-hook reset nudge** *(hook; exact)* | One `followup_message` per chat naming `/agent-spec-compact` with the measured numbers, only on a `reset` verdict; loaded by path (DEC-03); `AGENT_SPEC_CONTEXT_NUDGE=0` opt-out; tests | 0.25d |
+| `[x]` | CB-003 | **Context UI** | Request › Context tab, header chip, Coach › Context budget, Sessions row chip; every figure through `<Num>`; honesty test covers both views; checked live | 0.5d |
+| `[x]` | CB-004 | **Warm-resume digest** *(hook; pulls the digest half of P4-009 forward)* | Digest reads the newest dated snapshot section (title, load, open), capped at 600 B; test | 0.25d |
+| `[x]` | CB-005 | **AF-004 nudge fix** | Snapshot nudge marker written only when it fires; `tokens` dict no longer compared to an int; regression test | 0.1d |
+
+## Slice 6f — Harness automation (2026-11-14)
+
+> Evidence: [`docs/evidence/HA-001.md`](docs/evidence/HA-001.md) (one file for the six rows). Audit of scripts that a person or the model had to remember to run: each row moves one into a hook. Every row is *plumbing* (DEC-15): no judgement moves into code.
+
+| Status | ID | Task | Acceptance criteria | Effort |
+|---|---|---|---|---|
+| `[x]` | HA-001 | **Snapshot follow-up runs the skill** *(plumbing)* | The long-chat `stop` follow-up is the slash command `/agent-spec-snapshot` itself, not a sentence asking for it; still one per chat; test asserts the exact message | 0.1d |
+| `[x]` | HA-002 | **Mid-session graph refresh** *(plumbing)* | `afterFileEdit` and a `Shell` `postToolUse` write `.agent-spec/.graph-dirty`; the next `stop`/`sessionEnd` removes it and starts `graphify-build.py --quiet` detached (the builder's own lock handles overlap); no marker, no build; tests | 0.25d |
+| `[x]` | HA-003 | **Snapshot rotation on session end** *(plumbing)* | `sessionEnd` runs `agent-spec-memory.py rotate` (no-op under its threshold), bounded by a 3 s timeout, fail-open; `stop` does not; test | 0.1d |
+| `[-]` | HA-004 | **Auto-advance SDLC gates from `stop`** | Dropped: `agent-spec-sdlc` makes every gate a separate human approval ("One gate per invocation. Do not chain."), and a `followup_message` is submitted without one. The session-start digest already shows the pipeline state | — |
+| `[x]` | HA-005 | **One-command project readiness** *(plumbing)* | `bin/agent-spec-ensure.py`, run from the clone through the root marker: registers the project when it is unregistered, its hooks are not merged, its rules file is missing or older than the package VERSION; builds a missing graph; reports `next: /agent-spec-onboard` from the installer's flag. `--check` and `AGENT_SPEC_AUTO_REGISTER=0` change nothing; refuses `$HOME` and `/`. `agent-spec-raw-code-full` §0, the router and `CURSOR.md` call it instead of prose; tests | 0.5d |
+| `[x]` | HA-006 | **Automations panel** *(plumbing)* | Hooks and HA-005 append one row per run to `.agent-spec/metrics/automation.jsonl` (not `events.jsonl`, which the trace builder turns into conversations) and skip any id in `.agent-spec/automation.json` `disabled`. `GET/POST /api/automations` (POST behind the token, origin and content-type guards). Project › Automations: measured run counts, last status, run log, one switch per automation; an environment opt-out locks its switch; honesty test | 1d |
 
 ## Slice 7 — Flywheel + security (dashboard surfaces)
 
@@ -430,8 +456,8 @@ Total ≈ 24.5 days. Minimum demo cut (≈ 17 d): Phase A, DV-010, DV-012, DV-01
 
 | Status | ID | Task | Acceptance Criteria | Effort |
 |--------|----|------|---------------------|--------|
-| `[ ]` | P3-001 | **Multi-repo Graphify** | ≥3 repos in connected graph | 3d |
-| `[ ]` | P3-002 | **Cross-repo blast radius** | Query spans repo boundaries in CLI + D-025 | 2d |
+| `[~]` | P3-001 | **Multi-repo Graphify** (2026-11-13: `bin/graphify-mesh.py` add/remove/build/stats, `graphify-build.py --out` and `unresolved_imports`, exact-FQN cross-repo edges; 3-repo fixture connects in `tests/test_graph_mesh.py`. On 10 local repos: 16,113 nodes, 0 import-level cross-repo edges, because none imports another, so real connectivity needs P3-002 http/message matching. Evidence: docs/evidence/P3-001.md) | ≥3 repos in connected graph | 3d |
+| `[x]` | P3-002 | **Cross-repo blast radius** (step 1 of 3 done 2026-11-13: graph 5.2 `routes` with verbs and joined class prefixes for JAX-RS, Spring, Micronaut, NestJS, servlets and web.xml, plus MicroProfile REST-client targets. On local repos: project-x 0 -> 347 endpoints, zoom 0 -> 173, no endpoint lost on a Spring repo. Step 2 done the same day: graph 5.3 `http_calls` {verb, target, path, via}; Feign and MicroProfile client interfaces are now calls, not served routes (project-x 372 -> 341 routes, 31 moved); URL literals count only in files that make HTTP calls (project-x calls 278 -> 103, zoom 306 -> 34). Step 3 done the same day: `graphify-mesh.py build` adds cross-repo `http` edges (service identity, then route path, then gateway suffix; path-only matches are `http_ambiguous`) and `message` edges by topic, and `graphify-mesh.py query --file` prints a file's cross-repo blast radius; 15 mesh tests pass. On the 10 local repos there are 0 cross-repo edges, because none calls another. Follow-up: Next.js file-system API routes. Evidence: docs/evidence/P3-002.md) | Query spans repo boundaries in CLI + D-025 | 2d |
 | `[ ]` | P3-003 | **Index aggregator (MCP)** | Schema per AGENT-HUB-PLAN Central Index | 1d |
 | `[ ]` | P3-004 | **Agent registry** | Catalog: agent, version, capabilities | 2d |
 | `[ ]` | P3-005 | **Registry in doctor** | Drift vs catalog | 0.5d |
@@ -484,7 +510,7 @@ Total ≈ 24.5 days. Minimum demo cut (≈ 17 d): Phase A, DV-010, DV-012, DV-01
 | `[ ]` | P4-006 | **Routine synthesizer** | `agent-spec-synthesize.py` — reads a session recording and generates a parameterized skill (markdown + step YAML) in `.agent-spec/skills/`; variables extracted from file paths, class names, test names | 3d |
 | `[ ]` | P4-007 | **Routine replay & validation** | Synthesized routine can be executed via `agent-spec-hub-runner`; replay produces equivalent diff on a clean branch; selftest validates replay fidelity | 2d |
 | `[ ]` | P4-008 | **Environment checkpoint schema** | Machine-readable checkpoint: `{ git_sha, graph_hash, branch, gate_track, test_results: {pass: [...], fail: [...]}, active_files, memory_hash }` — written on session end and snapshot | 1d |
-| `[ ]` | P4-009 | **Warm resume from checkpoint** | `agent-spec-resume.py` — reads `checkpoint.json`, reconstructs session state (digest, graph, memory, gate position) in < 2 seconds; new Cursor chat starts with full context | 2d |
+| `[ ]` | P4-009 | **Warm resume from checkpoint** (digest half done in CB-004: the sessionStart digest carries the last snapshot's title, files to load and open items) | `agent-spec-resume.py` — reads `checkpoint.json`, reconstructs session state (digest, graph, memory, gate position) in < 2 seconds; new Cursor chat starts with full context | 2d |
 | `[ ]` | P4-010 | **Routine scheduling** | Daemon supports cron-like scheduling for synthesized routines (e.g., nightly regression RCA, weekly dependency audit); schedule config in `.agent-spec/schedules.yaml` | 2d |
 
 ## Slice 14 — Risk-tier gating & structured handoffs

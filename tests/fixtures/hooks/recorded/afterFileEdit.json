@@ -1,0 +1,20 @@
+{
+  "conversation_id": "conv-recorded-1",
+  "cursor_version": "3.30.8",
+  "edits": [
+    {
+      "new_string": "2026-11-13T13:46:05Z\n",
+      "old_string": ""
+    }
+  ],
+  "file_path": "/workspace/project/.agent-spec/metrics/hook-probe.txt",
+  "generation_id": "gen-recorded-1",
+  "hook_event_name": "afterFileEdit",
+  "model": "grok-4.7",
+  "session_id": "conv-recorded-1",
+  "transcript_path": "/home/developer/.cursor/projects/home-pawan-personal-agent-spec/agent-transcripts/conv-recorded-1/conv-recorded-1.jsonl",
+  "user_email": "developer@example.com",
+  "workspace_roots": [
+    "/workspace/project"
+  ]
+}

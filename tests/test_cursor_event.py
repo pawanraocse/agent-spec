@@ -63,6 +63,35 @@ class CursorEventTest(unittest.TestCase):
         self.assertIn("auth.ts", row["target"])
         self.assertGreater(row["output_bytes"], 0)
 
+    def _cursor_read(self, size, content_length):
+        """Cursor's live postToolUse for Read: tool_input has file_path only, tool_output a JSON string."""
+        path = os.path.join(self.root, "big.txt")
+        with open(path, "w") as fh:
+            fh.write("x" * size)
+        payload = fixture("postToolUse", self.root)
+        payload["tool_input"] = {"file_path": path}
+        payload["tool_output"] = json.dumps({"file_path": path, "content_length": content_length})
+        return self.run_hook(payload)[-1]
+
+    def test_cursor_read_judged_by_content_length(self):
+        whole = self._cursor_read(30000, 29950)
+        self.assertIs(whole["ranged"], False)
+        self.assertEqual((whole["read_chars"], whole["file_bytes"]), (29950, 30000))
+        part = self._cursor_read(30000, 1200)
+        self.assertIs(part["ranged"], True)
+
+    def test_cursor_read_of_multibyte_file_is_whole(self):
+        """Review fix: content_length counts characters, so it is compared with characters."""
+        path = os.path.join(self.root, "cjk.txt")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("\u4e2d" * 10000)  # 10,000 chars, 30,000 bytes
+        payload = fixture("postToolUse", self.root)
+        payload["tool_input"] = {"file_path": path}
+        payload["tool_output"] = json.dumps({"file_path": path, "content_length": 10000})
+        row = self.run_hook(payload)[-1]
+        self.assertIs(row["ranged"], False)
+        self.assertEqual((row["file_bytes"], row["file_chars"]), (30000, 10000))
+
     def test_post_tool_use_failure(self):
         row = self.one("postToolUseFailure")
         self.assertEqual((row["status"], row["failure_type"], row["duration_ms"]), ("error", "timeout", 30000))
@@ -95,6 +124,29 @@ class CursorEventTest(unittest.TestCase):
         row = self.one("preCompact")
         self.assertEqual((row["trigger"], row["context_tokens"], row["context_usage_percent"]), ("auto", 120000, 85))
 
+    def test_after_agent_response_keeps_recorded_token_counts(self):
+        # DV-002: Cursor 3.6.21 sends real token counts on afterAgentResponse (recorded fixture).
+        with open(os.path.join(FIXTURES, "recorded", "afterAgentResponse.json"), encoding="utf-8") as fh:
+            data = json.load(fh)
+        data["workspace_roots"] = [self.root]
+        rows = self.run_hook(data)
+        self.assertEqual(len(rows), 1)
+        for key in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens"):
+            self.assertEqual(rows[0][key], data[key], key)
+
+    def test_recorded_subagent_stop_keeps_the_child_link(self):
+        # Cursor 3.30.8: subagentStop names the child conversation; its tool calls carry
+        # parent_tool_call_id equal to subagent_id (recorded 2026-11-13 by /agent-spec-hook-probe).
+        with open(os.path.join(FIXTURES, "recorded", "subagentStop.json"), encoding="utf-8") as fh:
+            data = json.load(fh)
+        data["workspace_roots"] = [self.root]
+        row = self.run_hook(data)[0]
+        self.assertEqual(row["child_conversation_id"], data["child_conversation_id"])
+        self.assertEqual(row["subagent_id"], data["subagent_id"])
+        child = dict(data, hook_event_name="postToolUse", tool_name="Grep", conversation_id="child",
+                     parent_tool_call_id=data["subagent_id"])
+        self.assertEqual(self.run_hook(child)[-1]["parent_tool_call_id"], data["subagent_id"])
+
     def test_stop(self):
         row = self.one("stop")
         self.assertEqual((row["status"], row["loop_count"]), ("completed", 0))
@@ -110,6 +162,19 @@ class CursorEventTest(unittest.TestCase):
         payload = fixture("stop", self.cwd)
         self.assertEqual(self.run_hook(payload), [])
         self.assertFalse(os.path.exists(os.path.join(self.cwd, ".agent-spec")))
+
+    def test_edits_and_shell_mark_the_graph_dirty(self):
+        """HA-002: the stop hook rebuilds the graph only after something may have changed it."""
+        marker = os.path.join(self.root, ".agent-spec", ".graph-dirty")
+        self.run_hook(fixture("postToolUse", self.root))  # a Read changes nothing
+        self.assertFalse(os.path.exists(marker))
+        self.run_hook(fixture("afterFileEdit", self.root))
+        self.assertTrue(os.path.exists(marker))
+        os.remove(marker)
+        shell = fixture("postToolUse", self.root)
+        shell["tool_name"] = "Shell"
+        self.run_hook(shell)
+        self.assertTrue(os.path.exists(marker))
 
     def test_fail_open_on_garbage(self):
         self.assertEqual(self.run_hook("{not json"), [])

@@ -96,6 +96,59 @@ export interface RequestDetail {
   responses: { span_id: string; ts?: string; text?: string; text_chars?: number }[];
   review: Review | null;
   session_requests: string[];
+  context?: ContextInfo | null;
+}
+
+/** Context budget (exact arithmetic over Cursor's own counters; see context_budget.py). */
+export interface ContextBudget {
+  used: number;
+  floor: number;
+  limit: number | null;
+  percent: number | null;
+  growth: number | null;
+  carried_tokens: number;
+  carry_per_call: number;
+  reset_once: number;
+  saving_per_call: number;
+  breakeven_calls: number | null;
+  reset_threshold_calls: number;
+  verdict: "reset" | "carry" | "fresh";
+  floor_source?: string;
+  breakdown?: Record<string, number> | null;
+  nudged?: boolean;
+  weights: { read: number; write: number };
+  provenance: "measured";
+}
+
+export interface ContextBilled {
+  requests: number;
+  input_total: number;
+  output_total: number;
+  cache_read_share: number | null;
+  points: number[];
+  generations?: string[];
+}
+
+export interface ContextInfo {
+  budget: ContextBudget | null;
+  billed: ContextBilled | null;
+}
+
+export interface ContextOverview {
+  floor: number | null;
+  chats: number;
+  by_verdict: { reset: number; carry: number; fresh: number };
+  carried_tokens: number;
+  reset_saving_per_call: number;
+  breakeven_calls: number;
+  weights: { read: number; write: number };
+  top: (ContextInfo & { session_id: string; name?: string | null; workspace?: string | null; latest_trace_id?: string | null })[];
+  provenance: "measured";
+  source: string;
+}
+
+export function useContextOverview() {
+  return useQuery({ queryKey: ["context"], queryFn: () => apiGet<ContextOverview>("/api/context"), refetchInterval: 15000 });
 }
 
 export interface Filters {
@@ -120,6 +173,47 @@ export function useRequests(filters: Filters, limit = 100) {
   return useQuery({
     queryKey: ["requests", filters, limit],
     queryFn: () => apiGet<RequestList>(`/api/requests${qs({ ...filters, limit })}`),
+    refetchInterval: (q) => (q.state.error ? false : 15_000),
+  });
+}
+
+export interface Conversation {
+  session_id: string;
+  name?: string | null;
+  first_prompt?: string | null;
+  last_prompt?: string | null;
+  workspace?: string | null;
+  sources: Source[];
+  provenance: "measured" | "estimated";
+  start?: string | null;
+  end?: string | null;
+  requests: number;
+  running: number;
+  skills: string[];
+  models: string[];
+  reviewed: boolean;
+  has_transcript: boolean;
+  latest_trace_id: string;
+  tool_count: number;
+  subagent_count: number;
+  error_count: number;
+  guard_count: number;
+  edit_count: number;
+  duration_ms: number;
+  context?: ContextInfo | null;
+}
+
+export interface ConversationList {
+  total: number;
+  conversations: Conversation[];
+  facets: { workspaces: string[] };
+}
+
+/** Every Cursor chat (hooks + Cursor's local store), one row per conversation. */
+export function useConversations(filters: Pick<Filters, "q" | "source" | "workspace">, limit = 500) {
+  return useQuery({
+    queryKey: ["conversations", filters, limit],
+    queryFn: () => apiGet<ConversationList>(`/api/conversations${qs({ ...filters, limit })}`),
     refetchInterval: (q) => (q.state.error ? false : 15_000),
   });
 }
@@ -154,6 +248,7 @@ export function useLive(enabled = true): { state: LiveState; lastRowAt: number |
       timer.current = window.setTimeout(() => {
         qc.invalidateQueries({ queryKey: ["requests"] });
         qc.invalidateQueries({ queryKey: ["request"] });
+        qc.invalidateQueries({ queryKey: ["conversations"] });
       }, 250);
     };
     const es = new EventSource("/api/live");

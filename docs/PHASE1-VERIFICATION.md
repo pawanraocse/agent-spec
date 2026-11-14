@@ -57,7 +57,7 @@ mkdir -p /tmp/p1-app && cd /tmp/p1-app && git init -q && printf 'import os\n' > 
 | B16 | T-014 | `wc -c skills/agent-spec/SKILL.md` | < 3072 (2537 at release). In Cursor: `/agent-spec` still routes; mentions `agent-spec-gate.py status` |
 | B17 | T-010 | `grep -n "Tool discipline" .cursor/rules/agent-spec.mdc` | 7 numbered rules present after `install.sh --register` |
 | B18 | T-011 default | In Cursor (Hooks on), ask the agent to read a > 20 KB file with no range | One nudge; same call retried goes through. Ranged read never nudged |
-| B19 | T-011 hard cap | Start Cursor from a shell with `AGENT_SPEC_READ_HARD_CAP_KB=10` | Same rangeless read denied **every** time, message names the env var |
+| B19 | T-011 hard cap | Run the hook outside Cursor (no `cursor_version` in the payload) with `AGENT_SPEC_READ_HARD_CAP_KB=10` | Same rangeless read denied **every** time, message names the env var. Under Cursor the cap does not apply (T-057): the debug log shows `allow-unobservable-over-cap` instead |
 | B20 | T-011 payload (DEBT-005) | `AGENT_SPEC_HOOK_DEBUG=1` in Cursor's env; do a ranged Read + an edit; `cat "$TMPDIR/algosec-agent-spec-hook-debug.jsonl"` | Rows show `tool` and `arg_keys`. If a ranged Read shows keys other than `path/offset/limit`, add them to `RANGE_KEYS` |
 | B21 | T-033 Windows | On Windows with Git Bash: `.\install.ps1 -RegisterHere` from the app folder; then WSL variant `-Register C:\app` | Workspace registered, doctor report printed. **Not verified on this machine** (no PowerShell) |
 | B22 | T-034 / T-020 docs | Read QUICKSTART top to bottom as a new teammate | Day-1 path works verbatim; adoption checklist ticks off with the commands given |
@@ -145,14 +145,14 @@ What the code review found (no live data needed):
 3. B20: `cat "$TMPDIR/algosec-agent-spec-hook-debug.jsonl"` (marker `.agent-spec/.hook-debug` is already in this clone). Rows
    show `tool`, `arg_shape` and `decision`. If a ranged Read shows `ranged: false`, add its real key to `RANGE_KEYS`;
    if `offset`/`limit` are missing from `arg_shape`, the nudge cannot be fixed hook-side and the rule needs a different trigger.
-4. B19: start Cursor from a shell with `AGENT_SPEC_READ_HARD_CAP_KB=10`; the same rangeless read is denied every time.
+4. B19: under Cursor the hard cap does not apply (T-057). With `AGENT_SPEC_READ_HARD_CAP_KB=10` and debug on, a read of a larger file logs `allow-unobservable-over-cap`.
 5. Confirm a receipt appears after the chat ends: `ls .agent-spec/metrics/receipts/`. Confirm the digest still arrives
    (timeouts are now explicit: sessionStart 10 s, others 5 s).
 
 | Check | Result | Notes |
 |---|---|---|
-| B18 ranged Read not nudged | _not run_ | |
-| StrReplace on > 2 KB file not nudged | _not run_ | |
-| B19 hard cap | _not run_ | |
-| B20 payload shape captured | _not run_ | |
-| receipt written on session end | _not run_ | |
+| B18 ranged Read not nudged | **pass after fix** (2026-11-13) | First run (`cursor-agent` 2026.11.11, `--model auto`): a Read of `todo-plan.md` with offset 1, limit 40 was denied with "algosec-agent-spec input discipline". Cause is B20, not `RANGE_KEYS`. Fix: under Cursor (`cursor_version` in the payload) the hook allows Reads it cannot judge (`allow-unobservable`). Re-run: both the ranged read and a whole read of `docs/IMPLEMENTATION-GUIDE.md` allowed; `events.jsonl` marks them `ranged: true` (2912 of 56696 B) and `ranged: false` (73888 of 74292 B). |
+| StrReplace on > 2 KB file not nudged | **pass after fix** (2026-11-13) | The model called `StrReplace` on a 4840 B file; Cursor's `preToolUse` reported it as `Write` with `{content, file_path}` (the whole new file), and the hook denied it. Same fix: under Cursor a `Write` without `old_string` is allowed. Re-run: allowed and applied. |
+| B19 hard cap | **not applicable under Cursor** | The hook cannot see a range in Cursor (B20), so the cap would deny ranged reads too. It is now skipped for Cursor payloads and still applies elsewhere. |
+| B20 payload shape captured | **done** (2026-11-13) | The model sent `{"path", "offset": 1, "limit": 40}` (agent transcript); the hook received `tool_input` = `{"file_path"}` only (`arg_keys: ["file_path"]`, `ranged: false`). Cursor drops offset/limit before `preToolUse`. The transcript is no fallback: it is written after the tool runs, so at hook time it is one message stale (tried and reverted: it still denied ranged reads and matched a rangeless read to an older range). `postToolUse` for Read does carry `tool_output.content_length`, so full reads are observable after the fact. |
+| receipt written on session end | **done** (2026-11-13) | `.agent-spec/metrics/receipts/d02605e3-818b-46bb-a4a2-d2a0d1b8d0fc.json` from the CLI session. Digest arrival recorded live under DV-002 (`sessionStart`). |

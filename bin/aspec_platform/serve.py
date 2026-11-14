@@ -12,6 +12,7 @@ import html
 import mimetypes
 import json
 import os
+import time
 import re
 import secrets
 import sqlite3
@@ -20,7 +21,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import agent_exec, common, db, demo_seed, insights, observe, platform_data, savings, cursor_sessions, traces
+from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, savings, cursor_sessions, traces
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_DIR = os.path.join(HERE, "ui")
@@ -68,11 +69,14 @@ def _offset(params) -> int:
 # DV-012/DV-041/DV-050/DV-056: read routes that need the project as well as the connection.
 PROJECT_ROUTES = {
     "/api/requests": lambda project, conn, q: traces.list_requests(project, conn, _filters(q), _limit(q, 50), _offset(q)),
+    "/api/conversations": lambda project, conn, q: traces.list_conversations(project, conn, _filters(q), _limit(q, 200), _offset(q)),
     "/api/coach/lag": lambda project, conn, q: traces.lag(project, conn, _first(q, "since")),
+    "/api/context": lambda project, conn, q: traces.context_overview(project, conn),
     "/api/coach/issues": lambda project, conn, q: observe.coach_issues(project, conn),
     "/api/learning": lambda project, conn, q: observe.learning(project, conn, _limit(q, 10)),
     "/api/panels": lambda project, conn, q: observe.panels(project),
     "/api/catalog": lambda project, conn, q: observe.catalog(project, conn),
+    "/api/automations": lambda project, conn, q: automations.overview(project),
 }
 
 
@@ -291,7 +295,7 @@ def make_handler(project: str, token: str):
             self.send_header("Content-Security-Policy", _csp())
             self.end_headers()
 
-        ALLOW_POST = frozenset(("/api/agent/sessions", "/api/seed"))
+        ALLOW_POST = frozenset(("/api/agent/sessions", "/api/seed", "/api/automations"))
 
         def _read_body(self) -> bytes:
             length = int(self.headers.get("Content-Length") or "0")
@@ -329,6 +333,14 @@ def make_handler(project: str, token: str):
                 if isinstance(exc, ApiError):
                     return self._json(exc.status, {"error": exc.message})
                 return self._json(400, {"error": "invalid json"})
+            if path == "/api/automations":
+                # HA-006: the panel's switch. Same loopback, origin and token guards as /api/seed.
+                if not isinstance(body.get("enabled"), bool):
+                    return self._json(400, {"error": "enabled must be true or false"})
+                try:
+                    return self._json(200, automations.set_enabled(project, str(body.get("id") or ""), body["enabled"]))
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
             if path == "/api/seed":
                 action = body.get("action", "seed")
                 payload = demo_seed.remove(project) if action == "remove" else demo_seed.seed(project)
@@ -555,8 +567,60 @@ def make_server(project: str, host: str = "127.0.0.1", port: int = 8765, token=N
     return server, token
 
 
+def start_hook_log_backfill(project: str, every: float = 60.0):
+    """DV-002/DV-060: copy Cursor's hook-log payloads into events.jsonl in the background, so
+    sessions whose hooks could not start (e.g. a folder opened over \\\\wsl.localhost) still
+    appear as live traces. Fail-soft; `AGENT_SPEC_HOOK_LOG_BACKFILL=0` turns it off."""
+    if os.environ.get("AGENT_SPEC_HOOK_LOG_BACKFILL", "1") == "0":
+        return None
+    import threading
+    from . import hook_logs
+
+    package = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    events = os.path.join(common.agent_spec_dir(project), "metrics", "events.jsonl")
+
+    def store_stamp():
+        from . import cursor_sessions
+        path = cursor_sessions.global_vscdb()
+        stamp = []
+        for suffix in ("", "-wal"):
+            try:
+                st = os.stat(path + suffix)
+                stamp.append((st.st_mtime_ns, st.st_size))
+            except OSError:
+                stamp.append(None)
+        return tuple(stamp)
+
+    def loop():
+        hook = hook_logs.load_hook(project, package)
+        seen = None
+        while True:
+            if hook:
+                try:
+                    hook_logs.backfill(hook_logs.harvest(project), events, hook)
+                except Exception:  # noqa: BLE001 — a log we cannot parse must never stop the server
+                    pass
+            # Chats that never fired a hook live only in Cursor's local store; re-read it when
+            # it changes so the Sessions list shows a new chat without a manual `ingest`.
+            if os.environ.get("AGENT_SPEC_CURSOR_STORE", "1") != "0":
+                try:
+                    now = store_stamp()
+                    if now != seen:
+                        from . import ingest
+                        ingest.run(project, ["traces"])
+                        seen = now
+                except Exception:  # noqa: BLE001 — an unreadable store must never stop the server
+                    pass
+            time.sleep(every)
+
+    t = threading.Thread(target=loop, name="hook-log-backfill", daemon=True)
+    t.start()
+    return t
+
+
 def main(args) -> int:
     project = common.find_project(getattr(args, "project", None))
+    start_hook_log_backfill(project)
     token = getattr(args, "token", None) or os.environ.get("AGENT_SPEC_TOKEN")
     try:
         server, token = make_server(project, args.host, args.port, token=token)

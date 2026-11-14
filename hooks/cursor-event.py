@@ -27,6 +27,9 @@ import sys
 import time
 import uuid
 
+# Tools whose effect may add, move or delete files the graph indexes (HA-002). afterFileEdit
+# covers agent edits; these cover a new file, a delete and anything a shell command does.
+GRAPH_CHANGING_TOOLS = frozenset({"Shell", "run_terminal_cmd", "Write", "Delete", "delete_file"})
 MAX_STDIN = 1 << 20
 TEXT_CAP = {"prompt": 500, "text": 2000, "task": 500, "summary": 2000, "description": 200,
             "error_message": 500}
@@ -84,6 +87,39 @@ def _tool_target(tool_input) -> str:
     return json.dumps(obj, sort_keys=True)[:200]
 
 
+WHOLE_READ_RATIO = 0.9
+CHAR_COUNT_MAX_BYTES = 4 * 1024 * 1024  # above this, compare with bytes instead of decoding
+
+
+def _read_extent(tool_input: dict, tool_output) -> dict:
+    """Whether a Read returned the whole file, from what Cursor reports after the read.
+
+    Cursor drops offset/limit from a Read's tool_input (recorded live 2026-11-13, see
+    docs/PHASE1-VERIFICATION.md §F), so the range is judged by the result instead:
+    tool_output carries content_length, a count of characters, which is compared with the
+    file's length in characters (bytes would make any multi-byte UTF-8 file look partly
+    read). A read returning at least 90% of the file counts as whole. Returns {} when either
+    is unknown."""
+    out = _as_dict(tool_output)
+    n = _int(out.get("content_length")) if out else None
+    path = tool_input.get("file_path") or tool_input.get("path") or tool_input.get("target_file")
+    if n is None or not path:
+        return {}
+    try:
+        size = os.path.getsize(str(path))
+        if size <= CHAR_COUNT_MAX_BYTES:
+            with open(str(path), "rb") as fh:
+                length = len(fh.read().decode("utf-8", errors="replace"))
+        else:
+            length = size
+    except OSError:
+        return {}
+    extent = {"read_chars": n, "file_bytes": size, "file_chars": length}
+    if length > 0:
+        extent["ranged"] = n < WHOLE_READ_RATIO * length
+    return extent
+
+
 def handle_event(raw: str, default_event: str = "", redact=None, now: float | None = None) -> dict | None:
     """Payload text -> one events.jsonl row, or None when the payload is unusable."""
     if not raw or not raw.strip():
@@ -107,6 +143,10 @@ def handle_event(raw: str, default_event: str = "", redact=None, now: float | No
     for key in ("model", "cursor_version"):
         if data.get(key):
             row[key] = str(data[key])[:80]
+    # A subagent's own tool calls arrive under its child conversation id; this field (Cursor
+    # 3.30, recorded 2026-11-13) equals the parent's subagentStart `subagent_id`.
+    if data.get("parent_tool_call_id"):
+        row["parent_tool_call_id"] = str(data["parent_tool_call_id"])[:128]
     if data.get("transcript_path"):
         row["transcript_path"] = str(data["transcript_path"])[:400]
 
@@ -124,6 +164,8 @@ def handle_event(raw: str, default_event: str = "", redact=None, now: float | No
         row["target"] = _clip(redact, _tool_target(tool_input), 240)
         if obj is not None and row["tool_name"] in ("Read", "read_file", "ReadFile"):
             row["ranged"] = any(k in obj for k in ("offset", "limit", "start_line", "end_line"))
+            if not row["ranged"]:
+                row.update(_read_extent(obj, data.get("tool_output")))
         row["input_bytes"] = len(json.dumps(tool_input)) if tool_input is not None else 0
         if "tool_output" in data:
             row["output_bytes"] = len(str(data.get("tool_output") or ""))
@@ -140,7 +182,7 @@ def handle_event(raw: str, default_event: str = "", redact=None, now: float | No
             row["status"] = "ok"
     elif event in ("subagentStart", "subagentStop"):
         for key in ("subagent_id", "subagent_type", "parent_conversation_id", "tool_call_id",
-                    "subagent_model", "status"):
+                    "subagent_model", "status", "child_conversation_id"):
             if data.get(key) is not None:
                 row[key] = str(data[key])[:128]
         for key in ("task", "description", "summary"):
@@ -165,6 +207,10 @@ def handle_event(raw: str, default_event: str = "", redact=None, now: float | No
     elif event == "afterAgentResponse":
         row["text"] = _clip(redact, data.get("text"), TEXT_CAP["text"])
         row["text_chars"] = len(str(data.get("text") or ""))
+        # Not in the hooks docs; recorded from Cursor 3.6.21 (DV-002): measured, not estimated.
+        for key in ("input_tokens", "output_tokens", "cache_read_tokens", "cache_write_tokens"):
+            if _int(data.get(key)) is not None:
+                row[key] = _int(data[key])
     elif event == "preCompact":
         if data.get("trigger"):
             row["trigger"] = str(data["trigger"])[:16]
@@ -226,6 +272,10 @@ def main() -> int:
         os.makedirs(metrics, exist_ok=True)
         with open(os.path.join(metrics, "events.jsonl"), "a", encoding="utf-8") as fh:
             fh.write(json.dumps(row, separators=(",", ":")) + "\n")
+        if row["event"] == "afterFileEdit" or row.get("tool_name") in GRAPH_CHANGING_TOOLS:
+            # HA-002: the session-end hook rebuilds the graph on the next stop. An empty file;
+            # opening it is the whole cost on the per-tool-call path.
+            open(os.path.join(root, ".agent-spec", ".graph-dirty"), "a").close()
         if os.environ.get("AGENT_SPEC_HOOK_RECORD") and isinstance(data, dict):
             _record(metrics, row["event"], data, redact)
     except Exception:

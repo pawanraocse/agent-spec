@@ -37,3 +37,11 @@ export async function copyText(text: string): Promise<boolean> {
     return false;
   }
 }
+
+/** 118311 -> "118.3k", 2400000 -> "2.4M"; exact below 10,000. */
+export function fmtTokens(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  if (Math.abs(n) >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (Math.abs(n) >= 10_000) return `${(n / 1000).toFixed(1)}k`;
+  return n.toLocaleString("en-US");
+}

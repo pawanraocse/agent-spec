@@ -1,0 +1,40 @@
+{
+  "attachments": [
+    {
+      "file_path": "agent-spec.mdc",
+      "type": "rule"
+    },
+    {
+      "file_path": "AGENTS.md",
+      "type": "rule"
+    }
+  ],
+  "composer_mode": "agent",
+  "conversation_id": "conv-recorded-1",
+  "cursor_version": "3.30.8",
+  "generation_id": "gen-recorded-1",
+  "hook_event_name": "beforeSubmitPrompt",
+  "model": "grok-4.7-medium",
+  "model_id": "grok-4.7",
+  "model_params": [
+    {
+      "id": "context",
+      "value": "256k"
+    },
+    {
+      "id": "reasoning_effort",
+      "value": "medium"
+    },
+    {
+      "id": "fast",
+      "value": "false"
+    }
+  ],
+  "prompt": "/agent-spec-hook-probe collect",
+  "session_id": "conv-recorded-1",
+  "transcript_path": "/home/developer/.cursor/projects/home-pawan-personal-agent-spec/agent-transcripts/conv-recorded-1/conv-recorded-1.jsonl",
+  "user_email": "developer@example.com",
+  "workspace_roots": [
+    "/workspace/project"
+  ]
+}

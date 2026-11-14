@@ -367,6 +367,7 @@ EOF
   cp "${REPO_DIR}/bin/agent-spec-index.sh" "${project_root}/.agent-spec/bin/agent-spec-index"
   cp "${REPO_DIR}/bin/graphify-build.py"   "${project_root}/.agent-spec/bin/graphify-build.py"
   cp "${REPO_DIR}/bin/graphify-cli.py"     "${project_root}/.agent-spec/bin/graphify-cli.py"
+  cp "${REPO_DIR}/bin/graphify-mesh.py"    "${project_root}/.agent-spec/bin/graphify-mesh.py"
   cp "${REPO_DIR}/bin/agent-spec-digest.py" "${project_root}/.agent-spec/bin/agent-spec-digest.py"
   cp "${REPO_DIR}/bin/agent-spec-gate.py"   "${project_root}/.agent-spec/bin/agent-spec-gate.py"
   cp "${REPO_DIR}/bin/agent-spec-memory.py" "${project_root}/.agent-spec/bin/agent-spec-memory.py"

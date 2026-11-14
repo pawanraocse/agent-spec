@@ -70,7 +70,7 @@ export function RequestFeed({ data, loading, filters, setFilters, selected, onSe
                 <span className="line-clamp-1 text-xs font-medium">{(t.prompt || t.session_name || "(prompt not captured)").replace(/\s+/g, " ")}</span>
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 pl-4 text-[10px] text-muted-foreground">
-                <span>{relTime(t.start)}</span>
+                <time dateTime={t.start ?? undefined}>{relTime(t.start)}</time>
                 <span><Num p={t.provenance}>{fmtMs(t.duration_ms)}</Num></span>
                 <span className="inline-flex items-center gap-0.5"><Wrench size={10} /><Num p="measured">{t.tool_count}</Num></span>
                 {t.subagent_count ? <span className="inline-flex items-center gap-0.5 text-k-subagent"><Bot size={10} /><Num p="measured">{t.subagent_count}</Num></span> : null}

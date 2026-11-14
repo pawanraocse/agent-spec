@@ -1,3 +1,5 @@
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
 import { Num } from "../components/Num";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -12,7 +14,6 @@ import {
   Cpu,
   ChevronRight,
   X,
-  Play,
 } from "lucide-react";
 
 type HomeData = {
@@ -39,20 +40,12 @@ type RunItem = {
   started?: string;
 };
 
-type SessionItem = {
-  session_id: string;
-  workspace?: string;
-  grade?: string;
-  turns?: number;
-};
-
 export function Home() {
   const navigate = useNavigate();
   const [home, setHome] = useState<HomeData | null>(null);
   const [gaps, setGaps] = useState<{ gaps: { rule: string; request_id: string }[] } | null>(null);
   const [recentRuns, setRecentRuns] = useState<RunItem[]>([]);
   const [factsCount, setFactsCount] = useState<number>(0);
-  const [gatesCount, setGatesCount] = useState<number>(9);
   const [tourStep, setTourStep] = useState<number | null>(null);
 
   useEffect(() => {
@@ -65,9 +58,6 @@ export function Home() {
       .catch(() => {});
     apiGet<{ facts: unknown[] }>("/api/memory")
       .then((d) => setFactsCount(d.facts?.length || 0))
-      .catch(() => {});
-    apiGet<{ gates: unknown[] }>("/api/gates")
-      .then((d) => setGatesCount(d.gates?.length || 9))
       .catch(() => {});
   }, []);
 
@@ -127,31 +117,31 @@ export function Home() {
       {/* Header */}
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-100">Control Plane v2</h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <h1 className="text-xl font-semibold text-foreground">Control Plane v2</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
             Real-time observability, governance rails, and agent orchestration
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
-            className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500 shadow-sm transition-colors"
+            size="sm"
             onClick={() => setTourStep(0)}
           >
             <Compass size={14} />
             Guided demo tour
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="rounded-md bg-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+            size="sm" variant="subtle"
             onClick={() => apiPost("/api/seed", { action: "seed" }).then(() => window.location.reload())}
           >
             Load demo seed
-          </button>
+          </Button>
           {home?.seeded ? (
             <button
               type="button"
-              className="rounded-md border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200"
+              className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
               onClick={() => apiPost("/api/seed", { action: "remove" }).then(() => window.location.reload())}
             >
               Remove demo data
@@ -194,99 +184,99 @@ export function Home() {
       </div>
 
       {/* "Caught by the harness" banner (§4.1 / CP-036) */}
-      <div className="flex items-center justify-between rounded-lg border border-slate-800/80 bg-slate-900/40 px-4 py-2.5 text-xs text-slate-300">
+      <Card className="flex items-center justify-between px-4 py-2.5 text-xs text-foreground/85">
         <div className="flex items-center gap-2">
-          <ShieldAlert size={15} className="text-amber-400" />
+          <ShieldAlert size={15} className="text-warning" />
           <span>
             Caught by the harness:{" "}
-            <strong className="text-slate-100 font-semibold"><Num p="measured">{gaps?.gaps?.length ?? 0}</Num></strong>{" "}
+            <strong className="text-foreground font-semibold"><Num p="measured">{gaps?.gaps?.length ?? 0}</Num></strong>{" "}
             potential rule gap(s) or nudges detected.
           </span>
         </div>
         <Link
           to="/governance?tab=gaps"
-          className="font-medium text-sky-400 hover:text-sky-300 flex items-center gap-1"
+          className="font-medium text-primary hover:text-primary/80 flex items-center gap-1"
         >
           View Gaps audit <ChevronRight size={13} />
         </Link>
-      </div>
+      </Card>
 
       {/* "How it works" 5-Tile Strip (§4.1) */}
       <div>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           How it works
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Link
             to="/knowledge"
-            className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
+            className="group rounded-xl border border-border bg-card p-3.5 transition-all hover:border-foreground/25 hover:bg-muted/60"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground" data-figure-exempt>
                 1. Digest
               </span>
-              <FileCode size={14} className="text-slate-500" />
+              <FileCode size={14} className="text-muted-foreground" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200">sessionStart</div>
-            <p className="mt-1 text-[11px] text-slate-500">injected start context</p>
+            <div className="mt-2 text-lg font-semibold text-foreground">sessionStart</div>
+            <p className="mt-1 text-[11px] text-muted-foreground">injected start context</p>
           </Link>
 
           <Link
             to="/knowledge"
-            className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
+            className="group rounded-xl border border-border bg-card p-3.5 transition-all hover:border-foreground/25 hover:bg-muted/60"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground" data-figure-exempt>
                 2. Graphify
               </span>
-              <GitBranch size={14} className="text-slate-500" />
+              <GitBranch size={14} className="text-muted-foreground" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200">
+            <div className="mt-2 text-lg font-semibold text-foreground">
               <Num p="measured">{home?.graph?.files ?? "—"}</Num> files
             </div>
-            <p className="mt-1 text-[11px] text-slate-500">AST symbols & blast radius</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">AST symbols & blast radius</p>
           </Link>
 
           <Link
             to="/governance?tab=guards"
-            className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
+            className="group rounded-xl border border-border bg-card p-3.5 transition-all hover:border-foreground/25 hover:bg-muted/60"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground" data-figure-exempt>
                 3. Guard
               </span>
-              <ShieldAlert size={14} className="text-slate-500" />
+              <ShieldAlert size={14} className="text-muted-foreground" />
             </div>
-            <div className="mt-2 font-mono text-lg font-semibold text-slate-200">S-002 / S-004</div>
-            <p className="mt-1 text-[11px] text-slate-500">preToolUse & context nudges</p>
+            <div className="mt-2 font-mono text-lg font-semibold text-foreground">S-002 / S-004</div>
+            <p className="mt-1 text-[11px] text-muted-foreground">preToolUse & context nudges</p>
           </Link>
 
           <Link
             to="/knowledge"
-            className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
+            className="group rounded-xl border border-border bg-card p-3.5 transition-all hover:border-foreground/25 hover:bg-muted/60"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground" data-figure-exempt>
                 4. Memory
               </span>
-              <Brain size={14} className="text-slate-500" />
+              <Brain size={14} className="text-muted-foreground" />
             </div>
-            <div className="mt-2 text-lg font-semibold text-slate-200"><Num p="measured">{factsCount}</Num> facts</div>
-            <p className="mt-1 text-[11px] text-slate-500">bounded memory flywheel</p>
+            <div className="mt-2 text-lg font-semibold text-foreground"><Num p="measured">{factsCount}</Num> facts</div>
+            <p className="mt-1 text-[11px] text-muted-foreground">bounded memory flywheel</p>
           </Link>
 
           <Link
             to="/runs"
-            className="group rounded-xl border border-slate-800 bg-slate-900/50 p-3.5 transition-all hover:border-slate-700 hover:bg-slate-900"
+            className="group rounded-xl border border-border bg-card p-3.5 transition-all hover:border-foreground/25 hover:bg-muted/60"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-400 group-hover:text-slate-200" data-figure-exempt>
+              <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground" data-figure-exempt>
                 5. Subagents
               </span>
-              <Cpu size={14} className="text-slate-500" />
+              <Cpu size={14} className="text-muted-foreground" />
             </div>
-            <div className="mt-2 font-mono text-lg font-semibold text-slate-200">agent-spec-wf-*</div>
-            <p className="mt-1 text-[11px] text-slate-500">isolated task execution</p>
+            <div className="mt-2 font-mono text-lg font-semibold text-foreground">agent-spec-wf-*</div>
+            <p className="mt-1 text-[11px] text-muted-foreground">isolated task execution</p>
           </Link>
         </div>
       </div>
@@ -294,14 +284,14 @@ export function Home() {
       {/* Recent Activity: last 5 runs (§4.1) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Recent activity
           </h2>
-          <Link to="/runs" className="text-xs text-sky-400 hover:underline">
+          <Link to="/runs" className="text-xs text-primary hover:underline">
             View all runs
           </Link>
         </div>
-        <div className="divide-y divide-slate-800/80 rounded-lg border border-slate-800 bg-slate-900/30 text-xs">
+        <Card className="divide-y divide-border text-xs">
           {recentRuns.length ? (
             recentRuns.map((r) => (
               <div key={r.request_id} className="flex items-center justify-between p-3">
@@ -309,40 +299,40 @@ export function Home() {
                   <span
                     className={`inline-block h-2 w-2 rounded-full ${
                       r.status === "completed" || r.status === "success"
-                        ? "bg-emerald-400"
-                        : "bg-rose-400"
+                        ? "bg-success"
+                        : "bg-danger"
                     }`}
                   />
-                  <Link to={`/runs/${r.request_id}`} className="font-mono text-sky-400 hover:underline">
+                  <Link to={`/runs/${r.request_id}`} className="font-mono text-primary hover:underline">
                     {r.request_id}
                   </Link>
-                  <span className="text-slate-400">
+                  <span className="text-muted-foreground">
                     {r.workflow_id ? `· ${r.workflow_id}` : ""}
                   </span>
                 </div>
-                <div className="text-slate-500 tabular-nums">
+                <div className="text-muted-foreground tabular-nums">
                   {r.tokens_total ? <><Num p={prov}>{r.tokens_total.toLocaleString()}</Num> tokens</> : null}
                   {r.started ? <> · <time dateTime={r.started}>{r.started.slice(11, 16)} UTC</time></> : null}
                 </div>
               </div>
             ))
           ) : (
-            <div className="p-4 text-center text-slate-500">No recent runs recorded.</div>
+            <div className="p-4 text-center text-muted-foreground">No recent runs recorded.</div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Guided Tour Modal (§4.1 / CP-040) */}
       {tourStep !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
-              <span className="rounded bg-indigo-500/20 px-2 py-0.5 text-xs font-medium text-indigo-300">
+              <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-medium text-primary">
                 Demo Tour · Step {tourStep + 1} of {TOUR_STEPS.length}
               </span>
               <button
                 type="button"
-                className="text-slate-400 hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
                 onClick={() => setTourStep(null)}
               >
                 <X size={18} />
@@ -351,26 +341,26 @@ export function Home() {
 
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-slate-100">
+                <h3 className="text-lg font-semibold text-foreground">
                   {TOUR_STEPS[tourStep].title}
                 </h3>
-                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] uppercase font-bold text-amber-300">
+                <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] uppercase font-bold text-warning">
                   {TOUR_STEPS[tourStep].badge}
                 </span>
               </div>
-              <p className="text-xs text-indigo-300 font-medium mt-0.5">
+              <p className="text-xs text-primary font-medium mt-0.5">
                 {TOUR_STEPS[tourStep].subtitle}
               </p>
             </div>
 
-            <p className="text-sm leading-relaxed text-slate-300">
+            <p className="text-sm leading-relaxed text-foreground/85">
               {TOUR_STEPS[tourStep].desc}
             </p>
 
-            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between pt-2 border-t border-border">
               <button
                 type="button"
-                className="text-xs text-slate-400 hover:text-slate-200"
+                className="text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => {
                   TOUR_STEPS[tourStep].action();
                   setTourStep(null);
@@ -380,26 +370,26 @@ export function Home() {
               </button>
               <div className="flex gap-2">
                 {tourStep > 0 && (
-                  <button
+                  <Button
                     type="button"
-                    className="rounded bg-slate-800 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-700"
+                    size="sm" variant="subtle"
                     onClick={() => setTourStep((s) => (s !== null ? s - 1 : 0))}
                   >
                     Previous
-                  </button>
+                  </Button>
                 )}
                 {tourStep < TOUR_STEPS.length - 1 ? (
-                  <button
+                  <Button
                     type="button"
-                    className="rounded bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
+                    size="sm"
                     onClick={() => setTourStep((s) => (s !== null ? s + 1 : 0))}
                   >
                     Next step
-                  </button>
+                  </Button>
                 ) : (
                   <button
                     type="button"
-                    className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
+                    className="rounded bg-success px-3 py-1.5 text-xs font-medium text-white hover:bg-success/90"
                     onClick={() => {
                       TOUR_STEPS[tourStep].action();
                       setTourStep(null);
