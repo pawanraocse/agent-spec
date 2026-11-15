@@ -141,6 +141,135 @@ def cmd_trace(args) -> int:
     return 0 if picked else 1
 
 
+def _index_conn(project, refresh: bool):
+    """Writer connection after an incremental index pass (cheap when nothing changed)."""
+    from aspec_platform import ingest
+    if refresh:
+        ingest.run(project, ["index"])
+    return db.open_ready(db.db_path(project))
+
+
+def _filters(args) -> dict:
+    return {"kinds": [k for k in (args.kind or "").split(",") if k], "path": args.path,
+            "since": args.since, "session": args.session}
+
+
+def _print_hits(hits) -> None:
+    for i, h in enumerate(hits, 1):
+        where = h["ref"] if h["kind"] not in ("request", "review") else "%s %s" % (h["kind"], h["ref"])
+        print("[%d] %-7s %s  (%s)" % (i, h["kind"], where, "+".join(h.get("matched_by") or [])))
+        print("    %s" % h["title"][:120])
+        snip = (h.get("snippet") or "").replace("\n", " ")
+        if snip:
+            print("    %s" % snip[:240])
+
+
+def cmd_search(args) -> int:
+    """PI-003: hybrid search over the local project index (code, docs, rules, memory, requests, reviews)."""
+    from aspec_platform import retrieval
+    project = common.find_project(args.project)
+    conn = _index_conn(project, not args.no_refresh)
+    try:
+        result = retrieval.search(conn, " ".join(args.query), _filters(args), args.limit)
+    finally:
+        conn.close()
+    if args.json:
+        print(json.dumps(result, indent=1))
+    else:
+        print("# mode=%s hits=%d%s" % (result["mode"], len(result["hits"]),
+                                       "".join("  warning: %s" % w for w in result["warnings"])))
+        _print_hits(result["hits"])
+    return 0 if result["hits"] else 1
+
+
+def cmd_rag_embed(args) -> int:
+    """Embed every pending chunk with AGENT_SPEC_EMBED (the ingest pass caps each run)."""
+    from aspec_platform import retrieval
+    project = common.find_project(args.project)
+    embedder = retrieval.get_embedder()
+    if embedder is None:
+        print("error: set AGENT_SPEC_EMBED=ollama:<model> (e.g. ollama:nomic-embed-text)", file=sys.stderr)
+        return 2
+    conn = _index_conn(project, True)
+    total = 0
+    try:
+        while True:
+            with conn:
+                done = retrieval.embed_pending(conn, embedder)
+            total += done
+            if done:
+                print("embedded %d (total %d)" % (done, total), flush=True)
+            if done < retrieval.EMBED_PER_PASS:
+                break
+    finally:
+        conn.close()
+    print("ok: %d chunk(s) embedded with %s" % (total, embedder.name))
+    return 0
+
+
+def cmd_rag_eval(args) -> int:
+    """Retrieval accuracy (hit@1, hit@k, MRR) for keyword, semantic and hybrid search."""
+    from aspec_platform import rag_eval
+    project = common.find_project(args.project)
+    conn = _index_conn(project, not args.no_refresh)
+    try:
+        if args.build or not rag_eval.load_golden(project):
+            built = rag_eval.build_golden(conn, project, n=args.n, model=args.model)
+            print("golden: %d case(s) -> %s (questions by %s)" % (built["cases"], built["path"], built["model"] or "docstrings"))
+        with conn:
+            result = rag_eval.run(conn, project, k=args.k, label=args.label)
+    finally:
+        conn.close()
+    if args.json or not result.get("ok"):
+        print(json.dumps(result, indent=1))
+        return 0 if result.get("ok") else 1
+    print("# %d cases, k=%d, embedder=%s" % (result["cases"], result["k"], result["embedder"] or "none"))
+    for mode, sc in result["modes"].items():
+        print("%-9s hit@1=%.0f%%  hit@%d=%.0f%%  MRR=%.3f" % (mode, sc["hit1"] * 100, result["k"], sc["hitk"] * 100, sc["mrr"]))
+    return 0
+
+
+def cmd_ask(args) -> int:
+    """PI-004: retrieval + citations; a local model answers only when AGENT_SPEC_LLM is set."""
+    from aspec_platform import retrieval
+    project = common.find_project(args.project)
+    conn = _index_conn(project, not args.no_refresh)
+    try:
+        result = retrieval.ask(conn, project, " ".join(args.query), _filters(args), args.limit)
+        if args.sources:
+            result["sources"] = retrieval._sources_block(conn, result["hits"], args.sources)
+    finally:
+        conn.close()
+    if args.json:
+        print(json.dumps(result, indent=1))
+        return 0 if result["hits"] else 1
+    print("# mode=%s hits=%d" % (result["mode"], len(result["hits"])))
+    if result.get("answer"):
+        print("## answer (%s, AI-generated)\n%s\n" % (result["answer"]["model"], result["answer"]["text"]))
+    _print_hits(result["hits"])
+    if result.get("related"):
+        print("# related by import graph: " + ", ".join(r["path"] for r in result["related"]))
+    if args.sources:
+        print("\n## sources\n" + result["sources"])
+    return 0 if result["hits"] else 1
+
+
+def cmd_signals(args) -> int:
+    """PI-006: measured outcome signals for one request (the review skill's quality evidence)."""
+    from aspec_platform import signals
+    project = common.find_project(args.project)
+    try:
+        conn = db.connect(db.db_path(project), readonly=True) if os.path.isfile(db.db_path(project)) else None
+    except Exception:
+        conn = None
+    out = signals.for_request(project, conn, args.request)
+    if out is None:
+        print("error: request not found: %s" % args.request, file=sys.stderr)
+        return 1
+    print(json.dumps(out, indent=1))
+    return 0
+
+
 def cmd_serve(args) -> int:
     from aspec_platform import serve
     return serve.main(args)
@@ -196,7 +325,7 @@ def main(argv=None) -> int:
     p.set_defaults(fn=cmd_status)
     p = sub.add_parser("ingest", help="import files into platform.db (idempotent)")
     p.add_argument("what", nargs="*",
-                   help="events transcripts gates memory graph quarantine runs experiences traces (default: all)")
+                   help="events transcripts gates memory graph quarantine runs experiences traces index (default: all)")
     p.add_argument("--project")
     p.add_argument("--rebuild", action="store_true", help="drop and recreate the database first")
     p.set_defaults(fn=cmd_ingest)
@@ -223,6 +352,39 @@ def main(argv=None) -> int:
     p.add_argument("--backfill", action="store_true", help="append missing rows to metrics/events.jsonl")
     p.add_argument("--json", action="store_true")
     p.set_defaults(fn=cmd_hooks)
+    for name, fn, hlp in (("search", cmd_search, "hybrid search over the local project index"),
+                          ("ask", cmd_ask, "retrieve cited sources for a question (answer only with AGENT_SPEC_LLM)")):
+        p = sub.add_parser(name, help=hlp)
+        p.add_argument("query", nargs="+")
+        p.add_argument("--project")
+        p.add_argument("--kind", help="comma list: code,doc,rule,memory,request,review")
+        p.add_argument("--path", help="source path prefix, e.g. bin/aspec_platform/")
+        p.add_argument("--since", help="ISO timestamp; requests, reviews and files changed after it")
+        p.add_argument("--session", help="one conversation_id")
+        p.add_argument("--limit", type=int, default=8)
+        p.add_argument("--no-refresh", action="store_true", help="skip the incremental index pass")
+        p.add_argument("--json", action="store_true")
+        if name == "ask":
+            p.add_argument("--sources", type=int, default=0, metavar="CHARS",
+                           help="also print each source body, capped at CHARS")
+        p.set_defaults(fn=fn)
+    p = sub.add_parser("rag-embed", help="embed all pending index chunks (needs AGENT_SPEC_EMBED)")
+    p.add_argument("--project")
+    p.set_defaults(fn=cmd_rag_embed)
+    p = sub.add_parser("rag-eval", help="retrieval accuracy: hit@1, hit@k, MRR per search mode")
+    p.add_argument("--project")
+    p.add_argument("--build", action="store_true", help="regenerate the golden set first")
+    p.add_argument("--n", type=int, default=30, help="golden cases to generate")
+    p.add_argument("--k", type=int, default=5)
+    p.add_argument("--model", help="Ollama model that writes the questions")
+    p.add_argument("--label", help="name this run in the dashboard's accuracy history")
+    p.add_argument("--no-refresh", action="store_true")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(fn=cmd_rag_eval)
+    p = sub.add_parser("signals", help="measured outcome signals for one request (JSON)")
+    p.add_argument("--project")
+    p.add_argument("--request", required=True, help="trace id (generation_id)")
+    p.set_defaults(fn=cmd_signals)
     p = sub.add_parser("serve", help="start the dashboard")
     p.add_argument("--project")
     p.add_argument("--host", default="127.0.0.1")

@@ -2,6 +2,92 @@
 
 ## Unreleased
 
+- **Tokens saved per chat, on the board**: the Impact tab opens with what the raw-code rules saved
+  across the whole chat (graph queries, ranged reads, subagents, and now targeted edits against a
+  rewrite), plus the re-sends avoided on every later model call. Session rows carry a −N chip
+  (⚡ when `/agent-spec-raw-code*` was on), and the Showcase leads with the board total, the top
+  chats and a raw-code vs plain comparison that stays hidden until each side has 5+ requests.
+- **Local agent token cut**: the Ollama agent now sends a relevance-filtered digest, shorter tool
+  descriptions, one search hit per file with its purpose line (no past requests, no test files
+  unless asked), shrinks earlier tool results to 280 chars, reads 80 lines by default, and answers
+  at the first repeated call. Per-step usage is in each result's `step_usage`. Bench, `qwen2.5-coder:7b`
+  at temperature 0: 4/6 correct on 21,646 prompt tokens (bare: 2/6 on 17,058); before the cut it was
+  5/6 on 65,568 at temperature 0.2.
+
+- **Local mode on Ollama, no Cursor plan needed**: `bin/agent-spec-ollama-agent.py` speaks the
+  `cursor-agent -p` stream-json protocol on a local Ollama model and fires the project's registered
+  Cursor hooks, so its requests are traced, measured and reviewed like Cursor chats (origin
+  `local`, visible in Live). It reads in ranges, skips repeated calls, answers from its notes when
+  the tool budget runs out, and honours preToolUse denials. `bin/agent-spec-live.py` sets
+  everything up in one command. Ollama discovery (`aspec_platform/ollama.py`) accepts loopback and,
+  under WSL, the Windows host; any other endpoint still needs `AGENT_SPEC_ALLOW_REMOTE_MODELS=1`.
+- **Console restored**: `GET /api/agent/jobs/<id>/stream` (removed in 7b9d249) is back, with
+  `GET /api/agent/status` and an optional `model`. The Console page is now a streaming chat with
+  tool chips, token counts, a trace link and follow-ups. The local backend turns the Console on by
+  default; `cursor-agent` still needs `AGENT_SPEC_CONSOLE=1` (DEC-15), and `AGENT_SPEC_CONSOLE=0`
+  turns it off.
+- **Measured RAG accuracy and self-tuned fusion**: `agent-spec-platform.py rag-eval` scores keyword,
+  semantic, hybrid and tuned search (hit@1, hit@k, MRR) on a golden set a local model writes
+  without naming the files, keeps a history, and stores the semantic weight with the best MRR,
+  which `search()` then uses. `rag-embed` embeds the whole index. nomic embeddings now use their
+  task prefixes (vectors are stored under a new name, so old and new are never mixed). On this
+  repository (60 cases) keyword search is the strongest single mode; the tuned weight (0.25) gives
+  the best MRR (0.496 vs 0.480 keyword, 0.457 plain hybrid).
+- **Harness A/B benchmark**: `bin/agent-spec-bench.py` runs the same prompts on the same local model
+  with the harness on and off. First run on `qwen2.5-coder:7b`, 6 prompts: 5/6 correct with the
+  harness, 3/6 without, at 65,568 vs 28,949 prompt tokens.
+- **Showcase page**: `/showcase` puts the A/B result, RAG accuracy and its history, the token ledger,
+  efficiency and accuracy tiles, a per-model table and the latest prompts on one screen, each
+  figure labelled measured, estimated or AI-judged.
+
+- **Impact tab on every request**: the request page now opens on what the harness changed in that
+  request, compared with a plain Cursor chat. It shows estimated tokens kept out of the chat (subagent
+  sweeps, graph queries priced as the median indexed file they replaced, ranged reads), a measured check
+  of the raw-code-full rules, the remembered facts the session-start digest injected, and the fixed
+  prompt cost the harness adds (rules, skills, subagent definitions) from Cursor's own breakdown.
+  Shell calls to `graphify-cli.py` and `agent-spec-memory.py` are now named after the query
+  ("graphify context") in the Orchestration and Waterfall views instead of "Shell".
+- **Injected facts are recorded**: the sessionStart hook appends which facts it injected to
+  `.agent-spec/metrics/injections.jsonl`, and ingest joins them to that conversation's requests in
+  `fact_injections`, so Learning's "Facts injected per request" chart has data. Recording starts with
+  this change; earlier chats have none. Read events now record the read extent for ranged reads too.
+- **Skill prune** (43 → 35): removed `agent-spec-doc-coauthoring`, `-mcp-builder`, `-skill-creator`
+  and `-webapp-testing` (vendored, never invoked), `-solid-check` (covered by `/agent-spec-review` and
+  the `refactor` persona), `-prompt-audit` (never invoked, written around `CLAUDE.md`) and
+  `-ai-architect` (duplicate of `/agent-spec-persona ai-architect`). `-synthesize-routine` is folded into
+  `/agent-spec-learn propose`, which now drafts and validates an `agent-spec-wf-*` workflow. Skills that
+  read project hard rules now point at `AGENTS.md` and `.cursor/rules/` instead of `CLAUDE.md`.
+  `./install.sh` removes the dropped skills from `~/.cursor/skills`.
+- **CLI runs labelled and hidden** (DV-064): requests made through `cursor-agent` (scripted probes,
+  `--print` runs) never appear in Cursor's chat list, so they read as phantom requests. They are now
+  tagged "CLI run" by Cursor's date-stamped CLI build string and hidden from Live, chats, the Coach
+  latency table, skill usage and the Ask index unless "Show CLI runs" (or the CLI runs source) is chosen.
+- **Headless requests named and closed** (DV-063): Cursor CLI runs (`cursor-agent --print`) fire no
+  prompt or stop hook, so their requests showed "(prompt not captured)" and stayed RUNNING forever.
+  The prompt is now read from Cursor's own transcript (only under `~/.cursor`, redacted, and only when
+  the chat's queries map to its requests without guessing), and a request with no `stop` and no event
+  for 30 minutes (`AGENT_SPEC_TRACE_IDLE_S`) is `incomplete — no stop event`.
+- **Skill drift sync** (HA-007): the preflight (`agent-spec-ensure.py`) now installs any package
+  skill that is missing from `~/.cursor/skills` or differs from the clone's copy, so a new or edited
+  skill no longer waits for someone to re-run `./install.sh`. Switch it off as `skills-sync` in
+  Project › Automations.
+- **Indexer symlink guard** (PI-013): the project index never follows a symlink out of the project
+  or onto a secret path.
+- **Ask the project** (PI-001…PI-005, DEC-17): a local index of the code, docs, rules, memory,
+  this workspace's Cursor requests and the AI session reviews, kept current by the dashboard
+  every 60 s and by the CLI before each query. The new **Ask** space returns cited sources
+  (`path:start-end`, `request <id>`) with highlighted snippets and filters by kind, folder and
+  time; Ctrl/⌘-K sends any text there. `/agent-spec-ask` lets Cursor's agent answer the same
+  questions with citations. Retrieval is BM25 by default; `AGENT_SPEC_EMBED=ollama:<model>` adds
+  local embeddings fused by reciprocal rank, and `AGENT_SPEC_LLM=ollama:<model>` lets the
+  dashboard write a labelled answer. Model endpoints must be loopback; secret paths are never
+  read; other workspaces' chats are not indexed. CLI: `agent-spec-platform.py search|ask`.
+- **Outcome quality** (PI-006…PI-008): each request now has measured outcome signals — tool
+  failures, unchanged retries, missing-path errors, files edited and churn, whether a test,
+  build or lint command ran after the last edit, and rework of the same files in a later
+  request — each with its span ids (`agent-spec-platform.py signals`). The session-review rubric
+  (2.1.0) scores eight outcome dimensions from them, or marks a dimension not assessable. Request
+  › Outcome shows both side by side. Design and gap analysis: `docs/INTELLIGENCE-PLATFORM.md`.
 - **Harness automation** (HA-001…HA-003): three scripts that someone had to remember to run now
   run from hooks. The long-chat `stop` follow-up is `/agent-spec-snapshot` itself rather than a
   sentence asking for it. An agent edit, a new or deleted file, or a shell command marks the

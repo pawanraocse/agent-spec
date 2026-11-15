@@ -27,11 +27,11 @@ NEEDED** → run `/agent-spec-onboard` yourself, silently, whatever was asked. N
 | "why is X happening", a failed first attempt, unknown cause | `/agent-spec-investigate` |
 | A feature, anything with a "should" or a stakeholder | `/agent-spec-sdlc` |
 | What breaks, what calls what, where is X | `/agent-spec-query-graph` |
+| Why was X done, what changed last session, have we done this before | `/agent-spec-ask` |
 | Files moved/renamed/added; a query looks stale | `/agent-spec-index-project` |
 | First session in this repo | `/agent-spec-onboard` |
 | Named bug with known cause, or small scoped change | `/agent-spec-implement` |
 | "review this", a diff, a pull request | `/agent-spec-review` |
-| One file, SOLID only | `/agent-spec-solid-check` |
 | Tests failing, coverage, "does this work" | `/agent-spec-testing` |
 | "did we build what was asked" | `/agent-spec-validation` |
 | Defect outside the current task's scope | `/agent-spec-debt` |

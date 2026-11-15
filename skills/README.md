@@ -27,11 +27,11 @@ On-demand workflows installed to `~/.cursor/skills/<name>/SKILL.md`. Standing ru
 ## SDLC pipeline
 
 `/agent-spec-intent` (optional) → requirements → tech-spec → prd → hld → lld → implement →
-review → testing → webapp-testing → validation.
+review → testing → validation.
 
 Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd`
 `/agent-spec-hld` `/agent-spec-lld` `/agent-spec-implement` `/agent-spec-review`
-`/agent-spec-testing` `/agent-spec-validation` · UI: `/agent-spec-webapp-testing`.
+`/agent-spec-testing` `/agent-spec-validation`.
 
 ## Workflows
 
@@ -41,8 +41,7 @@ Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd
 - `/agent-spec-wf-pr-review <branch|PR>` — diff → review → validate each finding
 - `/agent-spec-wf-fix-plan <rca run id>` — RCA follow-on: test-first fix plan behind a human gate
 - `/agent-spec-wf-eval` — golden-ticket score of the RCA workflow vs the BugBot baseline (`evals/`)
-- `/agent-spec-learn distill|recall|propose` — experience store to facts, recall, skill proposals
-- `/agent-spec-synthesize-routine` — synthesize repeated task patterns into parameterized `agent-spec-wf-*` workflows
+- `/agent-spec-learn distill|recall|propose` — experience store to facts, recall, and `agent-spec-wf-*` workflow proposals (Rule of 3)
 - New workflows: `skills/agent-spec-wf-<name>/SKILL.md` with a ```steps block; check with `agent-spec-run.py validate`
 
 ## Context modes
@@ -56,9 +55,8 @@ Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd
 
 - `/agent-spec` — picks one skill from pipeline state
 - `/agent-spec-persona <role>` — expert lens with Absolute Rules
-- `/agent-spec-self-review` `/agent-spec-solid-check` `/agent-spec-debt`
+- `/agent-spec-self-review` `/agent-spec-debt`
 - `/agent-spec-hook-probe` — one command fires every registered Cursor hook, harvests the payloads and reports coverage
-- `/agent-spec-doc-coauthoring` `/agent-spec-prompt-audit` `/agent-spec-skill-creator` `/agent-spec-mcp-builder`
 
 ## Authoring
 

@@ -120,6 +120,22 @@ def _read_extent(tool_input: dict, tool_output) -> dict:
     return extent
 
 
+def _ranged_extent(tool_input, tool_output) -> dict:
+    """{read_chars, file_bytes} for a ranged read, from a stat only; {} when unknown."""
+    out = _as_dict(tool_output)
+    n = _int(out.get("content_length")) if out else None
+    path = tool_input.get("file_path") or tool_input.get("path") or tool_input.get("target_file")
+    extent = {}
+    if n is not None:
+        extent["read_chars"] = n
+    if path:
+        try:
+            extent["file_bytes"] = os.path.getsize(str(path))
+        except OSError:
+            pass
+    return extent
+
+
 def handle_event(raw: str, default_event: str = "", redact=None, now: float | None = None) -> dict | None:
     """Payload text -> one events.jsonl row, or None when the payload is unusable."""
     if not raw or not raw.strip():
@@ -164,7 +180,11 @@ def handle_event(raw: str, default_event: str = "", redact=None, now: float | No
         row["target"] = _clip(redact, _tool_target(tool_input), 240)
         if obj is not None and row["tool_name"] in ("Read", "read_file", "ReadFile"):
             row["ranged"] = any(k in obj for k in ("offset", "limit", "start_line", "end_line"))
-            if not row["ranged"]:
+            if row["ranged"]:
+                # An explicit range is ranged whatever it returned; only the file's size is
+                # needed, so the file is never read or decoded here (hooks have a 5 s budget).
+                row.update(_ranged_extent(obj, data.get("tool_output")))
+            else:
                 row.update(_read_extent(obj, data.get("tool_output")))
         row["input_bytes"] = len(json.dumps(tool_input)) if tool_input is not None else 0
         if "tool_output" in data:

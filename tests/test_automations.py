@@ -40,7 +40,7 @@ class AutomationsApiTest(ApiCase):
     def test_empty_project_lists_every_automation_enabled(self):
         data = self.get_json("/api/automations")
         ids = [a["id"] for a in data["automations"]]
-        self.assertEqual(ids, ["register", "graph-refresh", "snapshot-rotate", "snapshot-followup", "context-nudge"])
+        self.assertEqual(ids, ["register", "skills-sync", "graph-refresh", "snapshot-rotate", "snapshot-followup", "context-nudge"])
         self.assertTrue(all(a["enabled"] and a["runs"] == 0 and a["last"] is None for a in data["automations"]))
         self.assertEqual(data["totals"]["runs"], 0)
 

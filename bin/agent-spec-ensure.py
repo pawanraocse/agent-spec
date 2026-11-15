@@ -8,8 +8,10 @@ This does the deterministic part in one command and leaves only the AI step to t
   1. registration — `.agent-spec/bin`, the hooks in `.cursor/hooks.json` and the rules file
      present, and the rules file stamped with the package's VERSION. If not, run
      `install.sh --project-only --register <root>` from the package clone.
-  2. graph — `.agent-spec/graph/knowledge-graph.json` present. If not, build it.
-  3. onboarding — `.agent-spec/.onboarding-needed` (the installer's flag). Reported, never
+  2. skills — every package skill installed in `~/.cursor/skills` and identical to the
+     clone's copy (lean-excluded skills may be absent). If not, `install.sh --skills-only`.
+  3. graph — `.agent-spec/graph/knowledge-graph.json` present. If not, build it.
+  4. onboarding — `.agent-spec/.onboarding-needed` (the installer's flag). Reported, never
      run: onboarding is a skill, so `next` names it for the model.
 
 Run it with the clone's path, since an unregistered project has no copy of its own:
@@ -85,6 +87,54 @@ def registration_gaps(root, package):
     return gaps
 
 
+# install.sh --lean leaves these out on purpose; a missing one is not drift.
+LEAN_SKILLS = frozenset(("agent-spec-intent", "agent-spec-hld", "agent-spec-lld", "agent-spec-prd",
+                         "agent-spec-requirements", "agent-spec-tech-spec"))
+
+
+LEAN_MARKER = ".algosec-agent-spec-lean"  # written by install.sh --lean, removed by a full install
+
+
+def skills_dir():
+    return os.path.join(os.path.expanduser("~"), ".cursor", "skills")
+
+
+def _tree(path):
+    """Relative path -> bytes for every file under a skill directory."""
+    out = {}
+    for dirpath, dirnames, filenames in os.walk(path):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for name in filenames:
+            full = os.path.join(dirpath, name)
+            try:
+                with open(full, "rb") as fh:
+                    out[os.path.relpath(full, path)] = fh.read()
+            except OSError:
+                pass
+    return out
+
+
+def skill_gaps(package, dest=None):
+    """Package skills missing from, or different in, the global skills directory (HA-007).
+    A skill edited or added in the clone otherwise stays invisible until someone re-runs
+    install.sh by hand."""
+    dest = dest or skills_dir()
+    src = os.path.join(package, "skills")
+    try:
+        names = sorted(n for n in os.listdir(src) if os.path.isfile(os.path.join(src, n, "SKILL.md")))
+    except OSError:
+        return []
+    gaps = []
+    for name in names:
+        installed = os.path.join(dest, name)
+        if not os.path.isfile(os.path.join(installed, "SKILL.md")):
+            if name not in LEAN_SKILLS:
+                gaps.append(name)
+        elif _tree(os.path.join(src, name)) != _tree(installed):
+            gaps.append(name)
+    return gaps
+
+
 def enabled(root, name):
     """Off when the dashboard's Automations panel lists it in .agent-spec/automation.json."""
     try:
@@ -114,7 +164,7 @@ def tail(text, lines=6):
 
 
 def ensure(root, check_only):
-    out = {"root": root, "registered": "ok", "graph": "ok", "onboard": "done", "next": None}
+    out = {"root": root, "registered": "ok", "skills": "ok", "graph": "ok", "onboard": "done", "next": None}
     home = os.path.realpath(os.path.expanduser("~"))
     if root in (home, os.path.realpath(os.sep)):
         out.update(registered="refused", error="%s is the home directory or filesystem root; "
@@ -147,6 +197,30 @@ def ensure(root, check_only):
             if not ok:
                 return out, 1
 
+    stale = skill_gaps(package) if package else []
+    if stale:
+        out["skill_gaps"] = stale
+        if check_only or not enabled(root, "skills-sync"):
+            out["skills"] = "needed"
+        else:
+            started = time.time()
+            cmd = ["bash", os.path.join(package, "install.sh"), "--skills-only"]
+            if os.path.isfile(os.path.join(skills_dir(), LEAN_MARKER)):
+                cmd.append("--lean")  # keep a lean install lean; no marker means a full install
+            try:
+                res = subprocess.run(cmd, cwd=package, capture_output=True, text=True,
+                                     timeout=INSTALL_TIMEOUT_S, stdin=subprocess.DEVNULL)
+                ok = res.returncode == 0 and not skill_gaps(package)
+                detail = tail(res.stdout + res.stderr)
+            except (OSError, subprocess.SubprocessError) as exc:
+                ok, detail = False, str(exc)
+            out["skills"] = "installed" if ok else "failed"
+            if not ok:
+                out["skills_error"] = detail
+            log_event(root, {"name": "skills-sync", "status": out["skills"],
+                             "reason": "%d skill(s) missing or changed: %s" % (len(stale), ", ".join(stale[:5])),
+                             "duration_ms": int((time.time() - started) * 1000)})
+
     graph = os.path.join(root, ".agent-spec", "graph", "knowledge-graph.json")
     builder = os.path.join(root, ".agent-spec", "bin", "graphify-build.py")
     if not os.path.isfile(graph):
@@ -166,7 +240,7 @@ def ensure(root, check_only):
     if os.path.exists(os.path.join(root, ".agent-spec", ".onboarding-needed")):
         out["onboard"] = "needed"
         out["next"] = "/agent-spec-onboard"
-    failed = "failed" in (out["registered"], out["graph"])
+    failed = "failed" in (out["registered"], out["graph"], out["skills"])
     return out, 1 if failed else 0
 
 

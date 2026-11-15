@@ -200,9 +200,9 @@ def _skill_category(name: str) -> tuple[str, str]:
         return "Coding & SDLC", "coding"
     if any(k in nl for k in ("learn", "remember", "compact", "snapshot", "persona", "debt")):
         return "Memory & Learning", "memory"
-    if any(k in nl for k in ("prd", "tech-spec", "hld", "lld", "requirements", "intent", "doc-coauthoring")):
+    if any(k in nl for k in ("prd", "tech-spec", "hld", "lld", "requirements", "intent")):
         return "Architecture & Specs", "architecture"
-    if any(k in nl for k in ("blast-radius", "query-graph", "index-project", "investigate", "testing", "validation", "doctor", "prompt-audit")):
+    if any(k in nl for k in ("blast-radius", "query-graph", "index-project", "investigate", "testing", "validation", "doctor")):
         return "Analysis & Safety", "analysis"
     return "Platform Tools", "platform"
 

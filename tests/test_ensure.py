@@ -6,6 +6,7 @@ Run: python3 tests/test_ensure.py
 """
 import json
 import re
+import shutil
 import os
 import subprocess
 import sys
@@ -62,11 +63,61 @@ def test_unregistered_project_is_installed_indexed_and_flags_onboarding():
     assert out["graph"] == "ok" and os.path.isfile(os.path.join(proj, ".agent-spec", "graph", "knowledge-graph.json"))
     assert out["onboard"] == "needed" and out["next"] == "/agent-spec-onboard"
     assert "agent-spec-session-start" in open(os.path.join(proj, ".cursor", "hooks.json")).read()
-    rows = automation_rows(proj)
-    assert len(rows) == 1 and rows[0]["name"] == "register" and rows[0]["status"] == "installed", rows
+    rows = [r for r in automation_rows(proj) if r["name"] == "register"]
+    assert len(rows) == 1 and rows[0]["status"] == "installed", rows
     code, again = run(home, proj)
     assert again["registered"] == "ok" and "gaps" not in again, "second run is a no-op"
-    assert len(automation_rows(proj)) == 1
+    assert again["skills"] == "ok" and "skill_gaps" not in again, again
+    assert len(automation_rows(proj)) == len(rows) + 1  # the first run's skills-sync row, nothing new
+
+
+def test_missing_or_edited_skill_is_reinstalled():
+    home, proj = workspace()
+    run(home, proj)
+    dest = os.path.join(home, ".cursor", "skills")
+    shutil.rmtree(os.path.join(dest, "agent-spec-ask"))
+    with open(os.path.join(dest, "agent-spec-debt", "SKILL.md"), "a") as fh:
+        fh.write("\nstale edit\n")
+    code, out = run(home, proj, "--check")
+    assert out["skills"] == "needed" and {"agent-spec-ask", "agent-spec-debt"} <= set(out["skill_gaps"]), out
+    assert not os.path.isdir(os.path.join(dest, "agent-spec-ask")), "--check changes nothing"
+    code, out = run(home, proj)
+    assert code == 0 and out["skills"] == "installed", out
+    assert os.path.isfile(os.path.join(dest, "agent-spec-ask", "SKILL.md"))
+    assert "stale edit" not in open(os.path.join(dest, "agent-spec-debt", "SKILL.md")).read()
+    assert automation_rows(proj)[-1]["name"] == "skills-sync"
+
+
+def test_skill_sync_keeps_the_install_mode():
+    """Review fix: a full install missing every SDLC design skill must not be re-installed lean."""
+    home, proj = workspace()
+    run(home, proj)
+    dest = os.path.join(home, ".cursor", "skills")
+    assert os.path.isfile(os.path.join(dest, "agent-spec-prd", "SKILL.md")), "the first sync is a full install"
+    for name in ("agent-spec-prd", "agent-spec-hld", "agent-spec-lld", "agent-spec-intent",
+                 "agent-spec-requirements", "agent-spec-tech-spec", "agent-spec-ask"):
+        shutil.rmtree(os.path.join(dest, name), ignore_errors=True)
+    code, out = run(home, proj)
+    assert code == 0 and out["skills"] == "installed", out
+    assert os.path.isfile(os.path.join(dest, "agent-spec-prd", "SKILL.md")), "no lean marker: a full install stays full"
+    for name in ("agent-spec-prd", "agent-spec-hld", "agent-spec-lld", "agent-spec-intent",
+                 "agent-spec-requirements", "agent-spec-tech-spec"):
+        shutil.rmtree(os.path.join(dest, name))
+    open(os.path.join(dest, ".algosec-agent-spec-lean"), "w").close()
+    shutil.rmtree(os.path.join(dest, "agent-spec-ask"))
+    code, out = run(home, proj)
+    assert out["skills"] == "installed" and os.path.isfile(os.path.join(dest, ".algosec-agent-spec-lean")), out
+    assert not os.path.isdir(os.path.join(dest, "agent-spec-prd")), "a lean install stays lean"
+
+
+def test_dashboard_switch_turns_skills_sync_into_a_report():
+    home, proj = workspace()
+    run(home, proj)
+    with open(os.path.join(proj, ".agent-spec", "automation.json"), "w") as fh:
+        json.dump({"disabled": ["skills-sync"]}, fh)
+    shutil.rmtree(os.path.join(home, ".cursor", "skills", "agent-spec-ask"))
+    code, out = run(home, proj)
+    assert out["skills"] == "needed" and not os.path.isdir(os.path.join(home, ".cursor", "skills", "agent-spec-ask"))
 
 
 def test_stale_harness_is_re_registered():

@@ -8,7 +8,7 @@ dashboard:
   emits: [review]
 ---
 
-# agent-spec-session-review (rubric 2.0.0)
+# agent-spec-session-review (rubric 2.1.0)
 
 You are the judge; no score is computed in code. Read the traces, decide what was slow,
 wasteful or unsafe, and write one JSON file. The dashboard only groups and counts what
@@ -49,6 +49,35 @@ Use exactly these `category` values so the Coach trend and Learning recurrence l
 Also record what went well (`pros`), each with a span id. Do not invent a finding to fill a
 category; an empty `findings` list is a valid result.
 
+## 2b. Judge the outcome of each request
+
+Process findings say how the agent worked; this says whether the result was any good. For each
+request that edited files or answered a question, read its measured signals first:
+
+```bash
+./.agent-spec/bin/agent-spec-platform.py signals --request <trace_id>
+```
+
+They are facts (tool failures, repeated failures, missing-path errors, files edited, churn,
+whether a test/build/lint command ran after the last edit, rework of the same files in a later
+request, tokens). Score each dimension 1–5, or `null` when the trace does not show enough to
+judge — never guess a number:
+
+| dimension | Ask |
+|---|---|
+| `relevance` | Does the response address the prompt that was asked? |
+| `intent` | Did it do what the user meant, not a nearby task? |
+| `completeness` | Is anything the prompt asked for missing? |
+| `correctness` | Evidence it works: verification ran and passed, no failing span left unaddressed |
+| `verification` | Tests or checks proportionate to the change (`verification.ran_after_last_edit`) |
+| `unnecessary_changes` | 5 = only what was needed; lower for churn or files the prompt did not imply |
+| `hallucination_risk` | 5 = none seen; lower for `missing_path_errors` or claims no span supports |
+| `rework` | 5 = none; lower when `rework_later` shows the same files edited again to fix it |
+
+Each scored dimension cites at least one `span_id` or signal name. `overall` is your judgement,
+not an average. Do not read earlier reviews' grades while scoring: a review must not grade
+itself against its own past output.
+
 ## 3. Write `.agent-spec/metrics/reviews/<conversation_id>.json`
 
 ```json
@@ -57,7 +86,7 @@ category; an empty `findings` list is a valid result.
   "session_started": "<ISO start of the first trace>",
   "reviewed_at": "<ISO now, UTC>",
   "model": "<your model id>",
-  "rubric_version": "2.0.0",
+  "rubric_version": "2.1.0",
   "grade": "A|B|C|D|F",
   "summary": "<two sentences>",
   "pros": [{"span_id": "<id>", "text": "<what was good>"}],
@@ -70,7 +99,13 @@ category; an empty `findings` list is a valid result.
     "span_id": "<span>",
     "fix_prompt": "<one line the user can paste into Cursor to avoid this next time>"
   }],
-  "evidence": [{"span_id": "<id>", "check": "<category>", "verdict": "pass|warn|fail"}]
+  "evidence": [{"span_id": "<id>", "check": "<category>", "verdict": "pass|warn|fail"}],
+  "quality": [{
+    "trace_id": "<trace>",
+    "dimensions": {"relevance": {"score": 4, "evidence": ["<span_id or signal>"], "note": "<one line>"}},
+    "overall": 4,
+    "summary": "<one sentence>"
+  }]
 }
 ```
 

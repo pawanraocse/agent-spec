@@ -11,6 +11,8 @@ import { RunDetail, Runs } from "../pages/Runs";
 import { SessionDetail, Sessions } from "../pages/Sessions";
 import { Learning } from "../pages/Learning";
 import { Live } from "../pages/Live";
+import { Ask } from "../pages/Ask";
+import { Impact } from "../features/Impact";
 import { fixtureFetch } from "./fixtures";
 
 /** DV-005: no figure on a v3 page unless it comes with provenance. A text node containing a
@@ -74,6 +76,23 @@ describe("page-level honesty (DV-005)", () => {
     expect(unlabelledFigures(container)).toEqual([]);
   });
 
+  it("Impact: every figure carries provenance", () => {
+    const { container } = render(
+      <Impact impact={{
+        bytes_per_token: 4, median_file_bytes: 5602,
+        tools: { graph: 2, memory: 1, search: 3, read_whole: 1, read_ranged: 4, shell: 2, edit: 0, in_subagents: 61, subagents: 2, guard_blocks: 1 },
+        tokens: { context_in: 2440, avoided: 17741, plain_cursor: 20181, provenance: "estimated", avoided_by: { graph: 936, ranged_reads: 0, subagents: 16805 } },
+        rules: [{ rule: "No whole-file reads in the main context", pass: false, detail: "1 whole-file read" }],
+        memory: { facts: Array.from({ length: 10 }, (_, i) => ({ fact_id: "f" + i, type: "constraint", subject: "fact " + i })), digest_bytes: 2379, provenance: "measured" },
+        harness: { tokens: { rules: 3921, skills: 5642, subagents: 1454 }, total: 11017, provenance: "measured" },
+        graph_queries: [{ name: "graphify context", target: "graphify-cli.py context", bytes: 1856, avoided: 3746 }],
+        whole_reads: [{ target: "a.py", file_bytes: 1200 }],
+      }} />,
+    );
+    expect(container.textContent).toContain("17,741");
+    expect(unlabelledFigures(container)).toEqual([]);
+  });
+
   it("Coach: every figure carries provenance", async () => {
     const { container, findByText } = mount("/coach", <Coach />);
     await findByText("Whole-file read of a large module");
@@ -90,6 +109,27 @@ describe("page-level honesty (DV-005)", () => {
     fireEvent.click(getByRole("button", { name: /Show the arithmetic/ }));
     await findByText(/Break-even/);
     expect(container.textContent).toContain("Hook nudged");
+    expect(unlabelledFigures(container)).toEqual([]);
+  });
+
+  it("Live › Outcome tab: measured signals and AI-judged quality are labelled (PI-006)", async () => {
+    const { container, findAllByText, getByRole, findByText } = mount("/requests/gen-1", <Live />, "/requests/:id");
+    await findAllByText(/why does login fail/);
+    fireEvent.mouseDown(getByRole("tab", { name: /^Outcome/ }));
+    fireEvent.click(getByRole("tab", { name: /^Outcome/ }));
+    await findByText("Measured signals");
+    await findByText(/left the failing test unaddressed/);
+    expect(container.textContent).toContain("no test, build or lint command after the last edit");
+    expect(container.textContent).toContain("not assessable");
+    expect(unlabelledFigures(container)).toEqual([]);
+  });
+
+  it("Ask: sources carry provenance and no answer is shown without a model (PI-005)", async () => {
+    const { container, findByText } = mount("/ask?q=why%20does%20login%20fail", <Ask />, "/ask");
+    await findByText("src/auth/login.py · login");
+    expect(container.textContent).toContain("Copy prompt for Cursor");
+    expect(container.textContent).not.toContain("Answer");
+    expect(container.querySelector("mark")?.textContent).toBe("login");
     expect(unlabelledFigures(container)).toEqual([]);
   });
 

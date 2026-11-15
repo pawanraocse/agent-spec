@@ -1,3 +1,4 @@
+import type { SessionSavings } from "../features/SkillSavings";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiGet } from "./client";
@@ -26,6 +27,12 @@ export interface Trace {
   edit_count: number;
   skills: string[];
   transcript_path?: string | null;
+  /** "transcript" when the prompt came from Cursor's transcript (headless runs fire no prompt hook). */
+  prompt_source?: string | null;
+  /** "cli" for cursor-agent runs (never shown in Cursor's chat list), "local" for the Ollama agent, "ide" otherwise; hook traces only. */
+  origin?: string | null;
+  /** Why the status is what it is, e.g. "no stop event". */
+  status_reason?: string | null;
   provenance: "measured" | "estimated";
 }
 
@@ -87,7 +94,7 @@ export interface RequestList {
   limit: number;
   offset: number;
   requests: Trace[];
-  facets: { sources: string[]; skills: string[]; statuses: string[]; workspaces: string[] };
+  facets: { sources: string[]; skills: string[]; statuses: string[]; workspaces: string[]; cli_runs?: number };
 }
 
 export interface RequestDetail {
@@ -97,6 +104,53 @@ export interface RequestDetail {
   review: Review | null;
   session_requests: string[];
   context?: ContextInfo | null;
+  signals?: Signals | null;
+  quality?: Quality | null;
+  impact?: Impact | null;
+  session_savings?: SessionSavings | null;
+}
+
+/** What the harness changed in one request, against plain Cursor (impact.py). */
+export interface Impact {
+  error?: string;
+  bytes_per_token: number;
+  median_file_bytes: number | null;
+  tools: { graph: number; memory: number; search: number; read_whole: number; read_ranged: number; shell: number;
+    edit: number; in_subagents: number; subagents: number; guard_blocks: number };
+  tokens: { context_in: number; avoided: number; plain_cursor: number; provenance: "estimated";
+    avoided_by: { graph: number; ranged_reads: number; subagents: number } };
+  /** pass: null = the rule did not apply to this request (left out of the score). */
+  rules: { rule: string; pass: boolean | null; detail: string }[];
+  memory: { facts: { fact_id: string; type: string; subject: string; updated?: string }[]; digest_bytes: number | null; recorded?: boolean; provenance: "measured" };
+  harness: { tokens: Partial<Record<"rules" | "skills" | "subagents", number>>; total: number | null; provenance: "measured" | null };
+  graph_queries: { name: string; target?: string; bytes: number | null; avoided: number }[];
+  whole_reads: { target?: string; file_bytes: number | null }[];
+}
+
+/** PI-006: measured outcome facts for one request (signals.py). No score: see Quality. */
+export interface Signals {
+  trace_id: string;
+  provenance: "measured" | "estimated";
+  tool_calls: number;
+  tool_failures: { count: number; span_ids: string[] };
+  repeated_failures: { tool: string; target: string; span_ids: string[] }[];
+  missing_path_errors: { count: number; span_ids: string[] };
+  files_edited: { count: number; files: string[]; edit_spans: number; churn: string[] };
+  verification: { ran_after_last_edit: boolean | null; commands: { span_id: string; command: string; status?: string }[] };
+  guard_blocks: number;
+  compactions: number;
+  subagents: { count: number; failed: string[] };
+  responded: boolean;
+  tokens: { input: number; output: number; cache_read: number; cache_write: number } | null;
+  rework_later: { files: string[]; later_edits: Record<string, { trace_id: string; span_id: string }[]> } | null;
+}
+
+/** Rubric 2.1.0 outcome quality, written by the session-review skill (AI-judged). */
+export interface Quality {
+  trace_id: string;
+  dimensions: Record<string, { score: number | null; evidence?: string[]; note?: string }>;
+  overall?: number | null;
+  summary?: string;
 }
 
 /** Context budget (exact arithmetic over Cursor's own counters; see context_budget.py). */
@@ -158,6 +212,8 @@ export interface Filters {
   skill?: string;
   session?: string;
   workspace?: string;
+  /** Hidden by default: "cli" shows only Cursor CLI runs, "all" shows both. */
+  origin?: string;
 }
 
 function qs(f: Filters & { limit?: number }): string {
@@ -201,6 +257,7 @@ export interface Conversation {
   edit_count: number;
   duration_ms: number;
   context?: ContextInfo | null;
+  savings?: { kept_out: number; resend_avoided: number; raw_code: { active: boolean } } | null;
 }
 
 export interface ConversationList {
@@ -210,7 +267,7 @@ export interface ConversationList {
 }
 
 /** Every Cursor chat (hooks + Cursor's local store), one row per conversation. */
-export function useConversations(filters: Pick<Filters, "q" | "source" | "workspace">, limit = 500) {
+export function useConversations(filters: Pick<Filters, "q" | "source" | "workspace" | "origin">, limit = 500) {
   return useQuery({
     queryKey: ["conversations", filters, limit],
     queryFn: () => apiGet<ConversationList>(`/api/conversations${qs({ ...filters, limit })}`),

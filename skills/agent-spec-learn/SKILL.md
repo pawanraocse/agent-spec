@@ -40,10 +40,15 @@ Reuse log: `.agent-spec/experience-reuse.jsonl` (`{"ts", "exp_id", "task"}`), wr
 1. Count reuses per `exp_id`:
    `grep -o '"exp_id": *"[^"]*"' .agent-spec/experience-reuse.jsonl | sort | uniq -c | sort -rn`.
 2. Take experiences reused at least 3 times with `status: success`.
-3. For each, draft `.agent-spec/skill-proposals/<slug>.md`: the repeated task shape, the steps that
-   worked (from its `workflow_id` or gates), the failure modes seen, and a draft `SKILL.md` body.
-4. Stop. Publishing a proposal into `skills/` is a human decision: show the draft, ask once,
-   and only copy it with an explicit yes. Never auto-publish.
+3. For each, draft `.agent-spec/skill-proposals/<slug>.md` as an `agent-spec-wf-<slug>` workflow
+   run by `/agent-spec-hub-runner <slug>`, never a loose global skill. Carry over the repeated task
+   shape, the steps that worked (from its `workflow_id` or gates) and the failure modes seen. Map
+   read-only lookups to `agent: agent-spec-search`, deterministic shell steps to `ai: false`, and
+   human decisions to `gate: human`. Replace concrete ticket IDs, branches and paths with
+   `<KEY>`, `<BRANCH>`, `<PATH>` parameters. Keep the description under 150 characters.
+4. Validate it: `python3 bin/agent-spec-run.py validate .agent-spec/skill-proposals/<slug>.md`.
+5. Stop. Publishing a proposal into `skills/agent-spec-wf-<slug>/` is a human decision: show the
+   draft, ask once, and only copy it with an explicit yes. Never auto-publish.
 
 ## Hard stops
 

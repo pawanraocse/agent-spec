@@ -22,16 +22,86 @@ Live requests need the workspace registered (`./install.sh --register "$(pwd)"`)
 puts `hooks/cursor-event.py` on every traced Cursor hook. They appear without an ingest:
 the server tails `.agent-spec/metrics/events.jsonl` and pushes new rows over SSE.
 
-## Four spaces
+## Local mode: no Cursor plan needed
+
+```bash
+python3 bin/agent-spec-live.py            # Ollama check, embeddings, index, RAG eval, dashboard
+python3 bin/agent-spec-live.py --bench    # also runs the harness-vs-bare A/B benchmark first
+```
+
+`agent-spec-live.py` finds Ollama (loopback, or the Windows host's gateway address under WSL),
+picks a chat model (`qwen2.5-coder:7b`, then `qwen3:4b`), pulls `nomic-embed-text` once if no
+embedding model is installed, ingests and embeds the index, scores retrieval, and starts the
+dashboard with the **Console** and **Ask** answering on that model. Nothing leaves the machine;
+an endpoint that is neither loopback nor the WSL host needs `AGENT_SPEC_ALLOW_REMOTE_MODELS=1`.
+
+The Console runs `bin/agent-spec-ollama-agent.py`, which takes `cursor-agent -p` arguments and
+fires the project's registered Cursor hooks with Cursor-shaped payloads (sessionStart digest,
+preToolUse guard, postToolUse, afterAgentResponse with Ollama's measured token counts, stop), so
+its requests are traced, measured and reviewed exactly like Cursor chats. They carry
+`origin: "local"` and stay visible in Live (CLI runs stay hidden). Its tools are read-only: ranged
+`Read`, `Grep`, `graphify_context` and `search_project` (this dashboard's retrieval). The backend
+is `cursor-agent` only when `AGENT_SPEC_CONSOLE=1` is set (or `AGENT_SPEC_AGENT_BACKEND=cursor`);
+`AGENT_SPEC_CONSOLE=0` turns the Console off.
+
+| Command | What it measures |
+|---|---|
+| `agent-spec-platform.py rag-embed` | Embeds every pending index chunk (`AGENT_SPEC_EMBED=ollama:nomic-embed-text`). |
+| `agent-spec-platform.py rag-eval [--build] [--label L]` | hit@1, hit@k and MRR for keyword, semantic, hybrid and tuned search on `.agent-spec/eval/rag-golden.jsonl` (questions a local model writes without naming the file). Stores the semantic fusion weight with the best MRR; `search()` uses it, and a weight of 0 skips the embedding call. |
+| `agent-spec-bench.py [--model M]` | The same prompts on the same model with the harness on and off (`--bare`: no digest, no guard, no graph or search tool). Correct = the answer names every expected string in `.agent-spec/eval/agent-bench.jsonl`. |
+
+The **Showcase** page (`/showcase`, `GET /api/showcase`) puts these together: the A/B result per
+prompt with links to both traces, the RAG accuracy table and its history across changes, tokens
+avoided and billed, rule pass rate, ranged-read share, tool error rate, latency, a per-model table
+and the latest prompts. Each figure is labelled measured, estimated or AI-judged.
+
+## Tokens saved by the raw-code rules
+
+Every chat shows what `/agent-spec-raw-code` and `/agent-spec-raw-code-full` saved, computed by
+`bin/aspec_platform/skill_savings.py` from the same spans as the Impact tab (bytes ÷ 4, estimated):
+
+| Lever | Priced as |
+|---|---|
+| Graph queries | one median indexed file per `graphify` query, minus its answer |
+| Ranged reads | the unread rest of each file read in a range |
+| Subagents | tool output that stayed in a subagent's own context |
+| Targeted edits | file size minus the edit, for each Edit instead of a rewrite |
+
+Because the context is re-read on every model call, each saving is also multiplied by the
+measured number of later model calls in that chat (later tool calls plus later requests): the
+"re-sends avoided" figure. A chat is in raw-code mode from the first `/agent-spec-raw-code*`
+request until `/agent-spec-verbose`. Where it shows: the **Impact** tab opens with a "This chat so
+far" card, each row of **Project › Sessions** carries a −N chip (⚡ when raw-code was on), and the
+**Showcase** leads with the board total, per-lever bars, the chats that saved the most and a
+raw-code vs plain comparison per Cursor request that used tools (the ratio appears only once each
+side has 5+ requests). `GET /api/skill-savings` returns the board; `session_savings` on a request
+and `savings` on a conversation carry the per-chat numbers.
+
+## Six spaces
 
 | Space | Question | Built from |
 |---|---|---|
-| **Live** (home) | What is my agent doing, and what did it do? | Request feed; orchestration graph (React Flow), waterfall, span inspector, responses, review, replay |
+| **Showcase** | What does the harness change? | Harness A/B on a local model, RAG accuracy (hit@k, MRR, tuned fusion), token ledger, efficiency and accuracy tiles, per-model table, latest prompts (`showcase.py`) |
+| **Console** | Can I ask the harnessed agent from here? | Streams a job from `/api/agent/sessions` over `/api/agent/jobs/<id>/stream`: tool chips, tokens, link to the trace; follow-ups resume the chat |
+| **Live** (home) | What is my agent doing, and what did it do? | Request feed; orchestration graph (React Flow), waterfall, span inspector, responses, outcome (measured signals + AI-judged quality), review, replay |
 | **Coach** | Where is it slow or wasteful? | p50/p95 per span kind and per tool, slowest spans (measured); top-3 issues with weekly trend and copyable fix prompts (AI-judged) |
 | **Learning** | Is it getting better? | Per fact: findings per session in the N reviewed sessions before vs after it was recorded |
+| **Ask** | Why was this built? What did Cursor change last session? Have we done this before? | Local index of code, docs, rules, memory, this workspace's requests and reviews (`retrieval.py`); cited sources (measured); copy-to-Cursor `/agent-spec-ask`; an answer only from a configured local model (AI-generated). See [`INTELLIGENCE-PLATFORM.md`](INTELLIGENCE-PLATFORM.md) |
 | **Project** | What does the harness know? | Skill catalog, knowledge graph with blast radius, skill panels, session history, runs, memory, health |
 
-Ctrl/⌘-K searches requests and skills. Settings holds the theme (dark, light, system).
+Ctrl/⌘-K searches requests and skills, and sends any text to Ask. Settings holds the theme (dark, light, system).
+
+## Impact tab
+
+Each request opens on **Impact**, which answers "what did agent-spec change here?" against a plain
+Cursor chat. It is computed by `bin/aspec_platform/impact.py` from the request's spans.
+
+| Card | Provenance | How |
+|---|---|---|
+| Tokens kept out of the chat | Estimated | Tool output that stayed in a subagent's own context, plus each graph query priced as one read of the median indexed file, plus the unread part of each ranged read. Bytes ÷ 4. |
+| raw-code-full rules | Measured | Graph before search, no whole-file reads in the main context, broad sweeps in subagents, tool output under 8,000 B, guard blocks. |
+| Memory injected | Measured | Facts the sessionStart digest injected, from `metrics/injections.jsonl` (recorded from 2026-11-15 on). |
+| What agent-spec adds | Measured | Rules, skills and subagent definitions from Cursor's own context breakdown: the fixed cost per model call. |
 
 ## Data sources and provenance
 

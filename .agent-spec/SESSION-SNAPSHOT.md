@@ -1,60 +1,64 @@
-## 2026-11-14 — Slice 6d/6e status check, high-effort code review, all 10 findings fixed
+## 2026-11-15 — Gap review of Slice 6g; skill drift sync; headless CLI requests named, closed and hidden
 
-### Done (uncommitted, on top of earlier uncommitted work on main)
-- **Status check.** Slice 6d (DV-000 to DV-062) and Slice 6e (CB-001 to CB-005) are all `[x]`, with an evidence file per row (CB rows share `docs/evidence/CB-001.md`). Before the review: pytest 383, vitest 18, build in budget, Playwright 7, all green. No code review of the uncommitted diff existed (no `06-REVIEW.md`, nothing under `.agent-spec/reviews/`).
-- **Review (`/code-review` high) of the uncommitted diff found 10 issues; all fixed:**
-  1. `hook_logs.backfill` re-appended every row the live hook had already written: the hook stamps `ts` in ms, Cursor's log in whole seconds, so the dedupe key never matched. The live `events.jsonl` had 10 of 27 postToolUse groups doubled. Now `_row_key()` compares `ts[:19]` plus every field except `id`, `ts`, `source`, `file_bytes`, `file_chars`, `ranged`.
-  2. The same function collapsed distinct same-second calls (`key_in` was event, generation, epoch). The key now includes the full input JSON.
-  3. `cursor_sessions._snapshot` copied Cursor's whole chat DB into `/tmp/agent-spec-cursor-snapshot` world-readable (0755/0644). Now `~/.cache/agent-spec/cursor-snapshot` (or `$XDG_CACHE_HOME`), dir 0700, file 0600; the legacy `/tmp` dir is removed on first use.
-  4. Concurrent `_snapshot` callers raced. Now a module lock, a unique temp copy with the WAL folded in (`journal_mode=DELETE`), then `os.replace`.
-  5. The stop hook re-read (on WSL, copied ~27 MB of) Cursor's store on every stop. Now at most one check per chat per `AGENT_SPEC_CONTEXT_CHECK_S` (default 300 s), stamped in `.agent-spec/metrics/context-checked/<id>`.
-  6. Under Cursor the hard cap is skipped by design (T-057); the debug log now records `allow-unobservable-over-cap`, and check B19 in `docs/PHASE1-VERIFICATION.md` was corrected (it still told testers to expect a denial in Cursor).
-  7. `list_conversations` now filters and pages before computing `session_context`; `_billed_by_session` takes a `sessions` filter (also used by `request_detail`).
-  8. Configured figures (0.1/1.25 weights, 5-call threshold, and carry/reset/saving/break-even derived from them) are now `estimated`, not `measured`, in `ContextMeter.tsx` and `Coach.tsx`; `budget()` returns `reset_threshold_calls` and `weighted_provenance: "estimated"`.
-  9. `cursor-event._read_extent` compares `content_length` (characters) with the file's characters (decoded up to 4 MB), not bytes.
-  10. The stop hook rejects a `conversation_id` not matching `^[\w.:-]{1,160}$` before using it in a file name.
-- Tests added: `test_hook_logs` (live row not duplicated, same-second calls kept), `test_cursor_event` (multibyte whole read), `test_session_end` (throttle, unsafe id), `test_traces` snapshot (0700 dir, 0600 file, no `-wal`/`.tmp` left), `test_pre_tool_use` (`allow-unobservable-over-cap`). After fixes: pytest 386, tsc clean, vitest 18, build `initial 153831 / 409600 bytes`, Playwright 7.
+### Done (uncommitted, on top of the uncommitted Slice 6f and 6g work)
+- **Gap review of Slice 6g.** Read the diff of `serve.py`, `ingest.py`, `traces.py`, `db.py`, `retrieval.py` and the `agent-spec-ask` skill. `agent-spec-lint-refs.py`: every path and skill name resolves. `agent-spec-ask` was missing from `~/.cursor/skills`, and the installed `agent-spec` and `agent-spec-session-review` were stale.
+- **HA-007 skill drift sync.** `bin/agent-spec-ensure.py` gains `skill_gaps()`: it compares each package skill directory, file by file, with `~/.cursor/skills`. When a skill is missing (the six `--lean` SDLC skills excepted) or different, it runs `install.sh --skills-only`, adding `--lean` when none of those six are installed. Output has a new `skills` key (`ok/needed/installed/failed`) and `skill_gaps`. `--check` and the `skills-sync` switch (new row in `automations.REGISTRY`) turn it into a report. It logs one `automation.jsonl` row. Ran it here: 3 skills installed, `check-install.sh` passes.
+- **PI-013 indexer symlink guard.** `retrieval.index_files` skips a file whose realpath leaves the project or is a secret path.
+- **DV-063 headless requests.** `cursor-agent --print` fires no `beforeSubmitPrompt` and no `stop`, so those requests showed "(prompt not captured)" and stayed RUNNING. `traces.transcript_queries()` reads the `<user_query>` blocks from the event's `transcript_path`: realpath under `~/.cursor` only, 8 MB cap, redacted, 500 chars, cached by mtime and size. `_Builder.recover_prompts()` assigns them only when a chat has exactly one query or as many queries as requests; it sets `prompt_source: transcript`. `finish(now_ms)` marks a request with no `stop` and no event for `AGENT_SPEC_TRACE_IDLE_S` (default 1800 s) as `incomplete`, `status_reason: no stop event`. `hook_traces` rebuilds its cache when a cached `running` request has gone idle.
+- **DV-064 CLI runs labelled and hidden.** Hook traces get `origin`: `cli` when `cursor_version` matches `CLI_BUILD` (cursor-agent's date-stamped build, e.g. `2026.11.11-b912975`), else `ide` (the IDE reports semver such as `3.6.21`). `_match` hides `cli` unless `origin=cli|all`. Facet `cli_runs`. `origin` is accepted by `serve.py` and `list_conversations`. Coach `lag`, `observe` skill usage and `retrieval.index_traces` exclude CLI runs. UI: "Show CLI runs (n)" toggle in `RequestFeed`, a "CLI runs" source in `ConversationList`, labels in `RequestView`. Live: 34 requests by default, 46 with CLI runs.
+- Tests: `tests/test_ensure.py` (+2), `tests/test_retrieval.py` (+1), `tests/test_traces.py` (+5), `tests/test_automations.py` (registry list). Final: fast platform suite 58, traces+retrieval 49, ensure 10, vitest 21, tsc clean, UI rebuilt.
+- `todo-plan.md` rows HA-007, DV-063, DV-064, PI-013 `[x]`; `CHANGELOG.md` entries for all four.
 
 ### Corrections to my own earlier work this session
-- My first status answer said Slice 6d/6e was implemented and green; it was, but "with review" was not true until this review ran. The ten findings above were all in the earlier uncommitted work, including CB-002 and DV-002/DV-060 code that had been marked `[x]`.
+- DV-063 first gave the CLI probe requests the probe prompts, which made scripted runs look like the user's own chats. The user asked where those prompts came from; DV-064 then labelled and hid them.
+- The transcript rule first required the query count to equal the request count. The CLI gives one query 2 or 3 generation ids, so 4 requests stayed blank. Extended: a single query names every request of its chat.
+- `pkill -f 'agent-spec-platform.py serve …'` matched its own shell and killed the command. Use `pkill -f '[a]gent-spec-platform.py serve'`.
+- The background selftest reported 1 failure in `test_automations`: it overlapped the `skills-sync` registry edit. The test now passes on its own; the full selftest was not re-run.
 
 ### Open
-- Duplicate rows already in `.agent-spec/metrics/events.jsonl` remain (the fix only stops new ones); counts for affected chats stay inflated until they are removed.
-- Installed copies in this clone are stale: `.cursor/hooks/agent-spec-cursor-session-end.py` and `agent-spec-cursor-pre-tool-use.py` differ from `hooks/`. Run `./install.sh` (also refreshes other registered workspaces).
-- Nothing committed; `npm run build` also rewrote `bin/aspec_platform/ui/dist/`. Earlier opens still stand: the context nudge has not fired in a real Cursor chat; T-058, CP-001, P3-001.
+- Full `bin/agent-spec-selftest.sh` not re-run after the fixes.
+- This repo's `.agent-spec/bin/aspec_platform` copy is older than `bin/` (no symlink guard): project copies refresh only on a VERSION change.
+- `~/.claude/skills/agent-spec-*` are August–October copies without the preflight section; `install.sh` installs into Cursor only.
+- Not run live in Cursor: `/agent-spec-ask`, and rubric 2.1.0 (still no review with a `quality` block). PI-009…PI-012 and the CP-001 live checks are still open.
+- One hook request (`8fc0f5bc…`, IDE 3.30.8) has no prompt and no `transcript_path`; it stays "(prompt not captured)".
+- Nothing committed. Dashboard running in the background on `127.0.0.1:8765`.
 
 ### Load next session
-`bin/aspec_platform/hook_logs.py` (`_row_key`, `backfill`), `bin/aspec_platform/cursor_sessions.py` (`_cache_dir`, `_snapshot`), `hooks/cursor-session-end.py` (`context_nudge`), `bin/aspec_platform/traces.py` (`list_conversations`).
+`bin/aspec_platform/traces.py` (`CLI_BUILD`, `transcript_queries`, `_Builder.recover_prompts`, `_Builder.finish`, `hook_traces`, `_match`), `bin/agent-spec-ensure.py` (`skill_gaps`, `ensure`), `ui-src/src/features/RequestFeed.tsx`, `todo-plan.md` Slice 6g.
 
-## 2026-11-14 (later) — Slice 6f: harness automation, one-command project readiness, Automations panel
+## 2026-11-15 (later) — Impact tab for the hackathon story; memory injections recorded; review and 10 fixes
 
-### Done (uncommitted, on top of earlier uncommitted work on main)
-- **Audit.** Every `bin/` script, hook and skill was checked for whether a hook runs it or someone has to remember to. Already automated: digest, doctor line and graph refresh at session start; git-hook re-indexing on checkout, merge and rewrite; receipts; the context nudge. Still manual: the snapshot, a mid-session re-index, snapshot rotation, gate transitions, saving learnings, CI.
-- **HA-001.** The long-chat `stop` follow-up is now exactly `/agent-spec-snapshot`, not a sentence asking for it (`hooks/cursor-session-end.py`).
-- **HA-002.** `hooks/cursor-event.py` writes `.agent-spec/.graph-dirty` after `afterFileEdit` or a `Shell`/`run_terminal_cmd`/`Write`/`Delete`/`delete_file` postToolUse. The next `stop`/`sessionEnd` spends the marker and starts `graphify-build.py --quiet` detached.
-- **HA-003.** `sessionEnd` runs `agent-spec-memory.py rotate` (3 s timeout, fail-open); `stop` does not.
-- **HA-004 dropped.** No auto-advance of SDLC gates: `skills/agent-spec-sdlc/SKILL.md` makes every gate a separate human approval, and a follow-up message is submitted without one.
-- **HA-005.** `bin/agent-spec-ensure.py`, run from the clone via `~/.cursor/skills/.algosec-agent-spec-root`. It registers the project when it is unregistered, its hooks are unmerged, its rules file is missing, or the rules file is older than `VERSION`; builds a missing graph; and prints one JSON line with `next: /agent-spec-onboard` when the installer's flag is set. `--check` / `AGENT_SPEC_AUTO_REGISTER=0` change nothing, and it refuses `$HOME` and `/`. It replaces the preflight prose in `agent-spec-raw-code-full` §0, the `agent-spec` router and `CURSOR.md`. Measured: first install 0.72 s, re-register on a stale stamp 540 ms.
-- **HA-006.** Project › Automations panel. Hooks and HA-005 append rows to `.agent-spec/metrics/automation.jsonl` and skip ids listed in `.agent-spec/automation.json` `disabled`. `GET/POST /api/automations` (`bin/aspec_platform/automations.py`, `serve.py`; POST behind token, origin and content-type guards). UI: `ui-src/src/pages/Automations.tsx`, the first Project tab: measured totals, a row and switch per automation, a run log. An environment opt-out locks its switch.
-- Tests: `tests/test_ensure.py` (8), `tests/test_automations.py` (5, added to `tests/platform-suites.txt`), new cases in `test_session_end.py` and `test_cursor_event.py`, a UI honesty case. Final: pytest 404, vitest 19, tsc clean, build `initial 153954 / 409600 bytes`, selftest and lint-refs green. API live-checked against `agent-spec-platform.py serve` on a scratch project.
-- `./install.sh` re-run: global skills in `~/.cursor/skills` and this repo's harness (`.cursor/hooks`, rules, `.agent-spec/bin`) are current; `./check-install.sh` passes. That resolves the previous section's "installed copies are stale" open.
-- Backlog: `todo-plan.md` Slice 6f, HA-001 to HA-006 (HA-004 `[-]`). Evidence: `docs/evidence/HA-001.md`. `CHANGELOG.md` updated.
+### Why
+The user ran the dashboard on a `/agent-spec-raw-code-full` request and could not explain the feature: no tokens saved on the request page, the trace looked like "grep, not graphify", and nothing showed memory or self-learning. Investigation: `/api/savings` existed only project-wide (Project → Sessions → Savings, 74,140 tokens estimated); Cursor's hook payloads carry no file content sizes (Read `out` = 82–107 B); graphify calls were drawn as "Shell"; receipts had `facts_injected: null` and `fact_injections` had no rows, so memory use was never recorded. In that trace, 61 of the tool calls (most Grep and Read) ran inside 2 `agent-spec-search` subagents; the main context had 6 calls, the first `graphify context`.
+
+### Done (uncommitted, on top of the uncommitted Slice 6f/6g work)
+- **Impact tab** (default tab on a request page): `bin/aspec_platform/impact.py` + `ui-src/src/features/Impact.tsx`, wired into `traces.request_detail` as `impact` (wrapped in try/except so it never breaks the page). Cards: tokens kept out of the chat vs plain Cursor (estimated: subagent-internal tool output, graph query priced as one median indexed file, unread part of ranged reads; bytes ÷ 4); raw-code-full rule checks (measured; `pass: null` = not applicable, left out of the score); memory injected; what agent-spec adds to the prompt (rules/skills/subagent definitions from Cursor's own context breakdown). On the raw-code-full review trace: 17,741 of 20,181 tokens kept out, 4 of 4 rules, harness fixed cost 11,017 tokens.
+- **Injected facts recorded.** `hooks/cursor-session-start.py` (copied to `.cursor/hooks/agent-spec-session-start.py`) parses the payload's `conversation_id` and appends `{ts, conversation_id, digest_bytes, facts}` to `.agent-spec/metrics/injections.jsonl`. `ingest.ingest_memory` matches lines to facts by `- [type] subject:` prefix (`match_facts`) into `fact_injections` for every trace of the conversation; `observe.learning` now joins `traces` as well as `requests`. The Impact tab reads injections.jsonl live (`impact.injection_row`), not the table.
+- **Graph queries named.** `traces.tool_category()` names a Shell call to `graphify-cli.py` / `agent-spec-memory.py` "graphify <sub>" / "memory <sub>" and stores `category`, `tool_name`, `read_chars`, `file_bytes` on tool spans.
+- **Read extent for ranged reads.** `hooks/cursor-event.py` records `read_chars` + `file_bytes` for explicit ranges via `_ranged_extent` (stat only, no decode).
+- Docs: `docs/DASHBOARD.md` "Impact tab" section; `CHANGELOG.md` entries.
+
+### Review (high effort) and fixes — all 10 fixed
+1. `ingest.ALL` ran memory before traces → injections joined stale traces; `traces` now precedes `memory`. 2. Impact read `fact_injections`, which the server never refreshes → reads injections.jsonl live. 3. Edit spans counted as "other". 4. `SEARCH_TOOL` prefix matched `search_replace`. 5. Any `read*` tool (ReadLints) counted as a file read. 6. Unknown `ranged` treated as whole-file. 7. "Guard rails held" always passed → removed from rules. 8. "Graph before search" failed requests that never searched → n/a. 9. `agent-spec-ensure.py` skill sync forced `--lean` when no lean skill was installed → `install.sh` now writes `~/.cursor/skills/.algosec-agent-spec-lean` on `--lean` and removes it on a full install; ensure passes `--lean` only when the marker exists. 10. Ranged reads decoded the whole file in the hook → stat only.
+- Tests: `tests/test_impact.py` (new, in `platform-suites.txt`), `tests/test_cursor_event.py` (+1), `tests/test_ensure.py` (+1), vitest Impact honesty test. Final: pytest 442 passed, fast platform 58, vitest 22, tsc clean, UI build within gzip budget.
 
 ### Corrections to my own earlier work this session
-- I first proposed auto-advancing SDLC gates from `stop` (item #4) and a separate stop-hook dispatcher. The gate rule above ruled out #4, and with #4 gone the existing follow-up order already picks one action, so no dispatcher was built.
-- HA-005 first logged its rows to `events.jsonl`. `traces.build_from_events` turns every row there into a conversation, so the rows moved to `metrics/automation.jsonl`.
-- I wrote the HA rows as `[x]` before the tests ran, then reset them to `[ ]` and closed them through the backlog CLI after the tests passed.
-- The panel's "Last 24 hours" label failed the honesty test (a digit outside provenance) and was renamed "Past day".
+- First Impact build defaulted to the Impact tab unconditionally and broke the DV-055 honesty test (it expects the Orchestration graph); the default is now Impact only when `impact` is present without an error.
+- Several Impact figures were plain text and failed the provenance (DV-005) check; all wrapped in `<Num>`, fact subjects marked `data-figure-exempt`.
+- My first ensure regression test expected a missing-lean-skills full install to stay without them; wrong — no marker means a full install, which correctly restores them.
+- Items 1–8 and 10 of the review were defects in code I wrote earlier the same session.
 
 ### Open
-- Nothing tested in a live Cursor chat: the slash-command follow-up, the graph refresh after edits, or the panel in a browser (Playwright is not installed). The tool names `Delete`, `delete_file` and `run_terminal_cmd` have not been seen in a recorded payload.
-- `install.sh` writes only `~/.cursor/skills`. The Claude Code copies in `~/.claude/skills` are older (this session's `agent-spec-raw-code-full` had no §0 preflight).
-- Not built from the audit: auto `/agent-spec-learn distill` on correction signals, a `preCompact` state write, CI or a pre-push test hook, a `ui/dist` staleness check.
-- Nothing committed; `npm run build` rewrote `bin/aspec_platform/ui/dist/` again. Earlier opens still stand: duplicate rows already in `events.jsonl`; the context nudge has not fired in a real chat; T-058, CP-001, P3-001.
-- User priority (hackathon): orchestration, efficiency, transparency and dashboard control come before new skills.
+- Not verified live: a new Cursor chat should show its injected facts on the Impact tab. Chats before 2026-11-15 have none (Cursor transcripts do not carry the digest; no backfill).
+- Existing `--lean` installs have no marker yet: the next skill sync adds the six SDLC skills back unless `./install.sh --lean` is re-run once.
+- "Kept out of the chat" is re-send savings in the parent context, not lower total billing: subagents still spend tokens. Say so when presenting.
+- Hackathon demo not run: same prompt in plain Cursor vs `/agent-spec-raw-code-full`, compare Impact tabs and Project → Sessions → Compare.
+- Untracked `retrieval.py`, `signals.py`, `skills/agent-spec-ask/` were outside the review (it covered `git diff HEAD` only).
+- Earlier opens still stand: full `bin/agent-spec-selftest.sh` not re-run; project `.agent-spec/bin/aspec_platform` copy older than `bin/`.
+- Nothing committed. Dashboard running on `127.0.0.1:8765` (token rotates per launch).
 
 ### Load next session
-`hooks/cursor-session-end.py` (`automation_enabled`, `log_automation`, `refresh_graph`, `rotate_snapshot`), `bin/agent-spec-ensure.py` (`registration_gaps`, `ensure`), `bin/aspec_platform/automations.py` (`REGISTRY`, `overview`, `set_enabled`), `ui-src/src/pages/Automations.tsx`.
+`bin/aspec_platform/impact.py` (`for_request`, `tool_rows`, `rule_checks`, `injection_row`, `injected_facts`), `bin/aspec_platform/traces.py` (`tool_category`, `request_detail`), `bin/aspec_platform/ingest.py` (`ALL`, `match_facts`, `_ingest_injections`), `hooks/cursor-session-start.py`, `ui-src/src/features/Impact.tsx`.
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -108,3 +112,9 @@
 - **2026-11-13 (night, 6) — T-057 closed live: preToolUse follows Cursor's harness** — T-057 ran live with `cursor-agent` 2026.11.11 (`--print --trust --model auto`, `AGENT_SPEC_HOOK_DEBUG=1`). Sli
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261114-073304.md`. Nothing is deleted.
 - **2026-11-13 (night, 7) — Slice 6e: measured context budget, stop-hook reset nudge, warm-resume digest** — Feature chosen from data, not the backlog. Slices 6c/6d had no open rows; the rest is Phase 3–5. `agent-spec-t
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261114-184939.md`. Nothing is deleted.
+- **2026-11-14 — Slice 6d/6e status check, high-effort code review, all 10 findings fixed** — Status check. Slice 6d (DV-000 to DV-062) and Slice 6e (CB-001 to CB-005) are all `[x]`, with an evidence file
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261115-095717.md`. Nothing is deleted.
+- **2026-11-14 (later) — Slice 6f: harness automation, one-command project readiness, Automations panel** — Audit. Every `bin/` script, hook and skill was checked for whether a hook runs it or someone has to remember t
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261115-115840.md`. Nothing is deleted.
+- **2026-11-14 (evening) — Slice 6g: project intelligence (local index, Ask space) and outcome quality** — Review against the "AI experience intelligence platform" brief. Traced hooks → `events.jsonl` → `ingest.py` → 

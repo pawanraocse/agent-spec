@@ -80,6 +80,18 @@ class CursorEventTest(unittest.TestCase):
         part = self._cursor_read(30000, 1200)
         self.assertIs(part["ranged"], True)
 
+    def test_explicit_range_records_size_without_reading_the_file(self):
+        path = os.path.join(self.root, "big.txt")
+        with open(path, "w") as fh:
+            fh.write("x" * 30000)
+        payload = fixture("postToolUse", self.root)
+        payload["tool_input"] = {"file_path": path, "offset": 10, "limit": 20}
+        payload["tool_output"] = json.dumps({"file_path": path, "content_length": 900})
+        row = self.run_hook(payload)[-1]
+        self.assertIs(row["ranged"], True)
+        self.assertEqual((row["read_chars"], row["file_bytes"]), (900, 30000))
+        self.assertNotIn("file_chars", row)
+
     def test_cursor_read_of_multibyte_file_is_whole(self):
         """Review fix: content_length counts characters, so it is compared with characters."""
         path = os.path.join(self.root, "cjk.txt")

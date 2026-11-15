@@ -29,3 +29,21 @@ test("live request, inspector, coach and learning", async ({ page }) => {
   await page.getByRole("link", { name: "Learning" }).click();
   await expect(page.getByText("narrow test runs").first()).toBeVisible();
 });
+
+// PI-005/PI-006: the background index answers a question about a past request, and the
+// request's Outcome tab shows measured signals.
+test("ask the project, then open the request's outcome", async ({ page }) => {
+  await page.goto("/?token=e2e");
+  await page.getByRole("link", { name: "Ask" }).click();
+  await page.getByLabel("Ask about this project").fill("login test fail");
+  await page.keyboard.press("Enter");
+  await expect(page.getByText("Sources")).toBeVisible();
+  await expect.poll(async () => page.getByText("Nothing matched").count(), { timeout: 10_000 }).toBe(0);
+  const hit = page.getByRole("link", { name: /why does the login test fail/ }).first();
+  await expect(hit).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copy prompt for Cursor" })).toBeVisible();
+  await hit.click();
+  await page.getByRole("tab", { name: /Outcome/ }).click();
+  await expect(page.getByText("Measured signals")).toBeVisible();
+  await expect(page.getByText("Verified after last edit")).toBeVisible();
+});

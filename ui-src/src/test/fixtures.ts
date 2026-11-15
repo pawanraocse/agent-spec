@@ -69,6 +69,19 @@ export const contextInfo = {
   billed: { requests: 2, input_total: 193809, output_total: 20, cache_read_share: 0.806, points: [36176, 157633], generations: ["gen-0", "gen-1"] },
 };
 requestDetail.context = contextInfo;
+(requestDetail as Record<string, unknown>).signals = {
+  trace_id: "gen-1", provenance: "measured", tool_calls: 4, tool_failures: { count: 1, span_ids: ["e6"] },
+  repeated_failures: [], missing_path_errors: { count: 0, span_ids: [] },
+  files_edited: { count: 1, files: ["/p/src/auth/login.py"], edit_spans: 1, churn: [] },
+  verification: { ran_after_last_edit: false, commands: [{ span_id: "e6", command: "npm test", status: "error" }] },
+  guard_blocks: 1, compactions: 0, subagents: { count: 1, failed: [] }, responded: true,
+  tokens: { input: 12000, output: 800, cache_read: 9000, cache_write: 0 }, rework_later: { files: [], later_edits: {} },
+};
+(requestDetail as Record<string, unknown>).quality = {
+  trace_id: "gen-1", overall: 3, summary: "Found the cause but left the failing test unaddressed.",
+  dimensions: { relevance: { score: 5, evidence: ["e8"], note: "answers the login question" },
+    verification: { score: 2, evidence: ["e6", "verification.ran_after_last_edit"] }, rework: { score: null } },
+};
 export const contextOverview = {
   floor: 18000, chats: 2, by_verdict: { reset: 1, carry: 1, fresh: 0 }, carried_tokens: 109000, reset_saving_per_call: 10200,
   breakeven_calls: 5, weights: { read: 0.1, write: 1.25 }, provenance: "measured", source: "fixture",
@@ -85,6 +98,17 @@ export const ROUTES: Record<string, unknown> = {
   ...V2_ROUTES,
   "/api/requests": requestList,
   "/api/requests/gen-1": requestDetail,
+  "/api/index": { ready: true, mode: "keyword", embedder: null, by_kind: { code: { sources: 12, chunks: 40 }, request: { sources: 3, chunks: 3 } },
+    vectors: {}, last: { ts: "2026-11-14T10:00:00.000Z", indexed: 0, unchanged: 15, removed: 0 } },
+  "/api/ask": { query: "why does login fail", mode: "keyword", warnings: [], answer: null,
+    cursor_prompt: "/agent-spec-ask why does login fail\n- [1] src/auth/login.py:10-40",
+    related: [{ path: "src/auth/session.py", relation: "imports a match" }],
+    hits: [
+      { chunk_id: 1, kind: "code", source: "src/auth/login.py", ref: "src/auth/login.py:10-40", title: "src/auth/login.py · login", start_line: 10, end_line: 40,
+        snippet: "def [[login]](user): retries = 3", matched_by: ["keyword"], rrf: 0.016 },
+      { chunk_id: 2, kind: "request", source: "gen-1", ref: "gen-1", title: "why does login fail", session_id: "conv-1",
+        ts: "2026-11-13T10:00:00.000Z", snippet: "Prompt: why does [[login]] fail", matched_by: ["keyword"], rrf: 0.015 },
+    ] },
   "/api/conversations": {
     total: 1, limit: 500, offset: 0, facets: { workspaces: ["/p"] },
     conversations: [{

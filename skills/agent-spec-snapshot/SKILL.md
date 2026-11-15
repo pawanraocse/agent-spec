@@ -22,9 +22,9 @@ description: >-
    and later reversed, and the reasoning behind them are its most valuable content, and an
    overwrite destroys all of it.
 4. **One snapshot file per repository.** Its location is the project's call (`.agent-spec/`
-   by default, repository root where `CLAUDE.md` says so) — but creating a second copy in
+   by default, repository root where `AGENTS.md` says so) — but creating a second copy in
    the other place fragments the history across two files, which is the failure this rule
-   prevents. Check `CLAUDE.md` before writing.
+   prevents. Check `AGENTS.md` before writing.
 
 Record: what was built, what broke, decisions locked or still open, **corrections made to
 your own earlier work**, and which files the next session should load.

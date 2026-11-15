@@ -33,6 +33,7 @@ Do not maintain a second roadmap or sprint list elsewhere. Supporting docs (`dem
 | Automation | Hooks + always-on rules run the harness; skills are agent instructions, not commands users memorize |
 | **AI-first (DEC-15)** | Build order: **rule/skill → hook (command or `prompt` type) → subagent/AI judgement writing a typed artifact → thin deterministic code**. Code only where it must be exact, fast, or secret-safe (see §AI-first principle). Supersedes DEC-14's Console scope |
 | **Request traces (DEC-16)** | A Cursor request is a trace keyed by `generation_id`; every step (skill, subagent, tool, guard, edit, response) is an OpenTelemetry-shaped span built only from documented hook fields. Four spaces: Live, Coach, Learning, Project. Coach findings come from `agent-spec-session-review`; Learning measures recurrence before vs after a fact. Design: `dashboard_overhaul.md` §14 |
+| **Project intelligence (DEC-17)** | The dashboard and the agent ask the project, and its AI history, through one local index (`retrieval.py`, migration 4): code, docs, rules, memory, this workspace's request traces and reviews; BM25 with identifier splitting, optional local embeddings fused by RRF, citations on every hit. Answers come from Cursor via `/agent-spec-ask`, or from a configured local model labelled AI-generated. Outcome quality is AI-judged (review rubric 2.1.0) over measured per-request signals (`signals.py`); no score in code. Reverses D-008's drop for this use only. Design: [`INTELLIGENCE-PLATFORM.md`](INTELLIGENCE-PLATFORM.md) |
 | UI | **Observe and verify.** Cursor is the console: the UI reads receipts, hook events and AI reviews; it does not re-implement chat, diff review or job running. Headless runs use Cursor Automations / cloud agents, not a custom daemon |
 | Demo | Dashboard showcases harness features (`demo.md` §1–8 built today; §9–10 Phase 2) |
 | BrandFactory | Pattern: nearest reference → delta → gated verify; not 39-agent port |
@@ -110,7 +111,7 @@ Phase 1 (v1.1.0)            Phase 2 (v2.0.0)            Phase 3 (v3.0.0)        
 │ • Memory         │Stabil. │ • Self-learning  │ Scale  │ • Registry       │ Auto-  │ • Cloud sandbox  │  Open  │ • 3P integrations│
 │ • Personas       │        │ • Dashboard UI   │        │ • Audit+comply   │ nomous │ • Routine synth  │  Eco-  │ • Community bots │
 │ • SDLC gates     │        │ • Data+DB        │        │ • Cross-org      │        │ • Env checkpoint │ system │ • Revenue model  │
-│ • 33 skills      │        │ • CI/CD headless │        │ • IDE-agnostic   │        │ • Risk-tier gate │        │ • Federation     │
+│ • 35 skills      │        │ • CI/CD headless │        │ • IDE-agnostic   │        │ • Risk-tier gate │        │ • Federation     │
 └──────────────────┘        │ • JIRA RCA       │        └──────────────────┘        │ • Handoff schema │        └──────────────────┘
                             └──────────────────┘                                    └──────────────────┘
 ```
@@ -322,6 +323,6 @@ Week  1 ── 3     4 ──────── 11    12 ───────�
 
 ---
 
-*Last updated: 2026-11-13 · Planning doc version: 3.2.0 (adds DEC-16, request traces)*
+*Last updated: 2026-11-14 · Planning doc version: 3.3.0 (adds DEC-17, project intelligence)*
 
 Algosec Cursor AI

@@ -1,6 +1,6 @@
 ---
 name: agent-spec-reviewer
-description: Reviews one Cursor conversation from its request traces and writes span-cited findings (rubric 2.0.0) to .agent-spec/metrics/reviews/<conversation_id>.json. Use for "review this session" so the trace reads stay out of the main context.
+description: Reviews one Cursor conversation from its request traces and writes span-cited findings (rubric 2.1.0, with per-request outcome quality) to .agent-spec/metrics/reviews/<conversation_id>.json. Use for "review this session" so the trace reads stay out of the main context.
 model: inherit
 ---
 

@@ -79,9 +79,76 @@ class BuilderTest(unittest.TestCase):
         self.assertEqual(by["e8"]["duration_ms"], 6000 - 5200, "response = gap since the previous step")
 
     def test_running_until_stop(self):
-        trs, spans = traces.build_from_events(hook_rows()[:4])
+        trs, spans = traces.build_from_events(hook_rows()[:4], now_ms=1_700_000_010_000)
         self.assertEqual(trs[0]["status"], "running")
         self.assertIsNone(next(s for s in spans if s["span_id"] == "e3")["end"])
+
+    def test_no_stop_and_idle_is_incomplete_not_running(self):
+        later = 1_700_000_000_000 + 2500 + traces.idle_ms() + 1
+        trs, spans = traces.build_from_events(hook_rows()[:4], now_ms=later)
+        self.assertEqual((trs[0]["status"], trs[0]["status_reason"]), ("incomplete", "no stop event"))
+        self.assertEqual(next(s for s in spans if s["kind"] == "prompt")["status"], "incomplete")
+        self.assertIsNotNone(next(s for s in spans if s["span_id"] == "e3")["end"])
+
+    def headless(self, home, queries, gens):
+        """A `cursor-agent --print` run: tool rows only, plus Cursor's transcript on disk."""
+        d = os.path.join(home, ".cursor", "projects", "p", "agent-transcripts", "conv-h")
+        os.makedirs(d)
+        path = os.path.join(d, "conv-h.jsonl")
+        with open(path, "w") as fh:
+            for q in queries:
+                fh.write(json.dumps({"role": "user", "message": {"content": [{"type": "text", "text":
+                         "<timestamp>Friday</timestamp>\n<user_query>\n%s\n</user_query>" % q}]}}) + "\n")
+                fh.write(json.dumps({"role": "assistant", "message": {"content": [{"type": "text", "text": "ok"}]}}) + "\n")
+        return [{"conversation_id": "conv-h", "generation_id": g, "id": "h%d" % i, "transcript_path": path,
+                 "ts": traces.iso(1_700_000_000_000 + i * 60000), "event": "postToolUse", "tool_name": "Read",
+                 "duration_ms": 5, "status": "ok"} for i, g in enumerate(gens)]
+
+    def with_home(self):
+        home = tempfile.mkdtemp()
+        old = os.environ.get("HOME")
+        os.environ["HOME"] = home
+        self.addCleanup(lambda: (os.environ.__setitem__("HOME", old) if old else os.environ.pop("HOME", None),
+                                 shutil.rmtree(home, ignore_errors=True)))
+        return home
+
+    def test_headless_prompt_is_recovered_from_the_transcript(self):
+        home = self.with_home()
+        rows = self.headless(home, ["/agent-spec-debt log it", "second ask token=sk-live-abcdefghijklmnop1234"],
+                             ["g1", "g2"])
+        trs, spans = traces.build_from_events(rows, now_ms=1_700_000_100_000)
+        by = {t["trace_id"]: t for t in trs}
+        self.assertEqual(by["g1"]["prompt"], "/agent-spec-debt log it")
+        self.assertEqual(by["g1"]["prompt_source"], "transcript")
+        self.assertEqual(by["g1"]["skills"], ["agent-spec-debt"])
+        self.assertNotIn("sk-live-abcdefghijklmnop1234", by["g2"]["prompt"])
+        root = next(s for s in spans if s["span_id"] == "g1#root")
+        self.assertEqual((root["name"], root["attributes"]["prompt_source"]), ("/agent-spec-debt log it", "transcript"))
+
+    def test_cli_runs_are_labelled_and_hidden_unless_asked_for(self):
+        ide = hook_rows()  # cursor_version "2.1.0": the IDE
+        cli = [dict(r, cursor_version="2026.11.11-b912975") for r in hook_rows(conv="conv-c", gen="gen-c")]
+        trs, _ = traces.build_from_events(ide + cli, now_ms=1_700_000_010_000)
+        self.assertEqual({t["trace_id"]: t["origin"] for t in trs}, {"gen-1": "ide", "gen-c": "cli"})
+        shown = lambda f: sorted(t["trace_id"] for t in trs if traces._match(t, f))  # noqa: E731
+        self.assertEqual(shown({}), ["gen-1"])
+        self.assertEqual(shown({"origin": "all"}), ["gen-1", "gen-c"])
+        self.assertEqual(shown({"origin": "cli"}), ["gen-c"])
+
+    def test_one_query_names_every_request_of_its_chat(self):
+        home = self.with_home()
+        rows = self.headless(home, ["only one query"], ["g1", "g2"])
+        trs, _ = traces.build_from_events(rows, now_ms=1_700_000_100_000)
+        self.assertEqual([t["prompt"] for t in trs], ["only one query"] * 2)
+
+    def test_transcript_is_not_used_when_counts_disagree_or_path_is_outside_cursor(self):
+        home = self.with_home()
+        rows = self.headless(home, ["first", "second"], ["g1", "g2", "g3"])
+        trs, _ = traces.build_from_events(rows, now_ms=1_700_000_400_000)
+        self.assertTrue(all(t["prompt"] is None for t in trs), "3 requests, 2 queries: never guess")
+        outside = os.path.join(tempfile.mkdtemp(), "x.jsonl")
+        shutil.copy(rows[0]["transcript_path"], outside)
+        self.assertEqual(traces.transcript_queries(outside), [])
 
     def test_without_generation_id_each_prompt_is_a_trace(self):
         rows = [dict(r, generation_id=None) for r in hook_rows()] + \

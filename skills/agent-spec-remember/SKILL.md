@@ -42,7 +42,7 @@ is known from then on, without anyone reading anything.
 ## Do not record
 
 - Anything the repository already records: structure, past fixes, commit history, the
-  contents of `CLAUDE.md`.
+  contents of `AGENTS.md` and `.cursor/rules/`.
 - Anything true only inside this conversation.
 - A guess. A remembered fact is read as established every session; a wrong one is wrong
   forever, and cheaper never written than corrected later.

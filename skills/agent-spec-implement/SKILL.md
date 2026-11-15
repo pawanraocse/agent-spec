@@ -26,7 +26,8 @@ Edit-test-edit without a mechanism is the most expensive loop in this framework.
 
 ## Before writing anything
 
-1. Read the project's hard rules — `CLAUDE.md` and anything under `.agent-spec/rules/`.
+1. Read the project's hard rules — `AGENTS.md`, `.cursor/rules/` and anything under
+   `.agent-spec/rules/`.
    Every time. They are deliberately not restated inside this skill.
 2. Read `.agent-spec/coding-standards/SIMPLICITY-FIRST.md` and the language standard under
    `.agent-spec/coding-standards/languages/`.

@@ -26,7 +26,8 @@ Feature detail: [docs/features.md](docs/features.md).
 | **Memory** | Bounded facts + rotating `SESSION-SNAPSHOT.md`; digest on new chat |
 | **Hooks** | `sessionStart` digest (~1.7 KB); `preToolUse` input discipline (fail-open) |
 | **Measurement** | `agent-spec-tokens.py` on Cursor agent JSONL ([usage](#measuring-usage)) |
-| **Skills** | 42 commands → `~/.cursor/skills/` via `./install.sh` |
+| **Skills** | 43 commands → `~/.cursor/skills/` via `./install.sh` |
+| **Local mode** | `bin/agent-spec-live.py`: dashboard Console, Ask and an A/B benchmark on a free Ollama model, no Cursor plan ([details](docs/DASHBOARD.md#local-mode-no-cursor-plan-needed)) |
 | **Self-test** | `./bin/agent-spec-selftest.sh` — package shape, install idempotency, no Claude paths |
 
 ---
@@ -112,7 +113,7 @@ Every command is prefixed `agent-spec-` so transcripts show which workflow ran.
 `/agent-spec-intent` (optional, pre-gate) → `/agent-spec-requirements` →
 `/agent-spec-tech-spec` → `/agent-spec-prd` → `/agent-spec-hld` → `/agent-spec-lld` →
 `/agent-spec-implement` → `/agent-spec-review` → `/agent-spec-testing` →
-`/agent-spec-webapp-testing` (Playwright, under gate 7) → `/agent-spec-validation`
+`/agent-spec-validation`
 
 Gate 1's `## Complexity` block (scope × algorithm) selects **fast-track**, **algorithm**,
 **design**, or **full** — see `/agent-spec-sdlc`.
@@ -123,9 +124,8 @@ Gate 1's `## Complexity` block (scope × algorithm) selects **fast-track**, **al
 |---|---|
 | `/agent-spec` | Router when unsure |
 | `/agent-spec-persona <role>` | architect, security, qa, … — Absolute Rules bind |
-| `/agent-spec-review` · `-self-review` · `-solid-check` · `-debt` | Review, repair loop, SOLID, debt register |
-| `/agent-spec-doc-coauthoring` | Specs and proposals with a zero-context reader check |
-| `/agent-spec-prompt-audit` · `-skill-creator` · `-mcp-builder` | Audit prompts; author skills; MCP servers |
+| `/agent-spec-review` · `-self-review` · `-debt` | Review, repair loop, debt register |
+| `/agent-spec-ask <question>` | Cited answers from the local index: code, docs, memory, past requests and reviews |
 
 Maintainer index: [skills/README.md](skills/README.md).
 

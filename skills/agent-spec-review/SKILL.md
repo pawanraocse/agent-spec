@@ -23,8 +23,8 @@ Skip it for markdown and design documents — the graph indexes code and will re
   output, and **prefer to actually execute it** over reasoning about it.
 - **Docs, comments and docstrings lie.** Verify against source and against the current
   external authority, never against a comment that describes intent from two refactors ago.
-- **Check the project's own hard rules** — whatever `CLAUDE.md` and `.agent-spec/rules/`
-  declare non-negotiable for this repo. Those are blockers by definition.
+- **Check the project's own hard rules** — whatever `AGENTS.md`, `.cursor/rules/` and
+  `.agent-spec/rules/` declare non-negotiable for this repo. Those are blockers by definition.
 - **Failure paths.** Does an error path invent a plausible value instead of failing loudly
   or returning "unknown" with a stated reason? Silent fallbacks are the highest-cost defect
   class there is.

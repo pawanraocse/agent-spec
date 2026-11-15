@@ -55,7 +55,7 @@ Verified by reading code on 2026-10-29 `[CONFIDENCE: HIGH]`. Reuse these; do not
 | SDLC gate state (`feature,gate,gate_name,artifacts,history,updated`) | `bin/agent-spec-gate.py` → `.agent-spec/sdlc/STATE.json` | D-004 |
 | Hooks: `sessionStart` (digest), `preToolUse` (read discipline, returns `permission: deny`), `sessionEnd` + `stop` (receipt) — all fail-open | `hooks/cursor-*.py`, `.cursor/hooks.json` | S-002, D-002 |
 | Doctor, selftest [1]–[12], doc-ref linter | `bin/agent-spec-doctor.py`, `bin/agent-spec-selftest.sh`, `bin/agent-spec-lint-refs.py` | Every task's verification |
-| Subagents `agent-spec-search`, `agent-spec-verify`; 33 skills; 11 personas | `agents/`, `skills/`, `personas/` | O-009, O-016 |
+| Subagents `agent-spec-search`, `agent-spec-verify`; 35 skills; 11 personas | `agents/`, `skills/`, `personas/` | O-009, O-016 |
 
 **Absent** (verified by grep): SQLite, FastAPI, Pydantic, `workflow.yaml` runner, `experience.jsonl`,
 registry code, symbol/call/co-change edges, embeddings, `.env` blocking in `preToolUse`.

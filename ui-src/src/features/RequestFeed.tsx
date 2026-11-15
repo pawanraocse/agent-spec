@@ -46,6 +46,12 @@ export function RequestFeed({ data, loading, filters, setFilters, selected, onSe
           {select("status", facets?.statuses, "Any status")}
           {select("skill", facets?.skills, "Any skill")}
           {select("workspace", facets?.workspaces, "All workspaces")}
+          {facets?.cli_runs ? (
+            <label className="inline-flex h-7 items-center gap-1.5 text-xs text-muted-foreground" title="Chats run through cursor-agent (scripts, probes). They never appear in Cursor's chat list.">
+              <input type="checkbox" checked={filters.origin === "all"} onChange={(e) => setFilters({ ...filters, origin: e.target.checked ? "all" : undefined })} />
+              Show CLI runs (<Num p="measured">{facets.cli_runs}</Num>)
+            </label>
+          ) : null}
         </div>
         <p className="text-[11px] text-muted-foreground">
           {loading ? "Loading…" : <><Num p="measured">{data?.total ?? 0}</Num> requests</>}
@@ -77,7 +83,7 @@ export function RequestFeed({ data, loading, filters, setFilters, selected, onSe
                 {t.guard_count ? <span className="inline-flex items-center gap-0.5 text-k-guard"><ShieldAlert size={10} /><Num p="measured">{t.guard_count}</Num></span> : null}
                 {t.error_count ? <span className="inline-flex items-center gap-0.5 text-danger"><AlertTriangle size={10} /><Num p="measured">{t.error_count}</Num></span> : null}
                 {t.skills.slice(0, 2).map((s) => <Badge key={s} tone="accent" className="normal-case">{s.replace(/^agent-spec-/, "")}</Badge>)}
-                <span className="ml-auto">{SOURCE_LABEL[t.source] ?? t.source}</span>
+                <span className="ml-auto">{t.origin === "cli" ? "CLI run" : t.origin === "local" ? "Local model" : SOURCE_LABEL[t.source] ?? t.source}</span>
               </div>
             </button>
           </li>

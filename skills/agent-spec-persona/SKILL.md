@@ -40,7 +40,7 @@ architect, review this boundary".
 ## Scope
 
 A persona changes the lens, **not the task**. It does not override the standing project
-rules in `CLAUDE.md` and `.agent-spec/rules/`, and it does not replace whatever skill is
+rules in `AGENTS.md`, `.cursor/rules/` and `.agent-spec/rules/`, and it does not replace whatever skill is
 already running — `/agent-spec-review` as `security` is still a review.
 
 ## Hard stops

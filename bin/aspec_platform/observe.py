@@ -196,9 +196,10 @@ def learning(project, conn=None, window: int = 10) -> dict:
     if conn is not None:
         try:
             injections = [dict(r) for r in conn.execute(
-                "SELECT r.request_id, r.started, COUNT(f.fact_id) AS facts FROM requests r "
-                "JOIN fact_injections f ON f.request_id = r.request_id GROUP BY r.request_id "
-                "ORDER BY r.started DESC LIMIT 30")]
+                "SELECT f.request_id, COALESCE(r.started, t.start) AS started, COUNT(f.fact_id) AS facts "
+                "FROM fact_injections f LEFT JOIN requests r ON r.request_id = f.request_id "
+                "LEFT JOIN traces t ON t.trace_id = f.request_id GROUP BY f.request_id "
+                "ORDER BY started DESC LIMIT 30")]
         except Exception:
             injections = []
     tiers = {}
@@ -305,6 +306,7 @@ def catalog(project, conn=None) -> dict:
                             "self_described": bool(dash), "is_workflow": name.startswith("agent-spec-wf-")}
     try:
         all_t, _ = traces.all_traces(project, conn)
+        all_t = [t for t in all_t if t.get("origin") != "cli"]  # scripted CLI probes are not usage
     except Exception:
         all_t = []
     uses = {}

@@ -11,4 +11,7 @@ python3 -m pytest \
   tests/test_platform_data.py \
   tests/test_platform_db.py \
   tests/test_platform_guard.py \
+  tests/test_retrieval.py \
+  tests/test_local_agent.py \
+  tests/test_skill_savings.py \
   -q "$@"

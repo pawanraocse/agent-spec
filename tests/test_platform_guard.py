@@ -13,6 +13,10 @@ import os
 import unittest
 
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Entry points of the platform extra itself: the dashboard CLI, and the local-model console
+# backend, A/B benchmark and launcher built on it. No hook or core script imports these.
+PLATFORM_ENTRY_POINTS = {"agent-spec-platform.py", "agent-spec-ollama-agent.py", "agent-spec-bench.py",
+                         "agent-spec-live.py"}
 FORBIDDEN = {"aspec_platform", "hub", "fastapi", "uvicorn", "pydantic", "yaml", "httpx", "starlette"}
 
 
@@ -34,8 +38,8 @@ class GuardTest(unittest.TestCase):
             glob.glob(os.path.join(REPO_DIR, "hooks", "*.py"))
         self.assertTrue(core)
         for path in core:
-            if os.path.basename(path) == "agent-spec-platform.py":
-                continue  # the extra's own entry point (imports lazily, stdlib-only data layer)
+            if os.path.basename(path) in PLATFORM_ENTRY_POINTS:
+                continue  # the extra's own entry points (stdlib-only data layer); core never calls them
             if os.path.basename(path).startswith("agent-spec-run"):
                 continue  # orchestrator entry point (P2.37+) imports bin/hub on purpose
             bad = imports_of(path) & FORBIDDEN

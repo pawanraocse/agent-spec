@@ -2,16 +2,19 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, BookOpen, GraduationCap, Moon, Search, Settings, Sun, Monitor, Boxes } from "lucide-react";
+import { Activity, BookOpen, GraduationCap, Moon, Search, Settings, Sun, Monitor, Boxes, MessageSquareText, Trophy, Terminal } from "lucide-react";
 import { apiGet } from "../api/client";
 import type { RequestList } from "../api/traces";
 import { Sheet } from "./ui/sheet";
 import { cn } from "../lib/utils";
 
 const NAV = [
+  { to: "/showcase", label: "Showcase", icon: Trophy, hint: "What does the harness change? Tokens, accuracy, RAG, A/B" },
+  { to: "/console", label: "Console", icon: Terminal, hint: "Ask the harnessed agent from the dashboard (local Ollama)" },
   { to: "/", label: "Live", icon: Activity, hint: "What is my agent doing right now?" },
   { to: "/coach", label: "Coach", icon: GraduationCap, hint: "Where is it slow or wasteful?" },
   { to: "/learning", label: "Learning", icon: BookOpen, hint: "Is it getting better?" },
+  { to: "/ask", label: "Ask", icon: MessageSquareText, hint: "Why was this built? What changed last session?" },
   { to: "/project", label: "Project", icon: Boxes, hint: "What does the harness know?" },
 ];
 
@@ -59,6 +62,13 @@ function Palette({ open, setOpen }: { open: boolean; setOpen: (o: boolean) => vo
               </Command.Item>
             ))}
           </Command.Group>
+          {q.trim() ? (
+            <Command.Group heading="Ask" className="px-1 text-[10px] uppercase text-muted-foreground">
+              <Command.Item value={`ask ${q}`} onSelect={() => go(`/ask?q=${encodeURIComponent(q.trim())}`)} className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm normal-case text-foreground data-[selected=true]:bg-muted">
+                <MessageSquareText size={14} />Ask the project: <span className="truncate font-medium">{q}</span>
+              </Command.Item>
+            </Command.Group>
+          ) : null}
           <Command.Group heading="Requests" className="px-1 text-[10px] uppercase text-muted-foreground">
             {(reqs.data?.requests ?? []).map((r) => (
               <Command.Item key={r.trace_id} onSelect={() => go(`/requests/${encodeURIComponent(r.trace_id)}`)} className="cursor-pointer truncate rounded px-2 py-1.5 text-sm normal-case text-foreground data-[selected=true]:bg-muted">
@@ -79,7 +89,7 @@ function Palette({ open, setOpen }: { open: boolean; setOpen: (o: boolean) => vo
   );
 }
 
-/** DV-021 four-space shell: Live, Coach, Learning, Project; Cmd-K; settings drawer; status bar. */
+/** DV-021 shell: Live, Coach, Learning, Ask (PI-005), Project; Cmd-K; settings drawer; status bar. */
 export function Shell() {
   const [palette, setPalette] = useState(false);
   const [settings, setSettings] = useState(false);

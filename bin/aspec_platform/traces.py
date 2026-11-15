@@ -21,13 +21,17 @@ import json
 import os
 import re
 import threading
+import time
 from datetime import datetime, timezone
 
-from . import common, context_budget, handoffs
+from . import common, context_budget, handoffs, redact
 
 SKILL_PROMPT = re.compile(r"^\s*/([a-z0-9][a-z0-9_:-]{1,63})(?=\s|$)", re.I)
 SKILL_PATH = re.compile(r"skills(?:-cursor)?[/\\]([a-z0-9][a-z0-9_-]+)[/\\]SKILL\.md", re.I)
 EDIT_TOOL = re.compile(r"edit|write|search_replace|apply_patch|create_file|delete_file", re.I)
+# cursor-agent (the CLI) reports a date-stamped build such as "2026.11.11-b912975"; the IDE
+# reports a semver such as "3.6.21". Headless CLI chats appear nowhere in Cursor's UI.
+CLI_BUILD = re.compile(r"^\d{4}\.\d{1,2}\.\d{1,2}(?:\D|$)")
 SUBAGENT_TOOL = re.compile(r"^(task|task_v\d+|subagent|run_subagent)$", re.I)
 
 
@@ -96,8 +100,41 @@ class _Builder:
         if t["_parent"] == t["trace_id"] + "#root":
             t["_parent"] = sid  # later steps hang under the first skill the request invoked
 
-    def finish(self):
-        """Close open spans, compute durations and per-trace counts; returns (traces, spans)."""
+    def recover_prompts(self):
+        """Fill prompts Cursor never sent: headless `cursor-agent --print` fires no
+        beforeSubmitPrompt, but its transcript keeps every user query. A session's queries are
+        assigned in order only when their count equals the session's request count, or when
+        there is exactly one query (every request in the chat then answers it; the CLI can
+        give one query several generation ids). Otherwise nothing is guessed."""
+        by_session = {}
+        for t in self.traces.values():
+            by_session.setdefault(t["session_id"], []).append(t)
+        for session in by_session.values():
+            if all(t["prompt"] for t in session):
+                continue
+            path = next((t["transcript_path"] for t in session if t["transcript_path"]), None)
+            queries = transcript_queries(path)
+            if len(queries) == 1:
+                queries = queries * len(session)
+            elif len(queries) != len(session):
+                continue
+            session.sort(key=lambda t: t["start_ms"] if t["start_ms"] is not None else 0)
+            for t, text in zip(session, queries):
+                if t["prompt"] or not text:
+                    continue
+                t["prompt"], t["prompt_source"] = text, "transcript"
+                root = self.spans.get(t["trace_id"] + "#root")
+                if root:
+                    root["attributes"]["prompt_source"] = "transcript"
+                m = SKILL_PROMPT.match(text)
+                if m:
+                    self.skill(t, m.group(1), t["start_ms"], "transcript")
+
+    def finish(self, now_ms=None):
+        """Close open spans, compute durations and per-trace counts; returns (traces, spans).
+        A request with no `stop` and no activity for IDLE_MS is `incomplete`, not `running`:
+        headless runs and crashed chats never send `stop`."""
+        now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
         traces, spans = [], []
         by_trace = {}
         for s in self.spans.values():
@@ -105,16 +142,20 @@ class _Builder:
         for tid, t in self.traces.items():
             mine = by_trace.get(tid, [])
             end = t["end_ms"]
+            ended = t["stopped"]
+            if not ended and end is not None and now_ms - end > idle_ms():
+                ended = True
+                t["status"], t["status_reason"] = "incomplete", "no stop event"
             for s in mine:
                 if s["kind"] in ("prompt", "skill"):
                     s["end_ms"] = end
                     if s["kind"] == "prompt":
-                        s["status"] = t["status"] if t["stopped"] else "running"
+                        s["status"] = t["status"] if ended else "running"
                         if t["prompt"]:
                             s["name"] = t["prompt"][:200]
                 elif s["end_ms"] is None:
-                    s["end_ms"] = end if t["stopped"] else None
-                    if s["status"] == "running" and t["stopped"]:
+                    s["end_ms"] = end if ended else None
+                    if s["status"] == "running" and ended:
                         s["status"] = "incomplete"
                 if s["start_ms"] is not None and s["end_ms"] is not None:
                     s["duration_ms"] = max(0, s["end_ms"] - s["start_ms"])
@@ -139,7 +180,91 @@ class _Builder:
         return traces, spans
 
 
-def build_from_events(rows, source: str = "hook"):
+def idle_ms() -> int:
+    """How long a request may go without an event before it counts as ended (default 30 min)."""
+    try:
+        return max(60, int(os.environ.get("AGENT_SPEC_TRACE_IDLE_S", "1800"))) * 1000
+    except ValueError:
+        return 1800 * 1000
+
+
+TRANSCRIPT_MAX_BYTES = 8 << 20
+USER_QUERY = re.compile(r"<user_query>\s*(.*?)\s*</user_query>", re.S)
+_TRANSCRIPTS: dict = {}  # path -> (mtime_ns, size, queries)
+
+
+def transcript_queries(path) -> list:
+    """The user queries of one Cursor agent transcript, in order; [] when unreadable.
+    Only files under ~/.cursor are read: the path comes from a hook payload. Each query is
+    redacted and truncated like a hooked prompt."""
+    if not path or not str(path).endswith(".jsonl"):
+        return []
+    real = os.path.realpath(path)
+    allowed = os.path.realpath(os.path.join(os.path.expanduser("~"), ".cursor"))
+    if not real.startswith(allowed + os.sep):
+        return []
+    try:
+        st = os.stat(real)
+    except OSError:
+        return []
+    hit = _TRANSCRIPTS.get(real)
+    if hit and hit[:2] == (st.st_mtime_ns, st.st_size):
+        return hit[2]
+    queries = []
+    try:
+        with open(real, "rb") as fh:
+            raw = fh.read(TRANSCRIPT_MAX_BYTES)
+    except OSError:
+        return []
+    for line in raw.decode("utf-8", "replace").splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("role") != "user":
+            continue
+        content = (row.get("message") or {}).get("content")
+        parts = content if isinstance(content, list) else [{"type": "text", "text": content}]
+        text = "\n".join(p.get("text") or "" for p in parts if isinstance(p, dict) and p.get("type") == "text")
+        m = USER_QUERY.search(text)
+        text = m.group(1) if m else re.sub(r"<timestamp>.*?</timestamp>", "", text, flags=re.S).strip()
+        queries.append(redact.redact(text)[:500])
+    _TRANSCRIPTS[real] = (st.st_mtime_ns, st.st_size, queries)
+    return queries
+
+
+HARNESS_CLI = re.compile(r"(graphify-cli|agent-spec-memory)\.py\s+(--?[\w-]+|\w[\w-]*)?")
+SEARCH_TOOL = re.compile(r"^(grep|grep_search|glob|file_search|codebase_?search|semantic_?search|search)$", re.I)
+READ_TOOL_NAMES = ("read", "read_file", "readfile")
+
+
+def tool_category(name, target):
+    """(category, display name) for one tool call. A shell call to graphify-cli or the memory
+    CLI is a harness query, so it is named after the query ("graphify context") instead of
+    "Shell"; otherwise the display name is None and the tool keeps its own name."""
+    lowered = (name or "").lower()
+    if EDIT_TOOL.search(lowered):
+        return "edit", None   # before search: `search_replace` is an edit
+    if lowered in ("shell", "bash", "run_terminal_cmd", "terminal"):
+        m = HARNESS_CLI.search(str(target or ""))
+        if m:
+            sub = (m.group(2) or "").lstrip("-") or "query"
+            if m.group(1) == "graphify-cli":
+                return "graph", "graphify " + sub
+            return "memory", "memory " + sub
+        if re.match(r"\s*(grep|rg|git grep|find)\b", str(target or "")):
+            return "search", None
+        return "shell", None
+    if lowered in READ_TOOL_NAMES:   # exact: ReadLints and friends are not file reads
+        return "read", None
+    if SEARCH_TOOL.match(lowered):
+        return "search", None
+    if lowered in ("task",):
+        return "subagent", None
+    return "other", None
+
+
+def build_from_events(rows, source: str = "hook", now_ms=None):
     """events.jsonl rows (hooks/cursor-event.py + guard rows) -> (traces, spans)."""
     b = _Builder(source, "measured")
     sub_conv = {}   # subagent conversation id -> subagent span id
@@ -188,7 +313,10 @@ def build_from_events(rows, source: str = "hook"):
             if m and name.lower().startswith("read"):
                 b.skill(t, m.group(1), start, "skill_read")
             kind = "edit" if EDIT_TOOL.search(name) else "tool"
-            b.span(tid, sid, parent, kind, name, start, at, "error" if ev.endswith("Failure") else "ok", {
+            category, label = tool_category(name, row.get("target"))
+            b.span(tid, sid, parent, kind, label or name, start, at, "error" if ev.endswith("Failure") else "ok", {
+                "tool_name": name, "category": category, "read_chars": row.get("read_chars"),
+                "file_bytes": row.get("file_bytes"),
                 "target": row.get("target"), "tool_use_id": row.get("tool_use_id"), "ranged": row.get("ranged"),
                 "bytes_in": row.get("input_bytes"), "bytes_out": row.get("output_bytes"),
                 "duration_ms": row.get("duration_ms"), "failure_type": row.get("failure_type"),
@@ -244,7 +372,12 @@ def build_from_events(rows, source: str = "hook"):
         elif ev == "stop" and not in_sub:
             t["stopped"], t["status"] = True, row.get("status") or "completed"
             t["end_ms"] = at
-    return b.finish()
+    for t in b.traces.values():
+        version = t.get("cursor_version") or ""
+        # The local Ollama agent (dashboard Console, A/B bench) is asked on purpose: shown, not hidden.
+        t["origin"] = "local" if "ollama" in version else "cli" if CLI_BUILD.match(version) else "ide"
+    b.recover_prompts()
+    return b.finish(now_ms)
 
 
 def build_from_store(conversations):
@@ -373,11 +506,15 @@ def hook_traces(project: str):
             return [], []
         if entry["ino"] != st.st_ino or st.st_size < entry["offset"]:
             entry = {"offset": 0, "rows": [], "result": ([], []), "ino": st.st_ino}
-        if st.st_size != entry["offset"]:
+        # A quiet log never grows, so a request left `running` would never age into `incomplete`.
+        now = int(time.time() * 1000)
+        stale = any(t.get("status") == "running" and ms(t.get("end")) is not None
+                    and now - ms(t.get("end")) > idle_ms() for t in entry["result"][0])
+        if st.st_size != entry["offset"] or stale:
             rows, entry["offset"] = read_events(path, entry["offset"])
-            if rows:
+            if rows or stale:
                 entry["rows"].extend(rows)
-                built = build_from_events(entry["rows"])
+                built = build_from_events(entry["rows"], now_ms=now)
                 # cursor-event.py writes to <workspace_roots[0]>/.agent-spec, so this file's
                 # project is the workspace of every trace in it.
                 ws = os.path.abspath(project)
@@ -448,6 +585,13 @@ def persist(conn, traces, spans, sources) -> int:
 # ---- read API helpers (DV-012) ---------------------------------------------------------------
 
 def _match(t, f):
+    # Cursor CLI runs (scripted probes, `cursor-agent --print`) are hidden unless asked for:
+    # nobody sees those chats in Cursor, so they read as phantom requests (DV-064).
+    origin = f.get("origin")
+    if t.get("origin") == "cli" and origin not in ("cli", "all"):
+        return False
+    if origin in ("cli", "ide") and t.get("origin") != origin:
+        return False
     if f.get("session") and t["session_id"] != f["session"]:
         return False
     if f.get("status") and t.get("status") != f["status"]:
@@ -475,7 +619,8 @@ def list_requests(project, conn, filters, limit=50, offset=0):
     facets = {"sources": sorted({t["source"] for t in traces}),
               "skills": sorted({s for t in traces for s in t.get("skills") or []}),
               "statuses": sorted({t.get("status") or "" for t in traces}),
-              "workspaces": sorted({t.get("workspace") for t in traces if t.get("workspace")})}
+              "workspaces": sorted({t.get("workspace") for t in traces if t.get("workspace")}),
+              "cli_runs": sum(1 for t in traces if t.get("origin") == "cli")}
     return {"total": len(rows), "limit": limit, "offset": offset, "requests": rows[offset:offset + limit],
             "facets": facets}
 
@@ -587,7 +732,7 @@ def list_conversations(project, conn, filters, limit=200, offset=0):
     provenance is "measured" only when every request came from hooks."""
     traces, spans = all_traces(project, conn)
     usage = context_usage()
-    sub = {k: v for k, v in filters.items() if k in ("source", "workspace", "skill", "status", "since", "until")}
+    sub = {k: v for k, v in filters.items() if k in ("source", "workspace", "skill", "status", "since", "until", "origin")}
     groups = {}
     for t in traces:
         if not t.get("session_id") or not _match(t, sub):
@@ -627,9 +772,17 @@ def list_conversations(project, conn, filters, limit=200, offset=0):
     rows.sort(key=lambda r: r.get("end") or r.get("start") or "", reverse=True)
     page = rows[offset:offset + limit]
     if page:  # the budget is per chat: compute it for the rows returned, not every chat
-        billed = _billed_by_session(traces, spans, {r["session_id"] for r in page})
+        from . import skill_savings
+        wanted = {r["session_id"] for r in page}
+        billed = _billed_by_session(traces, spans, wanted)
+        by_trace = {}
+        for s in spans:
+            by_trace.setdefault(s["trace_id"], []).append(s)
         for row in page:
             row["context"] = session_context(project, row["session_id"], usage, billed.get(row["session_id"]))
+            sv = skill_savings.for_session(project, conn, groups[row["session_id"]], by_trace)
+            row["savings"] = {k: sv[k] for k in ("kept_out", "resend_avoided", "net_kept_out", "net_resend_avoided",
+                                                 "skill_cost", "raw_code")}
     return {"total": len(rows), "limit": limit, "offset": offset, "conversations": page,
             "facets": {"workspaces": sorted({r["workspace"] for r in rows if r.get("workspace")})}}
 
@@ -665,8 +818,27 @@ def request_detail(project, conn, trace_id):
                                                key=lambda t: t.get("start") or "")]
     ctx = session_context(project, trace["session_id"],
                           billed=_billed_by_session(traces, spans, {trace["session_id"]}).get(trace["session_id"]))
+    from . import signals
+    session = [t for t in traces if t["session_id"] == trace["session_id"]]
+    sids = {t["trace_id"] for t in session}
+    sig = signals.for_trace(trace, mine, session, [s for s in spans if s["trace_id"] in sids])
+    quality = next((q for q in (review or {}).get("quality") or [] if isinstance(q, dict) and q.get("trace_id") == trace_id), None)
+    from . import impact
+    try:
+        imp = impact.for_request(project, conn, trace, mine, ctx)
+    except Exception as exc:  # the impact view is additive; never take the request page down with it
+        imp = {"error": str(exc)[:200]}
+    from . import skill_savings
+    try:
+        by_trace = {}
+        for s in spans:
+            if s["trace_id"] in sids:
+                by_trace.setdefault(s["trace_id"], []).append(s)
+        saved = skill_savings.for_session(project, conn, session, by_trace)
+    except Exception as exc:  # additive, like impact
+        saved = {"error": str(exc)[:200]}
     return {"trace": trace, "spans": mine, "responses": responses, "review": review, "session_requests": siblings,
-            "context": ctx}
+            "context": ctx, "signals": sig, "quality": quality, "impact": imp, "session_savings": saved}
 
 
 # ---- Coach measurements (DV-041, exact) ------------------------------------------------------
@@ -683,7 +855,8 @@ def lag(project, conn, since=None):
     """Per span kind and per tool name: count, p50, p95, failure rate; plus guard blocks,
     compactions, whole-file reads and bytes handed to subagents. Exact over the spans shown."""
     traces, spans = all_traces(project, conn)
-    keep = {t["trace_id"]: t for t in traces if not since or (t.get("start") or "") >= since}
+    keep = {t["trace_id"]: t for t in traces
+            if t.get("origin") != "cli" and (not since or (t.get("start") or "") >= since)}
     spans = [s for s in spans if s["trace_id"] in keep]
 
     def group(key):

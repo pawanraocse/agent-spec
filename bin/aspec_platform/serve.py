@@ -21,7 +21,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, savings, cursor_sessions, traces
+from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, cursor_sessions, traces
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_DIR = os.path.join(HERE, "ui")
@@ -55,7 +55,7 @@ LIVE_BATCH = 200
 
 
 def _filters(params):
-    return {k: _first(params, k) for k in ("session", "status", "skill", "source", "workspace", "since", "until", "q")
+    return {k: _first(params, k) for k in ("session", "status", "skill", "source", "workspace", "since", "until", "q", "origin")
             if _first(params, k)}
 
 
@@ -64,6 +64,28 @@ def _offset(params) -> int:
         return max(0, int(_first(params, "offset") or 0))
     except (TypeError, ValueError):
         return 0
+
+
+def _search_filters(params) -> dict:
+    kinds = [k.strip() for k in (_first(params, "kind") or "").split(",") if k.strip()]
+    return {"kinds": kinds, "path": _first(params, "path"), "since": _first(params, "since"),
+            "session": _first(params, "session")}
+
+
+NOT_INDEXED = {"query": "", "mode": "keyword", "hits": [], "related": [], "answer": None,
+               "warnings": ["the project index is empty: run `agent-spec-platform.py ingest --what index`"]}
+
+
+def _search(project, conn, q, ask=False):
+    """PI-003: /api/search and /api/ask over the local index (read-only connection)."""
+    text = (_first(q, "q") or "").strip()[:500]
+    if not text:
+        raise ApiError(400, "q is required")
+    if conn is None:
+        return dict(NOT_INDEXED, query=text)
+    if ask:
+        return retrieval.ask(conn, project, text, _search_filters(q), _limit(q, 8))
+    return retrieval.search(conn, text, _search_filters(q), _limit(q, 10))
 
 
 # DV-012/DV-041/DV-050/DV-056: read routes that need the project as well as the connection.
@@ -77,7 +99,24 @@ PROJECT_ROUTES = {
     "/api/panels": lambda project, conn, q: observe.panels(project),
     "/api/catalog": lambda project, conn, q: observe.catalog(project, conn),
     "/api/automations": lambda project, conn, q: automations.overview(project),
+    "/api/showcase": lambda project, conn, q: showcase.overview(project, conn),
+    "/api/skill-savings": lambda project, conn, q: skill_savings.overview(project, conn, *traces.all_traces(project, conn)),
+    "/api/search": lambda project, conn, q: _search(project, conn, q),
+    "/api/ask": lambda project, conn, q: _search(project, conn, q, ask=True),
+    "/api/index": lambda project, conn, q: retrieval.index_status(conn) if conn is not None else {"ready": False, "by_kind": {}},
+    "/api/signals": lambda project, conn, q: _signals(project, conn, q),
 }
+
+
+def _signals(project, conn, q):
+    from . import signals
+    tid = _first(q, "trace")
+    if not tid:
+        raise ApiError(400, "trace is required")
+    out = signals.for_request(project, conn, tid)
+    if out is None:
+        raise ApiError(404, "request not found")
+    return out
 
 
 def _use_v2_ui() -> bool:
@@ -234,6 +273,21 @@ ROUTES = {"/api/health": api_health, "/api/runs": api_runs, "/api/tasks": api_ta
           "/api/cursor/workspaces": api_cursor_workspaces}
 
 
+CONSOLE_HINT = ("No agent backend: install cursor-agent, or start Ollama with a chat model "
+                "(ollama pull qwen3:4b). AGENT_SPEC_CONSOLE=1 enables the cursor-agent console explicitly.")
+
+
+def console_status() -> dict:
+    """The Agent Console is on when a local Ollama backend is available (no cost, nothing leaves
+    the machine) or when AGENT_SPEC_CONSOLE=1 enables cursor-agent (DEC-15). AGENT_SPEC_CONSOLE=0
+    turns it off."""
+    flag = os.environ.get("AGENT_SPEC_CONSOLE")
+    b = agent_exec.backend()
+    enabled = flag != "0" and b["kind"] is not None and (flag == "1" or b["kind"] == "ollama")
+    return {"enabled": enabled, "backend": b["kind"], "models": b["models"], "default_model": b["default_model"],
+            "endpoint": b["url"], "hint": None if enabled else CONSOLE_HINT}
+
+
 def make_handler(project: str, token: str):
     job_registry = agent_exec.JobRegistry(project)
     class Handler(BaseHTTPRequestHandler):
@@ -346,18 +400,27 @@ def make_handler(project: str, token: str):
                 payload = demo_seed.remove(project) if action == "remove" else demo_seed.seed(project)
                 return self._json(200, payload)
             if path == "/api/agent/sessions" or AGENT_MSG.match(path) or AGENT_CANCEL.match(path):
-                if os.environ.get("AGENT_SPEC_CONSOLE") != "1":
-                    return self._json(404, {"ok": False, "error": "console_frozen",
-                                            "hint": "Cursor chat is the console (DEC-15). Set AGENT_SPEC_CONSOLE=1 to enable headless CLI."})
+                if not console_status()["enabled"]:
+                    return self._json(404, {"ok": False, "error": "console_frozen", "hint": CONSOLE_HINT})
+            model_args = []
+            if body.get("model"):
+                if not isinstance(body["model"], str) or not agent_exec.MODEL_RE.match(body["model"]):
+                    return self._json(400, {"error": "invalid model"})
+                model_args = ["--model", body["model"]]
             if path == "/api/agent/sessions":
                 prompt = str(body.get("prompt") or "")
                 if len(prompt) > PROMPT_MAX:
                     return self._json(413, {"error": "prompt too large"})
+                if not prompt.strip():
+                    return self._json(400, {"error": "prompt required"})
                 mode = body.get("mode", "ask")
+                if mode not in ("ask", "plan", "agent"):
+                    return self._json(400, {"error": "invalid mode"})
                 argv = ["-p", "--mode", mode, "--output-format", "stream-json", "--stream-partial-output",
                         "--trust", "--workspace", project, prompt] if mode in ("ask", "plan") else [
                     "-p", "--output-format", "stream-json", "--stream-partial-output", "--trust",
                     "--workspace", project, prompt]
+                argv = argv[:-1] + model_args + argv[-1:]
                 if mode == "agent" and not body.get("confirm"):
                     return self._json(400, {"error": "confirm required for agent mode"})
                 job_id = common.ulid()
@@ -369,8 +432,12 @@ def make_handler(project: str, token: str):
             if (m := AGENT_MSG.match(path)):
                 chat_id = m.group(1)
                 prompt = str(body.get("prompt") or "")
+                if len(prompt) > PROMPT_MAX:
+                    return self._json(413, {"error": "prompt too large"})
+                if not prompt.strip():
+                    return self._json(400, {"error": "prompt required"})
                 argv = ["-p", "--resume", chat_id, "--output-format", "stream-json", "--stream-partial-output",
-                        "--trust", "--workspace", project, prompt]
+                        "--trust", "--workspace", project] + model_args + [prompt]
                 job_id = common.ulid()
                 result = job_registry.launch(job_id, argv, project)
                 return self._json(200 if result.get("ok") else 503, result)
@@ -415,6 +482,11 @@ def make_handler(project: str, token: str):
                 return self._json(401, {"error": "missing or invalid token"})
             if path == "/api/live":
                 return self._live_stream(query)
+            if path == "/api/agent/status":
+                return self._json(200, console_status())
+            stream = AGENT_STREAM.match(path)
+            if stream:
+                return self._agent_stream(stream.group(1))
             if path in PROJECT_ROUTES or REQUEST_ID.match(path):
                 try:
                     conn = self._open()
@@ -422,7 +494,10 @@ def make_handler(project: str, token: str):
                     conn = None  # hook traces still come from events.jsonl
                 try:
                     if path in PROJECT_ROUTES:
-                        payload = PROJECT_ROUTES[path](project, conn, query)
+                        try:
+                            payload = PROJECT_ROUTES[path](project, conn, query)
+                        except ApiError as exc:
+                            return self._json(exc.status, {"error": exc.message})
                     else:
                         payload = traces.request_detail(project, conn, unquote(REQUEST_ID.match(path).group(1)))
                         if payload is None:
@@ -484,6 +559,24 @@ def make_handler(project: str, token: str):
             except sqlite3.Error:
                 return self._json(503, {"error": "database unavailable; run: agent-spec-platform.py ingest"})
             self._json(200, payload)
+
+        def _agent_stream(self, job_id):
+            """Server-Sent Events for one Agent Console job (session, message, tool, done frames).
+            Loopback + token guards already ran; the job id is only a registry key."""
+            if job_registry.get(job_id) is None:
+                return self._json(404, {"error": "job not found"})
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", _csp())
+            self.end_headers()
+            try:
+                for frame in job_registry.iter_sse(job_id):
+                    self.wfile.write(frame.encode("utf-8"))
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass  # the browser closed the stream; the job keeps running and is still traced
 
         def _live_stream(self, query):
             """DV-013: Server-Sent Events tail of events.jsonl. Loopback + token guards already ran.
@@ -609,6 +702,13 @@ def start_hook_log_backfill(project: str, every: float = 60.0):
                         from . import ingest
                         ingest.run(project, ["traces"])
                         seen = now
+                except Exception:  # noqa: BLE001 — an unreadable store must never stop the server
+                    pass
+            # PI-002: keep the project index current (stamps make an unchanged pass cheap).
+            if os.environ.get("AGENT_SPEC_INDEX", "1") != "0":
+                try:
+                    from . import ingest
+                    ingest.run(project, ["index"])
                 except Exception:  # noqa: BLE001 — an unreadable store must never stop the server
                     pass
             time.sleep(every)

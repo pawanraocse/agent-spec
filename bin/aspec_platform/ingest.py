@@ -27,7 +27,7 @@ import time
 from collections import Counter
 from datetime import datetime, timezone
 
-from . import common, db
+from . import common, db, retrieval
 from .redact import redact, redact_obj
 
 READ_CAP = 20000  # same threshold as bin/agent-spec-receipt.py
@@ -39,7 +39,8 @@ TASK_TOOLS = ("Task", "Subagent")
 SKILL_TOOLS = ("Skill", "skill")
 PROMPT_CAP = 2000
 VALUE_CAP = 300
-ALL = ("events", "transcripts", "gates", "memory", "graph", "quarantine", "runs", "experiences", "traces")
+# "traces" precedes "memory": memory joins injected facts to the traces of each conversation.
+ALL = ("events", "transcripts", "gates", "traces", "memory", "graph", "quarantine", "runs", "experiences", "index")
 
 _USER_QUERY = re.compile(r"<user_query>\s*(.*?)\s*</user_query>", re.S)
 _TS_TAG = re.compile(r"<timestamp>.*?</timestamp>\s*", re.S)
@@ -454,8 +455,10 @@ def _fact_files(directory):
 def ingest_memory(conn, project) -> dict:
     """Mirror local + team facts into memory_facts; note receipt fact counts in `meta`.
 
-    Limitation: receipts only record HOW MANY facts the digest carried (`facts_injected`), not which,
-    so `fact_injections` gets no rows; the per-session counts go to meta keys `receipt:<session>`."""
+    Receipts only record HOW MANY facts the digest carried (`facts_injected`); those counts go to
+    meta keys `receipt:<session>`. WHICH facts comes from `metrics/injections.jsonl`, written by the
+    sessionStart hook: each line is matched to a fact by its `- [type] subject:` prefix and joined to
+    every trace of that conversation in `fact_injections`."""
     spec = common.agent_spec_dir(project)
     stats = {"facts": 0, "added": 0, "removed": 0, "receipts": 0, "errors": 0}
     before = {r[0] for r in conn.execute("SELECT fact_id FROM memory_facts")}
@@ -486,7 +489,53 @@ def ingest_memory(conn, project) -> dict:
                      ("receipt:%s" % (receipt.get("session_id") or os.path.basename(path)[:-5]),
                       json.dumps({"facts_injected": receipt["facts_injected"], "ts": receipt.get("ts")})))
         stats["receipts"] += 1
+    stats["injections"] = _ingest_injections(conn, spec, rows)
     return stats
+
+
+def injection_rows(spec):
+    """Rows of metrics/injections.jsonl (sessionStart hook); malformed lines are skipped."""
+    out = []
+    path = os.path.join(spec, "metrics", "injections.jsonl")
+    if not os.path.isfile(path):
+        return out
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            try:
+                row = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(row, dict) and row.get("conversation_id"):
+                out.append(row)
+    return out
+
+
+def match_facts(lines, facts):
+    """Digest lines -> fact ids. `facts` is {fact_id: (type, subject)}; longest subject wins."""
+    prefixes = sorted(((("- [%s] %s:" % (t, subj)), fid) for fid, (t, subj) in facts.items() if subj),
+                      key=lambda p: -len(p[0]))
+    found = []
+    for line in lines or []:
+        fid = next((f for pre, f in prefixes if str(line).startswith(pre)), None)
+        if fid and fid not in found:
+            found.append(fid)
+    return found
+
+
+def _ingest_injections(conn, spec, rows) -> int:
+    facts = {fid: (r[1], r[2]) for fid, r in rows.items()}
+    by_conv = {}
+    for row in injection_rows(spec):
+        by_conv.setdefault(str(row["conversation_id"]), set()).update(match_facts(row.get("facts"), facts))
+    conn.execute("DELETE FROM fact_injections")
+    n = 0
+    for conv, fids in by_conv.items():
+        tids = [r[0] for r in conn.execute("SELECT trace_id FROM traces WHERE session_id = ?", (conv,))]
+        for tid in tids:
+            for fid in fids:
+                conn.execute("INSERT OR IGNORE INTO fact_injections (fact_id, request_id) VALUES (?,?)", (fid, tid))
+                n += 1
+    return n
 
 
 # ---- graph + quarantine (append-only JSONL, UNIQUE keys make re-reads idempotent) -------------
@@ -749,7 +798,7 @@ def ingest_traces(conn, project) -> dict:
 
 SOURCES = {"traces": ingest_traces, "events": ingest_events, "transcripts": ingest_transcripts, "gates": ingest_gates, "memory": ingest_memory,
            "graph": ingest_graph, "quarantine": ingest_quarantine, "runs": ingest_runs,
-           "experiences": ingest_experiences, "compact": ingest_compact}
+           "experiences": ingest_experiences, "compact": ingest_compact, "index": retrieval.ingest_index}
 
 
 def run(project, what, rebuild=False) -> dict:

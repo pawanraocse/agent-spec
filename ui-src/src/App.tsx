@@ -9,7 +9,9 @@ import { Live } from "./pages/Live";
 const Coach = lazy(() => import("./pages/Coach").then((m) => ({ default: m.Coach })));
 const Learning = lazy(() => import("./pages/Learning").then((m) => ({ default: m.Learning })));
 const Project = lazy(() => import("./pages/Project").then((m) => ({ default: m.Project })));
+const Ask = lazy(() => import("./pages/Ask").then((m) => ({ default: m.Ask })));
 const Console = lazy(() => import("./pages/Console").then((m) => ({ default: m.Console })));
+const Showcase = lazy(() => import("./pages/Showcase").then((m) => ({ default: m.Showcase })));
 const L = ({ children }: { children: ReactNode }) => <Suspense fallback={<p className="p-6 text-xs text-muted-foreground">Loading…</p>}>{children}</Suspense>;
 
 const client = new QueryClient({ defaultOptions: { queries: { staleTime: 5_000, retry: 1, refetchOnWindowFocus: false } } });
@@ -33,8 +35,10 @@ export default function App() {
               <Route path="requests/:id" element={<Live />} />
               <Route path="coach" element={<L><Coach /></L>} />
               <Route path="learning" element={<L><Learning /></L>} />
+              <Route path="ask" element={<L><Ask /></L>} />
               <Route path="project/*" element={<L><Project /></L>} />
               <Route path="console" element={<L><Console /></L>} />
+              <Route path="showcase" element={<L><Showcase /></L>} />
               <Route path="sessions" element={<Moved to="/project/sessions" />} />
               <Route path="sessions/:id" element={<Moved to="/project/sessions/:id" />} />
               <Route path="runs" element={<Moved to="/project/runs" />} />

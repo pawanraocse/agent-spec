@@ -7,6 +7,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Num } from "../components/Num";
 import { cn, copyText, fmtMs, relTime } from "../lib/utils";
+import { SavingsChip } from "./SkillSavings";
 import { ContextChip } from "./ContextMeter";
 
 const SOURCE_LABEL: Record<string, string> = { hook: "Live hooks", cursor_store: "Cursor history", run: "Workflow run", demo_seed: "Demo seed" };
@@ -25,7 +26,7 @@ export function ConversationList() {
   const [source, setSource] = useState("");
   const [workspace, setWorkspace] = useState("");
   const [open, setOpen] = useState<string | null>(null);
-  const { data, isLoading, error } = useConversations({ q, source, workspace });
+  const { data, isLoading, error } = useConversations(source === "cli" ? { q, workspace, origin: "cli" } : { q, source, workspace });
   const rows = data?.conversations ?? [];
   const totals = useMemo(() => rows.reduce((a, c) => ({ requests: a.requests + c.requests, tools: a.tools + c.tool_count, subs: a.subs + c.subagent_count }), { requests: 0, tools: 0, subs: 0 }), [rows]);
 
@@ -58,6 +59,7 @@ export function ConversationList() {
           <option value="">All sources</option>
           <option value="hook">Live hooks</option>
           <option value="cursor_store">Cursor history</option>
+          <option value="cli">CLI runs (hidden by default)</option>
         </select>
         <select aria-label="Workspace" value={workspace} onChange={(e) => setWorkspace(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs">
           <option value="">All workspaces</option>
@@ -103,6 +105,7 @@ function Row({ c, open, onToggle }: { c: Conversation; open: boolean; onToggle: 
             {c.guard_count ? <span className="inline-flex items-center gap-0.5 text-k-guard"><ShieldAlert size={10} /><Num p="measured">{c.guard_count}</Num></span> : null}
             {c.error_count ? <span className="inline-flex items-center gap-0.5 text-danger"><AlertTriangle size={10} /><Num p="measured">{c.error_count}</Num></span> : null}
             <span><Num p={c.provenance}>{fmtMs(c.duration_ms)}</Num></span>
+            {c.savings ? <SavingsChip kept={c.savings.kept_out} resend={c.savings.resend_avoided} raw={c.savings.raw_code.active} /> : null}
             {c.context?.budget ? <ContextChip b={c.context.budget} /> : null}
             {c.skills.slice(0, 3).map((s) => <Badge key={s} tone="accent" className="normal-case">{s.replace(/^agent-spec-/, "")}</Badge>)}
             <span className="ml-auto">{c.sources.map((s) => SOURCE_LABEL[s] ?? s).join(" + ")}</span>

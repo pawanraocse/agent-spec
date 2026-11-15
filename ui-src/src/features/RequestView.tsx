@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { copyText, fmtMs } from "../lib/utils";
 import { statusTone } from "./kinds";
 import { ContextChip, ContextMeter } from "./ContextMeter";
+import { Impact } from "./Impact";
+import { Outcome } from "./Outcome";
 import { SpanInspector } from "./SpanInspector";
 import { timeBounds } from "./spanTree";
 import { Waterfall } from "./Waterfall";
@@ -80,7 +82,10 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
           <div className="min-w-0">
             <p className="line-clamp-2 text-sm font-medium" title={trace.prompt ?? ""}>{(trace.prompt || "(prompt not captured)").slice(0, 200)}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-              <Badge tone={statusTone(trace.status)}>{trace.status}</Badge>
+              <span title={trace.status_reason ?? undefined}><Badge tone={statusTone(trace.status)}>{trace.status}</Badge></span>
+              {trace.status_reason ? <span>{trace.status_reason}</span> : null}
+              {trace.origin === "cli" ? <span title="Run through cursor-agent (a script or probe); it never appears in Cursor's chat list">CLI run</span> : null}
+              {trace.prompt_source === "transcript" ? <span title="Cursor fired no prompt hook (headless run); the prompt was read from its transcript">prompt from transcript</span> : null}
               <span>Duration <Num p={prov} className="text-foreground">{fmtMs(trace.duration_ms)}</Num></span>
               {trace.model ? <span>Model <span className="font-mono text-foreground">{trace.model}</span></span> : null}
               {trace.cursor_version ? <span>Cursor <span className="font-mono text-foreground">{trace.cursor_version}</span></span> : null}
@@ -111,16 +116,21 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
         ) : null}
       </header>
 
-      <Tabs defaultValue="graph" className="flex min-h-0 flex-1 flex-col">
+      <Tabs defaultValue={detail.impact && !detail.impact.error ? "impact" : "graph"} className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-border px-5 py-2">
           <TabsList>
+            <TabsTrigger value="impact">Impact {detail.impact?.tokens?.avoided ? <Badge tone="success" className="ml-1"><Num p="estimated">−{detail.impact.tokens.avoided.toLocaleString()}</Num></Badge> : null}</TabsTrigger>
             <TabsTrigger value="graph">Orchestration</TabsTrigger>
             <TabsTrigger value="waterfall">Waterfall</TabsTrigger>
             <TabsTrigger value="responses">Responses <span className="ml-1 text-muted-foreground"><Num p="measured">{responses.length}</Num></span></TabsTrigger>
             <TabsTrigger value="context">Context {detail.context?.budget?.verdict === "reset" ? <Badge tone="danger" className="ml-1">reset</Badge> : null}</TabsTrigger>
+            <TabsTrigger value="outcome">Outcome {detail.signals && detail.signals.tool_failures.count ? <Badge tone="danger" className="ml-1"><Num p={detail.signals.provenance}>{detail.signals.tool_failures.count}</Num></Badge> : null}{detail.quality?.overall ? <Badge tone="accent" className="ml-1"><Num p="ai_judged">{detail.quality.overall}/5</Num></Badge> : null}</TabsTrigger>
             <TabsTrigger value="review">Review {review?.grade ? <Badge tone="accent" className="ml-1">{review.grade}</Badge> : null}</TabsTrigger>
           </TabsList>
         </div>
+        <TabsContent value="impact" className="scrollbar-thin min-h-0 flex-1 overflow-auto px-5 py-4">
+          <Impact impact={detail.impact} session={detail.session_savings} />
+        </TabsContent>
         <TabsContent value="graph" className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-[300px] flex-[3] border-b border-border">
             <Suspense fallback={<div className="p-6 text-xs text-muted-foreground">Loading graph…</div>}>
@@ -153,6 +163,9 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
           {detail.context ? <div className="max-w-3xl"><ContextMeter ctx={detail.context} currentGeneration={trace.trace_id} /></div> : (
             <Empty title="No context data for this chat" hint="Cursor reports the context size in its local store, and token counts on afterAgentResponse; neither was found for this conversation." />
           )}
+        </TabsContent>
+        <TabsContent value="outcome" className="scrollbar-thin min-h-0 flex-1 overflow-auto px-5 py-4">
+          <Outcome signals={detail.signals} quality={detail.quality} spans={spans} reviewPrompt={reviewPrompt} onPick={(s) => setSel({ span: s, members: [s] })} />
         </TabsContent>
         <TabsContent value="review" className="scrollbar-thin min-h-0 flex-1 overflow-auto px-5 py-4">
           {!review ? (

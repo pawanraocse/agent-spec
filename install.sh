@@ -51,7 +51,10 @@ LEAN_EXCLUDE="agent-spec-intent agent-spec-hld agent-spec-lld agent-spec-prd age
 LEGACY_SKILLS="api architect data devops hld implement index-project investigate lld \
 onboard perf prd qa query-graph raw-code refactor requirements review reviewer sdlc \
 security self-review snapshot solid-check tech-spec testing trim-noise dense verbose \
-validation writer debt agent-spec-dense agent-spec-trim-noise"
+validation writer debt agent-spec-dense agent-spec-trim-noise \
+agent-spec-doc-coauthoring agent-spec-mcp-builder agent-spec-skill-creator \
+agent-spec-webapp-testing agent-spec-solid-check agent-spec-prompt-audit \
+agent-spec-ai-architect agent-spec-synthesize-routine"
 
 usage() {
   sed -n '3,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -115,7 +118,7 @@ prune_legacy() {
   [ -d "${dest}" ] || return 0
   for name in ${LEGACY_SKILLS}; do
     if [ -f "${dest}/${name}/SKILL.md" ] \
-       && grep -q "^name: \"${name}\"$" "${dest}/${name}/SKILL.md" 2>/dev/null; then
+       && grep -qE "^name: \"?${name}\"?$" "${dest}/${name}/SKILL.md" 2>/dev/null; then
       rm -rf "${dest:?}/${name}"
       removed=$((removed + 1))
     fi
@@ -151,6 +154,8 @@ copy_skills() {
     fi
     installed=$((installed + 1))
   done
+  # ensure.py's skill sync reads this to keep a lean install lean (and a full one full).
+  if [ "$LEAN" = "true" ]; then : > "${dest}/.algosec-agent-spec-lean"; else rm -f "${dest}/.algosec-agent-spec-lean"; fi
   echo -e "  ${GREEN}✓${NC} ${installed} skills → ${dest}$([ "$skipped" -gt 0 ] && echo "   (${skipped} lean-excluded)")"
 }
 

@@ -1,4 +1,9 @@
-"""Thin Cursor CLI job runner for the Agent Console (DEC-14). Stdlib only."""
+"""Thin agent CLI job runner for the Agent Console (DEC-14). Stdlib only.
+
+The backend is `cursor-agent` when it is installed, else the local Ollama agent
+(`bin/agent-spec-ollama-agent.py`), which speaks the same `-p --output-format stream-json`
+protocol and fires the project's Cursor hooks so its requests are traced like Cursor's.
+AGENT_SPEC_AGENT_BACKEND=cursor|ollama pins one; the default is auto."""
 from __future__ import annotations
 
 import json
@@ -12,11 +17,14 @@ import sys
 import threading
 import time
 
-from . import common, db, redact
+from . import common, db, ollama, redact
 
 MAX_JOBS = 2
 JOB_TIMEOUT_S = 15 * 60
 STDERR_CAP = 64 * 1024
+HERE = os.path.dirname(os.path.abspath(__file__))
+OLLAMA_AGENT = os.path.normpath(os.path.join(HERE, "..", "agent-spec-ollama-agent.py"))
+MODEL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,79}$")
 
 
 def _cli_argv(cli: str, argv: list[str]) -> list[str]:
@@ -25,10 +33,37 @@ def _cli_argv(cli: str, argv: list[str]) -> list[str]:
     return [cli] + list(argv)
 
 
-def _resolve_cli() -> str | None:
+def backend() -> dict:
+    """{"kind": "fake"|"cursor-agent"|"ollama"|None, "cli", "models", "default_model", "url"}."""
     fake = os.environ.get("AGENT_SPEC_FAKE_CURSOR_AGENT")
     if fake and os.path.isfile(fake):
-        return fake
+        return {"kind": "fake", "cli": fake, "models": [], "default_model": None, "url": None}
+    choice = (os.environ.get("AGENT_SPEC_AGENT_BACKEND") or "auto").strip().lower()
+    # auto: cursor-agent only when the paid console is enabled explicitly (DEC-15); otherwise the
+    # free local backend, so an exhausted Cursor plan never blocks the dashboard console.
+    if choice == "cursor" or (choice == "auto" and os.environ.get("AGENT_SPEC_CONSOLE") == "1"):
+        cli = _cursor_cli()
+        if cli:
+            return {"kind": "cursor-agent", "cli": cli, "models": [], "default_model": None, "url": None}
+    if choice in ("auto", "ollama") and os.path.isfile(OLLAMA_AGENT):
+        found = ollama.probe()
+        names = [m["name"] for m in ollama.chat_models(found["models"])]
+        if found["reachable"] and names:
+            pinned = os.environ.get("AGENT_SPEC_OLLAMA_MODEL")
+            default = next((n for n in (pinned, "qwen2.5-coder:7b", "qwen3:4b") if n in names), names[0])
+            return {"kind": "ollama", "cli": OLLAMA_AGENT, "models": names, "default_model": default, "url": found["url"]}
+    if choice == "auto":
+        cli = _cursor_cli()
+        if cli:
+            return {"kind": "cursor-agent", "cli": cli, "models": [], "default_model": None, "url": None}
+    return {"kind": None, "cli": None, "models": [], "default_model": None, "url": None}
+
+
+def _resolve_cli() -> str | None:
+    return backend()["cli"]
+
+
+def _cursor_cli() -> str | None:
     for name in ("cursor-agent", "agent"):
         path = shutil.which(name)
         if not path:
@@ -224,7 +259,11 @@ class JobRegistry:
                     frame = self._frame_from_ndjson(extra, job)
                     if frame:
                         yield frame
-                yield "event: done\ndata: {\"exit_code\": %d}\n\n" % (job.exit_code or -1)
+                code = job.exit_code if job.exit_code is not None else -1
+                end = {"exit_code": code, "final": True}
+                if code != 0 and job.stderr:
+                    end["stderr"] = redact.redact(job.stderr[-600:])
+                yield "event: done\ndata: %s\n\n" % json.dumps(end)
                 return
             if stdout_done_at and (time.time() - stdout_done_at) > 30 and job.ended is None:
                 break
@@ -240,9 +279,15 @@ class JobRegistry:
             text = redact.redact(line)
             return "event: message\ndata: %s\n\n" % json.dumps({"chunk": text})
         typ = obj.get("type") or obj.get("event") or "message"
+        ids = {k: obj[k] for k in ("session_id", "request_id", "model") if isinstance(obj.get(k), str)}
+        if typ == "system":
+            return "event: session\ndata: %s\n\n" % json.dumps(ids) if ids else ""
         if typ == "result":
             text = redact.redact(obj.get("result") or obj.get("text") or "")
-            return "event: done\ndata: %s\n\n" % json.dumps({"chunk": text, "exit_code": 0})
+            done = dict(ids, chunk=text, exit_code=0)
+            if isinstance(obj.get("usage"), dict):
+                done["usage"] = {k: v for k, v in obj["usage"].items() if isinstance(v, int)}
+            return "event: done\ndata: %s\n\n" % json.dumps(done)
         if "tool" in typ:
             name = obj.get("name") or (obj.get("tool") or {}).get("name") or "tool"
             call_id = obj.get("call_id") or obj.get("id") or ""
@@ -256,8 +301,10 @@ class JobRegistry:
             }
             return "event: tool\ndata: %s\n\n" % json.dumps(tool_payload)
         chunk = obj.get("text") or obj.get("message") or obj.get("delta") or ""
-        if isinstance(chunk, dict):
-            chunk = chunk.get("text", "")
+        if isinstance(chunk, dict):  # cursor-agent: {"message": {"content": [{"type": "text", "text": ...}]}}
+            parts = chunk.get("content")
+            chunk = "".join(p.get("text", "") for p in parts if isinstance(p, dict)) if isinstance(parts, list) \
+                else chunk.get("text", "")
         chunk = redact.redact(str(chunk))
         if chunk:
             return "event: message\ndata: %s\n\n" % json.dumps({"chunk": chunk})
