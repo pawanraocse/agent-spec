@@ -1,31 +1,3 @@
-## 2026-11-15 — Gap review of Slice 6g; skill drift sync; headless CLI requests named, closed and hidden
-
-### Done (uncommitted, on top of the uncommitted Slice 6f and 6g work)
-- **Gap review of Slice 6g.** Read the diff of `serve.py`, `ingest.py`, `traces.py`, `db.py`, `retrieval.py` and the `agent-spec-ask` skill. `agent-spec-lint-refs.py`: every path and skill name resolves. `agent-spec-ask` was missing from `~/.cursor/skills`, and the installed `agent-spec` and `agent-spec-session-review` were stale.
-- **HA-007 skill drift sync.** `bin/agent-spec-ensure.py` gains `skill_gaps()`: it compares each package skill directory, file by file, with `~/.cursor/skills`. When a skill is missing (the six `--lean` SDLC skills excepted) or different, it runs `install.sh --skills-only`, adding `--lean` when none of those six are installed. Output has a new `skills` key (`ok/needed/installed/failed`) and `skill_gaps`. `--check` and the `skills-sync` switch (new row in `automations.REGISTRY`) turn it into a report. It logs one `automation.jsonl` row. Ran it here: 3 skills installed, `check-install.sh` passes.
-- **PI-013 indexer symlink guard.** `retrieval.index_files` skips a file whose realpath leaves the project or is a secret path.
-- **DV-063 headless requests.** `cursor-agent --print` fires no `beforeSubmitPrompt` and no `stop`, so those requests showed "(prompt not captured)" and stayed RUNNING. `traces.transcript_queries()` reads the `<user_query>` blocks from the event's `transcript_path`: realpath under `~/.cursor` only, 8 MB cap, redacted, 500 chars, cached by mtime and size. `_Builder.recover_prompts()` assigns them only when a chat has exactly one query or as many queries as requests; it sets `prompt_source: transcript`. `finish(now_ms)` marks a request with no `stop` and no event for `AGENT_SPEC_TRACE_IDLE_S` (default 1800 s) as `incomplete`, `status_reason: no stop event`. `hook_traces` rebuilds its cache when a cached `running` request has gone idle.
-- **DV-064 CLI runs labelled and hidden.** Hook traces get `origin`: `cli` when `cursor_version` matches `CLI_BUILD` (cursor-agent's date-stamped build, e.g. `2026.11.11-b912975`), else `ide` (the IDE reports semver such as `3.6.21`). `_match` hides `cli` unless `origin=cli|all`. Facet `cli_runs`. `origin` is accepted by `serve.py` and `list_conversations`. Coach `lag`, `observe` skill usage and `retrieval.index_traces` exclude CLI runs. UI: "Show CLI runs (n)" toggle in `RequestFeed`, a "CLI runs" source in `ConversationList`, labels in `RequestView`. Live: 34 requests by default, 46 with CLI runs.
-- Tests: `tests/test_ensure.py` (+2), `tests/test_retrieval.py` (+1), `tests/test_traces.py` (+5), `tests/test_automations.py` (registry list). Final: fast platform suite 58, traces+retrieval 49, ensure 10, vitest 21, tsc clean, UI rebuilt.
-- `todo-plan.md` rows HA-007, DV-063, DV-064, PI-013 `[x]`; `CHANGELOG.md` entries for all four.
-
-### Corrections to my own earlier work this session
-- DV-063 first gave the CLI probe requests the probe prompts, which made scripted runs look like the user's own chats. The user asked where those prompts came from; DV-064 then labelled and hid them.
-- The transcript rule first required the query count to equal the request count. The CLI gives one query 2 or 3 generation ids, so 4 requests stayed blank. Extended: a single query names every request of its chat.
-- `pkill -f 'agent-spec-platform.py serve …'` matched its own shell and killed the command. Use `pkill -f '[a]gent-spec-platform.py serve'`.
-- The background selftest reported 1 failure in `test_automations`: it overlapped the `skills-sync` registry edit. The test now passes on its own; the full selftest was not re-run.
-
-### Open
-- Full `bin/agent-spec-selftest.sh` not re-run after the fixes.
-- This repo's `.agent-spec/bin/aspec_platform` copy is older than `bin/` (no symlink guard): project copies refresh only on a VERSION change.
-- `~/.claude/skills/agent-spec-*` are August–October copies without the preflight section; `install.sh` installs into Cursor only.
-- Not run live in Cursor: `/agent-spec-ask`, and rubric 2.1.0 (still no review with a `quality` block). PI-009…PI-012 and the CP-001 live checks are still open.
-- One hook request (`8fc0f5bc…`, IDE 3.30.8) has no prompt and no `transcript_path`; it stays "(prompt not captured)".
-- Nothing committed. Dashboard running in the background on `127.0.0.1:8765`.
-
-### Load next session
-`bin/aspec_platform/traces.py` (`CLI_BUILD`, `transcript_queries`, `_Builder.recover_prompts`, `_Builder.finish`, `hook_traces`, `_match`), `bin/agent-spec-ensure.py` (`skill_gaps`, `ensure`), `ui-src/src/features/RequestFeed.tsx`, `todo-plan.md` Slice 6g.
-
 ## 2026-11-15 (later) — Impact tab for the hackathon story; memory injections recorded; review and 10 fixes
 
 ### Why
@@ -59,6 +31,45 @@ The user ran the dashboard on a `/agent-spec-raw-code-full` request and could no
 
 ### Load next session
 `bin/aspec_platform/impact.py` (`for_request`, `tool_rows`, `rule_checks`, `injection_row`, `injected_facts`), `bin/aspec_platform/traces.py` (`tool_category`, `request_detail`), `bin/aspec_platform/ingest.py` (`ALL`, `match_facts`, `_ingest_injections`), `hooks/cursor-session-start.py`, `ui-src/src/features/Impact.tsx`.
+
+## 2026-11-15 (evening) — Local Ollama mode, Console restored, Showcase, RAG eval, per-chat skill savings; committed and pushed
+
+### Why
+The user has no usable Cursor plan: every `cursor-agent` prompt returns `ActionRequiredError: You've hit your usage limit`, so the dashboard could not issue a query and request `145456cc…` stayed `incomplete` with only a `beforeSubmitPrompt` event (no tools, so no tokens saved). They asked for an end-to-end test on their Ollama, the Console stream back, a dashboard that shows tokens, efficiency, accuracy, RAG and new prompts, then a token cut and per-chat raw-code savings "on the board".
+
+### Done — committed as `b59e517` on `main` (fast-forward of `feat/harness-automation`) and pushed to `origin/main`
+- **Local agent**: `bin/agent-spec-ollama-agent.py` takes `cursor-agent -p` arguments, runs a read-only tool loop (ranged `Read`, `Grep`, `graphify_context`, `search_project`) on Ollama and fires the project's `.cursor/hooks.json` hooks with Cursor-shaped payloads (sessionStart digest, beforeSubmitPrompt, preToolUse deny honoured, postToolUse, afterAgentResponse with Ollama token counts, stop). `cursor_version` `ollama-agent/1.0` → `traces.py` origin `local` (shown in Live, labelled "Local model"). `--bare` drops the digest, guard and harness tools for A/B. Result line carries `request_id`, `usage`, `tools`, `step_usage`.
+- **Ollama discovery**: `bin/aspec_platform/ollama.py` — loopback, else the WSL default gateway (`172.28.32.1:11434` here) counts as local; anything else needs `AGENT_SPEC_ALLOW_REMOTE_MODELS=1`. Probe cache keyed on the candidate list; a pinned `AGENT_SPEC_OLLAMA_URL` is returned without probing so `_post_json` still refuses remote URLs. `retrieval.py` uses it.
+- **Console**: `GET /api/agent/jobs/<id>/stream` (dropped in `7b9d249`) restored as `serve._agent_stream`; `GET /api/agent/status`; optional `model` (validated by `agent_exec.MODEL_RE`), prompt/mode validation. `agent_exec.backend()`: auto = Ollama unless `AGENT_SPEC_CONSOLE=1` (then cursor-agent); `AGENT_SPEC_CONSOLE=0` turns the Console off. SSE frames: `session`, `message`, `tool`, `done` (exit code 0 was reported as -1 before; fixed). `Console.tsx` is a streaming chat; Showcase and Console are in the nav.
+- **RAG**: `rag-embed` (2,762 chunks with `nomic-embed-text`, pulled into the Windows Ollama), nomic task prefixes (`#task-prefix` vector name), `rag_eval.py` + `rag-eval` CLI (golden set written by `qwen2.5-coder:7b` at `.agent-spec/eval/rag-golden.jsonl`, history in `meta`), weighted RRF with a self-tuned semantic weight (`rag:fusion`, 0 skips the embed call). 60 cases: keyword hit@5 65% MRR 0.480, semantic 48%/0.405, plain hybrid 55%/0.457, tuned ×0.25 60%/0.496.
+- **A/B bench**: `bin/agent-spec-bench.py` + `.agent-spec/eval/agent-bench.jsonl` (6 "which file" prompts). **Launcher** `bin/agent-spec-live.py` (Ollama check, embed pull, ingest, embed, eval, serve with `AGENT_SPEC_EMBED`/`AGENT_SPEC_LLM`).
+- **Token cut** in the local agent (measured with `step_usage`): stop at the first repeated call, `slim_digest` (stack line + facts sharing 2+ words with the prompt), short tool schema, one search hit per file with its purpose line (code/doc/memory only, no `tests/` unless asked), `compact_history` to 280 chars, 80-line default Read, temperature 0. Harness arm 65,568 → 21,646 prompt tokens, 5/6 → 4/6 correct; bare 2/6 on 17,058.
+- **Showcase** (`showcase.py`, `/api/showcase`, `Showcase.tsx`) and **per-chat skill savings** (`skill_savings.py`, `/api/skill-savings`, `SkillSavings.tsx`): levers graph / ranged reads / subagents / targeted edits (new), × later model calls in the chat, minus the raw-code SKILL.md size re-sent the same way. On the Impact tab ("This chat so far"), Sessions rows (−N chip, ⚡ when raw-code on) and the Showcase hero. Board: 68,694 kept out, 187,335 re-sends avoided, 96,370 skill cost, net ≈98,280 (estimated). raw-code vs plain ratio hidden until each side has 5+ comparable requests (now 1 vs 16).
+- Tests: `tests/test_local_agent.py` (20), `tests/test_skill_savings.py` (5), both in `platform-suites.txt` and `test-platform-fast.sh`. 34 of 34 suites, 22 vitest, tsc clean, UI within gzip budget. Live browser walkthroughs (Playwright) on Console, request Impact, Showcase, Sessions: no page errors.
+- Docs: `docs/DASHBOARD.md` "Local mode", "Tokens saved by the raw-code rules", six spaces; `README.md` Local mode row; `CHANGELOG.md`.
+
+### Corrections to my own earlier work this session
+- Auto backend first picked `cursor-agent` because it is installed; it is over its plan limit, so auto now prefers Ollama.
+- `qwen3:4b` narrated its reasoning; default changed to `qwen2.5-coder:7b`.
+- The agent looped on one identical Read (pulled toward `ui-src/src/lib/utils.ts` by the digest's "most depended on" line) and stopped empty; added repeat skipping and a tool-free final answer.
+- `ollama.probe()` cached across `AGENT_SPEC_OLLAMA_URL` changes; keyed the cache on the candidates.
+- The first token cut over-reached: "answer as soon as a hit matches" plus search hits from past requests (earlier answers to the bench prompts, leaking into the A/B) took the harness to 0/6, then 3/6. Restored the confirm-step instruction and excluded request/review kinds.
+- The Console's own `2026.11.15-ollama` version matched DV-064's CLI pattern and would have hidden Console requests; renamed and given origin `local`.
+- First skill-savings comparison claimed 6.5×, then 16.2× on n=1 raw-code request; restricted to comparable hook requests with tools and gated at 5 per side. It also ignored the skill's own cost until the user's own earlier question ("does raw-code cost more?") prompted netting it out.
+- `pkill -f "agent-spec-platform.py serve"` killed my own shell twice (already a remembered gotcha).
+- `tests/test_platform_guard.py` gained a `PLATFORM_ENTRY_POINTS` allowlist for the three new scripts; they import `aspec_platform` by design.
+
+### Open
+- Cursor itself cannot use the local Ollama: its custom-model setting routes through Cursor's servers (needs a public tunnel; not set up, and Agent mode may still need a plan [MEDIUM]).
+- Memory over cap: 64 facts vs 40 (`INDEX.md` 9,737 B vs 8,000). The doctor's `prune --older-than 90` is a no-op (all facts recent, constraints never pruned). Needs a decision: merge facts or raise the limit. This session added 3 facts.
+- graphify `context` ranks `bin/agent-spec-tokens.py` for "tokens saved" questions; only the agent's `search_project` works around it.
+- The local agent's slimmed digest differs from what the sessionStart hook records in `injections.jsonl` (the hook records the full digest's facts).
+- The A/B is 6 prompts; the before/after token numbers mix temperature 0.2 and 0. RAG history entries were measured on different golden sets (30 vs 60 cases).
+- Full `bin/agent-spec-selftest.sh` still not re-run; project `.agent-spec/bin/aspec_platform` copy still older than `bin/`.
+- `feat/harness-automation` is local only (same commit as `main`). Dashboard may still be running via `agent-spec-live.py` on `127.0.0.1:8765`.
+
+### Load next session
+`bin/agent-spec-ollama-agent.py` (`main`, `slim_digest`, `compact_history`, `project_search`, `final_answer`), `bin/aspec_platform/skill_savings.py` (`for_session`, `overview`), `bin/aspec_platform/agent_exec.py` (`backend`), `bin/aspec_platform/serve.py` (`console_status`, `_agent_stream`), `bin/aspec_platform/rag_eval.py`, `ui-src/src/features/SkillSavings.tsx`, `ui-src/src/pages/Showcase.tsx`.
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -118,3 +129,5 @@ The user ran the dashboard on a `/agent-spec-raw-code-full` request and could no
 - **2026-11-14 (later) — Slice 6f: harness automation, one-command project readiness, Automations panel** — Audit. Every `bin/` script, hook and skill was checked for whether a hook runs it or someone has to remember t
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261115-115840.md`. Nothing is deleted.
 - **2026-11-14 (evening) — Slice 6g: project intelligence (local index, Ask space) and outcome quality** — Review against the "AI experience intelligence platform" brief. Traced hooks → `events.jsonl` → `ingest.py` → 
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261115-133220.md`. Nothing is deleted.
+- **2026-11-15 — Gap review of Slice 6g; skill drift sync; headless CLI requests named, closed and hidden** — Gap review of Slice 6g. Read the diff of `serve.py`, `ingest.py`, `traces.py`, `db.py`, `retrieval.py` and the
