@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, CheckCircle2, Cpu, ExternalLink, FlaskConical, Search, Terminal, XCircle } from "lucide-react";
 import { apiGet } from "../api/client";
-import { Prov, Stat } from "../components/Num";
+import { Num, Prov, Stat } from "../components/Num";
 import { Badge } from "../components/ui/badge";
 import { Card, CardHeader, Empty } from "../components/ui/card";
 import { cn, fmtMs, relTime } from "../lib/utils";
@@ -26,20 +27,23 @@ type Showcase = {
     history: { ts: string; label: string; cases: number; modes: Record<string, Score> }[];
     fusion: { semantic_weight: number; tuned_at: string | null; cases: number } | null;
   };
-  bench: { run_id: string; ts: string; model: string; arms: { harness?: Arm; bare?: Arm };
-           cases: { case: number; prompt: string; expect: string[]; harness?: ArmRow; bare?: ArmRow }[];
-           runs: { run_id: string; ts: string; arms: { harness?: Arm; bare?: Arm } }[] } | null;
+  bench: BenchRun | null;
+  skill_bench?: BenchRun | null;
   by_model: { model: string; requests: number; tokens_in: number; tokens_out: number; avoided: number; tools_per_request: number; median_ms: number | null; local: boolean }[];
   prompts: { trace_id: string; prompt: string; model: string; status: string; start: string; duration_ms: number | null; tools: number;
              tokens_in: number; tokens_out: number; avoided: number; guard: number; errors: number }[];
 };
+
+type BenchRun = { run_id: string; ts: string; model: string; skill?: string | null; arms: Record<string, Arm | undefined>;
+  cases: ({ case: number; prompt: string; expect: string[] } & Record<string, ArmRow | undefined | number | string | string[]>)[];
+  runs: { run_id: string; ts: string; arms: Record<string, Arm | undefined> }[] };
 
 const n = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toLocaleString());
 const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${v}%`);
 const p100 = (v: number) => `${Math.round(v * 100)}%`;
 
 /** One metric, two arms: paired bars on a shared zero baseline, direct-labelled, hover for the exact value. */
-function PairBar({ label, harness, bare, fmt, lowerIsBetter }: { label: string; harness: number; bare: number; fmt: (v: number) => string; lowerIsBetter?: boolean }) {
+function PairBar({ label, harness, bare, fmt, lowerIsBetter, names = ["harness", "bare"] }: { label: string; harness: number; bare: number; fmt: (v: number) => string; lowerIsBetter?: boolean; names?: readonly [string, string] }) {
   const max = Math.max(harness, bare, 1);
   const better = lowerIsBetter ? harness < bare : harness > bare;
   const delta = bare ? Math.round(((harness - bare) / bare) * 100) : null;
@@ -48,10 +52,10 @@ function PairBar({ label, harness, bare, fmt, lowerIsBetter }: { label: string; 
       <div className="flex items-baseline justify-between text-xs">
         <span className="font-medium">{label}</span>
         {delta !== null && delta !== 0 && (
-          <span className={cn("tabular", better ? "text-success" : "text-warning")}>{delta > 0 ? "+" : ""}{delta}% vs bare</span>
+          <span className={cn("tabular", better ? "text-success" : "text-warning")}>{delta > 0 ? "+" : ""}{delta}% vs {names[1]}</span>
         )}
       </div>
-      {([["harness", harness, "bg-primary"], ["bare", bare, "bg-muted-foreground/50"]] as const).map(([arm, v, tone]) => (
+      {([[names[0], harness, "bg-primary"], [names[1], bare, "bg-muted-foreground/50"]] as const).map(([arm, v, tone]) => (
         <div key={arm} className="group flex items-center gap-2" title={`${arm}: ${fmt(v)}`}>
           <span className="w-14 shrink-0 text-[11px] text-muted-foreground">{arm}</span>
           <div className="h-3 flex-1 rounded-sm bg-muted/40">
@@ -64,37 +68,37 @@ function PairBar({ label, harness, bare, fmt, lowerIsBetter }: { label: string; 
   );
 }
 
-function Bench({ b }: { b: NonNullable<Showcase["bench"]> }) {
-  const h = b.arms.harness, r = b.arms.bare;
+function Bench({ b, pair = ["harness", "bare"], title, what }: { b: BenchRun; pair?: readonly [string, string]; title?: ReactNode; what?: ReactNode }) {
+  const h = b.arms[pair[0]], r = b.arms[pair[1]];
   if (!h || !r) return null;
   return (
     <Card>
       <CardHeader
-        title={<span className="flex items-center gap-1.5"><FlaskConical size={14} />Harness A/B on a free local model</span>}
-        subtitle={<>Same {h.cases} prompts, same model (<code>{b.model}</code>), harness on vs off. Correct = the answer names the expected file. Run {relTime(b.ts)}.{h.cases < 10 ? <> <b className="text-warning">n = {h.cases}: a smoke test, not a benchmark.</b></> : null}</>}
+        title={<span className="flex items-center gap-1.5"><FlaskConical size={14} />{title ?? "Harness A/B on a free local model"}</span>}
+        subtitle={<>Same <Num p="measured">{h.cases}</Num> prompts, same model (<code>{b.model}</code>), {what ?? "harness on vs off"}. Correct = the answer names the expected file. Run <time dateTime={b.ts}>{relTime(b.ts)}</time>.{h.cases < 10 ? <> <b className="text-warning">n = <Num p="measured">{h.cases}</Num>: a smoke test, not a benchmark.</b></> : null}</>}
         right={<Prov p="measured" />}
       />
       <div className="grid gap-5 p-4 md:grid-cols-2">
         <div className="space-y-4">
-          <PairBar label="Correct answers" harness={h.correct} bare={r.correct} fmt={(v) => `${v} / ${h.cases}`} />
-          <PairBar label="Tool calls" harness={h.tools} bare={r.tools} fmt={(v) => n(v)} lowerIsBetter />
+          <PairBar names={pair} label="Correct answers" harness={h.correct} bare={r.correct} fmt={(v) => `${v} / ${h.cases}`} />
+          <PairBar names={pair} label="Tool calls" harness={h.tools} bare={r.tools} fmt={(v) => n(v)} lowerIsBetter />
         </div>
         <div className="space-y-4">
-          <PairBar label="Prompt tokens evaluated" harness={h.tokens_in} bare={r.tokens_in} fmt={(v) => n(v)} lowerIsBetter />
-          <PairBar label="Wall time" harness={h.ms} bare={r.ms} fmt={(v) => fmtMs(v)} lowerIsBetter />
+          <PairBar names={pair} label="Prompt tokens evaluated" harness={h.tokens_in} bare={r.tokens_in} fmt={(v) => n(v)} lowerIsBetter />
+          <PairBar names={pair} label="Wall time" harness={h.ms} bare={r.ms} fmt={(v) => fmtMs(v)} lowerIsBetter />
         </div>
       </div>
       <div className="overflow-x-auto border-t border-border">
         <table className="w-full text-xs">
           <thead className="text-left text-muted-foreground">
-            <tr><th className="px-4 py-2 font-medium">Prompt</th><th className="px-2 font-medium">Harness</th><th className="px-2 font-medium">Bare</th></tr>
+            <tr><th className="px-4 py-2 font-medium">Prompt</th>{pair.map((a) => <th key={a} className="px-2 font-medium capitalize">{a}</th>)}</tr>
           </thead>
           <tbody>
             {b.cases.map((c) => (
               <tr key={c.case} className="border-t border-border align-top">
                 <td className="px-4 py-2">{c.prompt}<div className="mt-0.5 text-muted-foreground">expects: {c.expect.join(", ")}</div></td>
-                {(["harness", "bare"] as const).map((arm) => {
-                  const x = c[arm];
+                {pair.map((arm) => {
+                  const x = c[arm] as ArmRow | undefined;
                   return (
                     <td key={arm} className="whitespace-nowrap px-2 py-2" title={x?.answer}>
                       {x ? (
@@ -212,6 +216,12 @@ export function Showcase() {
       </div>
 
       <SavingsHero o={sv.data} />
+
+      {d.skill_bench?.skill ? (
+        <Bench b={d.skill_bench} pair={["skill", "plain"]}
+          title={<>Measured: does <code>/{d.skill_bench.skill}</code> pay for itself?</>}
+          what={<>harness on in both arms, the skill loaded in one. The skill text is re-sent on every model call; on short questions it can only add cost</>} />
+      ) : null}
 
       {d.bench ? <Bench b={d.bench} /> : (
         <Card className="p-4 text-xs text-muted-foreground">No A/B run yet: <code>bin/agent-spec-bench.py</code> runs the same prompts with the harness on and off.</Card>

@@ -250,6 +250,20 @@ class OllamaAgentTest(EnvCase):
         self.assertNotIn("search_project", tools)
         self.assertTrue(lines[-1]["bare"])
 
+    def test_skill_prompt_loads_the_installed_skill(self):
+        skill = os.path.join(self.tmp, ".cursor", "skills", "agent-spec-demo")
+        os.makedirs(skill)
+        with open(os.path.join(skill, "SKILL.md"), "w") as fh:
+            fh.write("DEMO-SKILL-BODY")
+        fake = FakeOllama([{"content": "src/a.py"}])
+        self.addCleanup(fake.close)
+        env = dict(os.environ, AGENT_SPEC_OLLAMA_URL=fake.url, HOOK_LOG=self.log, HOME=self.tmp)
+        for extra, expect in (([], True), (["--bare"], False)):
+            proc = subprocess.run([sys.executable, AGENT, "-p", "--workspace", self.project, *extra,
+                                   "/agent-spec-demo where is savings"], capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertEqual("DEMO-SKILL-BODY" in fake.chats[-1]["messages"][0]["content"], expect)
+
 
 class ConsoleApiTest(ApiCase):
     def setUp(self):
@@ -411,6 +425,15 @@ class ShowcaseTest(EnvCase):
         self.assertEqual(out["bench"]["arms"]["harness"]["correct"], 1)
         self.assertEqual(out["bench"]["arms"]["bare"]["correct"], 0)
         self.assertEqual(out["bench"]["cases"][0]["expect"], ["a.py"])
+        self.assertIsNone(out["skill_bench"])
+        skill_rows = [dict(r, run_id="s1", arm=arm, skill="agent-spec-x" if arm == "skill" else None)
+                      for r, arm in zip(bench, ("plain", "skill"))]
+        with open(os.path.join(project, ".agent-spec", "eval", "skill-bench-results.jsonl"), "w") as fh:
+            fh.writelines(json.dumps(r) + "\n" for r in skill_rows)
+        out = showcase.overview(project, None)
+        self.assertEqual(out["skill_bench"]["skill"], "agent-spec-x")
+        self.assertEqual(out["skill_bench"]["arms"]["skill"]["tokens_in"], 300)
+        self.assertEqual(out["bench"]["run_id"], "r1")      # the harness A/B is unaffected
 
 
 if __name__ == "__main__":

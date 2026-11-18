@@ -75,6 +75,22 @@ HARNESS_TOOLS = ("graphify_context", "search_project")
 LOGGED_AS = {"graphify_context": "Shell", "search_project": "codebase_search"}
 
 
+SKILL_PROMPT = re.compile(r"^/(agent-spec-[\w-]+)")
+
+
+def skill_body(prompt: str) -> tuple:
+    """A prompt that opens with /agent-spec-<name> loads that installed skill, as Cursor does."""
+    m = SKILL_PROMPT.match(prompt.strip())
+    if not m:
+        return None, ""
+    path = os.path.join(os.path.expanduser("~"), ".cursor", "skills", m.group(1), "SKILL.md")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return m.group(1), fh.read()
+    except OSError:
+        return m.group(1), ""
+
+
 def emit(obj: dict) -> None:
     print(json.dumps(obj), flush=True)
 
@@ -315,6 +331,9 @@ def main(argv: list) -> int:
         context = "".join(o.get("additional_context", "") for o in hooks.fire("sessionStart", {"source": "startup"}))
         messages.append({"role": "system", "content": BARE_SYSTEM % workspace if bare else HARNESS_SYSTEM % (
             workspace, slim_digest(context, opts["prompt"]))})
+        name, body = (None, "") if bare else skill_body(opts["prompt"])
+        if body:  # re-sent on every step like the rest of the system prompt, so its cost is measured too
+            messages[0]["content"] += "\n\n<skill name=\"%s\">\n%s\n</skill>" % (name, body)
     hooks.fire("beforeSubmitPrompt", {"prompt": opts["prompt"], "attachments": []})
     messages.append({"role": "user", "content": opts["prompt"]})
     emit({"type": "system", "subtype": "init", "session_id": conv, "request_id": gen, "model": "ollama:" + model})

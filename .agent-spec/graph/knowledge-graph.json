@@ -1,11 +1,11 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-18T17:37:19.186025",
+  "generated": "2026-11-18T21:04:30.641603",
   "generator": "graphify-build",
   "git": {
-    "branch": "dashboard-five-spaces",
-    "head_sha": "7e472bf430292e25283bf7f9e2faf388e25632a5",
+    "branch": "main",
+    "head_sha": "2a7a7999297169137c3fd8189d7e5791d1e20982",
     "dirty": true,
     "operation": null,
     "conflicts": 0
@@ -139,7 +139,7 @@
     "test framework": [
       [
         "pytest",
-        201
+        202
       ]
     ],
     "error handling": [
@@ -6519,109 +6519,116 @@
       "line": 782
     },
     {
+      "id": "bin/agent-spec-ollama-agent.py::skill_body",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 81
+    },
+    {
       "id": "bin/agent-spec-ollama-agent.py::emit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 78
+      "line": 94
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::parse_args",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 82
+      "line": 98
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::pick_model",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 99
+      "line": 115
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::chat",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 111
+      "line": 127
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks",
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 137
+      "line": 153
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 144
+      "line": 160
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks.fire",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 152
+      "line": 168
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::_inside",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 169
+      "line": 185
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::run_tool",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 175
+      "line": 191
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::project_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 205
+      "line": 221
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::slim_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 237
+      "line": 253
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::compact_history",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 253
+      "line": 269
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::final_answer",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 262
+      "line": 278
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::text_tool_call",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 271
+      "line": 287
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 285
+      "line": 301
     },
     {
       "id": "bin/agent-spec-platform.py::cmd_init",
@@ -10443,7 +10450,7 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/showcase.py",
-      "line": 76
+      "line": 78
     },
     {
       "id": "bin/aspec_platform/signals.py::_target",
@@ -15577,130 +15584,137 @@
       "line": 241
     },
     {
+      "id": "tests/test_local_agent.py::OllamaAgentTest.test_skill_prompt_loads_the_installed_skill",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 253
+    },
+    {
       "id": "tests/test_local_agent.py::ConsoleApiTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 254
+      "line": 268
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 255
+      "line": 269
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.tearDown",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 261
+      "line": 275
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest._post",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 268
+      "line": 282
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_status_reports_backend",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 280
+      "line": 294
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_session_streams_to_done",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 285
+      "line": 299
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_unknown_job_and_bad_input",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 296
+      "line": 310
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_console_off_switch",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 302
+      "line": 316
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_stream_needs_token",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 308
+      "line": 322
     },
     {
       "id": "tests/test_local_agent.py::write",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_local_agent.py",
-      "line": 312
+      "line": 326
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 319
+      "line": 333
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 320
+      "line": 334
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.index",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 334
+      "line": 348
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.test_keyword_scores_and_history",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 340
+      "line": 354
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.test_tuned_weight_is_stored_and_used",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 353
+      "line": 367
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.test_weighted_fusion",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 373
+      "line": 387
     },
     {
       "id": "tests/test_local_agent.py::ShowcaseTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 380
+      "line": 394
     },
     {
       "id": "tests/test_local_agent.py::ShowcaseTest.test_overview_with_events_and_bench",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 381
+      "line": 395
     },
     {
       "id": "tests/test_manage_git_hooks.py::run_manage",
@@ -19760,49 +19774,49 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 37
+      "line": 41
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::pct",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 38
+      "line": 42
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::p100",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 39
+      "line": 43
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::PairBar",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 42
+      "line": 46
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::Bench",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 67
+      "line": 71
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::Rag",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 119
+      "line": 123
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::Showcase",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 185
+      "line": 189
     },
     {
       "id": "ui-src/src/test/fixtures.ts::span",
@@ -20897,6 +20911,11 @@
     {
       "source": "bin/agent-spec-ollama-agent.py::main",
       "target": "bin/agent-spec-ollama-agent.py::run_tool",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::main",
+      "target": "bin/agent-spec-ollama-agent.py::skill_body",
       "type": "calls"
     },
     {
@@ -30387,6 +30406,21 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_skill_prompt_loads_the_installed_skill",
+      "target": "tests/test_local_agent.py::FakeOllama",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_skill_prompt_loads_the_installed_skill",
+      "target": "bin/aspec_platform/rag_eval.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_skill_prompt_loads_the_installed_skill",
+      "target": "tests/test_local_agent.py::write",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_local_agent.py::ConsoleApiTest.setUp",
       "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
       "type": "calls"
@@ -34458,19 +34492,19 @@
     ],
     [
       "react",
-      31
+      32
     ],
     [
       "collections",
       25
     ],
     [
-      "lucide-react",
+      "type",
       24
     ],
     [
-      "type",
-      23
+      "lucide-react",
+      24
     ],
     [
       "_run_helpers",

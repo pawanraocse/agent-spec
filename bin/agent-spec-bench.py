@@ -74,17 +74,22 @@ def main(argv=None) -> int:
     ap.add_argument("--project")
     ap.add_argument("--model")
     ap.add_argument("--only", type=int, help="first N cases")
+    ap.add_argument("--skill", help="compare harness alone vs harness plus /<skill> (e.g. agent-spec-raw-code-full)")
     args = ap.parse_args(argv)
     project = common.find_project(args.project)
     cases = load_cases(project)[: args.only or None]
     run_id = time.strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:6]
-    out_path = os.path.join(eval_dir(project), "agent-bench-results.jsonl")
+    # A skill run is its own A/B (both arms keep the harness on), so it has its own results file.
+    arms = ("plain", "skill") if args.skill else ("harness", "bare")
+    out_path = os.path.join(eval_dir(project), "skill-bench-results.jsonl" if args.skill else "agent-bench-results.jsonl")
     rows = []
     for i, case in enumerate(cases, 1):
-        for arm in ("harness", "bare"):
-            r = run_arm(project, case["prompt"], args.model, arm == "bare")
+        for arm in arms:
+            prompt = "/%s %s" % (args.skill, case["prompt"]) if arm == "skill" else case["prompt"]
+            r = run_arm(project, prompt, args.model, arm == "bare")
             text = (r["answer"] or "").lower()
             r.update(run_id=run_id, ts=common.utc_now(), case=i, arm=arm, prompt=case["prompt"], expect=case["expect"],
+                     skill=args.skill if arm == "skill" else None,
                      correct=r["exit"] == 0 and all(e.lower() in text for e in case["expect"]))
             r["answer"] = (r["answer"] or "")[:600]
             rows.append(r)
@@ -92,7 +97,7 @@ def main(argv=None) -> int:
                 fh.write(json.dumps(r) + "\n")
             print("case %d %-7s correct=%-5s in=%-6s out=%-5s tools=%-2s %5.1fs" % (
                 i, arm, r["correct"], r["tokens_in"], r["tokens_out"], r["tools"], r["ms"] / 1000), flush=True)
-    for arm in ("harness", "bare"):
+    for arm in arms:
         rs = [r for r in rows if r["arm"] == arm]
         if rs:
             print("%-7s accuracy=%d/%d tokens_in=%d tools=%d time=%.0fs" % (

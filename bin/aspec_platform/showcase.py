@@ -29,9 +29,10 @@ def _model_family(model: str | None) -> str:
     return m.split("-")[0] if m else "unknown"
 
 
-def bench(project: str) -> dict | None:
-    """Latest harness-vs-bare A/B run (bin/agent-spec-bench.py), plus every earlier run's totals."""
-    path = os.path.join(common.agent_spec_dir(project), "eval", "agent-bench-results.jsonl")
+def bench(project: str, name: str = "agent-bench-results.jsonl", pair: tuple = ("harness", "bare")) -> dict | None:
+    """Latest A/B run of bin/agent-spec-bench.py, plus every earlier run's totals. The default pair
+    is harness on vs off; `--skill` runs (skill-bench-results.jsonl) pair plain vs the skill."""
+    path = os.path.join(common.agent_spec_dir(project), "eval", name)
     rows = []
     try:
         with open(path, encoding="utf-8") as fh:
@@ -40,7 +41,7 @@ def bench(project: str) -> dict | None:
                     r = json.loads(line)
                 except ValueError:
                     continue
-                if isinstance(r, dict) and r.get("run_id") and r.get("arm") in ("harness", "bare"):
+                if isinstance(r, dict) and r.get("run_id") and r.get("arm") in pair:
                     rows.append(r)
     except OSError:
         return None
@@ -52,7 +53,7 @@ def bench(project: str) -> dict | None:
 
     def arms(rs):
         out = {}
-        for arm in ("harness", "bare"):
+        for arm in pair:
             a = [r for r in rs if r["arm"] == arm]
             if a:
                 out[arm] = {"cases": len(a), "correct": sum(1 for r in a if r.get("correct")),
@@ -68,6 +69,7 @@ def bench(project: str) -> dict | None:
         cases[r["case"]]["prompt"] = r.get("prompt")
         cases[r["case"]]["expect"] = r.get("expect")
     return {"run_id": order[-1], "ts": latest[-1].get("ts"), "model": latest[0].get("model"),
+            "skill": next((r.get("skill") for r in latest if r.get("skill")), None),
             "arms": arms(latest), "cases": [dict(case=k, **v) for k, v in sorted(cases.items())],
             "runs": [{"run_id": k, "ts": runs[k][0].get("ts"), "arms": arms(runs[k])} for k in order[-10:]],
             "provenance": "measured"}
@@ -183,6 +185,7 @@ def overview(project: str, conn) -> dict:
         "rag": {"index": idx, "eval": rag, "history": rag_eval.history(conn) if conn is not None else [],
                 "fusion": retrieval.fusion_weight(conn) if conn is not None else None},
         "bench": bench(project),
+        "skill_bench": bench(project, "skill-bench-results.jsonl", ("plain", "skill")),
         "by_model": by_model,
         "trend": trend,
         "prompts": rows[:PROMPTS],

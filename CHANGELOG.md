@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Measured: `/agent-spec-raw-code-full` on short questions (H-050, local half).**
+  `agent-spec-bench.py --skill <name>` runs the bench with the harness on in both arms and the
+  skill loaded in one; the local agent now loads `/agent-spec-*` skills the way Cursor does. Six
+  questions on `qwen2.5-coder:7b`: same accuracy, +60% input tokens, because the skill text is
+  re-sent on every call and the local Read is already capped. Impact › Summary shows the run.
+- **`agent-spec-raw-code-full` no longer restates the always-on rule.** 75% of it repeated
+  `CURSOR.md`'s tool discipline and was re-sent on every call for nothing; it now carries only
+  preflight, optional `rg`, prefix stability, reply shape and Complexity Override (3,848 B to
+  2,541 B).
+
 - **Savings model: subagent calls no longer re-send the parent context.** A subagent's own tool
   calls were counted as main-context model calls, so a skill's body was charged against every
   one of them (66,378 tokens in one real chat, now 7,696), and what a subagent kept out was never
