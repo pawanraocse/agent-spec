@@ -110,7 +110,7 @@ the audit trail records it.
 | `[~]` | H-042 | **Install matrix** | Clean install, register, uninstall on Linux, macOS and WSL in CI; one manual run on real Windows Git Bash (absorbs T-058, DEBT-006, PHASE1-VERIFICATION B21) | 1d |
 | `[x]` | H-043 | **Scale check** | Graph build on a 20,000-file repo; session-start incremental build inside the 3 s limit; dashboard pages under 1 s with 10,000 traces. Numbers recorded in a new H-043 evidence file under `docs/evidence/`; anything over budget fixed or logged | 1d |
 | `[x]` | H-044 | **Security pass** | `/security-review` over the hooks, dashboard API (token, localhost bind, CSRF on control actions), approval endpoint (H-030) and redaction. Every finding fixed | 1d |
-| `[ ]` | H-045 | **Fresh-user test** | Someone new to the project goes from README to the first dashboard view in under 10 minutes on a clean machine; every stumble fixed in README or QUICKSTART | 0.5d |
+| `[~]` | H-045 | **Fresh-user test** | Someone new to the project goes from README to the first dashboard view in under 10 minutes on a clean machine; every stumble fixed in README or QUICKSTART. Scripted pass done: fresh clone, empty HOME, system python3, seconds per step; 5 stumbles fixed (no dashboard step, wrong skill count, first-load race, empty-state page, dead demo button) (docs/evidence/H-045.md). Owed: one run by a person new to the project | 0.5d |
 | `[x]` | H-046 | **Fail-open proof** | Each hook with its helper deleted, with a corrupt graph and with a full disk still lets Cursor proceed; one test per case | 0.5d |
 
 ---

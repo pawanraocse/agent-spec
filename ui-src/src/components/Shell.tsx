@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Moon, Search, Settings, Sun, Monitor, Boxes, MessageSquareText, Trophy, Inbox } from "lucide-react";
-import { apiGet, apiPost } from "../api/client";
+import { apiGet } from "../api/client";
 import { useInboxCounts } from "../api/inbox";
 import type { RequestList } from "../api/traces";
 import { Sheet } from "./ui/sheet";
@@ -198,12 +198,8 @@ export function Shell() {
             <p className="text-muted-foreground"><b className="text-foreground">Workflow</b> — hub-runner runs, joined to the request that started them.</p>
           </div>
           <div className="space-y-2">
-            <p className="font-medium">Demo data</p>
-            <p className="text-muted-foreground">Seeds a few labelled demo sessions and runs (every number from them is tagged <b className="text-foreground">demo</b>). Your real data is untouched.</p>
-            <div className="flex gap-2">
-              <button type="button" className="rounded-md border border-border px-2.5 py-1 hover:bg-muted" onClick={() => apiPost("/api/seed", { action: "seed" }).then(() => window.location.reload())}>Load demo data</button>
-              <button type="button" className="rounded-md border border-border px-2.5 py-1 text-muted-foreground hover:bg-muted" onClick={() => apiPost("/api/seed", { action: "remove" }).then(() => window.location.reload())}>Remove demo data</button>
-            </div>
+            <p className="font-medium">Demo</p>
+            <p className="text-muted-foreground"><code>bash examples/mesh-demo/demo-setup.sh</code> (in the agent-spec clone) builds a three-repo demo and replays a recorded Cursor chat through the real hooks, so every page has real traces to show. Your project is untouched.</p>
           </div>
         </div>
       </Sheet>

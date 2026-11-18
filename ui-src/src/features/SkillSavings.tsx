@@ -102,6 +102,12 @@ export function SessionSavingsCard({ s }: { s?: SessionSavings | null }) {
 /** Showcase hero: the board-level total and the raw-code vs plain comparison. */
 export function SavingsHero({ o }: { o?: SavingsOverview | null }) {
   if (!o) return null;
+  if (!o.kept_out) return (
+    <Card className="flex items-center gap-2 p-4 text-xs text-muted-foreground">
+      <Zap size={14} className="shrink-0 text-success" />
+      <span><b className="text-foreground">No tokens kept out yet.</b> This fills in once a chat queries the graph instead of reading a file, reads by line range, sends a sweep to a subagent or makes a targeted edit.</span>
+    </Card>
+  );
   const c = o.compare;
   const sk = o.skill_chats;
   const enough = c.lift !== null;

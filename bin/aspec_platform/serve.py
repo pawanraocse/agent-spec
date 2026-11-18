@@ -811,8 +811,19 @@ def start_hook_log_backfill(project: str, every: float = 60.0):
     return t
 
 
+def ensure_db(project: str) -> None:
+    """Create or migrate the schema before the first request. The backfill thread's ingest
+    would create it too, but a page opened straight after `--register` raced it and read a
+    database with no tables."""
+    try:
+        db.open_ready(db.db_path(project)).close()
+    except Exception as exc:  # noqa: BLE001 — a read-only checkout still serves the hook log
+        print("warning: platform db not ready: %s" % exc, file=sys.stderr)
+
+
 def main(args) -> int:
     project = common.find_project(getattr(args, "project", None))
+    ensure_db(project)
     start_hook_log_backfill(project)
     token = getattr(args, "token", None) or os.environ.get("AGENT_SPEC_TOKEN")
     try:

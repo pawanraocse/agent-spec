@@ -436,5 +436,20 @@ class ShowcaseTest(EnvCase):
         self.assertEqual(out["bench"]["run_id"], "r1")      # the harness A/B is unaffected
 
 
+class FirstServeTest(EnvCase):
+    def test_summary_works_on_a_project_never_ingested(self):
+        from aspec_platform import serve
+        project = os.path.join(self.tmp, "fresh")
+        os.makedirs(os.path.join(project, ".agent-spec", "platform"))
+        path = db.db_path(project)
+        conn = db.connect(path)
+        conn.execute("CREATE TABLE unrelated (x)")   # a database another tool created first
+        conn.close()
+        with self.assertRaises(Exception):
+            showcase.overview(project, db.connect(path, readonly=True))
+        serve.ensure_db(project)
+        out = showcase.overview(project, db.connect(path, readonly=True))
+        self.assertEqual(out["requests"], 0)
+
 if __name__ == "__main__":
     unittest.main()

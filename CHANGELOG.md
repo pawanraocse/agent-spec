@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Fresh-user pass (H-045).** README › Install gains a dashboard step and the right skill count
+  (35). The server creates its database schema before the first request, so a page opened
+  straight after `--register` no longer fails with `no such table: steps`. An empty project's
+  Summary opens on the three ways to get data instead of a page of zeros, and an empty savings
+  panel collapses to one line. "Load demo data" is gone: it wrote to a table no page reads; the
+  mesh demo (`examples/mesh-demo/demo-setup.sh`) replays a recorded chat through the real hooks.
+
 - **Measured: `/agent-spec-raw-code-full` on short questions (H-050, local half).**
   `agent-spec-bench.py --skill <name>` runs the bench with the harness on in both arms and the
   skill loaded in one; the local agent now loads `/agent-spec-*` skills the way Cursor does. Six

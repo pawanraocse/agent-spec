@@ -26,7 +26,7 @@ Feature detail: [docs/features.md](docs/features.md).
 | **Memory** | Bounded facts + rotating `SESSION-SNAPSHOT.md`; digest on new chat |
 | **Hooks** | `sessionStart` digest (~1.7 KB); `preToolUse` input discipline (fail-open) |
 | **Measurement** | `agent-spec-tokens.py` on Cursor agent JSONL ([usage](#measuring-usage)) |
-| **Skills** | 43 commands → `~/.cursor/skills/` via `./install.sh` |
+| **Skills** | 35 commands → `~/.cursor/skills/` via `./install.sh` |
 | **Local mode** | `bin/agent-spec-live.py`: dashboard Console, Ask and an A/B benchmark on a free Ollama model, no Cursor plan ([details](docs/DASHBOARD.md#local-mode-no-cursor-plan-needed)) |
 | **Self-test** | `./bin/agent-spec-selftest.sh` — package shape, install idempotency, no Claude paths |
 
@@ -61,6 +61,19 @@ Register the folder Cursor actually opened (title-bar root):
 
 Enable **Hooks** in Cursor Settings. Confirm **Customize → Rules → agent-spec** is
 **Always Apply**.
+
+### 3. Dashboard (optional)
+
+From the registered folder:
+
+```bash
+python3 .agent-spec/bin/agent-spec-platform.py serve     # prints http://127.0.0.1:8765/?token=...
+```
+
+Open the printed link. Requests appear live as you chat in Cursor. Nothing traced yet? The
+page says how to get data; `bash examples/mesh-demo/demo-setup.sh` (in this clone) builds a
+demo with a recorded chat. No Cursor plan: `bin/agent-spec-live.py --project <folder>` runs
+the harness on a free local Ollama model. Detail: [docs/DASHBOARD.md](docs/DASHBOARD.md).
 
 | | Global (`./install.sh`) | Per project (`--register`) |
 |---|---|---|

@@ -186,6 +186,26 @@ function Rag({ rag }: { rag: Showcase["rag"] }) {
   );
 }
 
+/** A new project has no traces yet: say how to get some instead of a page of zeros. */
+function FirstRun({ rag }: { rag: Showcase["rag"] }) {
+  const step = "flex gap-3 rounded-md border border-border p-3";
+  const num = "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary";
+  return (
+    <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+      <div className="border-b border-border pb-4">
+        <h1 className="text-xl font-semibold">No traced requests yet</h1>
+        <p className="mt-0.5 text-xs text-muted-foreground">This page fills in from real Cursor chats in this project. Every number it shows is labelled measured, estimated or AI-judged.</p>
+      </div>
+      <Card className="space-y-2 p-4 text-xs">
+        <div className={step}><span className={num}>1</span><div><b>Open this folder in Cursor</b> with <b>Settings › Hooks</b> on, and start a chat. Each request appears under <Link to="/requests" className="text-primary">Activity</Link> as it runs; no restart needed.</div></div>
+        <div className={step}><span className={num}>2</span><div><b>No Cursor plan?</b> From the agent-spec clone, <code>bin/agent-spec-live.py --project &lt;this folder&gt;</code> runs the same harness on a free local Ollama model, and <Link to="/console" className="text-primary">Ask › Run the agent</Link> traces each run here.</div></div>
+        <div className={step}><span className={num}>3</span><div><b>Just looking?</b> In the agent-spec clone, <code>bash examples/mesh-demo/demo-setup.sh</code> builds a three-repo demo and replays a recorded Cursor chat through the real hooks; it prints the dashboard command to open it.</div></div>
+      </Card>
+      <Rag rag={rag} />
+    </div>
+  );
+}
+
 export function Showcase() {
   const q = useQuery({ queryKey: ["showcase"], queryFn: () => apiGet<Showcase>("/api/showcase"), refetchInterval: 15000 });
   const sv = useQuery({ queryKey: ["skill-savings"], queryFn: () => apiGet<SavingsOverview>("/api/skill-savings"), refetchInterval: 15000 });
@@ -193,6 +213,7 @@ export function Showcase() {
   if (q.isLoading) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
   if (!d) return <div className="p-6"><Empty title="Showcase unavailable" hint={String(q.error ?? "")} /></div>;
   const t = d.tokens, e = d.efficiency, a = d.accuracy;
+  if (d.requests === 0) return <FirstRun rag={d.rag} />;
   return (
     <div className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-4">
