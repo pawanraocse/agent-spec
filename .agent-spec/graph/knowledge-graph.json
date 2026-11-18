@@ -1,11 +1,11 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-18T16:09:05.734755",
+  "generated": "2026-11-18T17:17:28.328199",
   "generator": "graphify-build",
   "git": {
     "branch": "main",
-    "head_sha": "c044f4f64c9a0781266cbefa6c818e6160c63683",
+    "head_sha": "bc0a8e89f2698cd6427747774f0bf9341fc60c51",
     "dirty": true,
     "operation": null,
     "conflicts": 0
@@ -13,7 +13,7 @@
   "stack": "Node.js + React",
   "stats": {
     "files": 208,
-    "internal_edges": 486,
+    "internal_edges": 482,
     "integration_edges": 1,
     "external_packages": 82,
     "test_files": 78,
@@ -28,16 +28,16 @@
       "javascript": 4
     },
     "layers": {
-      "unknown": 114,
+      "unknown": 113,
       "test": 78,
-      "controller": 9,
+      "controller": 10,
       "config": 5,
       "util": 2
     },
     "most_depended": [
       [
         "ui-src/src/api/client.ts",
-        36
+        35
       ],
       [
         "bin/aspec_platform/__init__.py",
@@ -45,7 +45,7 @@
       ],
       [
         "ui-src/src/lib/utils.ts",
-        28
+        30
       ],
       [
         "ui-src/src/components/Num.tsx",
@@ -57,7 +57,7 @@
       ],
       [
         "ui-src/src/components/ui/card.tsx",
-        23
+        22
       ],
       [
         "bin/aspec_platform/traces.py",
@@ -139,7 +139,7 @@
     "test framework": [
       [
         "pytest",
-        199
+        201
       ]
     ],
     "error handling": [
@@ -155,7 +155,7 @@
       ],
       [
         "generics",
-        25
+        31
       ]
     ]
   },
@@ -2363,9 +2363,9 @@
       "consumes": []
     },
     {
-      "id": "ui-src/src/api/traces.ts",
+      "id": "ui-src/src/api/inbox.ts",
       "type": "file",
-      "path": "ui-src/src/api/traces.ts",
+      "path": "ui-src/src/api/inbox.ts",
       "lang": "typescript",
       "layer": "controller",
       "service": "ui-src",
@@ -2376,11 +2376,11 @@
       "consumes": []
     },
     {
-      "id": "ui-src/src/components/Layout.tsx",
+      "id": "ui-src/src/api/traces.ts",
       "type": "file",
-      "path": "ui-src/src/components/Layout.tsx",
+      "path": "ui-src/src/api/traces.ts",
       "lang": "typescript",
-      "layer": "unknown",
+      "layer": "controller",
       "service": "ui-src",
       "endpoints": [],
       "routes": [],
@@ -2431,6 +2431,19 @@
       "id": "ui-src/src/components/Shell.tsx",
       "type": "file",
       "path": "ui-src/src/components/Shell.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/components/Space.tsx",
+      "type": "file",
+      "path": "ui-src/src/components/Space.tsx",
       "lang": "typescript",
       "layer": "unknown",
       "service": "ui-src",
@@ -2847,19 +2860,6 @@
       "id": "ui-src/src/pages/Governance.tsx",
       "type": "file",
       "path": "ui-src/src/pages/Governance.tsx",
-      "lang": "typescript",
-      "layer": "unknown",
-      "service": "ui-src",
-      "endpoints": [],
-      "routes": [],
-      "http_calls": [],
-      "produces": [],
-      "consumes": []
-    },
-    {
-      "id": "ui-src/src/pages/Home.tsx",
-      "type": "file",
-      "path": "ui-src/src/pages/Home.tsx",
       "lang": "typescript",
       "layer": "unknown",
       "service": "ui-src",
@@ -4384,7 +4384,17 @@
     },
     {
       "source": "ui-src/src/App.tsx",
+      "target": "ui-src/src/api/inbox.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/App.tsx",
       "target": "ui-src/src/components/Shell.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/App.tsx",
+      "target": "ui-src/src/components/Space.tsx",
       "type": "imports"
     },
     {
@@ -4398,17 +4408,27 @@
       "type": "imports"
     },
     {
+      "source": "ui-src/src/api/inbox.ts",
+      "target": "ui-src/src/pages/Proposals.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/api/inbox.ts",
+      "target": "ui-src/src/pages/Risk.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/api/inbox.ts",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
       "source": "ui-src/src/api/traces.ts",
       "target": "ui-src/src/features/SkillSavings.tsx",
       "type": "imports"
     },
     {
       "source": "ui-src/src/api/traces.ts",
-      "target": "ui-src/src/api/client.ts",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/components/Layout.tsx",
       "target": "ui-src/src/api/client.ts",
       "type": "imports"
     },
@@ -4420,6 +4440,11 @@
     {
       "source": "ui-src/src/components/Metric.tsx",
       "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Metric.tsx",
+      "target": "ui-src/src/components/Num.tsx",
       "type": "imports"
     },
     {
@@ -4435,6 +4460,11 @@
     {
       "source": "ui-src/src/components/Shell.tsx",
       "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx",
+      "target": "ui-src/src/api/inbox.ts",
       "type": "imports"
     },
     {
@@ -4450,6 +4480,11 @@
     {
       "source": "ui-src/src/components/Shell.tsx",
       "target": "ui-src/src/components/ui/sheet.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/components/Space.tsx",
+      "target": "ui-src/src/lib/utils.ts",
       "type": "imports"
     },
     {
@@ -5048,31 +5083,6 @@
       "type": "imports"
     },
     {
-      "source": "ui-src/src/pages/Home.tsx",
-      "target": "ui-src/src/api/client.ts",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Home.tsx",
-      "target": "ui-src/src/components/Metric.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Home.tsx",
-      "target": "ui-src/src/components/Num.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Home.tsx",
-      "target": "ui-src/src/components/ui/button.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Home.tsx",
-      "target": "ui-src/src/components/ui/card.tsx",
-      "type": "imports"
-    },
-    {
       "source": "ui-src/src/pages/IndexHealth.tsx",
       "target": "ui-src/src/api/client.ts",
       "type": "imports"
@@ -5105,11 +5115,6 @@
     {
       "source": "ui-src/src/pages/Knowledge.tsx",
       "target": "ui-src/src/components/Num.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Knowledge.tsx",
-      "target": "ui-src/src/components/ui/button.tsx",
       "type": "imports"
     },
     {
@@ -5194,6 +5199,11 @@
     },
     {
       "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/components/Space.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
       "target": "ui-src/src/components/ui/badge.tsx",
       "type": "imports"
     },
@@ -5219,17 +5229,7 @@
     },
     {
       "source": "ui-src/src/pages/Project.tsx",
-      "target": "ui-src/src/pages/Automations.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Project.tsx",
       "target": "ui-src/src/pages/Governance.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Project.tsx",
-      "target": "ui-src/src/pages/Home.tsx",
       "type": "imports"
     },
     {
@@ -5244,27 +5244,7 @@
     },
     {
       "source": "ui-src/src/pages/Project.tsx",
-      "target": "ui-src/src/pages/Proposals.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Project.tsx",
       "target": "ui-src/src/pages/Repos.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Project.tsx",
-      "target": "ui-src/src/pages/Risk.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Project.tsx",
-      "target": "ui-src/src/pages/Runs.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Project.tsx",
-      "target": "ui-src/src/pages/Sessions.tsx",
       "type": "imports"
     },
     {
@@ -5360,6 +5340,11 @@
     {
       "source": "ui-src/src/pages/Runs.tsx",
       "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Runs.tsx",
+      "target": "ui-src/src/lib/utils.ts",
       "type": "imports"
     },
     {
@@ -5460,11 +5445,6 @@
     {
       "source": "ui-src/src/test/honesty.test.tsx",
       "target": "ui-src/src/pages/Governance.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/test/honesty.test.tsx",
-      "target": "ui-src/src/pages/Home.tsx",
       "type": "imports"
     },
     {
@@ -5689,77 +5669,77 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 155
+      "line": 157
     },
     {
       "id": "bin/agent-spec-digest.py::git_label",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 177
+      "line": 179
     },
     {
       "id": "bin/agent-spec-digest.py::remembered",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 197
+      "line": 199
     },
     {
       "id": "bin/agent-spec-digest.py::ensure_fresh_graph",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 216
+      "line": 218
     },
     {
       "id": "bin/agent-spec-digest.py::parse_team_yaml",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 269
+      "line": 271
     },
     {
       "id": "bin/agent-spec-digest.py::team_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 294
+      "line": 296
     },
     {
       "id": "bin/agent-spec-digest.py::doctor_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 304
+      "line": 306
     },
     {
       "id": "bin/agent-spec-digest.py::staged_learning_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 321
+      "line": 323
     },
     {
       "id": "bin/agent-spec-digest.py::build_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 338
+      "line": 340
     },
     {
       "id": "bin/agent-spec-digest.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 394
+      "line": 396
     },
     {
       "id": "bin/agent-spec-digest.py::cursor_hook",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 402
+      "line": 404
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx",
@@ -8083,42 +8063,42 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/automations.py",
-      "line": 49
+      "line": 51
     },
     {
       "id": "bin/aspec_platform/automations.py::_log_path",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/automations.py",
-      "line": 53
+      "line": 55
     },
     {
       "id": "bin/aspec_platform/automations.py::disabled",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/automations.py",
-      "line": 57
+      "line": 59
     },
     {
       "id": "bin/aspec_platform/automations.py::_rows",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/automations.py",
-      "line": 65
+      "line": 67
     },
     {
       "id": "bin/aspec_platform/automations.py::overview",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/automations.py",
-      "line": 81
+      "line": 83
     },
     {
       "id": "bin/aspec_platform/automations.py::set_enabled",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/automations.py",
-      "line": 113
+      "line": 117
     },
     {
       "id": "bin/aspec_platform/common.py::utc_now",
@@ -10547,7 +10527,7 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/skill_savings.py",
-      "line": 157
+      "line": 160
     },
     {
       "id": "bin/aspec_platform/traces.py::ms",
@@ -10757,28 +10737,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/traces.py",
-      "line": 790
+      "line": 792
     },
     {
       "id": "bin/aspec_platform/traces.py::request_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/traces.py",
-      "line": 802
+      "line": 804
     },
     {
       "id": "bin/aspec_platform/traces.py::_pct",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/traces.py",
-      "line": 832
+      "line": 834
     },
     {
       "id": "bin/aspec_platform/traces.py::lag",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/traces.py",
-      "line": 840
+      "line": 842
     },
     {
       "id": "bin/aspec_platform/views.py::_spans_by_trace",
@@ -11082,67 +11062,88 @@
       "line": 1118
     },
     {
+      "id": "bin/graphify-build.py::write_text_if_changed",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-build.py",
+      "line": 1145
+    },
+    {
+      "id": "bin/graphify-build.py::graph_unchanged",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-build.py",
+      "line": 1158
+    },
+    {
       "id": "bin/graphify-build.py::write_conventions",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1138
+      "line": 1171
     },
     {
       "id": "bin/graphify-build.py::write_project_index",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1177
+      "line": 1210
     },
     {
       "id": "bin/graphify-build.py::write_graph_md",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1223
+      "line": 1256
     },
     {
       "id": "bin/graphify-build.py::git_state",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1262
+      "line": 1295
     },
     {
       "id": "bin/graphify-build.py::repeat_history_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1301
+      "line": 1334
     },
     {
       "id": "bin/graphify-build.py::read_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1316
+      "line": 1349
     },
     {
       "id": "bin/graphify-build.py::unchanged_since_last_build",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1325
+      "line": 1358
     },
     {
       "id": "bin/graphify-build.py::write_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1345
+      "line": 1378
+    },
+    {
+      "id": "bin/graphify-build.py::log_automation_outcome",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-build.py",
+      "line": 1398
     },
     {
       "id": "bin/graphify-build.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-build.py",
-      "line": 1364
+      "line": 1423
     },
     {
       "id": "bin/graphify-cli.py::load_graph",
@@ -11870,49 +11871,49 @@
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 358
+      "line": 362
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::allow",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 418
+      "line": 422
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::guard_event",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 426
+      "line": 430
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::deny",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 451
+      "line": 455
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::_risk_module",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 465
+      "line": 469
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::risk_gate",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 477
+      "line": 481
     },
     {
       "id": "hooks/cursor-pre-tool-use.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-pre-tool-use.py",
-      "line": 529
+      "line": 533
     },
     {
       "id": "hooks/cursor-session-end.py::load_receipt_module",
@@ -11954,28 +11955,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-session-end.py",
-      "line": 117
+      "line": 118
     },
     {
       "id": "hooks/cursor-session-end.py::apply_retention",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-session-end.py",
-      "line": 135
+      "line": 136
     },
     {
       "id": "hooks/cursor-session-end.py::context_nudge",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-session-end.py",
-      "line": 158
+      "line": 159
     },
     {
       "id": "hooks/cursor-session-end.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/cursor-session-end.py",
-      "line": 208
+      "line": 209
     },
     {
       "id": "hooks/cursor-session-start.py::remembered_lines",
@@ -12661,21 +12662,21 @@
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_automations.py",
-      "line": 60
+      "line": 62
     },
     {
       "id": "tests/test_automations.py::AutomationsApiTest.test_switch_is_guarded",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_automations.py",
-      "line": 69
+      "line": 71
     },
     {
       "id": "tests/test_automations.py::AutomationsApiTest.test_environment_switch_wins",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_automations.py",
-      "line": 77
+      "line": 79
     },
     {
       "id": "tests/test_backlog.py::slurp",
@@ -13775,6 +13776,20 @@
       "kind": "function",
       "file": "tests/test_graph_git.py",
       "line": 146
+    },
+    {
+      "id": "tests/test_graph_git.py::test_commit_without_structural_change_leaves_tracked_files_alone",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_graph_git.py",
+      "line": 168
+    },
+    {
+      "id": "tests/test_graph_git.py::test_automation_build_logs_its_outcome",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_graph_git.py",
+      "line": 192
     },
     {
       "id": "tests/test_graph_mesh.py::java",
@@ -16143,172 +16158,179 @@
       "line": 56
     },
     {
-      "id": "tests/test_pre_tool_use.py::test_hard_cap_denies_every_time",
+      "id": "tests/test_pre_tool_use.py::test_image_read_is_never_gated",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
       "line": 61
     },
     {
-      "id": "tests/test_pre_tool_use.py::test_hard_cap_still_allows_ranged_and_small",
+      "id": "tests/test_pre_tool_use.py::test_hard_cap_denies_every_time",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
       "line": 69
     },
     {
+      "id": "tests/test_pre_tool_use.py::test_hard_cap_still_allows_ranged_and_small",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_pre_tool_use.py",
+      "line": 77
+    },
+    {
       "id": "tests/test_pre_tool_use.py::test_hard_cap_off_by_default_and_ignores_garbage",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 75
+      "line": 83
     },
     {
       "id": "tests/test_pre_tool_use.py::test_alternate_payload_shapes_count_as_ranged",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 81
+      "line": 89
     },
     {
       "id": "tests/test_pre_tool_use.py::test_debug_log_records_shape_not_contents",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 91
+      "line": 99
     },
     {
       "id": "tests/test_pre_tool_use.py::test_range_detection_is_tolerant",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 101
+      "line": 109
     },
     {
       "id": "tests/test_pre_tool_use.py::test_targeted_edit_reported_as_write_is_allowed",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 115
+      "line": 123
     },
     {
       "id": "tests/test_pre_tool_use.py::test_debug_marker_file_enables_log_with_decision",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 125
+      "line": 133
     },
     {
       "id": "tests/test_pre_tool_use.py::test_fail_open_on_garbage",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 135
+      "line": 143
     },
     {
       "id": "tests/test_pre_tool_use.py::call_raw",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 143
+      "line": 151
     },
     {
       "id": "tests/test_pre_tool_use.py::tool",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 150
+      "line": 158
     },
     {
       "id": "tests/test_pre_tool_use.py::quarantine_log",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 154
+      "line": 162
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_denies_every_pattern_every_time",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 206
+      "line": 214
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_allows_lookalikes",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 216
+      "line": 224
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_log_line_is_redacted_and_complete",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 244
+      "line": 252
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_log_failure_never_breaks_the_deny",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 265
+      "line": 273
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_denies_without_agent_spec_dir_and_logs_nothing",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 272
+      "line": 280
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_matches_malformed_payloads_but_still_fails_open_otherwise",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 279
+      "line": 287
     },
     {
       "id": "tests/test_pre_tool_use.py::test_quarantine_runs_before_hard_cap_and_nudges",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 306
+      "line": 314
     },
     {
       "id": "tests/test_pre_tool_use.py::test_token_threshold_nudge_fires_above_80k_and_retries_allow",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 321
+      "line": 329
     },
     {
       "id": "tests/test_pre_tool_use.py::test_token_threshold_under_80k_allowed",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 342
+      "line": 350
     },
     {
       "id": "tests/test_pre_tool_use.py::test_token_threshold_custom_env_and_dict_tokens",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 350
+      "line": 358
     },
     {
       "id": "tests/test_pre_tool_use.py::test_cursor_read_allowed_because_range_is_unobservable",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 362
+      "line": 370
     },
     {
       "id": "tests/test_pre_tool_use.py::test_cursor_write_allowed_because_strreplace_arrives_as_write",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_pre_tool_use.py",
-      "line": 377
+      "line": 385
     },
     {
       "id": "tests/test_proposals.py::ProposalsApiTest",
@@ -17701,21 +17723,21 @@
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_session_end.py",
-      "line": 259
+      "line": 260
     },
     {
       "id": "tests/test_session_end.py::test_fail_open_cases",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_session_end.py",
-      "line": 267
+      "line": 268
     },
     {
       "id": "tests/test_session_end.py::test_merge_registers_events_with_timeouts_idempotently",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_session_end.py",
-      "line": 276
+      "line": 277
     },
     {
       "id": "tests/test_skill_effect.py::SkillEffectTest",
@@ -17813,21 +17835,21 @@
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_skill_savings.py",
-      "line": 74
+      "line": 75
     },
     {
       "id": "tests/test_skill_savings.py::SkillSavingsTest.test_overview_gates_the_ratio_on_sample_size",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_skill_savings.py",
-      "line": 80
+      "line": 82
     },
     {
       "id": "tests/test_skill_savings.py::SkillSavingsTest.test_api_fields",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_skill_savings.py",
-      "line": 87
+      "line": 89
     },
     {
       "id": "tests/test_status.py::StatusTest",
@@ -18527,21 +18549,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 15
+      "line": 24
+    },
+    {
+      "id": "ui-src/src/App.tsx::Inbox",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/App.tsx",
+      "line": 43
     },
     {
       "id": "ui-src/src/App.tsx::Moved",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 20
+      "line": 55
     },
     {
       "id": "ui-src/src/App.tsx::App",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 27
+      "line": 70
     },
     {
       "id": "ui-src/src/api/client.ts::getToken",
@@ -18565,6 +18594,13 @@
       "line": 20
     },
     {
+      "id": "ui-src/src/api/inbox.ts::useInboxCounts",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/inbox.ts",
+      "line": 7
+    },
+    {
       "id": "ui-src/src/api/traces.ts::Trace",
       "type": "symbol",
       "kind": "class",
@@ -18572,193 +18608,200 @@
       "line": 9
     },
     {
+      "id": "ui-src/src/api/traces.ts::harnessOff",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 40
+    },
+    {
+      "id": "ui-src/src/api/traces.ts::originLabel",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/api/traces.ts",
+      "line": 41
+    },
+    {
       "id": "ui-src/src/api/traces.ts::Span",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 39
+      "line": 44
     },
     {
       "id": "ui-src/src/api/traces.ts::HandoffSide",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 54
+      "line": 59
     },
     {
       "id": "ui-src/src/api/traces.ts::Handoff",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 60
+      "line": 65
     },
     {
       "id": "ui-src/src/api/traces.ts::Finding",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 67
+      "line": 72
     },
     {
       "id": "ui-src/src/api/traces.ts::Review",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 77
+      "line": 82
     },
     {
       "id": "ui-src/src/api/traces.ts::RequestList",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 92
+      "line": 97
     },
     {
       "id": "ui-src/src/api/traces.ts::RequestDetail",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 100
+      "line": 105
     },
     {
       "id": "ui-src/src/api/traces.ts::Impact",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 114
+      "line": 119
     },
     {
       "id": "ui-src/src/api/traces.ts::Signals",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 131
+      "line": 136
     },
     {
       "id": "ui-src/src/api/traces.ts::Quality",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 149
+      "line": 154
     },
     {
       "id": "ui-src/src/api/traces.ts::ContextBudget",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 157
+      "line": 162
     },
     {
       "id": "ui-src/src/api/traces.ts::ContextBilled",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 177
+      "line": 182
     },
     {
       "id": "ui-src/src/api/traces.ts::ContextInfo",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 186
+      "line": 191
     },
     {
       "id": "ui-src/src/api/traces.ts::ContextOverview",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 191
+      "line": 196
     },
     {
       "id": "ui-src/src/api/traces.ts::useContextOverview",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 204
+      "line": 209
     },
     {
       "id": "ui-src/src/api/traces.ts::Filters",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 208
+      "line": 213
     },
     {
       "id": "ui-src/src/api/traces.ts::qs",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 219
+      "line": 224
     },
     {
       "id": "ui-src/src/api/traces.ts::useRequests",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 228
+      "line": 233
     },
     {
       "id": "ui-src/src/api/traces.ts::Conversation",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 236
+      "line": 241
     },
     {
       "id": "ui-src/src/api/traces.ts::ConversationList",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/api/traces.ts",
-      "line": 263
+      "line": 270
     },
     {
       "id": "ui-src/src/api/traces.ts::useConversations",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 270
+      "line": 277
     },
     {
       "id": "ui-src/src/api/traces.ts::useRequest",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 278
+      "line": 285
     },
     {
       "id": "ui-src/src/api/traces.ts::useLive",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 290
+      "line": 297
     },
     {
       "id": "ui-src/src/api/traces.ts::refresh",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/api/traces.ts",
-      "line": 303
-    },
-    {
-      "id": "ui-src/src/components/Layout.tsx::Layout",
-      "type": "symbol",
-      "kind": "function",
-      "file": "ui-src/src/components/Layout.tsx",
-      "line": 23
+      "line": 310
     },
     {
       "id": "ui-src/src/components/Metric.tsx::Sparkline",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Metric.tsx",
-      "line": 10
+      "line": 5
     },
     {
       "id": "ui-src/src/components/Metric.tsx::Metric",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Metric.tsx",
-      "line": 37
+      "line": 32
     },
     {
       "id": "ui-src/src/components/Num.tsx::Num",
@@ -18793,42 +18836,49 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 25
+      "line": 24
     },
     {
       "id": "ui-src/src/components/Shell.tsx::readTheme",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 31
+      "line": 30
     },
     {
       "id": "ui-src/src/components/Shell.tsx::Palette",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 39
+      "line": 38
     },
     {
       "id": "ui-src/src/components/Shell.tsx::go",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 48
+      "line": 47
     },
     {
       "id": "ui-src/src/components/Shell.tsx::Shell",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 93
+      "line": 92
     },
     {
       "id": "ui-src/src/components/Shell.tsx::onKey",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 104
+      "line": 103
+    },
+    {
+      "id": "ui-src/src/components/Space.tsx::Space",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/components/Space.tsx",
+      "line": 8
     },
     {
       "id": "ui-src/src/components/ui/badge.tsx::Badge",
@@ -19069,11 +19119,18 @@
       "line": 15
     },
     {
+      "id": "ui-src/src/features/KnowledgeGraph.tsx::layerOf",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/features/KnowledgeGraph.tsx",
+      "line": 47
+    },
+    {
       "id": "ui-src/src/features/KnowledgeGraph.tsx::jump",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/KnowledgeGraph.tsx",
-      "line": 42
+      "line": 52
     },
     {
       "id": "ui-src/src/features/OrchestrationGraph.tsx::OrchestrationGraph",
@@ -19178,49 +19235,49 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 31
+      "line": 32
     },
     {
       "id": "ui-src/src/features/SkillSavings.tsx::compact",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 32
+      "line": 33
     },
     {
       "id": "ui-src/src/features/SkillSavings.tsx::Levers",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 35
+      "line": 36
     },
     {
       "id": "ui-src/src/features/SkillSavings.tsx::SavingsChip",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 53
+      "line": 54
     },
     {
       "id": "ui-src/src/features/SkillSavings.tsx::Net",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 64
+      "line": 65
     },
     {
       "id": "ui-src/src/features/SkillSavings.tsx::SessionSavingsCard",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 76
+      "line": 77
     },
     {
       "id": "ui-src/src/features/SkillSavings.tsx::SavingsHero",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/features/SkillSavings.tsx",
-      "line": 102
+      "line": 103
     },
     {
       "id": "ui-src/src/features/SpanInspector.tsx::Field",
@@ -19517,13 +19574,6 @@
       "line": 83
     },
     {
-      "id": "ui-src/src/pages/Home.tsx::Home",
-      "type": "symbol",
-      "kind": "function",
-      "file": "ui-src/src/pages/Home.tsx",
-      "line": 43
-    },
-    {
       "id": "ui-src/src/pages/IndexHealth.tsx::short",
       "type": "symbol",
       "kind": "function",
@@ -19542,14 +19592,7 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Knowledge.tsx",
-      "line": 54
-    },
-    {
-      "id": "ui-src/src/pages/Knowledge.tsx::loadBlast",
-      "type": "symbol",
-      "kind": "function",
-      "file": "ui-src/src/pages/Knowledge.tsx",
-      "line": 86
+      "line": 27
     },
     {
       "id": "ui-src/src/pages/Learning.tsx::Learning",
@@ -19570,21 +19613,21 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Project.tsx",
-      "line": 26
+      "line": 21
     },
     {
       "id": "ui-src/src/pages/Project.tsx::Panels",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Project.tsx",
-      "line": 64
+      "line": 70
     },
     {
       "id": "ui-src/src/pages/Project.tsx::Project",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Project.tsx",
-      "line": 114
+      "line": 112
     },
     {
       "id": "ui-src/src/pages/Proposals.tsx::Proposals",
@@ -19619,49 +19662,49 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 33
+      "line": 35
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::median",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 80
+      "line": 82
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::WorkflowCards",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 87
+      "line": 89
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::onDryRun",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 92
+      "line": 94
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::onLaunch",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 103
+      "line": 105
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::Runs",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 178
+      "line": 180
     },
     {
       "id": "ui-src/src/pages/Runs.tsx::RunDetail",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Runs.tsx",
-      "line": 204
+      "line": 213
     },
     {
       "id": "ui-src/src/pages/Sessions.tsx::SessionDetail",
@@ -19745,28 +19788,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/test/honesty.test.tsx",
-      "line": 29
+      "line": 28
     },
     {
       "id": "ui-src/src/test/honesty.test.tsx::RO",
       "type": "symbol",
       "kind": "class",
       "file": "ui-src/src/test/honesty.test.tsx",
-      "line": 44
+      "line": 43
     },
     {
       "id": "ui-src/src/test/honesty.test.tsx::mount",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/test/honesty.test.tsx",
-      "line": 53
+      "line": 52
     },
     {
       "id": "ui-src/src/test/honesty.test.tsx::settle",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/test/honesty.test.tsx",
-      "line": 192
+      "line": 191
     },
     {
       "id": "ui-src/tailwind.config.js::v",
@@ -25974,6 +26017,21 @@
       "type": "calls"
     },
     {
+      "source": "bin/graphify-build.py::write_conventions",
+      "target": "bin/graphify-build.py::write_text_if_changed",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-build.py::write_project_index",
+      "target": "bin/graphify-build.py::write_text_if_changed",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-build.py::write_graph_md",
+      "target": "bin/graphify-build.py::write_text_if_changed",
+      "type": "calls"
+    },
+    {
       "source": "bin/graphify-build.py::unchanged_since_last_build",
       "target": "bin/graphify-build.py::git_state",
       "type": "calls"
@@ -25981,6 +26039,11 @@
     {
       "source": "bin/graphify-build.py::unchanged_since_last_build",
       "target": "bin/graphify-build.py::read_status",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-build.py::write_status",
+      "target": "bin/graphify-build.py::log_automation_outcome",
       "type": "calls"
     },
     {
@@ -26021,6 +26084,11 @@
     {
       "source": "bin/graphify-build.py::main",
       "target": "bin/graphify-build.py::git_state",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-build.py::main",
+      "target": "bin/graphify-build.py::graph_unchanged",
       "type": "calls"
     },
     {
@@ -26081,11 +26149,6 @@
     {
       "source": "bin/graphify-build.py::main",
       "target": "bin/graphify-build.py::service_of",
-      "type": "calls"
-    },
-    {
-      "source": "bin/graphify-build.py::main",
-      "target": "bin/graphify-build.py::top_modules",
       "type": "calls"
     },
     {
@@ -28269,6 +28332,36 @@
     },
     {
       "source": "tests/test_graph_git.py::test_unchanged_tree_takes_the_fast_path",
+      "target": "tests/test_graph_git.py::make_repo",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_git.py::test_commit_without_structural_change_leaves_tracked_files_alone",
+      "target": "tests/test_graph_git.py::build",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_git.py::test_commit_without_structural_change_leaves_tracked_files_alone",
+      "target": "tests/test_graph_git.py::digest_module",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_git.py::test_commit_without_structural_change_leaves_tracked_files_alone",
+      "target": "tests/test_graph_git.py::git",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_git.py::test_commit_without_structural_change_leaves_tracked_files_alone",
+      "target": "tests/test_graph_git.py::make_repo",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_git.py::test_automation_build_logs_its_outcome",
+      "target": "tests/test_graph_git.py::build",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_git.py::test_automation_build_logs_its_outcome",
       "target": "tests/test_graph_git.py::make_repo",
       "type": "calls"
     },
@@ -30832,6 +30925,21 @@
     },
     {
       "source": "tests/test_pre_tool_use.py::test_small_read_allowed",
+      "target": "tests/test_pre_tool_use.py::read",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_pre_tool_use.py::test_image_read_is_never_gated",
+      "target": "tests/test_pre_tool_use.py::call",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_pre_tool_use.py::test_image_read_is_never_gated",
+      "target": "tests/test_pre_tool_use.py::project",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_pre_tool_use.py::test_image_read_is_never_gated",
       "target": "tests/test_pre_tool_use.py::read",
       "type": "calls"
     },
@@ -33428,6 +33536,11 @@
       "type": "calls"
     },
     {
+      "source": "ui-src/src/App.tsx::Inbox",
+      "target": "ui-src/src/api/inbox.ts::useInboxCounts",
+      "type": "calls"
+    },
+    {
       "source": "ui-src/src/api/client.ts::apiGet",
       "target": "ui-src/src/api/client.ts::getToken",
       "type": "calls"
@@ -33435,6 +33548,11 @@
     {
       "source": "ui-src/src/api/client.ts::apiPost",
       "target": "ui-src/src/api/client.ts::getToken",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/api/traces.ts::originLabel",
+      "target": "ui-src/src/api/traces.ts::harnessOff",
       "type": "calls"
     },
     {
@@ -33464,6 +33582,21 @@
     },
     {
       "source": "ui-src/src/components/Shell.tsx::onKey",
+      "target": "ui-src/src/api/client.ts::apiPost",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx::onKey",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Shell.tsx::onKey",
+      "target": "ui-src/src/api/inbox.ts::useInboxCounts",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/components/Space.tsx::Space",
       "target": "ui-src/src/lib/utils.ts::cn",
       "type": "calls"
     },
@@ -33564,6 +33697,16 @@
     },
     {
       "source": "ui-src/src/features/ConversationList.tsx::Row",
+      "target": "ui-src/src/api/traces.ts::harnessOff",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/ConversationList.tsx::Row",
+      "target": "ui-src/src/api/traces.ts::originLabel",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/ConversationList.tsx::Row",
       "target": "ui-src/src/lib/utils.ts::relTime",
       "type": "calls"
     },
@@ -33605,6 +33748,11 @@
     {
       "source": "ui-src/src/features/Impact.tsx::Impact",
       "target": "ui-src/src/features/Impact.tsx::fmt",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/KnowledgeGraph.tsx::jump",
+      "target": "ui-src/src/features/KnowledgeGraph.tsx::layerOf",
       "type": "calls"
     },
     {
@@ -33659,6 +33807,16 @@
     },
     {
       "source": "ui-src/src/features/RequestFeed.tsx::select",
+      "target": "ui-src/src/api/traces.ts::harnessOff",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx::select",
+      "target": "ui-src/src/api/traces.ts::originLabel",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestFeed.tsx::select",
       "target": "ui-src/src/lib/utils.ts::relTime",
       "type": "calls"
     },
@@ -33680,6 +33838,11 @@
     {
       "source": "ui-src/src/features/RequestView.tsx::RequestView",
       "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/RequestView.tsx::RequestView",
+      "target": "ui-src/src/api/traces.ts::harnessOff",
       "type": "calls"
     },
     {
@@ -33730,6 +33893,11 @@
     {
       "source": "ui-src/src/features/SkillSavings.tsx::SessionSavingsCard",
       "target": "ui-src/src/features/SkillSavings.tsx::n",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/features/SkillSavings.tsx::SavingsHero",
+      "target": "ui-src/src/lib/utils.ts::cn",
       "type": "calls"
     },
     {
@@ -33963,11 +34131,6 @@
       "type": "calls"
     },
     {
-      "source": "ui-src/src/pages/Home.tsx::Home",
-      "target": "ui-src/src/api/client.ts::apiPost",
-      "type": "calls"
-    },
-    {
       "source": "ui-src/src/pages/IndexHealth.tsx::IndexHealth",
       "target": "ui-src/src/lib/utils.ts::fmtBytes",
       "type": "calls"
@@ -34023,11 +34186,6 @@
       "type": "calls"
     },
     {
-      "source": "ui-src/src/pages/Project.tsx::Project",
-      "target": "ui-src/src/lib/utils.ts::cn",
-      "type": "calls"
-    },
-    {
       "source": "ui-src/src/pages/Proposals.tsx::Proposals",
       "target": "ui-src/src/lib/utils.ts::relTime",
       "type": "calls"
@@ -34055,6 +34213,11 @@
     {
       "source": "ui-src/src/pages/Runs.tsx::onLaunch",
       "target": "ui-src/src/pages/Runs.tsx::onDryRun",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Runs.tsx::Runs",
+      "target": "ui-src/src/lib/utils.ts::relTime",
       "type": "calls"
     },
     {
@@ -34205,18 +34368,18 @@
     ],
     [
       "react",
-      32
+      31
     ],
     [
       "collections",
       25
     ],
     [
-      "lucide-react",
-      24
+      "type",
+      23
     ],
     [
-      "type",
+      "lucide-react",
       23
     ],
     [
@@ -34229,14 +34392,10 @@
     ],
     [
       "@tanstack",
-      18
+      19
     ],
     [
       "_api_support",
-      17
-    ],
-    [
-      "react-router-dom",
       17
     ],
     [
@@ -34246,6 +34405,10 @@
     [
       "http",
       16
+    ],
+    [
+      "react-router-dom",
+      15
     ],
     [
       "urllib",

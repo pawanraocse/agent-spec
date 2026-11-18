@@ -43,7 +43,9 @@ REGISTRY: list[dict] = [
 ]
 IDS = frozenset(a["id"] for a in REGISTRY)
 RECENT = 40
-OK = frozenset(("ok", "installed", "built", "started", "sent"))
+OK = frozenset(("ok", "installed", "built", "sent"))
+# A launch whose outcome was never written (older stop hooks logged only "started"): neither ok nor failed.
+UNKNOWN = frozenset(("started",))
 
 
 def _config_path(project: str) -> str:
@@ -94,7 +96,8 @@ def overview(project: str) -> dict:
         items.append(dict(spec, enabled=spec["id"] not in off and not env_off,
                           switched_off=spec["id"] in off, env_off=env_off,
                           runs=len(mine), succeeded=sum(n for s, n in statuses.items() if s in OK),
-                          failed=statuses.get("failed", 0), statuses=dict(statuses),
+                          failed=statuses.get("failed", 0), unknown=sum(statuses.get(u, 0) for u in UNKNOWN),
+                          statuses=dict(statuses),
                           duration_ms_total=sum(durations) if durations else None,
                           last=mine[-1] if mine else None))
     day_ago = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - 86400))
@@ -102,6 +105,7 @@ def overview(project: str) -> dict:
         "automations": items,
         "totals": {"runs": len(rows), "succeeded": sum(1 for r in rows if r.get("status") in OK),
                    "failed": sum(1 for r in rows if r.get("status") == "failed"),
+                   "unknown": sum(1 for r in rows if r.get("status") in UNKNOWN),
                    "last_24h": sum(1 for r in rows if str(r.get("ts") or "") >= day_ago),
                    "enabled": sum(1 for i in items if i["enabled"]), "count": len(items)},
         "recent": list(reversed(rows[-RECENT:])),

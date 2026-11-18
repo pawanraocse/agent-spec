@@ -1,21 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, BookOpen, GraduationCap, Moon, Search, Settings, Sun, Monitor, Boxes, MessageSquareText, Trophy, Terminal } from "lucide-react";
-import { apiGet } from "../api/client";
+import { Activity, Moon, Search, Settings, Sun, Monitor, Boxes, MessageSquareText, Trophy, Inbox } from "lucide-react";
+import { apiGet, apiPost } from "../api/client";
+import { useInboxCounts } from "../api/inbox";
 import type { RequestList } from "../api/traces";
 import { Sheet } from "./ui/sheet";
 import { cn } from "../lib/utils";
 
 const NAV = [
-  { to: "/showcase", label: "Showcase", icon: Trophy, hint: "What does the harness change? Tokens, accuracy, RAG, A/B" },
-  { to: "/console", label: "Console", icon: Terminal, hint: "Ask the harnessed agent from the dashboard (local Ollama)" },
-  { to: "/", label: "Live", icon: Activity, hint: "What is my agent doing right now?" },
-  { to: "/coach", label: "Coach", icon: GraduationCap, hint: "Where is it slow or wasteful?" },
-  { to: "/learning", label: "Learning", icon: BookOpen, hint: "Is it getting better?" },
-  { to: "/ask", label: "Ask", icon: MessageSquareText, hint: "Why was this built? What changed last session?" },
-  { to: "/project", label: "Project", icon: Boxes, hint: "What does the harness know?" },
+  { to: "/", label: "Impact", icon: Trophy, hint: "What does the harness change? Tokens kept out, A/B, retrieval accuracy", match: ["/coach", "/learning"] },
+  { to: "/requests", label: "Activity", icon: Activity, hint: "Every request, chat and workflow run, live", match: ["/requests", "/chats", "/runs"] },
+  { to: "/ask", label: "Ask", icon: MessageSquareText, hint: "Search the project's code, docs, memory and past sessions, or run the agent", match: ["/ask", "/console"] },
+  { to: "/risk", label: "Inbox", icon: Inbox, hint: "Blocked risky edits, learning proposals and automations waiting on you", match: ["/risk", "/proposals", "/automations"] },
+  { to: "/project", label: "Project", icon: Boxes, hint: "Skills, knowledge graph, memory, repos, health", match: ["/project"] },
 ];
 
 type Theme = "dark" | "light" | "system";
@@ -89,7 +88,7 @@ function Palette({ open, setOpen }: { open: boolean; setOpen: (o: boolean) => vo
   );
 }
 
-/** DV-021 shell: Live, Coach, Learning, Ask (PI-005), Project; Cmd-K; settings drawer; status bar. */
+/** Shell: five spaces (Impact, Activity, Ask, Inbox, Project), Cmd-K, settings drawer, status bar. */
 export function Shell() {
   const [palette, setPalette] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -111,6 +110,8 @@ export function Shell() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+  const { pathname } = useLocation();
+  const inbox = useInboxCounts();
   const s = status.data;
   const hookOk = s?.hooks ? Object.values(s.hooks).filter(Boolean).length : 0;
   const cov = s?.hook_coverage;
@@ -123,18 +124,23 @@ export function Shell() {
             <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-primary to-accent text-[11px] font-bold text-primary-foreground">as</span>
             <span className="hidden text-sm font-semibold tracking-tight lg:inline">agent-spec</span>
           </Link>
-          {NAV.map(({ to, label, icon: Icon, hint }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              title={hint}
-              className={({ isActive }) => cn("flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors", isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}
-            >
-              <Icon size={16} />
-              <span className="hidden lg:inline">{label}</span>
-            </NavLink>
-          ))}
+          {NAV.map(({ to, label, icon: Icon, hint, match }) => {
+            const active = pathname === to || match.some((m) => pathname === m || pathname.startsWith(m + "/"));
+            const badge = label === "Inbox" ? inbox.total : 0;
+            return (
+              <Link
+                key={to}
+                to={to}
+                title={hint}
+                aria-current={active ? "page" : undefined}
+                className={cn("relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors", active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}
+              >
+                <Icon size={16} />
+                <span className="hidden lg:inline">{label}</span>
+                {badge ? <span className="absolute right-1 top-1 rounded-full bg-warning px-1 text-[10px] font-semibold leading-4 text-background lg:static lg:ml-auto">{badge}</span> : null}
+              </Link>
+            );
+          })}
           <div className="mt-auto flex flex-col gap-1">
             <button type="button" onClick={() => setPalette(true)} className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground hover:bg-muted/60" title="Search (Ctrl/Cmd-K)">
               <Search size={16} /><span className="hidden lg:inline">Search</span><kbd className="ml-auto hidden rounded border border-border px-1 text-[10px] lg:inline">⌘K</kbd>
@@ -156,8 +162,9 @@ export function Shell() {
           <span className={cn("h-1.5 w-1.5 rounded-full", s?.doctor?.status === "fail" ? "bg-danger" : s?.doctor?.status === "warn" ? "bg-warning" : "bg-success")} />doctor {s?.doctor?.status ?? "…"}
         </Link>
         {cov && cov.registered > 0 ? (
-          <span
-            className={cn("flex items-center gap-1.5", cov.action_needed ? "text-danger" : (cov.missing.length || cov.failing_now) && "text-warning")}
+          <Link
+            to="/project/health?tab=health"
+            className={cn("flex items-center gap-1.5 hover:text-foreground", cov.action_needed ? "text-danger" : (cov.missing.length || cov.failing_now) && "text-warning")}
             title={[
               cov.failing_now ? `failing now: ${cov.failing_events.join(", ")}. ${cov.fix || "run agent-spec-platform.py hooks"}` : "",
               ...cov.missing.map((ev) => `${ev}: ${cov.hints[ev]}`),
@@ -165,7 +172,7 @@ export function Shell() {
           >
             <span className={cn("h-1.5 w-1.5 rounded-full", cov.action_needed ? "bg-danger" : cov.missing.length || cov.failing_now ? "bg-warning" : "bg-success")} />
             hooks firing {cov.fired}/{cov.registered}
-          </span>
+          </Link>
         ) : (
           <span title="Registered Cursor hooks">hooks {hookOk}/{s?.hooks ? Object.keys(s.hooks).length : 0}</span>
         )}
@@ -190,9 +197,13 @@ export function Shell() {
             <p className="text-muted-foreground"><b className="text-foreground">Cursor store</b> — history from Cursor's local database (unofficial); durations estimated from message times. Refresh with <code>agent-spec-platform.py ingest traces</code>; disable with <code>AGENT_SPEC_CURSOR_STORE=0</code>.</p>
             <p className="text-muted-foreground"><b className="text-foreground">Workflow</b> — hub-runner runs, joined to the request that started them.</p>
           </div>
-          <div className="space-y-1.5">
-            <p className="font-medium">Pricing and demo data</p>
-            <p className="text-muted-foreground">Pricing presets, the demo seed and the frozen Console live under <Link className="text-primary" to="/project/health" onClick={() => setSettings(false)}>Project › Health</Link>.</p>
+          <div className="space-y-2">
+            <p className="font-medium">Demo data</p>
+            <p className="text-muted-foreground">Seeds a few labelled demo sessions and runs (every number from them is tagged <b className="text-foreground">demo</b>). Your real data is untouched.</p>
+            <div className="flex gap-2">
+              <button type="button" className="rounded-md border border-border px-2.5 py-1 hover:bg-muted" onClick={() => apiPost("/api/seed", { action: "seed" }).then(() => window.location.reload())}>Load demo data</button>
+              <button type="button" className="rounded-md border border-border px-2.5 py-1 text-muted-foreground hover:bg-muted" onClick={() => apiPost("/api/seed", { action: "remove" }).then(() => window.location.reload())}>Remove demo data</button>
+            </div>
           </div>
         </div>
       </Sheet>

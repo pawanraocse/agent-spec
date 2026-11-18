@@ -50,7 +50,7 @@ is `cursor-agent` only when `AGENT_SPEC_CONSOLE=1` is set (or `AGENT_SPEC_AGENT_
 | `agent-spec-platform.py rag-eval [--build] [--label L]` | hit@1, hit@k and MRR for keyword, semantic, hybrid and tuned search on `.agent-spec/eval/rag-golden.jsonl` (questions a local model writes without naming the file). Stores the semantic fusion weight with the best MRR; `search()` uses it, and a weight of 0 skips the embedding call. |
 | `agent-spec-bench.py [--model M]` | The same prompts on the same model with the harness on and off (`--bare`: no digest, no guard, no graph or search tool). Correct = the answer names every expected string in `.agent-spec/eval/agent-bench.jsonl`. |
 
-The **Showcase** page (`/showcase`, `GET /api/showcase`) puts these together: the A/B result per
+The **Impact › Summary** page (`/`, `GET /api/showcase`) puts these together: the A/B result per
 prompt with links to both traces, the RAG accuracy table and its history across changes, tokens
 avoided and billed, rule pass rate, ranged-read share, tool error rate, latency, a per-model table
 and the latest prompts. Each figure is labelled measured, estimated or AI-judged.
@@ -68,28 +68,30 @@ Every chat shows what `/agent-spec-raw-code` and `/agent-spec-raw-code-full` sav
 | Targeted edits | file size minus the edit, for each Edit instead of a rewrite |
 
 Because the context is re-read on every model call, each saving is also multiplied by the
-measured number of later model calls in that chat (later tool calls plus later requests): the
-"re-sends avoided" figure. A chat is in raw-code mode from the first `/agent-spec-raw-code*`
+measured number of later model calls in that chat (the tool calls left in its own request, plus
+later tool calls and later requests): the "re-sends avoided" figure. The skill's own body is
+priced the same way, against only the chats that invoked it. A chat is in raw-code mode from the first `/agent-spec-raw-code*`
 request until `/agent-spec-verbose`. Where it shows: the **Impact** tab opens with a "This chat so
-far" card, each row of **Project › Sessions** carries a −N chip (⚡ when raw-code was on), and the
-**Showcase** leads with the board total, per-lever bars, the chats that saved the most and a
+far" card, each row of **Activity › Chats** carries a −N chip (⚡ when raw-code was on), and the
+**Impact › Summary** leads with the board total, per-lever bars, the chats that saved the most and a
 raw-code vs plain comparison per Cursor request that used tools (the ratio appears only once each
 side has 5+ requests). `GET /api/skill-savings` returns the board; `session_savings` on a request
 and `savings` on a conversation carry the per-chat numbers.
 
-## Six spaces
+## Five spaces
 
-| Space | Question | Built from |
+Each sidebar space is a row of tabs; every tab keeps its own URL, and the old URLs
+(`/showcase`, `/sessions`, `/project/runs`, `/governance`, …) redirect to their new home.
+
+| Space | Question | Tabs |
 |---|---|---|
-| **Showcase** | What does the harness change? | Harness A/B on a local model, RAG accuracy (hit@k, MRR, tuned fusion), token ledger, efficiency and accuracy tiles, per-model table, latest prompts (`showcase.py`) |
-| **Console** | Can I ask the harnessed agent from here? | Streams a job from `/api/agent/sessions` over `/api/agent/jobs/<id>/stream`: tool chips, tokens, link to the trace; follow-ups resume the chat |
-| **Live** (home) | What is my agent doing, and what did it do? | Request feed; orchestration graph (React Flow), waterfall, span inspector, responses, outcome (measured signals + AI-judged quality), review, replay |
-| **Coach** | Where is it slow or wasteful? | p50/p95 per span kind and per tool, slowest spans (measured); top-3 issues with weekly trend and copyable fix prompts (AI-judged) |
-| **Learning** | Is it getting better? | Per fact: findings per session in the N reviewed sessions before vs after it was recorded |
-| **Ask** | Why was this built? What did Cursor change last session? Have we done this before? | Local index of code, docs, rules, memory, this workspace's requests and reviews (`retrieval.py`); cited sources (measured); copy-to-Cursor `/agent-spec-ask`; an answer only from a configured local model (AI-generated). See [`INTELLIGENCE-PLATFORM.md`](INTELLIGENCE-PLATFORM.md) |
-| **Project** | What does the harness know? | Skill catalog, knowledge graph with blast radius, skill panels, session history, runs, memory, health |
+| **Impact** (home) | What does the harness change? | **Summary**: tokens kept out and re-sends avoided, whether `/agent-spec-raw-code` paid for its own size, harness A/B on a local model (with its sample size), RAG accuracy, token ledger, per-model table, latest prompts (`showcase.py`, `skill_savings.py`). **Coach**: p50/p95 per span kind, slowest spans, top issues with fix prompts. **Learning**: findings before vs after each recorded fact |
+| **Activity** | What did my agent do? | **Requests**: live feed with the orchestration graph, waterfall, span inspector, outcome, review, replay; local runs say *harness on* or *harness off*. **Chats**: one row per conversation. **Workflow runs**: hub-runner runs only, by workflow and input |
+| **Ask** | Why was this built? Have we done this before? | **Search the project**: cited search over code, docs, rules, memory, requests and reviews (`retrieval.py`, see [`INTELLIGENCE-PLATFORM.md`](INTELLIGENCE-PLATFORM.md)). **Run the agent**: the local Console, streamed from `/api/agent/sessions` |
+| **Inbox** | What is waiting on me? | **Risky edits** blocked by the risk gate, learning-loop **Proposals**, and **Automations** with each run's recorded outcome. The sidebar badge counts what waits |
+| **Project** | What does the harness know, and is it healthy? | Skills (used first; skill panels on top), knowledge graph (most-depended-on files, unlinked files hidden), memory, repos, search index, health (doctor first; the SDLC rail appears while a pipeline is in flight) |
 
-Ctrl/⌘-K searches requests and skills, and sends any text to Ask. Settings holds the theme (dark, light, system).
+Ctrl/⌘-K searches requests and skills, and sends any text to Ask. Settings holds the theme (dark, light, system) and loads or removes the labelled demo data.
 
 ## Impact tab
 
@@ -165,7 +167,7 @@ run one.
    ```
 
 2. **Show a number, table or timeline.** Have the skill write one JSON file to
-   `.agent-spec/metrics/panels/<skill-name>/<panel>.json`. Project › Panels renders every
+   `.agent-spec/metrics/panels/<skill-name>/<panel>.json`. Project › Skills renders every
    valid file and lists invalid ones with the reason.
 
    ```json

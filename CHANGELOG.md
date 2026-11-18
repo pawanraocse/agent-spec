@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+- **Dashboard: five spaces instead of twenty pages.** Impact (home: Summary, Coach, Learning),
+  Activity (Requests, Chats, Workflow runs), Ask (search, or run the agent), Inbox (risky edits,
+  proposals, automations, with a waiting-count badge) and Project (skills, graph, memory, repos,
+  search index, health). Old URLs redirect. The v2 Overview page and the unused Layout are gone;
+  demo data moved to Settings.
+- **Numbers that agree.** One tokens-kept-out figure, with the raw-code skill's own size netted
+  only against the chats that invoked it ("did it pay for itself?"). Savings and skill cost now
+  both count the calls left in their own request. The whole-file estimate no longer appears as
+  a second "tokens saved". The A/B card states its sample size.
+- **Automations count outcomes, not launches.** The background graph build logs ok or failed
+  with its duration (`AGENT_SPEC_AUTOMATION`); a bare "started" from older hooks shows as
+  "outcome not recorded" instead of ok.
+- **Harness-off runs are labelled.** Local A/B control runs show *harness off* in Requests and
+  Chats, and their Impact tab no longer shows a failing rules checklist.
+- **Clearer views.** Memory counts load before a tab is opened and its duplicate graph and skill
+  tabs are gone; the graph hides unlinked files and lists the most depended-on ones; Skills
+  shows used skills first; Workflow runs lists only workflow runs, by name and input; Health
+  opens on the doctor and shows the SDLC rail only while a pipeline is in flight; every KPI
+  tile uses the same provenance badge.
+- **Read guard skips images and PDFs**, which cannot be read by line range.
+- **Skills:** raw-code-full is 21% smaller (same rules), so it costs less each time it is
+  re-sent; raw-code's `full` level is now `tight` so it no longer collides with the
+  raw-code-full skill (`full` still works); the router now reaches hub-runner, learn,
+  session-review, hook-probe and raw-code-full.
+
 - **Optional ripgrep in raw-code-full**: §2 now names `rg -n --max-columns 200` as the
   preferred text search when `rg` is on PATH, with `grep -n` as the fallback. Graphify still
   comes first for structural questions; ripgrep is never required or installed.

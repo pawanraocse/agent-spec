@@ -40,7 +40,7 @@ type TaskRow = {
 
 export function Governance() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = (searchParams.get("tab") as any) || "gates";
+  const initialTab = (searchParams.get("tab") as any) || "health";
   const [tab, setTab] = useState<"gates" | "gaps" | "guards" | "health" | "tasks">(initialTab);
 
   const [gatesData, setGatesData] = useState<{
@@ -86,25 +86,29 @@ export function Governance() {
   };
 
   const gatePassCount = (gatesData?.gates || []).filter((g) => g.status === "ok").length;
+  // The 9-gate rail is noise until a feature is actually moving through it (gate 0 written).
+  const pipelineActive = !!gatesData?.gates?.[0] && gatesData.gates[0].status !== "missing";
   const docFailCount = (doctorData?.checks || []).filter((c) => c.status === "FAIL").length;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-foreground">Governance & Rail Audits</h1>
+        <h1 className="text-xl font-semibold text-foreground">Health</h1>
         <p className="text-xs text-muted-foreground" data-figure-exempt>
-          9-gate SDLC, 6-gate implement audit, harness gaps, doctor health, and proof pack
+          Is the harness installed and working: doctor checks, what the hooks caught, the guard log{pipelineActive ? ", and the SDLC pipeline in flight" : ""}
         </p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Metric
-          label="SDLC Gate Rail"
-          value={`${gatePassCount} / 9`}
-          provenance="measured"
-        />
+      <div className={`grid gap-3 ${pipelineActive ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
+        {pipelineActive ? (
+          <Metric
+            label="SDLC Gate Rail"
+            value={`${gatePassCount} / 9`}
+            provenance="measured"
+          />
+        ) : null}
         <Metric
           label="Open Gaps Caught"
           value={gapsData.length}
@@ -132,10 +136,10 @@ export function Governance() {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-border text-xs">
         {[
-          ["gates", "9-Gate SDLC Rail"],
+          ["health", "Doctor Health & Snapshot"],
           ["gaps", "Caught by Harness", gapsData.length],
           ["guards", "Guard Log & Quarantine"],
-          ["health", "Doctor Health & Snapshot"],
+          ...(pipelineActive || tab === "gates" ? [["gates", "SDLC pipeline"]] : []),
           ["tasks", "Backlog", tasksData.length],
         ].map(([t, label, count]) => (
           <button

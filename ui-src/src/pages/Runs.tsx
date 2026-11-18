@@ -4,8 +4,10 @@ import { Num, rowProv } from "../components/Num";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet, apiPost } from "../api/client";
+import { relTime } from "../lib/utils";
 
-type RunRow = { request_id: string; status: string; tokens_total: number; workflow_id?: string; source?: string; tokens_estimated?: number };
+type RunRow = { request_id: string; status: string; tokens_total: number; workflow_id?: string | null; source?: string; tokens_estimated?: number;
+  prompt?: string | null; started?: string | null; step_count?: number };
 type Step = {
   step_id: string;
   ordinal: number;
@@ -178,25 +180,32 @@ function WorkflowCards() {
 export function Runs() {
   const [runs, setRuns] = useState<{ runs: RunRow[] }>();
   useEffect(() => {
-    apiGet<{ runs: RunRow[] }>("/api/runs?limit=50").then(setRuns).catch(console.error);
+    apiGet<{ runs: RunRow[] }>("/api/runs?limit=200").then(setRuns).catch(console.error);
   }, []);
+  // Plain chat requests already live under Requests; this list is only hub-runner workflow runs.
+  const wf = (runs?.runs ?? []).filter((r) => r.workflow_id);
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-semibold">Runs & workflows</h1>
+    <div className="space-y-4">
       <WorkflowCards />
-      <ul className="divide-y divide-border rounded-lg border border-border text-sm">
-        {(runs?.runs ?? []).map((r) => (
-          <li key={r.request_id} className="flex justify-between px-3 py-2">
-            <Link to={`/runs/${r.request_id}`} className="font-mono text-primary">
-              {r.request_id}
-            </Link>
-            <span className="text-muted-foreground">
-              {r.status} · <Num p={rowProv(r)}>{r.tokens_total}</Num> tok
-              {r.workflow_id ? ` · ${r.workflow_id}` : ""}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {runs && !wf.length ? (
+        <p className="rounded-lg border border-dashed border-border p-4 text-xs text-muted-foreground">
+          No workflow runs yet. Launch one above, or run <code>/agent-spec-hub-runner</code> in Cursor; each run then appears here with its steps, subagents and tokens.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border rounded-lg border border-border text-sm">
+          {wf.map((r) => (
+            <li key={r.request_id}>
+              <Link to={`/runs/${r.request_id}`} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/40">
+                <span className="shrink-0 rounded bg-accent/10 px-1.5 text-[11px] font-medium text-accent">{(r.workflow_id ?? "").replace(/^agent-spec-wf-/, "")}</span>
+                <span className="min-w-0 flex-1 truncate">{(r.prompt || "").replace(/\s+/g, " ").slice(0, 140) || <span className="font-mono text-muted-foreground">{r.request_id.slice(0, 12)}</span>}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {r.status} · <Num p="measured">{r.step_count ?? 0}</Num> steps · <Num p={rowProv(r)}>{r.tokens_total}</Num> tok{r.started ? <> · <time dateTime={r.started}>{relTime(r.started)}</time></> : null}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

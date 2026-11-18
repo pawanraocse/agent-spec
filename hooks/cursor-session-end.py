@@ -105,11 +105,12 @@ def refresh_graph(project, session=None):
         return  # the marker stays: turning it back on rebuilds at the next stop
     try:
         os.remove(marker)
-        subprocess.Popen([sys.executable, builder, "--quiet"], cwd=project,
+        # The builder logs its own outcome (ok or failed, with duration) when it finishes.
+        env = dict(os.environ, AGENT_SPEC_AUTOMATION="graph-refresh",
+                   AGENT_SPEC_AUTOMATION_SESSION=str(session or ""))
+        subprocess.Popen([sys.executable, builder, "--quiet"], cwd=project, env=env,
                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, start_new_session=True)
-        log_automation(project, "graph-refresh", "started", "files changed since the last build",
-                       session=session)
     except (OSError, ValueError, subprocess.SubprocessError):
         log_automation(project, "graph-refresh", "failed", "could not start the builder", session=session)
 

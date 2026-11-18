@@ -51,7 +51,9 @@ class AutomationsApiTest(ApiCase):
                  {"ts": "2026-11-14T03:00:01Z", "name": "not-an-automation", "status": "ok"})
         data = self.get_json("/api/automations")
         by = {a["id"]: a for a in data["automations"]}
-        self.assertEqual((by["graph-refresh"]["runs"], by["graph-refresh"]["succeeded"], by["graph-refresh"]["failed"]), (2, 1, 1))
+        # A bare "started" (older hooks) is neither ok nor failed: its outcome was never recorded.
+        self.assertEqual((by["graph-refresh"]["runs"], by["graph-refresh"]["succeeded"], by["graph-refresh"]["failed"],
+                          by["graph-refresh"]["unknown"]), (2, 0, 1, 1))
         self.assertEqual(by["graph-refresh"]["last"]["status"], "failed")
         self.assertEqual(by["snapshot-rotate"]["duration_ms_total"], 40)
         self.assertEqual(data["totals"]["runs"], 3, "unknown names and bad lines are ignored")

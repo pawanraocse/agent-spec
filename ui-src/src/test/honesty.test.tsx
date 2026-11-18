@@ -10,7 +10,6 @@ import { Repos } from "../pages/Repos";
 import { SkillEffectiveness } from "../features/SkillEffectiveness";
 import { Coach } from "../pages/Coach";
 import { Governance } from "../pages/Governance";
-import { Home } from "../pages/Home";
 import { Knowledge } from "../pages/Knowledge";
 import { RunDetail, Runs } from "../pages/Runs";
 import { SessionDetail, Sessions } from "../pages/Sessions";
@@ -196,9 +195,8 @@ describe("page-level honesty (DV-005)", () => {
     ["Session detail", "/sessions/conv-1", <SessionDetail />, "/sessions/:id", [/^Savings Calculator/, /Compare$/]],
     ["Runs", "/runs", <Runs />, undefined, []],
     ["Run detail", "/runs/req-1", <RunDetail />, "/runs/:id", [/^Subagent health$/]],
-    ["Memory", "/memory", <Knowledge />, undefined, [/^Bounded Memory/, /^Flywheel Experiences/, /^Skills & Personas/]],
+    ["Memory", "/memory", <Knowledge />, undefined, [/^Bounded Memory/, /^Flywheel Experiences/]],
     ["Health", "/health", <Governance />, undefined, [/^Caught by Harness/, /^Guard Log/, /^Doctor Health/, /^Backlog/]],
-    ["Overview", "/overview", <Home />, undefined, []],
   ];
   for (const [name, path, el, route, tabs] of v2) {
     it(`${name}: every figure carries provenance, on every tab`, async () => {

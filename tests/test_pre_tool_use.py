@@ -58,6 +58,14 @@ def test_small_read_allowed():
     assert call(p, read(p, "small.txt"))["permission"] == "allow"
 
 
+def test_image_read_is_never_gated():
+    """A screenshot cannot be read by line range, so the nudge would only cost a retry."""
+    p = project()
+    with open(os.path.join(p, "shot.png"), "wb") as fh:
+        fh.write(b"\x89PNG" + b"\0" * 200000)
+    assert call(p, read(p, "shot.png"))["permission"] == "allow"
+
+
 def test_hard_cap_denies_every_time():
     p = project()
     for _ in range(3):

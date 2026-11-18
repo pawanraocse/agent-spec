@@ -1,23 +1,18 @@
-import { lazy, Suspense } from "react";
-import { NavLink, Navigate, Route, Routes } from "react-router-dom";
+import { lazy, Suspense, useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../api/client";
 import { Num, Prov } from "../components/Num";
 import { Badge } from "../components/ui/badge";
-import { Card, CardHeader, Empty } from "../components/ui/card";
-import { cn, relTime } from "../lib/utils";
+import { Card, CardHeader } from "../components/ui/card";
+import { relTime } from "../lib/utils";
+import { Space, type SpaceTab } from "../components/Space";
 import { skillIcon, type Skill } from "../features/skillMeta";
-import { Automations } from "./Automations";
 import { Governance } from "./Governance";
-import { Home } from "./Home";
 import { IndexHealth } from "./IndexHealth";
-import { Risk } from "./Risk";
-import { Proposals } from "./Proposals";
 import { Repos } from "./Repos";
 import { SkillEffectiveness } from "../features/SkillEffectiveness";
 import { Knowledge } from "./Knowledge";
-import { RunDetail, Runs } from "./Runs";
-import { SessionDetail, Sessions } from "./Sessions";
 
 const KnowledgeGraph = lazy(() => import("../features/KnowledgeGraph"));
 
@@ -25,13 +20,24 @@ type Panel = { skill: string; file: string; mtime: number; panel: { type: "kpi" 
 
 function Catalog() {
   const q = useQuery({ queryKey: ["catalog"], queryFn: () => apiGet<{ skills: Skill[]; self_described: number }>("/api/catalog") });
+  const [all, setAll] = useState(false);
+  const skills = q.data?.skills ?? [];
+  const used = skills.filter((s) => s.uses > 0);
+  // Unused skills are noise on a first look; they stay one click away.
+  const shown = all || !used.length ? skills : used;
   const groups = new Map<string, Skill[]>();
-  (q.data?.skills ?? []).forEach((s) => groups.set(s.category, [...(groups.get(s.category) ?? []), s]));
+  [...shown].sort((a, b) => b.uses - a.uses).forEach((s) => groups.set(s.category, [...(groups.get(s.category) ?? []), s]));
   return (
     <div className="space-y-5 p-6">
       <p className="text-xs text-muted-foreground">
-        <Num p="measured">{q.data?.skills.length ?? 0}</Num> skills · <Num p="measured">{q.data?.self_described ?? 0}</Num> describe themselves with a <code>dashboard:</code> block. Uses are counted from request traces.
+        <Num p="measured">{skills.length}</Num> skills, <Num p="measured">{used.length}</Num> used so far (counted from request traces).{" "}
+        {used.length && used.length < skills.length ? (
+          <button type="button" className="text-primary hover:underline" onClick={() => setAll(!all)}>
+            {all ? "Show only used skills" : `Show all ${skills.length}`}
+          </button>
+        ) : null}
       </p>
+      <Panels />
       <SkillEffectiveness />
       {[...groups.entries()].map(([cat, list]) => (
         <section key={cat}>
@@ -63,11 +69,10 @@ function Catalog() {
 
 function Panels() {
   const q = useQuery({ queryKey: ["panels"], queryFn: () => apiGet<{ panels: Panel[]; invalid: { skill: string; file: string; error: string }[] }>("/api/panels") });
-  if (q.data && !q.data.panels.length && !q.data.invalid.length) {
-    return <Empty title="No skill panels yet" hint={<>Any skill can add a panel by writing <code>.agent-spec/metrics/panels/&lt;skill&gt;/&lt;name&gt;.json</code> (kpi, table or timeline, with provenance). See docs/DASHBOARD.md, "Make your skill show up in five minutes".</>} />;
-  }
+  // Skills that publish a panel show it above the catalog; nothing is rendered when none do.
+  if (!q.data || (!q.data.panels.length && !q.data.invalid.length)) return null;
   return (
-    <div className="grid gap-4 p-6 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       {(q.data?.panels ?? []).map(({ skill, file, mtime, panel }) => (
         <Card key={file}>
           <CardHeader title={<span className="flex items-center gap-2">{panel.title}<Prov p={panel.provenance} /></span>} subtitle={<>/{skill} · updated <time dateTime={new Date(mtime * 1000).toISOString()}>{relTime(new Date(mtime * 1000).toISOString())}</time></>} />
@@ -94,53 +99,29 @@ function Panels() {
   );
 }
 
-const TABS = [
-  { to: "automations", label: "Automations" },
+const TABS: SpaceTab[] = [
   { to: "skills", label: "Skills & workflows" },
   { to: "graph", label: "Knowledge graph" },
-  { to: "panels", label: "Panels" },
-  { to: "sessions", label: "Session history" },
-  { to: "runs", label: "Runs" },
   { to: "memory", label: "Memory" },
   { to: "repos", label: "Repos" },
-  { to: "proposals", label: "Proposals" },
-  { to: "risk", label: "Risk" },
-  { to: "index", label: "Index health" },
+  { to: "index", label: "Search index" },
   { to: "health", label: "Health" },
-  { to: "overview", label: "Overview" },
 ];
 
-/** Project space (§14.2): what the harness knows and has. Older v2 views live here unchanged. */
+/** Project space: what the harness knows about this codebase and whether it is healthy. */
 export function Project() {
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <nav className="flex gap-1 overflow-x-auto border-b border-border px-4 pt-3" aria-label="Project sections">
-        {TABS.map((t) => (
-          <NavLink key={t.to} to={t.to} className={({ isActive }) => cn("whitespace-nowrap border-b-2 px-3 pb-2 text-xs font-medium", isActive ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
-            {t.label}
-          </NavLink>
-        ))}
-      </nav>
-      <div className="scrollbar-thin min-h-0 flex-1 overflow-auto">
-        <Routes>
-          <Route index element={<Navigate to="skills" replace />} />
-          <Route path="skills" element={<Catalog />} />
-          <Route path="graph" element={<div className="h-full"><Suspense fallback={<p className="p-6 text-xs text-muted-foreground">Loading graph…</p>}><KnowledgeGraph /></Suspense></div>} />
-          <Route path="automations" element={<Automations />} />
-          <Route path="panels" element={<Panels />} />
-          <Route path="sessions" element={<div className="p-6"><Sessions /></div>} />
-          <Route path="sessions/:id" element={<div className="p-6"><SessionDetail /></div>} />
-          <Route path="runs" element={<div className="p-6"><Runs /></div>} />
-          <Route path="runs/:id" element={<div className="p-6"><RunDetail /></div>} />
-          <Route path="memory" element={<div className="p-6"><Knowledge /></div>} />
-          <Route path="repos" element={<Repos />} />
-          <Route path="proposals" element={<Proposals />} />
-          <Route path="risk" element={<Risk />} />
-          <Route path="index" element={<IndexHealth />} />
-          <Route path="health" element={<div className="p-6"><Governance /></div>} />
-          <Route path="overview" element={<div className="p-6"><Home /></div>} />
-        </Routes>
-      </div>
-    </div>
+    <Space tabs={TABS}>
+      <Routes>
+        <Route index element={<Navigate to="skills" replace />} />
+        <Route path="skills" element={<Catalog />} />
+        <Route path="graph" element={<div className="h-full"><Suspense fallback={<p className="p-6 text-xs text-muted-foreground">Loading graph…</p>}><KnowledgeGraph /></Suspense></div>} />
+        <Route path="panels" element={<Navigate to="../skills" replace />} />
+        <Route path="memory" element={<div className="p-6"><Knowledge /></div>} />
+        <Route path="repos" element={<Repos />} />
+        <Route path="index" element={<IndexHealth />} />
+        <Route path="health" element={<div className="p-6"><Governance /></div>} />
+      </Routes>
+    </Space>
   );
 }

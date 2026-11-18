@@ -36,6 +36,11 @@ export interface Trace {
   provenance: "measured" | "estimated";
 }
 
+/** The local agent's A/B control arm (`--bare`): no digest, no graph tools, no guard. */
+export const harnessOff = (t: { cursor_version?: string | null }) => (t.cursor_version ?? "").endsWith("+bare");
+export const originLabel = (t: { origin?: string | null; cursor_version?: string | null }) =>
+  t.origin === "cli" ? "CLI run" : t.origin === "local" ? (harnessOff(t) ? "Local · harness off" : "Local · harness on") : null;
+
 export interface Span {
   span_id: string;
   trace_id: string;
@@ -241,6 +246,8 @@ export interface Conversation {
   workspace?: string | null;
   sources: Source[];
   provenance: "measured" | "estimated";
+  origin?: string | null;
+  cursor_version?: string | null;
   start?: string | null;
   end?: string | null;
   requests: number;

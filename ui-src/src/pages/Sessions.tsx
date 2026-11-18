@@ -83,7 +83,7 @@ export function SessionDetail() {
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <Link to="/sessions" className="text-xs text-muted-foreground hover:text-foreground">
+            <Link to="/chats" className="text-xs text-muted-foreground hover:text-foreground">
               ← Sessions
             </Link>
             <span className="text-muted-foreground/70">/</span>

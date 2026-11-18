@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Gauge, Pause, Play, Rewind } from "lucide-react";
-import type { RequestDetail, Span } from "../api/traces";
+import { harnessOff, type RequestDetail, type Span } from "../api/traces";
 import { Num, Prov } from "../components/Num";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -85,10 +85,11 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
               <span title={trace.status_reason ?? undefined}><Badge tone={statusTone(trace.status)}>{trace.status}</Badge></span>
               {trace.status_reason ? <span>{trace.status_reason}</span> : null}
               {trace.origin === "cli" ? <span title="Run through cursor-agent (a script or probe); it never appears in Cursor's chat list">CLI run</span> : null}
+              {harnessOff(trace) ? <Badge tone="warning" title="A/B control arm: no digest, no graph tools, no guard">harness off</Badge> : trace.origin === "local" ? <Badge tone="success">harness on</Badge> : null}
               {trace.prompt_source === "transcript" ? <span title="Cursor fired no prompt hook (headless run); the prompt was read from its transcript">prompt from transcript</span> : null}
               <span>Duration <Num p={prov} className="text-foreground">{fmtMs(trace.duration_ms)}</Num></span>
               {trace.model ? <span>Model <span className="font-mono text-foreground">{trace.model}</span></span> : null}
-              {trace.cursor_version ? <span>Cursor <span className="font-mono text-foreground">{trace.cursor_version}</span></span> : null}
+              {trace.cursor_version && trace.origin !== "local" ? <span>Cursor <span className="font-mono text-foreground">{trace.cursor_version}</span></span> : null}
               <span>Spans <Num p="measured" className="text-foreground">{trace.span_count}</Num></span>
               {detail.context?.budget ? <span className="inline-flex items-center gap-1">Context <ContextChip b={detail.context.budget} /></span> : null}
               {trace.skills.map((s) => <Badge key={s} tone="accent" className="normal-case">/{s}</Badge>)}
@@ -129,7 +130,7 @@ export function RequestView({ detail }: { detail: RequestDetail }) {
           </TabsList>
         </div>
         <TabsContent value="impact" className="scrollbar-thin min-h-0 flex-1 overflow-auto px-5 py-4">
-          <Impact impact={detail.impact} session={detail.session_savings} />
+          <Impact impact={detail.impact} session={detail.session_savings} harnessOff={harnessOff(trace)} />
         </TabsContent>
         <TabsContent value="graph" className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-[300px] flex-[3] border-b border-border">

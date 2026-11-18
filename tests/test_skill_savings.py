@@ -67,15 +67,17 @@ class SkillSavingsTest(unittest.TestCase):
         cost = skill_savings.skill_bytes("agent-spec-raw-code-full") // 4
         self.assertGreater(cost, 0)
         self.assertEqual(s["skill_cost"]["tokens"], cost)            # invoked once, in request 1
-        self.assertEqual(s["skill_cost"]["resend"], cost * 4)        # and re-sent on the 4 later calls
+        # loaded before request 1's own tool call, so re-sent on it and on the 4 later calls
+        self.assertEqual(s["skill_cost"]["resend"], cost * 5)
         self.assertEqual(s["net_kept_out"], 1890 - cost)
-        self.assertEqual(s["net_resend_avoided"], (1890 - cost) * 4)
+        self.assertEqual(s["net_resend_avoided"], 900 * 5 + 990 * 4 - cost * 5)
 
     def test_resend_multiplier_counts_later_calls(self):
         s = self.session()
         # after request 1: 2 tool calls in request 2 + 2 later requests = 4 later model calls
         self.assertEqual(s["requests"][0]["later_calls"], 4)
-        self.assertEqual(s["resend_avoided"], 1890 * 4)
+        # the ranged read is followed by the edit in its own request (one more call); the edit is last
+        self.assertEqual(s["resend_avoided"], 900 * 5 + 990 * 4)
 
     def test_overview_gates_the_ratio_on_sample_size(self):
         o = skill_savings.overview(self.project, None, self.traces, self.spans)

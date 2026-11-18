@@ -1,11 +1,6 @@
 import type { Provenance } from "../api/client";
+import { Prov } from "./Num";
 
-const LABEL: Record<Provenance, string> = {
-  measured: "Measured",
-  estimated: "Estimated",
-  demo_seed: "Demo seed",
-  ai_judged: "AI-judged",
-};
 
 function Sparkline({ data }: { data: number[] }) {
   if (!data || data.length < 2) return null;
@@ -28,7 +23,7 @@ function Sparkline({ data }: { data: number[] }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         points={points}
-        className="text-sky-400/80"
+        className="text-primary"
       />
     </svg>
   );
@@ -47,23 +42,19 @@ export function Metric({
   formula?: string;
   sparkline?: number[];
 }) {
+  // Same tile and provenance badge as <Stat>, so a figure looks the same on every page.
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/60 p-4">
+    <div className="rounded-lg border border-border bg-card px-4 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs uppercase tracking-wide text-slate-500" data-figure-exempt>{label}</span>
-        <span
-          className="rounded px-1.5 py-0.5 text-[10px] font-medium uppercase text-amber-200/90 ring-1 ring-amber-500/40"
-          title={formula}
-        >
-          {LABEL[provenance]}
-        </span>
+        <span className="text-[11px] uppercase tracking-wide text-muted-foreground" data-figure-exempt>{label}</span>
+        <span title={formula}><Prov p={provenance} /></span>
       </div>
       <div className="mt-1 flex items-baseline justify-between gap-2">
-        <div className="text-2xl font-semibold tabular-nums text-slate-100" data-provenance={provenance}>{value}</div>
+        <div className="text-xl font-semibold tabular-nums" data-provenance={provenance}>{value}</div>
         {sparkline ? <Sparkline data={sparkline} /> : null}
       </div>
       {provenance === "estimated" && formula ? (
-        <p className="mt-1 text-[11px] text-slate-500">{formula}</p>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">{formula}</p>
       ) : null}
     </div>
   );

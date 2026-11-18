@@ -71,7 +71,7 @@ function Bench({ b }: { b: NonNullable<Showcase["bench"]> }) {
     <Card>
       <CardHeader
         title={<span className="flex items-center gap-1.5"><FlaskConical size={14} />Harness A/B on a free local model</span>}
-        subtitle={<>Same prompts, same model (<code>{b.model}</code>), harness on vs off. Correct = the answer names the expected file. Run {relTime(b.ts)}.</>}
+        subtitle={<>Same {h.cases} prompts, same model (<code>{b.model}</code>), harness on vs off. Correct = the answer names the expected file. Run {relTime(b.ts)}.{h.cases < 10 ? <> <b className="text-warning">n = {h.cases}: a smoke test, not a benchmark.</b></> : null}</>}
         right={<Prov p="measured" />}
       />
       <div className="grid gap-5 p-4 md:grid-cols-2">
@@ -203,8 +203,7 @@ export function Showcase() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Tokens avoided" value={n(t.avoided)} p="estimated" hint={t.reduction_pct !== null ? `${t.reduction_pct}% of a plain-Cursor read path` : undefined} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
         <Stat label="Cache-read share" value={pct(t.cache_share_pct)} p="measured" hint="of billed input, re-sent at 0.1×" />
         <Stat label="Harness rules pass" value={pct(a.rules_pass_pct)} p="measured" hint={`${n(a.rules_checked)} checks`} />
         <Stat label="Ranged reads" value={pct(e.ranged_read_pct)} p="measured" hint="of file reads" />
@@ -246,8 +245,7 @@ export function Showcase() {
             {([
               ["Billed input", t.billed_in, "measured"], ["of which cache reads", t.cache_read, "measured"], ["Billed output", t.billed_out, "measured"],
               ["Context the harness let in", t.context_in, "estimated"], ["Plain-Cursor equivalent", t.plain_cursor, "estimated"],
-              ["Avoided by graph, ranged reads, subagents", t.avoided, "estimated"],
-              ["Whole-file reads replaced by graph (project)", t.whole_file_estimate?.saved_tokens ?? 0, "estimated"],
+              ["Kept out by graph, ranged reads, subagents", t.avoided, "estimated"],
             ] as const).map(([label, v, p]) => (
               <div key={label} className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5">
                 <span className="text-muted-foreground">{label}</span>

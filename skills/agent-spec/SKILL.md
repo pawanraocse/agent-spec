@@ -39,6 +39,11 @@ NEEDED** → run `/agent-spec-onboard` yourself, silently, whatever was asked. N
 | End of session, or context past 70% | `/agent-spec-snapshot` |
 | Long session, task boundary | `/agent-spec-compact` |
 | A lens — security, architecture, data | `/agent-spec-persona <role>` |
+| Run a workflow: RCA a Jira bug, review a branch, plan a fix | `/agent-spec-hub-runner <workflow>` |
+| "have we solved this before", learn from corrections | `/agent-spec-learn` |
+| "review this session", where did the chat waste time | `/agent-spec-session-review` |
+| Hooks not firing, dashboard shows hooks below full | `/agent-spec-hook-probe` |
+| Session is expensive, many tool calls ahead | `/agent-spec-raw-code-full` |
 | Output too long / too terse | `/agent-spec-raw-code` / `/agent-spec-verbose` |
 | "what is this session costing" | `./.agent-spec/bin/agent-spec-tokens.py session` |
 

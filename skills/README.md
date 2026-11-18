@@ -46,7 +46,7 @@ Gate skills: `/agent-spec-requirements` `/agent-spec-tech-spec` `/agent-spec-prd
 
 ## Context modes
 
-- `/agent-spec-raw-code` — short actionable replies (`full` / `lite`)
+- `/agent-spec-raw-code` — short actionable replies (`tight` / `lite`)
 - `/agent-spec-raw-code-full` — batch, graph, Edit, cap output; Complexity Override for hard algorithms
 - `/agent-spec-compact` — snapshot then new chat
 - `/agent-spec-verbose` — normal prose

@@ -765,6 +765,8 @@ def list_conversations(project, conn, filters, limit=200, offset=0, loaded=None)
             "running": sum(1 for t in ts if t.get("status") == "running"),
             "skills": sorted({s for t in ts for s in t.get("skills") or []}),
             "models": sorted({t.get("model") for t in ts if t.get("model")}),
+            "origin": next((t.get("origin") for t in ts if t.get("origin")), None),
+            "cursor_version": next((t.get("cursor_version") for t in ts if t.get("cursor_version")), None),
             "reviewed": os.path.isfile(os.path.join(reviews_dir, "%s.json" % sid)),
             "has_transcript": any(t.get("transcript_path") for t in ts),
             "latest_trace_id": ts[-1]["trace_id"],

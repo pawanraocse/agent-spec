@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertTriangle, Bot, ChevronDown, ChevronRight, Copy, Download, FileText, Pencil, Search, ShieldAlert, Wrench } from "lucide-react";
 import { apiGet } from "../api/client";
-import { useConversations, useRequests, type Conversation } from "../api/traces";
+import { harnessOff, originLabel, useConversations, useRequests, type Conversation } from "../api/traces";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -11,7 +11,7 @@ import { cn, copyText, fmtMs, relTime } from "../lib/utils";
 import { SavingsChip } from "./SkillSavings";
 import { ContextChip } from "./ContextMeter";
 
-const SOURCE_LABEL: Record<string, string> = { hook: "Live hooks", cursor_store: "Cursor history", run: "Workflow run", demo_seed: "Demo seed" };
+const SOURCE_LABEL: Record<string, string> = { hook: "Cursor", cursor_store: "Cursor history", run: "Workflow run", demo_seed: "Demo seed" };
 
 function base(path?: string | null) {
   return path ? path.replace(/[\\/]+$/, "").split(/[\\/]/).pop() || path : "—";
@@ -58,7 +58,7 @@ export function ConversationList() {
         </label>
         <select aria-label="Source" value={source} onChange={(e) => setSource(e.target.value)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs">
           <option value="">All sources</option>
-          <option value="hook">Live hooks</option>
+          <option value="hook">Cursor (live hooks)</option>
           <option value="cursor_store">Cursor history</option>
           <option value="cli">CLI runs (hidden by default)</option>
         </select>
@@ -109,7 +109,7 @@ function Row({ c, open, onToggle }: { c: Conversation; open: boolean; onToggle: 
             {c.savings ? <SavingsChip kept={c.savings.kept_out} resend={c.savings.resend_avoided} raw={c.savings.raw_code.active} /> : null}
             {c.context?.budget ? <ContextChip b={c.context.budget} /> : null}
             {c.skills.slice(0, 3).map((s) => <Badge key={s} tone="accent" className="normal-case">{s.replace(/^agent-spec-/, "")}</Badge>)}
-            <span className="ml-auto">{c.sources.map((s) => SOURCE_LABEL[s] ?? s).join(" + ")}</span>
+            <span className={cn("ml-auto", harnessOff(c) && "text-warning")}>{originLabel(c) ?? c.sources.map((s) => SOURCE_LABEL[s] ?? s).join(" + ")}</span>
           </div>
         </div>
       </button>
@@ -159,7 +159,7 @@ function Detail({ c }: { c: Conversation }) {
             <Download size={12} />{exporting ? "Exporting…" : exportNote || "Export audit"}
           </Button>
           {c.has_transcript ? (
-            <Button size="sm" variant="outline" onClick={() => navigate(`/project/sessions/${encodeURIComponent(c.session_id)}`)}>
+            <Button size="sm" variant="outline" onClick={() => navigate(`/chats/${encodeURIComponent(c.session_id)}`)}>
               <FileText size={12} />Transcript analysis
             </Button>
           ) : null}

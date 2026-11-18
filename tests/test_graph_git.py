@@ -164,6 +164,51 @@ def test_unchanged_tree_takes_the_fast_path():
     finally:
         shutil.rmtree(t)
 
+
+def test_commit_without_structural_change_leaves_tracked_files_alone():
+    """A rebuild after committing the graph changes only the build time and the git block;
+    the committed files keep their bytes, so the tree stays clean, and the digest still
+    reports the new HEAD from .status.json."""
+    t = make_repo()
+    try:
+        build(t)
+        gdir = os.path.join(t, ".agent-spec", "graph")
+        names = ("knowledge-graph.json", "KNOWLEDGE-GRAPH.md")
+        before = {}
+        for n in names:
+            with open(os.path.join(gdir, n), "rb") as fh:
+                before[n] = fh.read()
+        git(t, "add", "-A")
+        git(t, "commit", "-q", "-m", "graph")
+        build(t)
+        for n in names:
+            with open(os.path.join(gdir, n), "rb") as fh:
+                assert fh.read() == before[n], n + " was rewritten"
+        line = digest_module(t).graph_line()
+        assert "HEAD is now" not in line, line
+    finally:
+        shutil.rmtree(t)
+
+def test_automation_build_logs_its_outcome():
+    """HA-006: a build the stop hook launched (AGENT_SPEC_AUTOMATION set) appends how it ended
+    to metrics/automation.jsonl; a build run by hand appends nothing."""
+    t = make_repo()
+    try:
+        log = os.path.join(t, ".agent-spec", "metrics", "automation.jsonl")
+        build(t)
+        assert not os.path.exists(log)
+        env = dict(os.environ, AGENT_SPEC_AUTOMATION="graph-refresh", AGENT_SPEC_AUTOMATION_SESSION="s1")
+        for _ in range(2):
+            subprocess.run([sys.executable, os.path.join(BIN, "graphify-build.py"), "--quiet"], cwd=t,
+                           check=True, capture_output=True, env=env)
+        rows = [json.loads(l) for l in open(log)]
+        assert [r["status"] for r in rows] == ["ok", "ok"], rows
+        assert rows[-1]["reason"] == "graph already current" and rows[-1]["session"] == "s1", rows
+        assert all(r["name"] == "graph-refresh" and isinstance(r["duration_ms"], int) for r in rows), rows
+    finally:
+        shutil.rmtree(t)
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

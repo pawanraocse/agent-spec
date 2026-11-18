@@ -16,6 +16,7 @@ export type SessionSavings = {
 export type SavingsOverview = {
   kept_out: number; resend_avoided: number; skill_cost: Cost; net_kept_out: number; net_resend_avoided: number; by_lever: Record<Lever, number>; labels: Record<Lever, string>;
   chats: number; chats_with_raw_code: number;
+  skill_chats?: { chats: number; kept_out: number; resend_avoided: number; cost_resend: number; net: number };
   compare: { raw_code: { requests: number; per_request: number | null }; plain: { requests: number; per_request: number | null };
              lift: number | null; min_requests: number };
   top: { session_id: string; prompt: string; requests: number; kept_out: number; resend_avoided: number; raw_code: boolean; latest_trace_id: string }[];
@@ -65,8 +66,8 @@ function Net({ net, cost }: { net: number; cost: Cost }) {
   return (
     <div className="rounded border border-border p-2 text-xs" title="The skill body enters the context when invoked and is re-sent like everything else">
       <div className="flex justify-between"><span className="text-muted-foreground">skill's own cost</span><Num p="estimated">−{n(cost.tokens + cost.resend)}</Num></div>
-      <div className={cn("flex justify-between font-semibold", net >= 0 ? "text-success" : "text-danger")}>
-        <span>net saved</span><Num p="estimated">{net >= 0 ? "" : "−"}{n(Math.abs(net))}</Num>
+      <div className={cn("flex justify-between font-semibold", net >= 0 ? "text-success" : "text-warning")}>
+        <span>{net >= 0 ? "net saved" : "not yet paid back: net"}</span><Num p="estimated">{net >= 0 ? "" : "−"}{n(Math.abs(net))}</Num>
       </div>
     </div>
   );
@@ -102,21 +103,32 @@ export function SessionSavingsCard({ s }: { s?: SessionSavings | null }) {
 export function SavingsHero({ o }: { o?: SavingsOverview | null }) {
   if (!o) return null;
   const c = o.compare;
+  const sk = o.skill_chats;
   const enough = c.lift !== null;
   return (
     <Card className="border-success/40">
       <CardHeader
-        title={<span className="flex items-center gap-1.5"><Zap size={14} className="text-success" />Tokens saved by the raw-code rules</span>}
-        subtitle={<>Across {n(o.chats)} chats; ⚡ {n(o.chats_with_raw_code)} invoked <code>/agent-spec-raw-code</code>, the rest follow the same rules from the always-on rule file. Context is re-read on every model call, so each token kept out is saved again on every later call; the skill's own size is netted out.</>}
+        title={<span className="flex items-center gap-1.5"><Zap size={14} className="text-success" />Tokens kept out of the context</span>}
+        subtitle={<>Across {n(o.chats)} chats. Context is re-read on every model call, so each token kept out is saved again on every later call in that chat.</>}
         right={<Prov p="estimated" />}
       />
       <div className="grid gap-5 p-4 lg:grid-cols-[260px_1fr_280px]">
         <div className="space-y-3">
           <div><div className="text-3xl font-semibold"><Num p="estimated">{compact(o.kept_out)}</Num></div><div className="text-xs text-muted-foreground">tokens kept out of chat contexts</div></div>
           <div><div className="text-2xl font-semibold text-success"><Num p="estimated">{compact(o.resend_avoided)}</Num></div><div className="text-xs text-muted-foreground">re-sends avoided on later calls</div></div>
-          {o.skill_cost.tokens > 0 && <Net net={o.net_resend_avoided} cost={o.skill_cost} />}
         </div>
         <Levers by={o.by_lever} labels={o.labels} />
+        <div className="space-y-3">
+        {sk && sk.chats > 0 && (
+          <div className="space-y-1.5 rounded border border-border p-3 text-xs" title="The skill body enters the context when invoked and is re-sent on every later call, like everything else">
+            <div className="font-medium">Did <code>/agent-spec-raw-code</code> pay for itself?</div>
+            <div className="flex justify-between"><span className="text-muted-foreground">saved in its {n(sk.chats)} chats</span><Num p="estimated">{n(sk.resend_avoided)}</Num></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">its own size, re-sent</span><Num p="estimated">−{n(sk.cost_resend)}</Num></div>
+            <div className={cn("flex justify-between font-semibold", sk.net >= 0 ? "text-success" : "text-warning")}>
+              <span>{sk.net >= 0 ? "net saved" : "not yet: net"}</span><Num p="estimated">{sk.net >= 0 ? "" : "−"}{n(Math.abs(sk.net))}</Num>
+            </div>
+          </div>
+        )}
         <div className="space-y-2 rounded border border-border p-3 text-xs">
           <div className="font-medium">Per Cursor request that used tools</div>
           <div className="flex justify-between"><span className="text-muted-foreground">raw-code on ({n(c.raw_code.requests)})</span><Num p="estimated">{n(c.raw_code.per_request)}</Num></div>
@@ -124,6 +136,7 @@ export function SavingsHero({ o }: { o?: SavingsOverview | null }) {
           {enough
             ? <div className="pt-1 text-sm font-semibold text-success">{c.lift}× more kept out with raw-code</div>
             : <div className="pt-1 text-muted-foreground">Ratio shown once each side has {c.min_requests}+ requests: run a few chats with <code>/agent-spec-raw-code-full</code>.</div>}
+        </div>
         </div>
       </div>
       {o.top.length > 0 && (

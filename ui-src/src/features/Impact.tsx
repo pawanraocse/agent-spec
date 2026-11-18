@@ -23,7 +23,10 @@ function Bar({ label, value, max, tone }: { label: string; value: number; max: n
 }
 
 /** Per-request impact: tokens kept out, rules followed, memory injected, harness cost. */
-export function Impact({ impact, session }: { impact?: ImpactData | null; session?: SessionSavings | null }) {
+export function Impact({ impact, session, harnessOff }: { impact?: ImpactData | null; session?: SessionSavings | null; harnessOff?: boolean }) {
+  if (harnessOff) {
+    return <Empty title="Harness was off for this request" hint="This is the control arm of an A/B run: no digest, no graph tools, no guard. Its harness-on twin is on Impact › Summary, under the A/B card." />;
+  }
   if (!impact) return <Empty title="No impact data" hint="This request has no tool spans to measure." />;
   if (impact.error) return <Empty title="Impact could not be computed" hint={impact.error} />;
   const t = impact.tokens;

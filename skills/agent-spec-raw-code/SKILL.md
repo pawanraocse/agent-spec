@@ -1,7 +1,7 @@
 ---
 name: "agent-spec-raw-code"
 description: >-
-  Short, actionable replies at two levels — full (default) and lite. For fit, not token saving. Persists until /agent-spec-verbose.
+  Short, actionable replies at two levels — tight (default) and lite. For fit, not token saving. Persists until /agent-spec-verbose.
 ---
 
 # agent-spec-raw-code
@@ -22,10 +22,10 @@ never ask the user to run install or onboard.
 
 | | Budget | Shape |
 |---|---|---|
-| `full` — default | 40–90 words | Fragments. Code blocks; any explanation as `#` comments inside, prefer none. |
+| `tight` — default | 40–90 words | Fragments. Code blocks; any explanation as `#` comments inside, prefer none. |
 | `lite` | 80–140 words | Full sentences. Tables and lists where they carry the content. |
 
-`/agent-spec-raw-code lite` and `/agent-spec-raw-code full` switch mid-session. Use `lite`
+`/agent-spec-raw-code lite` and `/agent-spec-raw-code tight` switch mid-session (`full`, the old name, still means `tight`). Use `lite`
 for a decision, a trade-off, or anything a third party will read. Exceed a budget only for
 correctness, ordering, or safety — never to sound thorough.
 

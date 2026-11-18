@@ -9,16 +9,16 @@ import { cn, relTime } from "../lib/utils";
 type Run = { ts: string; name: string; status: string; reason?: string; duration_ms?: number; session?: string; source?: string };
 type Automation = {
   id: string; title: string; trigger: string; kind: "script" | "skill"; replaces: string; env: string | null;
-  enabled: boolean; switched_off: boolean; env_off: boolean; runs: number; succeeded: number; failed: number;
+  enabled: boolean; switched_off: boolean; env_off: boolean; runs: number; succeeded: number; failed: number; unknown?: number;
   duration_ms_total: number | null; last: Run | null;
 };
 export type AutomationsData = {
   automations: Automation[]; recent: Run[]; config: string; log: string;
-  totals: { runs: number; succeeded: number; failed: number; last_24h: number; enabled: number; count: number };
+  totals: { runs: number; succeeded: number; failed: number; unknown?: number; last_24h: number; enabled: number; count: number };
 };
 
 const TONE: Record<string, "success" | "danger" | "primary" | "neutral"> = {
-  ok: "success", installed: "success", built: "success", started: "primary", sent: "primary", failed: "danger",
+  ok: "success", installed: "success", built: "success", started: "neutral", sent: "primary", failed: "danger",
 };
 
 function Switch({ on, disabled, label, onChange }: { on: boolean; disabled?: boolean; label: string; onChange: (v: boolean) => void }) {
@@ -66,7 +66,7 @@ export function Automations() {
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">When: {a.trigger}. Replaces {a.replaces}.</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  <Num p="measured">{a.runs}</Num> runs · <Num p="measured">{a.succeeded}</Num> ok · <Num p="measured">{a.failed}</Num> failed
+                  <Num p="measured">{a.runs}</Num> runs · <Num p="measured">{a.succeeded}</Num> ok · <Num p="measured">{a.failed}</Num> failed{a.unknown ? <> · <span title="Launched in the background by an older hook that did not record how the run ended"><Num p="measured">{a.unknown}</Num> outcome not recorded</span></> : null}
                   {a.duration_ms_total != null ? <> · <Num p="measured">{a.duration_ms_total}</Num> ms total</> : null}
                   {a.last ? <> · last <time dateTime={a.last.ts}>{relTime(a.last.ts)}</time></> : null}
                 </p>

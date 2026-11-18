@@ -31,11 +31,21 @@ export default function KnowledgeGraph() {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  const [showAll, setShowAll] = useState(false);
+  // Files with no import edge are scattered dots that hide the structure; they stay one click away.
+  const linked = useMemo(() => {
+    const ids = new Set<string>();
+    (graph.data?.edges ?? []).forEach((e) => { ids.add(e.source); ids.add(e.target); });
+    return ids;
+  }, [graph.data]);
+  const unlinked = (graph.data?.nodes ?? []).filter((n) => !linked.has(n.id)).length;
   const data = useMemo(() => ({
-    nodes: (graph.data?.nodes ?? []).map((n) => ({ ...n })),
+    nodes: (graph.data?.nodes ?? []).filter((n) => showAll || linked.has(n.id)).map((n) => ({ ...n })),
     links: (graph.data?.edges ?? []).map((e) => ({ source: e.source, target: e.target })),
-  }), [graph.data]);
-  const layers = useMemo(() => Array.from(new Set(data.nodes.map((n) => n.layer || "other"))), [data]);
+  }), [graph.data, linked, showAll]);
+  const hot = useMemo(() => [...(graph.data?.nodes ?? [])].filter((n) => n.in_degree > 0).sort((a, b) => b.in_degree - a.in_degree).slice(0, 10), [graph.data]);
+  const layerOf = (n: GNode) => (!n.layer || n.layer === "unknown" ? "other" : n.layer);
+  const layers = useMemo(() => Array.from(new Set(data.nodes.map(layerOf))), [data]);
   const halo = useMemo(() => new Set(blast.data?.blast_files ?? []), [blast.data]);
   const direct = useMemo(() => new Set(blast.data?.direct_dependents ?? []), [blast.data]);
 
@@ -65,7 +75,7 @@ export default function KnowledgeGraph() {
             nodeRelSize={3}
             nodeVal={(n) => 1 + Math.min(n.in_degree, 12)}
             nodeLabel={(n) => `${n.id} · ${n.in_degree} dependents`}
-            nodeColor={(n) => n.id === focus ? "#f8fafc" : direct.has(n.id) ? "#f87171" : halo.has(n.id) ? "#fbbf24" : LAYER_COLORS[layers.indexOf(n.layer || "other") % LAYER_COLORS.length]}
+            nodeColor={(n) => n.id === focus ? "#f8fafc" : direct.has(n.id) ? "#f87171" : halo.has(n.id) ? "#fbbf24" : LAYER_COLORS[layers.indexOf(layerOf(n)) % LAYER_COLORS.length]}
             linkColor={(l) => (typeof l.target === "object" && (l.target as GNode).id === focus) || (typeof l.source === "object" && direct.has((l.source as GNode).id)) ? "rgba(248,113,113,0.8)" : "rgba(148,163,184,0.18)"}
             linkDirectionalArrowLength={2.5}
             cooldownTicks={120}
@@ -76,8 +86,13 @@ export default function KnowledgeGraph() {
       <aside className="scrollbar-thin overflow-auto border-l border-border p-4 text-xs">
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Graph</p>
         <p className="mt-1"><Num p="measured">{graph.data?.nodes.length ?? 0}</Num> files · <Num p="measured">{graph.data?.edges.length ?? 0}</Num> import edges</p>
+        {unlinked ? (
+          <button type="button" className="mt-1 text-primary hover:underline" onClick={() => setShowAll(!showAll)}>
+            {showAll ? "Hide" : "Show"} <Num p="measured">{unlinked}</Num> files with no imports
+          </button>
+        ) : null}
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {layers.map((l, i) => (
+          {layers.length > 1 && layers.map((l, i) => (
             <span key={l} className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"><span className="h-2 w-2 rounded-full" style={{ background: LAYER_COLORS[i % LAYER_COLORS.length] }} />{l}</span>
           ))}
         </div>
@@ -98,7 +113,20 @@ export default function KnowledgeGraph() {
               </ul>
             </div>
           </div>
-        ) : <p className="mt-5 text-muted-foreground">Click a node to see its blast halo and direct callers.</p>}
+        ) : (
+          <div className="mt-5 space-y-2">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Most depended on</p>
+            <ol className="space-y-1 font-mono text-[11px]">
+              {hot.map((n) => (
+                <li key={n.id} className="flex items-center gap-2">
+                  <button type="button" className="truncate text-left hover:text-primary" title={n.id} onClick={() => setFocus(n.id)}>{n.id}</button>
+                  <Num p="measured" className="ml-auto shrink-0 text-muted-foreground">{n.in_degree}</Num>
+                </li>
+              ))}
+            </ol>
+            <p className="text-muted-foreground">Click a file, here or in the graph, to see what breaks if it changes.</p>
+          </div>
+        )}
       </aside>
     </div>
   );

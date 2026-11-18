@@ -355,10 +355,14 @@ def _payload_meta(raw):
         return "unknown", None
 
 
+# Images and PDFs are not read by line, so offset/limit cannot shrink them: never gate them.
+NOT_LINE_READ = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".pdf")
+
+
 def check(tool, args):
     if tool in ("Read", "read_file"):
         path = args.get("file_path") or args.get("path") or args.get("target_file") or ""
-        if is_ranged(args):
+        if is_ranged(args) or path.lower().endswith(NOT_LINE_READ):
             return None
         size = size_of(path)
         if size >= READ_CAP:

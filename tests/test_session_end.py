@@ -239,7 +239,8 @@ def test_automations_log_a_row_and_obey_the_dashboard_switch():
     open(marker, "w").close()
     run_hook(home, proj, {"hook_event_name": "sessionEnd", "conversation_id": SID, "transcript_path": tpath})
     rows = {r["name"]: r for r in _automation_rows(proj)}
-    assert rows["graph-refresh"]["status"] == "started" and rows["graph-refresh"]["session"] == SID, rows
+    # The launch is not an outcome: the detached builder logs ok or failed itself when it ends.
+    assert "graph-refresh" not in rows and not os.path.exists(marker), rows
     assert rows["snapshot-rotate"]["status"] == "ok" and rows["snapshot-rotate"]["reason"] == "nothing to rotate"
     assert isinstance(rows["snapshot-rotate"]["duration_ms"], int)
 

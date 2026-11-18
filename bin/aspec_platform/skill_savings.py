@@ -13,13 +13,13 @@ chat total always equals the sum of its requests' Impact cards. `writes` is new 
 
 The multiplier is what makes the skill matter: whatever enters the context is re-read on every
 later model call in that chat. `resend_avoided` multiplies each saving by the number of model
-calls after it in the same chat, counted as later tool calls plus later requests (each tool
-result triggers one more call, each request at least one). That count is measured; the result
-is still an estimate and is labelled so.
+calls after it in the same chat: the tool calls left in its own request, plus every later
+tool call and request (each tool result triggers one more call, each request at least one).
+That count is measured; the result is still an estimate and is labelled so.
 
 The skill is not free: invoking it puts its SKILL.md into the context, where it is re-sent on
 every later call as well. `skill_cost` prices each invocation the same way (file size / 4, times
-the later calls), and `net_*` is savings minus that cost, so a chat where the mode did not pay
+the calls after it, which includes every tool call of the invoking request), and `net_*` is savings minus that cost, so a chat where the mode did not pay
 for itself shows a negative net instead of hiding it.
 
 A chat is in raw-code mode from the first request that invoked `/agent-spec-raw-code` or
@@ -94,46 +94,49 @@ def for_session(project: str, conn, traces: list, spans_by_trace: dict) -> dict:
     traces = sorted(traces, key=lambda t: t.get("start") or "")
     modes = _mode_timeline(traces)
     # Every saving with its position in the chat, so later calls can be counted after it.
-    events = []           # (request index, lever, bytes)
+    events = []           # (request index, lever, bytes, calls left in that request after it)
     calls_per_request = []
     for i, t in enumerate(traces):
         spans = spans_by_trace.get(t["trace_id"], [])
         rows = impact.tool_rows(project, spans)
+        main = [r for r in rows if not r["in_subagent"]]
         calls_per_request.append(sum(1 for s in spans if s.get("kind") == "tool"))
-        for r in rows:
-            if r["in_subagent"]:
-                continue
+        for j, r in enumerate(main):
+            left = len(main) - j - 1
             if r["category"] == "graph" and r["avoided"]:
-                events.append((i, "graph", r["avoided"]))
+                events.append((i, "graph", r["avoided"], left))
             elif r["category"] == "read" and r["avoided"]:
-                events.append((i, "ranged_reads", r["avoided"]))
+                events.append((i, "ranged_reads", r["avoided"], left))
         kept = sum(r["bytes"] or 0 for r in rows if r["in_subagent"])
         if kept:
-            events.append((i, "subagents", kept))
+            events.append((i, "subagents", kept, 0))
+        ids = [r["span_id"] for r in main]
         for s in spans:
             if s.get("kind") == "edit":
                 b = _edit_avoided(project, s.get("attributes") or {})
                 if b:
-                    events.append((i, "writes", b))
+                    pos = ids.index(s["span_id"]) if s["span_id"] in ids else len(ids) - 1
+                    events.append((i, "writes", b, max(0, len(ids) - pos - 1)))
 
-    later_calls = []      # model calls after request i: its own remaining calls are ignored (lower bound)
+    later_calls = []      # model calls after request i ends
     for i in range(len(traces)):
         later_calls.append(sum(calls_per_request[i + 1:]) + (len(traces) - i - 1))
     by_lever = {k: 0 for k in LEVERS}
     resend = 0
     per_request = defaultdict(lambda: {k: 0 for k in LEVERS})
-    for i, lever, b in events:
+    for i, lever, b, left in events:
         tok = _tok(b)
         by_lever[lever] += tok
         per_request[i][lever] += tok
-        resend += tok * later_calls[i]
+        resend += tok * (later_calls[i] + left)
     kept_out = sum(by_lever.values())
     cost = cost_resend = 0
     for i, t in enumerate(traces):
         for name in set(t.get("skills") or []) & set(RAW_CODE):
             tok = _tok(skill_bytes(name))
             cost += tok
-            cost_resend += tok * later_calls[i]
+            # Loaded before the request's first tool call, so every one of them re-sends it.
+            cost_resend += tok * (later_calls[i] + calls_per_request[i])
     mode_on = [i for i, m in enumerate(modes) if m]
     kept_on = sum(sum(per_request[i].values()) for i in mode_on)
     return {
@@ -165,6 +168,8 @@ def overview(project: str, conn, traces: list, spans: list, limit: int = 12) -> 
             chats[t["session_id"]].append(t)
     rows, totals = [], {k: 0 for k in LEVERS}
     resend = cost = cost_resend = 0
+    # The skill's price belongs only to the chats that loaded it: always-on rules cost nothing extra.
+    skill = {"chats": 0, "kept_out": 0, "resend_avoided": 0, "cost_resend": 0}
     groups = {"raw_code": {"requests": 0, "kept_out": 0}, "plain": {"requests": 0, "kept_out": 0}}
     for sid, ts in chats.items():
         sv = for_session(project, conn, ts, by_trace)
@@ -173,6 +178,11 @@ def overview(project: str, conn, traces: list, spans: list, limit: int = 12) -> 
         resend += sv["resend_avoided"]
         cost += sv["skill_cost"]["tokens"]
         cost_resend += sv["skill_cost"]["resend"]
+        if sv["skill_cost"]["tokens"]:
+            skill["chats"] += 1
+            skill["kept_out"] += sv["kept_out"]
+            skill["resend_avoided"] += sv["resend_avoided"]
+            skill["cost_resend"] += sv["skill_cost"]["resend"]
         for r in sv["requests"]:
             # Like for like: Cursor requests recorded by hooks that made at least one tool call.
             if not r["comparable"]:
@@ -194,6 +204,7 @@ def overview(project: str, conn, traces: list, spans: list, limit: int = 12) -> 
         "kept_out": sum(totals.values()), "resend_avoided": resend, "by_lever": totals,
         "skill_cost": {"tokens": cost, "resend": cost_resend},
         "net_kept_out": sum(totals.values()) - cost, "net_resend_avoided": resend - cost_resend,
+        "skill_chats": dict(skill, net=skill["resend_avoided"] - skill["cost_resend"]),
         "labels": LEVER_LABEL, "chats": len(rows),
         "chats_with_raw_code": sum(1 for r in rows if r["raw_code"]),
         # A ratio from a handful of requests is noise; below MIN_COMPARE per group the UI shows counts only.

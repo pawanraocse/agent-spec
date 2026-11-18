@@ -1,5 +1,5 @@
 import { Bot, ShieldAlert, Wrench, AlertTriangle, Search } from "lucide-react";
-import type { Filters, RequestList, Trace } from "../api/traces";
+import { harnessOff, originLabel, type Filters, type RequestList, type Trace } from "../api/traces";
 import { Num } from "../components/Num";
 import { Badge } from "../components/ui/badge";
 import { cn, fmtMs, relTime } from "../lib/utils";
@@ -83,7 +83,7 @@ export function RequestFeed({ data, loading, filters, setFilters, selected, onSe
                 {t.guard_count ? <span className="inline-flex items-center gap-0.5 text-k-guard"><ShieldAlert size={10} /><Num p="measured">{t.guard_count}</Num></span> : null}
                 {t.error_count ? <span className="inline-flex items-center gap-0.5 text-danger"><AlertTriangle size={10} /><Num p="measured">{t.error_count}</Num></span> : null}
                 {t.skills.slice(0, 2).map((s) => <Badge key={s} tone="accent" className="normal-case">{s.replace(/^agent-spec-/, "")}</Badge>)}
-                <span className="ml-auto">{t.origin === "cli" ? "CLI run" : t.origin === "local" ? "Local model" : SOURCE_LABEL[t.source] ?? t.source}</span>
+                <span className={cn("ml-auto", harnessOff(t) && "text-warning")}>{originLabel(t) ?? SOURCE_LABEL[t.source] ?? t.source}</span>
               </div>
             </button>
           </li>

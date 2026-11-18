@@ -18,17 +18,10 @@ Before the first reply, from the opened workspace, run once:
 python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"
 ```
 
-It registers the project when it is unregistered or older than the package, builds the
-graph when it is missing, and prints one JSON line. Then:
-
-- `"next": "/agent-spec-onboard"` → run the `/agent-spec-onboard` procedure yourself, then
-  continue the request.
-- `"registered": "failed"` or `"refused"`, or the marker file is missing → report the
-  `error` in one line, then continue the request without the harness.
-- Anything else → continue the request.
-
-Never tell the user to run install or onboard, never report either as pending. Skip the
-preflight when the workspace is the package clone itself or has no source files.
+It prints one JSON line. `"next": "/agent-spec-onboard"` → run that procedure yourself.
+`"registered": "failed"`/`"refused"`, or no marker file → report the `error` in one line and
+continue without the harness. Never ask the user to install or onboard. Skip in the package
+clone itself or a workspace with no source files.
 
 ## 1. Fewer turns — 95,190 B each
 
@@ -79,20 +72,11 @@ conversation matters more than tokens.
 - Recommend; never survey branches. Options: three max, one line each.
 - No preamble, recap, next-steps, or tool-call narration.
 
-## When to break this mode (Complexity Override)
+## Complexity Override
 
-This mode suppresses conversational filler, not reasoning. A fixed-ratio terse rule
-applied to a genuinely complex algorithm will produce a wrong answer more cheaply.
-
-Break into normal prose when **all three** are true:
-1. The task requires non-trivial algorithmic reasoning (cryptography, distributed
-   consensus, complex state machines, or novel data structures).
-2. The first implementation attempt failed its own tests.
-3. A brief reasoning trace would produce a correct second attempt.
-
-Resume raw-code-full immediately after the algorithm is verified green.
-Say "complexity override" at the start of the reasoning section so it is visible in
-the transcript, and "resuming raw-code-full" when you return.
+This mode cuts filler, not reasoning. When a non-trivial algorithm (crypto, consensus,
+state machine, novel data structure) failed its own tests once, write the reasoning out:
+say "complexity override", then "resuming raw-code-full" once it is green.
 
 ## Never compress
 
@@ -108,7 +92,3 @@ question asked twice.
 
 Commits, code comments, docs, pull request and issue bodies, `.agent-spec/` artifacts,
 memory files.
-
-<!-- Figures: docs/token-checklist.md. Caveman prose measured 0 and was removed.
-     Complexity Override: inspired by TPP-diversity finding (arXiv:2605.08541) —
-     fixed-ratio output rules degrade on off-distribution (high-complexity) tasks. -->

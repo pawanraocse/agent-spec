@@ -141,10 +141,12 @@ def graph_line():
         stats.get("cycles", "?"),
     )
     line += "\nmost depended on: " + hot if hot else ""
-    where = git_label(graph.get("git"))
+    status = load_json(os.path.join(SPEC, "graph", ".status.json")) or {}
+    # The last build's git state lives in .status.json; the committed graph keeps the git
+    # block from its last structural change, so it is only the fallback.
+    where = git_label((status.get("git") if isinstance(status, dict) else None) or graph.get("git"))
     if where:
         line += "\ngraph reflects: " + where
-    status = load_json(os.path.join(SPEC, "graph", ".status.json")) or {}
     fail = status.get("last_failure") if isinstance(status, dict) else None
     if status.get("state") == "failed" and isinstance(fail, dict):
         line += "\ngraph: last build FAILED at %s — %s | fix: %s" % (

@@ -242,3 +242,12 @@ the chance of a correct first pass, and measure the result in cost per verified 
 Our own numbers are the best argument for it: the mode that used 10.5% fewer tokens cost
 2.3% more.
 > **Note (algosec-agent-spec):** Off-diagonal benchmark tasks `05-needle-in-haystack` and `06-hard-algorithm` live in upstream agent-spec only; this Cursor-only package does not ship `benchmarks/`.
+
+## Notes on `/agent-spec-raw-code-full`
+
+- The figures in the skill's headings come from this checklist. Caveman-style prose was
+  measured to save nothing and was removed.
+- The Complexity Override follows the TPP-diversity finding (arXiv:2605.08541): fixed-ratio
+  output rules degrade on off-distribution, high-complexity tasks.
+- These notes live here, not in the skill, because the skill body is re-sent on every model
+  call once invoked; the dashboard's Impact page nets that size against what the skill saves.
