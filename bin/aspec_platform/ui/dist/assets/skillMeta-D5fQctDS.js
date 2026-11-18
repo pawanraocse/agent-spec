@@ -1,4 +1,4 @@
-import{c as t,u as o,y as r,W as l,am as p,D as k,g as y,an as h,ao as n,F as i,ap as d,i as m}from"./index-GVqyD2ed.js";import{F as u}from"./flask-conical-CRflB7vW.js";import{B as f}from"./book-open-DqJZqpet.js";/**
+import{c as t,u as o,y as r,W as l,an as p,D as k,g as y,ao as h,ap as n,F as i,aq as d,i as m}from"./index-Cdb7SSWD.js";import{F as u}from"./flask-conical-57hc9d4i.js";import{B as f}from"./book-open-BWnylCXP.js";/**
  * @license lucide-react v0.469.0 - ISC
  *
  * This source code is licensed under the ISC license.
@@ -13,9 +13,9 @@ import{c as t,u as o,y as r,W as l,am as p,D as k,g as y,an as h,ao as n,F as i,
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
- */const v=t("GitBranch",[["line",{x1:"6",x2:"6",y1:"3",y2:"15",key:"17qcm7"}],["circle",{cx:"18",cy:"6",r:"3",key:"1h7g24"}],["circle",{cx:"6",cy:"18",r:"3",key:"fqmcym"}],["path",{d:"M18 9a9 9 0 0 1-9 9",key:"n2h4wq"}]]);/**
+ */const q=t("GitBranch",[["line",{x1:"6",x2:"6",y1:"3",y2:"15",key:"17qcm7"}],["circle",{cx:"18",cy:"6",r:"3",key:"1h7g24"}],["circle",{cx:"6",cy:"18",r:"3",key:"fqmcym"}],["path",{d:"M18 9a9 9 0 0 1-9 9",key:"n2h4wq"}]]);/**
  * @license lucide-react v0.469.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
- */const w=t("Shield",[["path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",key:"oel41y"}]]),q={"book-open":f,brain:d,bug:g,"file-text":i,flask:u,gauge:n,gavel:M,"git-branch":v,"list-checks":h,search:y,shield:w,sparkles:k,workflow:p,wrench:l},G=a=>a?q[a]??null:null;function b(){const a=o({queryKey:["catalog"],queryFn:()=>m("/api/catalog"),staleTime:6e4});return r.useMemo(()=>{var c;const s=new Map;for(const e of((c=a.data)==null?void 0:c.skills)??[])s.set(e.name,e),s.set(e.id,e);return s},[a.data])}export{v as G,G as s,b as u};
+ */const v=t("Shield",[["path",{d:"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",key:"oel41y"}]]),w={"book-open":f,brain:d,bug:g,"file-text":i,flask:u,gauge:n,gavel:M,"git-branch":q,"list-checks":h,search:y,shield:v,sparkles:k,workflow:p,wrench:l},G=a=>a?w[a]??null:null;function b(){const a=o({queryKey:["catalog"],queryFn:()=>m("/api/catalog"),staleTime:6e4});return r.useMemo(()=>{var c;const s=new Map;for(const e of((c=a.data)==null?void 0:c.skills)??[])s.set(e.name,e),s.set(e.id,e);return s},[a.data])}export{q as G,G as s,b as u};

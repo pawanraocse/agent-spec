@@ -283,6 +283,8 @@ def api_session_detail(conn, session_id, project=None):
     detail = insights.session_detail(conn, session_id, project=project)
     if detail is None:
         raise ApiError(404, "session not found")
+    if project:
+        detail["session_savings"] = views.session_savings(project, conn, session_id)
     return detail
 
 

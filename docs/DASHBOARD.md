@@ -68,9 +68,12 @@ Every chat shows what `/agent-spec-raw-code` and `/agent-spec-raw-code-full` sav
 | Targeted edits | file size minus the edit, for each Edit instead of a rewrite |
 
 Because the context is re-read on every model call, each saving is also multiplied by the
-measured number of later model calls in that chat (the tool calls left in its own request, plus
-later tool calls and later requests): the "re-sends avoided" figure. The skill's own body is
-priced the same way, against only the chats that invoked it. A chat is in raw-code mode from the first `/agent-spec-raw-code*`
+measured number of later model calls in that chat (the main-context tool calls left in its own
+request, plus later main-context tool calls and later requests): the "re-sends avoided" figure.
+A subagent's own tool calls are not counted: they run in its context, which never carries the
+parent's. What a subagent read counts against the main calls made after it returned. The
+skill's own body is priced the same way, against only the chats that invoked it. Chats read only from Cursor's history are left out of that payback: they record no tool sizes, so only the cost side could be counted. The chat
+page (**Activity › Chats › a chat › Savings**) shows the same per-chat figures. A chat is in raw-code mode from the first `/agent-spec-raw-code*`
 request until `/agent-spec-verbose`. Where it shows: the **Impact** tab opens with a "This chat so
 far" card, each row of **Activity › Chats** carries a −N chip (⚡ when raw-code was on), and the
 **Impact › Summary** leads with the board total, per-lever bars, the chats that saved the most and a

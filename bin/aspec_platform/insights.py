@@ -248,6 +248,8 @@ def skills_catalog(conn, project: str | None = None) -> dict:
             meta = _skill_frontmatter(skill_md)
             name = meta.get("name") or folder
             desc = meta.get("description") or ""
+            if desc.lower().startswith("fixture") and not usage_map.get(name):
+                continue  # test fixtures (agent-spec-wf-example) are not product skills; show one only once it has run
             cat, tag = _skill_category(name)
             seen[folder] = {
                 "id": folder,

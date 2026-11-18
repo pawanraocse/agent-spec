@@ -192,7 +192,7 @@ describe("page-level honesty (DV-005)", () => {
   // [name, path, element, route pattern, tab buttons to visit after the default view]
   const v2: [string, string, React.ReactNode, string | undefined, RegExp[]][] = [
     ["Sessions", "/sessions", <Sessions />, undefined, []],
-    ["Session detail", "/sessions/conv-1", <SessionDetail />, "/sessions/:id", [/^Savings Calculator/, /Compare$/]],
+    ["Session detail", "/sessions/conv-1", <SessionDetail />, "/sessions/:id", [/^Savings$/, /Compare$/]],
     ["Runs", "/runs", <Runs />, undefined, []],
     ["Run detail", "/runs/req-1", <RunDetail />, "/runs/:id", [/^Subagent health$/]],
     ["Memory", "/memory", <Knowledge />, undefined, [/^Bounded Memory/, /^Flywheel Experiences/]],

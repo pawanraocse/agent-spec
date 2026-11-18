@@ -100,16 +100,28 @@ def for_session(project: str, conn, traces: list, spans_by_trace: dict) -> dict:
         spans = spans_by_trace.get(t["trace_id"], [])
         rows = impact.tool_rows(project, spans)
         main = [r for r in rows if not r["in_subagent"]]
-        calls_per_request.append(sum(1 for s in spans if s.get("kind") == "tool"))
+        owner = impact._subagent_of(spans)
+        # Only main-context tool calls are followed by a main-context model call; a subagent's
+        # calls run in its own context, which never carries the parent's (or the skill body).
+        calls_per_request.append(sum(1 for s in spans if s.get("kind") == "tool" and not owner.get(s["span_id"])))
         for j, r in enumerate(main):
             left = len(main) - j - 1
             if r["category"] == "graph" and r["avoided"]:
                 events.append((i, "graph", r["avoided"], left))
             elif r["category"] == "read" and r["avoided"]:
                 events.append((i, "ranged_reads", r["avoided"], left))
-        kept = sum(r["bytes"] or 0 for r in rows if r["in_subagent"])
-        if kept:
-            events.append((i, "subagents", kept, 0))
+        start = {s["span_id"]: s.get("start") or "" for s in spans}
+        kept_by_sub = defaultdict(int)
+        for r in rows:
+            if r["in_subagent"]:
+                kept_by_sub[owner.get(r["span_id"])] += r["bytes"] or 0
+        for sub, kept in kept_by_sub.items():
+            if not kept:
+                continue
+            # What the subagent read would have stayed in the parent for every main call after it returned.
+            done = next((s.get("end") or s.get("start") or "" for s in spans if s["span_id"] == sub), "")
+            left = sum(1 for r in main if start.get(r["span_id"], "") > done) if done else 0
+            events.append((i, "subagents", kept, left))
         ids = [r["span_id"] for r in main]
         for s in spans:
             if s.get("kind") == "edit":
@@ -146,6 +158,9 @@ def for_session(project: str, conn, traces: list, spans_by_trace: dict) -> dict:
         "net_kept_out": kept_out - cost,
         "net_resend_avoided": resend - cost_resend,
         "later_calls": sum(calls_per_request) + len(traces),
+        # Hooks record tool sizes; Cursor's own history does not, so a chat with no hook request
+        # can price the skill but cannot measure what it saved.
+        "sizes_recorded": any(t.get("source") == "hook" for t in traces),
         "by_lever": by_lever,
         "raw_code": {"active": bool(mode_on), "since_request": (mode_on[0] + 1) if mode_on else None,
                      "requests_on": len(mode_on), "requests": len(traces), "kept_out_while_on": kept_on},
@@ -169,7 +184,7 @@ def overview(project: str, conn, traces: list, spans: list, limit: int = 12) -> 
     rows, totals = [], {k: 0 for k in LEVERS}
     resend = cost = cost_resend = 0
     # The skill's price belongs only to the chats that loaded it: always-on rules cost nothing extra.
-    skill = {"chats": 0, "kept_out": 0, "resend_avoided": 0, "cost_resend": 0}
+    skill = {"chats": 0, "kept_out": 0, "resend_avoided": 0, "cost_resend": 0, "unmeasured": 0}
     groups = {"raw_code": {"requests": 0, "kept_out": 0}, "plain": {"requests": 0, "kept_out": 0}}
     for sid, ts in chats.items():
         sv = for_session(project, conn, ts, by_trace)
@@ -178,7 +193,9 @@ def overview(project: str, conn, traces: list, spans: list, limit: int = 12) -> 
         resend += sv["resend_avoided"]
         cost += sv["skill_cost"]["tokens"]
         cost_resend += sv["skill_cost"]["resend"]
-        if sv["skill_cost"]["tokens"]:
+        if sv["skill_cost"]["tokens"] and not sv["sizes_recorded"]:
+            skill["unmeasured"] += 1   # one-sided: cost known, savings not; left out of the payback
+        elif sv["skill_cost"]["tokens"]:
             skill["chats"] += 1
             skill["kept_out"] += sv["kept_out"]
             skill["resend_avoided"] += sv["resend_avoided"]

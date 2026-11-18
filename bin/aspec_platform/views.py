@@ -52,3 +52,16 @@ def request_detail(project, conn, trace_id):
     except Exception as exc:  # additive, like impact
         detail["session_savings"] = {"error": str(exc)[:200]}
     return detail
+
+
+def session_savings(project, conn, session_id):
+    """One chat's savings, the same model the request page and the chat list use."""
+    traces, spans = tr.all_traces(project, conn)
+    session = [t for t in traces if t["session_id"] == session_id]
+    if not session:
+        return None
+    sids = {t["trace_id"] for t in session}
+    try:
+        return skill_savings.for_session(project, conn, session, _spans_by_trace(spans, sids))
+    except Exception as exc:  # additive: never take the chat page down with it
+        return {"error": str(exc)[:200]}

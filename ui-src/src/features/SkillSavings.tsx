@@ -16,7 +16,7 @@ export type SessionSavings = {
 export type SavingsOverview = {
   kept_out: number; resend_avoided: number; skill_cost: Cost; net_kept_out: number; net_resend_avoided: number; by_lever: Record<Lever, number>; labels: Record<Lever, string>;
   chats: number; chats_with_raw_code: number;
-  skill_chats?: { chats: number; kept_out: number; resend_avoided: number; cost_resend: number; net: number };
+  skill_chats?: { chats: number; kept_out: number; resend_avoided: number; cost_resend: number; net: number; unmeasured?: number };
   compare: { raw_code: { requests: number; per_request: number | null }; plain: { requests: number; per_request: number | null };
              lift: number | null; min_requests: number };
   top: { session_id: string; prompt: string; requests: number; kept_out: number; resend_avoided: number; raw_code: boolean; latest_trace_id: string }[];
@@ -65,7 +65,7 @@ export function SavingsChip({ kept, resend, raw }: { kept: number; resend: numbe
 function Net({ net, cost }: { net: number; cost: Cost }) {
   return (
     <div className="rounded border border-border p-2 text-xs" title="The skill body enters the context when invoked and is re-sent like everything else">
-      <div className="flex justify-between"><span className="text-muted-foreground">skill's own cost</span><Num p="estimated">−{n(cost.tokens + cost.resend)}</Num></div>
+      <div className="flex justify-between"><span className="text-muted-foreground">its own size, re-sent</span><Num p="estimated">−{n(cost.resend)}</Num></div>
       <div className={cn("flex justify-between font-semibold", net >= 0 ? "text-success" : "text-warning")}>
         <span>{net >= 0 ? "net saved" : "not yet paid back: net"}</span><Num p="estimated">{net >= 0 ? "" : "−"}{n(Math.abs(net))}</Num>
       </div>
@@ -82,7 +82,7 @@ export function SessionSavingsCard({ s }: { s?: SessionSavings | null }) {
       <CardHeader
         title={<span className="flex items-center gap-2"><Zap className="h-4 w-4 text-success" />This chat so far <Prov p="estimated" /></span>}
         subtitle={rc.active
-          ? <>raw-code mode on since request #{rc.since_request} ({rc.requests_on} of {rc.requests} requests)</>
+          ? <>raw-code mode on since request #<Num p="measured">{rc.since_request}</Num> (<Num p="measured">{rc.requests_on}</Num> of <Num p="measured">{rc.requests}</Num> requests)</>
           : <>raw-code mode was not invoked in this chat; savings come from the always-on rules and hooks</>}
         right={rc.active ? <Badge tone="success">/agent-spec-raw-code</Badge> : null}
       />
@@ -122,11 +122,12 @@ export function SavingsHero({ o }: { o?: SavingsOverview | null }) {
         {sk && sk.chats > 0 && (
           <div className="space-y-1.5 rounded border border-border p-3 text-xs" title="The skill body enters the context when invoked and is re-sent on every later call, like everything else">
             <div className="font-medium">Did <code>/agent-spec-raw-code</code> pay for itself?</div>
-            <div className="flex justify-between"><span className="text-muted-foreground">saved in its {n(sk.chats)} chats</span><Num p="estimated">{n(sk.resend_avoided)}</Num></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">saved in its <Num p="measured">{n(sk.chats)}</Num> hook-recorded chats</span><Num p="estimated">{n(sk.resend_avoided)}</Num></div>
             <div className="flex justify-between"><span className="text-muted-foreground">its own size, re-sent</span><Num p="estimated">−{n(sk.cost_resend)}</Num></div>
             <div className={cn("flex justify-between font-semibold", sk.net >= 0 ? "text-success" : "text-warning")}>
               <span>{sk.net >= 0 ? "net saved" : "not yet: net"}</span><Num p="estimated">{sk.net >= 0 ? "" : "−"}{n(Math.abs(sk.net))}</Num>
             </div>
+            {sk.unmeasured ? <div className="text-muted-foreground"><Num p="measured">{sk.unmeasured}</Num> more read from Cursor's history left out: it records no tool sizes, so savings there cannot be measured.</div> : null}
           </div>
         )}
         <div className="space-y-2 rounded border border-border p-3 text-xs">

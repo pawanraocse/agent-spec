@@ -567,7 +567,13 @@ export const V2_ROUTES: Record<string, unknown> = {
     "tokens_input": 10200,
     "tokens_output": 5200
    }
-  ]
+  ],
+  "session_savings": {
+   "kept_out": 9000, "resend_avoided": 18000, "later_calls": 2,
+   "by_lever": {"graph": 6000, "ranged_reads": 3000, "subagents": 0, "writes": 0},
+   "skill_cost": {"tokens": 900, "resend": 1800}, "net_kept_out": 8100, "net_resend_avoided": 16200,
+   "raw_code": {"active": true, "since_request": 1, "requests_on": 1, "requests": 1, "kept_out_while_on": 9000}
+  }
  },
  "/api/compare": {
   "a": {"session_id": "conv-1", "provenance": "measured", "requests": 2, "tool_calls": 3, "tool_failures": 1,

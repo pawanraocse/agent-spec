@@ -1,11 +1,11 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-18T17:17:28.328199",
+  "generated": "2026-11-18T17:37:19.186025",
   "generator": "graphify-build",
   "git": {
-    "branch": "main",
-    "head_sha": "bc0a8e89f2698cd6427747774f0bf9341fc60c51",
+    "branch": "dashboard-five-spaces",
+    "head_sha": "7e472bf430292e25283bf7f9e2faf388e25632a5",
     "dirty": true,
     "operation": null,
     "conflicts": 0
@@ -5354,11 +5354,6 @@
     },
     {
       "source": "ui-src/src/pages/Sessions.tsx",
-      "target": "ui-src/src/components/Metric.tsx",
-      "type": "imports"
-    },
-    {
-      "source": "ui-src/src/pages/Sessions.tsx",
       "target": "ui-src/src/components/ui/button.tsx",
       "type": "imports"
     },
@@ -5375,6 +5370,11 @@
     {
       "source": "ui-src/src/pages/Sessions.tsx",
       "target": "ui-src/src/features/SessionCompare.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Sessions.tsx",
+      "target": "ui-src/src/features/SkillSavings.tsx",
       "type": "imports"
     },
     {
@@ -9155,7 +9155,7 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/insights.py",
-      "line": 264
+      "line": 266
     },
     {
       "id": "bin/aspec_platform/mesh_view.py::_spec",
@@ -10331,63 +10331,63 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 289
+      "line": 291
     },
     {
       "id": "bin/aspec_platform/serve.py::api_compare",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 293
+      "line": 295
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_workspaces",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 304
+      "line": 306
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_session",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 308
+      "line": 310
     },
     {
       "id": "bin/aspec_platform/serve.py::console_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 327
+      "line": 329
     },
     {
       "id": "bin/aspec_platform/serve.py::make_handler",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 338
+      "line": 340
     },
     {
       "id": "bin/aspec_platform/serve.py::make_server",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 744
+      "line": 746
     },
     {
       "id": "bin/aspec_platform/serve.py::start_hook_log_backfill",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 754
+      "line": 756
     },
     {
       "id": "bin/aspec_platform/serve.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 812
+      "line": 814
     },
     {
       "id": "bin/aspec_platform/session_compare.py::summarize",
@@ -10527,7 +10527,7 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/skill_savings.py",
-      "line": 160
+      "line": 175
     },
     {
       "id": "bin/aspec_platform/traces.py::ms",
@@ -10780,6 +10780,13 @@
       "kind": "function",
       "file": "bin/aspec_platform/views.py",
       "line": 36
+    },
+    {
+      "id": "bin/aspec_platform/views.py::session_savings",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/views.py",
+      "line": 57
     },
     {
       "id": "bin/graphify-build.py::_name_tokens",
@@ -15409,6 +15416,20 @@
       "line": 173
     },
     {
+      "id": "tests/test_insights.py::SkillsCatalogTests",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_insights.py",
+      "line": 183
+    },
+    {
+      "id": "tests/test_insights.py::SkillsCatalogTests.test_unused_fixture_skills_are_hidden",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_insights.py",
+      "line": 184
+    },
+    {
       "id": "tests/test_local_agent.py::FakeOllama",
       "type": "symbol",
       "kind": "class",
@@ -17838,18 +17859,32 @@
       "line": 75
     },
     {
-      "id": "tests/test_skill_savings.py::SkillSavingsTest.test_overview_gates_the_ratio_on_sample_size",
+      "id": "tests/test_skill_savings.py::SkillSavingsTest.test_subagent_calls_do_not_resend_the_skill_and_kept_bytes_count_later_main_calls",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_skill_savings.py",
       "line": 82
     },
     {
+      "id": "tests/test_skill_savings.py::SkillSavingsTest.test_payback_leaves_out_chats_without_tool_sizes",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_skill_savings.py",
+      "line": 106
+    },
+    {
+      "id": "tests/test_skill_savings.py::SkillSavingsTest.test_overview_gates_the_ratio_on_sample_size",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_skill_savings.py",
+      "line": 113
+    },
+    {
       "id": "tests/test_skill_savings.py::SkillSavingsTest.test_api_fields",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_skill_savings.py",
-      "line": 89
+      "line": 120
     },
     {
       "id": "tests/test_status.py::StatusTest",
@@ -19711,14 +19746,14 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Sessions.tsx",
-      "line": 34
+      "line": 22
     },
     {
       "id": "ui-src/src/pages/Sessions.tsx::runCompare",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Sessions.tsx",
-      "line": 73
+      "line": 52
     },
     {
       "id": "ui-src/src/pages/Showcase.tsx::n",
@@ -25091,6 +25126,11 @@
       "type": "calls"
     },
     {
+      "source": "bin/aspec_platform/serve.py::api_session_detail",
+      "target": "bin/aspec_platform/views.py::session_savings",
+      "type": "calls"
+    },
+    {
       "source": "bin/aspec_platform/serve.py::api_skills",
       "target": "bin/aspec_platform/insights.py::skills_catalog",
       "type": "calls"
@@ -25516,6 +25556,11 @@
     },
     {
       "source": "bin/aspec_platform/skill_savings.py::for_session",
+      "target": "bin/aspec_platform/impact.py::_subagent_of",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/skill_savings.py::for_session",
       "target": "bin/aspec_platform/skill_savings.py::_tok",
       "type": "calls"
     },
@@ -25879,6 +25924,21 @@
     {
       "source": "bin/aspec_platform/views.py::request_detail",
       "target": "bin/aspec_platform/signals.py::for_trace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/views.py::session_savings",
+      "target": "bin/aspec_platform/views.py::_spans_by_trace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/views.py::session_savings",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/views.py::session_savings",
+      "target": "bin/aspec_platform/skill_savings.py::for_session",
       "type": "calls"
     },
     {
@@ -30152,6 +30212,16 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_insights.py::SkillsCatalogTests.test_unused_fixture_skills_are_hidden",
+      "target": "bin/aspec_platform/db.py::open_ready",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_insights.py::SkillsCatalogTests.test_unused_fixture_skills_are_hidden",
+      "target": "bin/aspec_platform/insights.py::skills_catalog",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_local_agent.py::FakeOllama.__init__",
       "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
       "type": "calls"
@@ -32770,6 +32840,26 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_skill_savings.py::SkillSavingsTest.test_subagent_calls_do_not_resend_the_skill_and_kept_bytes_count_later_main_calls",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_skill_savings.py::SkillSavingsTest.test_subagent_calls_do_not_resend_the_skill_and_kept_bytes_count_later_main_calls",
+      "target": "tests/test_skill_savings.py::ev",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_skill_savings.py::SkillSavingsTest.test_subagent_calls_do_not_resend_the_skill_and_kept_bytes_count_later_main_calls",
+      "target": "bin/aspec_platform/skill_savings.py::for_session",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_skill_savings.py::SkillSavingsTest.test_payback_leaves_out_chats_without_tool_sizes",
+      "target": "bin/aspec_platform/skill_savings.py::overview",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_skill_savings.py::SkillSavingsTest.test_overview_gates_the_ratio_on_sample_size",
       "target": "bin/aspec_platform/skill_savings.py::overview",
       "type": "calls"
@@ -34375,11 +34465,11 @@
       25
     ],
     [
-      "type",
-      23
+      "lucide-react",
+      24
     ],
     [
-      "lucide-react",
+      "type",
       23
     ],
     [

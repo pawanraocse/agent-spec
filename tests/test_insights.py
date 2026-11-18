@@ -179,5 +179,19 @@ class ExportTest(InsightsCase):
         self.assertNotIn("Traceback", proc.stderr)
 
 
+
+class SkillsCatalogTests(unittest.TestCase):
+    def test_unused_fixture_skills_are_hidden(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for name, desc in (("agent-spec-wf-example", "Fixture workflow: smoke test."),
+                               ("agent-spec-real", "A real skill.")):
+                os.makedirs(os.path.join(tmp, "skills", name))
+                with open(os.path.join(tmp, "skills", name, "SKILL.md"), "w") as fh:
+                    fh.write('---\nname: "%s"\ndescription: %s\n---\n' % (name, desc))
+            conn = db.open_ready(os.path.join(tmp, "t.db"))
+            ids = {s["id"] for s in insights.skills_catalog(conn, tmp)["skills"]}
+            self.assertIn("agent-spec-real", ids)
+            self.assertNotIn("agent-spec-wf-example", ids)
+
 if __name__ == "__main__":
     unittest.main()

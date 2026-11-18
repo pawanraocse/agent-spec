@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- **Savings model: subagent calls no longer re-send the parent context.** A subagent's own tool
+  calls were counted as main-context model calls, so a skill's body was charged against every
+  one of them (66,378 tokens in one real chat, now 7,696), and what a subagent kept out was never
+  credited with the main calls after it returned. Both fixed, with a regression test.
+  The "Did it pay for itself?" box also leaves out chats read only from Cursor's history: they
+  record no tool sizes, so their cost was counted (129,200 tokens in one chat) and their savings
+  could not be. The box says how many were left out.
+- **Chat page: the Savings tab shows this chat's savings.** The old "Savings Calculator" showed the
+  project-wide whole-file estimate with a weight slider that changed nothing; it now renders the
+  same per-chat card as the request page (`/api/sessions/<id>` returns `session_savings`). The
+  context gauge uses the largest request's input instead of the chat's summed tokens capped at 85k.
+- **Skills catalog hides unused fixtures.** A skill whose description starts with "Fixture"
+  (`agent-spec-wf-example`) appears only once it has run.
+
 - **Dashboard: five spaces instead of twenty pages.** Impact (home: Summary, Coach, Learning),
   Activity (Requests, Chats, Workflow runs), Ask (search, or run the agent), Inbox (risky edits,
   proposals, automations, with a waiting-count badge) and Project (skills, graph, memory, repos,

@@ -3,12 +3,9 @@ import { Card } from "../components/ui/card";
 import { useEffect, useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { apiGet } from "../api/client";
-import { Metric } from "../components/Metric";
+import { SessionSavingsCard, type SessionSavings } from "../features/SkillSavings";
 import { SessionCompare, type CompareResult } from "../features/SessionCompare";
-import {
-  Play,
-  RotateCcw,
-} from "lucide-react";
+import { Play } from "lucide-react";
 
 type SessionRow = {
   session_id: string;
@@ -17,15 +14,6 @@ type SessionRow = {
   workspace?: string;
   grade?: string;
   started?: string;
-};
-
-type SavingsData = {
-  estimate?: boolean;
-  saved_tokens?: number;
-  saved_usd?: number;
-  naive_tokens?: number;
-  graph_tokens?: number;
-  weights?: Record<string, number>;
 };
 
 
@@ -37,11 +25,10 @@ export function SessionDetail() {
   const [data, setData] = useState<{
     session_id?: string;
     story?: { request_id: string; prompt: string; steps?: { name: string; kind: string }[]; tokens_input?: number; tokens_output?: number }[];
+    session_savings?: SessionSavings | null;
   } | null>(null);
 
   const [tab, setTab] = useState<"timeline" | "savings" | "compare">("timeline");
-  const [savingsData, setSavingsData] = useState<SavingsData | null>(null);
-  const [readWeight, setReadWeight] = useState(1.0);
   const [compareTarget, setCompareTarget] = useState("");
   const [allSessions, setAllSessions] = useState<SessionRow[]>([]);
   const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
@@ -52,21 +39,13 @@ export function SessionDetail() {
         .then((res) => setData(res as any))
         .catch(console.error);
     }
-    apiGet<SavingsData>("/api/savings")
-      .then(setSavingsData)
-      .catch(() => {});
     apiGet<{ sessions: SessionRow[] }>("/api/sessions")
       .then((res) => setAllSessions(res.sessions || []))
       .catch(() => {});
   }, [id]);
 
-  // Compute total tokens and peak context
-  const totalTokens = useMemo(() => {
-    const story = data?.story || [];
-    return story.reduce((acc, r) => acc + (r.tokens_input || 0) + (r.tokens_output || 0), 0);
-  }, [data]);
-
-  const peakContext = Math.min(totalTokens, 85000);
+  // The largest single request's input is the most context the model held at once.
+  const peakContext = useMemo(() => Math.max(0, ...(data?.story || []).map((r) => r.tokens_input || 0)), [data]);
   const contextThreshold = 80000;
   const contextPct = Math.min(100, Math.round((peakContext / contextThreshold) * 100));
 
@@ -104,7 +83,8 @@ export function SessionDetail() {
         </div>
       </div>
 
-      {/* Context Gauge (§4.2 / CP-024) */}
+      {/* Context Gauge (§4.2 / CP-024): only when the chat recorded token counts; 0 would read as "healthy" */}
+      {peakContext > 0 && (
       <Card className="p-4 space-y-2">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
@@ -133,14 +113,15 @@ export function SessionDetail() {
         </div>
         {contextPct >= 100 ? (
           <p className="text-[11px] text-warning">
-            Session passed the 80k threshold; S-004 compact nudge was triggered.
+            A request passed the compact threshold; the S-004 compact nudge applies.
           </p>
         ) : (
           <p className="text-[11px] text-muted-foreground">
-            Healthy context window; needle-in-haystack degradation avoided.
+            Largest request stayed under the compact threshold.
           </p>
         )}
       </Card>
+      )}
 
       {/* Navigation Tabs */}
       <div className="flex gap-2 border-b border-border text-xs">
@@ -164,7 +145,7 @@ export function SessionDetail() {
           }`}
           onClick={() => setTab("savings")}
         >
-          Savings Calculator <span className="font-mono">(D-010)</span>
+          Savings
         </button>
         <button
           type="button"
@@ -213,67 +194,15 @@ export function SessionDetail() {
         </div>
       )}
 
-      {/* Tab: Savings Calculator (CP-024 / D-010 parity) */}
+      {/* Tab: Savings — the same per-chat model the request page and the chat list use */}
       {tab === "savings" && (
-        <Card className="space-y-4 p-5 text-xs">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Context Savings Calculator</h3>
-              <p className="text-muted-foreground">
-                Naive whole-file dumps vs Graphify symbol AST queries with configurable weights
-              </p>
-            </div>
-            <span className="rounded bg-warning/10 px-2 py-0.5 text-[10px] uppercase font-bold text-warning">
-              Estimated
-            </span>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Metric
-              label="Saved Tokens"
-              value={savingsData?.saved_tokens?.toLocaleString() ?? "—"}
-              provenance="estimated"
-              formula="naive whole-file bytes converted to tokens minus graph bytes"
-            />
-            <Metric
-              label="Saved Cost"
-              value={
-                savingsData?.saved_usd != null ? `$${savingsData.saved_usd.toFixed(2)}` : "—"
-              }
-              provenance="estimated"
-              formula="saved tokens multiplied by active pricing preset"
-            />
-            <Metric
-              label="Graph Context Tokens"
-              value={savingsData?.graph_tokens?.toLocaleString() ?? "—"}
-              provenance="measured"
-            />
-          </div>
-
-          <div className="space-y-2 pt-2">
-            <div className="flex items-center justify-between text-muted-foreground">
-              <span data-figure-exempt>Read weight sensitivity: {readWeight.toFixed(1)}x</span>
-              <button
-                type="button"
-                className="text-primary hover:underline flex items-center gap-1"
-                onClick={() => setReadWeight(1.0)}
-              >
-                <RotateCcw size={11} /> Reset weight
-              </button>
-            </div>
-            <input
-              type="range"
-              min="0.5"
-              max="2.0"
-              step="0.1"
-              value={readWeight}
-              onChange={(e) => setReadWeight(parseFloat(e.target.value))}
-              className="w-full accent-primary cursor-pointer"
-            />
-          </div>
-        </Card>
+        data?.session_savings && !data.session_savings.error && data.session_savings.kept_out
+          ? <div className="grid gap-4 lg:grid-cols-2"><SessionSavingsCard s={data.session_savings} /></div>
+          : <Card className="p-5 text-xs text-muted-foreground">
+              No savings recorded for this chat. Savings come from hook-recorded tool calls (graph queries, ranged reads,
+              subagents, targeted edits); chats read only from Cursor's own history carry no tool sizes.
+            </Card>
       )}
-
 
       {/* Tab: A/B Compare */}
       {tab === "compare" && (

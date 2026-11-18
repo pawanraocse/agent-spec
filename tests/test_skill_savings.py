@@ -79,6 +79,37 @@ class SkillSavingsTest(unittest.TestCase):
         # the ranged read is followed by the edit in its own request (one more call); the edit is last
         self.assertEqual(s["resend_avoided"], 900 * 5 + 990 * 4)
 
+    def test_subagent_calls_do_not_resend_the_skill_and_kept_bytes_count_later_main_calls(self):
+        rows = [
+            ev(11, "beforeSubmitPrompt", "c2", "h1", prompt="/agent-spec-raw-code-full sweep"),
+            ev(12, "subagentStart", "c2", "h1", subagent_id="sub1", subagent_type="agent-spec-search", task="find x"),
+            ev(13, "postToolUse", "sub1", "h1", tool_name="Read", target="src/big.py", ranged=True, read_chars=2000, status="ok"),
+            ev(14, "postToolUse", "sub1", "h1", tool_name="Grep", target="pattern=x", status="ok"),
+            ev(15, "subagentStop", "c2", "h1", subagent_type="agent-spec-search", task="find x", status="completed"),
+            ev(16, "postToolUse", "c2", "h1", tool_name="Grep", target="pattern=y", status="ok"),
+            ev(17, "postToolUse", "c2", "h1", tool_name="Grep", target="pattern=z", status="ok"),
+            ev(18, "stop", "c2", "h1", status="completed"),
+        ]
+        with open(os.path.join(self.project, ".agent-spec", "metrics", "events.jsonl"), "a") as fh:
+            fh.writelines(json.dumps(r) + "\n" for r in rows)
+        tr, sp = traces.all_traces(self.project, None)
+        by = {}
+        for x in sp:
+            by.setdefault(x["trace_id"], []).append(x)
+        s = skill_savings.for_session(self.project, None, [t for t in tr if t["session_id"] == "c2"], by)
+        cost = s["skill_cost"]["tokens"]
+        self.assertEqual(s["requests"][0]["tools"], 2)                 # the two main Greps, not the subagent's
+        self.assertEqual(s["skill_cost"]["resend"], cost * 2)
+        self.assertEqual(s["by_lever"]["subagents"], 500)               # 2,000 chars read inside the subagent
+        self.assertEqual(s["resend_avoided"], 500 * 2)                  # re-sent on the 2 main calls after it
+
+    def test_payback_leaves_out_chats_without_tool_sizes(self):
+        hook = [t for t in self.traces if t["session_id"] == "c1"]
+        store = [dict(t, session_id="cs1", trace_id="cs:" + t["trace_id"], source="cursor_store") for t in hook]
+        o = skill_savings.overview(self.project, None, hook + store, self.spans)
+        self.assertEqual(o["skill_chats"]["chats"], 1)
+        self.assertEqual(o["skill_chats"]["unmeasured"], 1)
+
     def test_overview_gates_the_ratio_on_sample_size(self):
         o = skill_savings.overview(self.project, None, self.traces, self.spans)
         self.assertEqual(o["kept_out"], 1890)
