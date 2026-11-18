@@ -360,7 +360,7 @@ class HandoffTest(unittest.TestCase):
 
     def test_shipped_schemas_load_and_are_self_consistent(self):
         schemas = handoffs.load_schemas(REPO_DIR)
-        self.assertEqual(sorted(schemas), ["agent-spec-reviewer", "agent-spec-search", "agent-spec-verify"])
+        self.assertEqual(sorted(schemas), ["agent-spec-implement", "agent-spec-reviewer", "agent-spec-search", "agent-spec-verify"])
         for name, doc in schemas.items():
             self.assertTrue(doc.get("version"), name)
             self.assertEqual((doc["input"]["type"], doc["output"]["type"]), ("object", "object"), name)

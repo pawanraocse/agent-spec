@@ -27,9 +27,14 @@ Repeat until `$RUN status <run_id>` shows no `ready` steps:
 2. `$RUN step-start <run_id> <step> --agent <A> --model <tier> [--inputs-json J]`
    - `"reuse": true` → skip the work; its `output` file is the result.
 3. Run the step as a Task subagent: `agent-spec-search` for read-only lookups,
-   `generalPurpose` otherwise. Prompt = step prompt + outputs of `needs` steps.
+   `generalPurpose` otherwise. Prompt = step prompt + the `context` that `step-start`
+   returned, when it returned one (a typed step: only its handoff input fields); otherwise
+   step prompt + outputs of `needs` steps.
 4. `$RUN step-end <run_id> <step> --status success --output-json '<result>'
    [--tokens-in N --tokens-out N]`
+   - Typed step (its agent or skill has `agents/handoffs/<name>.json`): return JSON matching
+     that file's `output`. A mismatch exits 4 with `"ok": false` and the step recorded as
+     failed; the `error` names the field. Fix the shape and retry as below.
 
 ## Step kinds
 

@@ -10,35 +10,66 @@ Agent-spec is a **harness** that wraps Cursor (and Gemini CLI) with structural a
 
 ---
 
-## ⏱️ 3-Minute Demo — the request-trace control plane (DEC-16, §14.8)
+## ⏱️ 5-Minute Demo — one story, offline (H-051)
 
-Every number the audience sees is read live from this repository by the dashboard; none is
-written in this script. Each figure on screen carries a Measured, Estimated or AI-judged
-badge.
+One developer works in `orders-api`, one of four small services that really depend on each
+other (`examples/mesh-demo/`). Every number on screen is read live from the demo project by
+the dashboard, and each carries a Measured, Estimated or AI-judged badge. Nothing in this script
+is a figure to read aloud.
 
-**Before (2 minutes, off stage):**
+**Before (off stage, network off is fine):**
 
 ```bash
-./install.sh --register "$(pwd)"                      # hooks write every request to events.jsonl
-python3 bin/agent-spec-platform.py ingest             # history, memory, graph, runs
-python3 bin/agent-spec-platform.py serve              # open the printed URL; Cursor on the left
-python3 bin/agent-spec-platform.py trace --list 5     # pick a fallback request for Replay
+bash examples/mesh-demo/demo-setup.sh /tmp/agent-spec-demo
+cd /tmp/agent-spec-demo/orders-api && python3 .agent-spec/bin/agent-spec-platform.py serve
 ```
+
+`demo-setup.sh` copies the four repos to `/tmp/agent-spec-demo` (the package is never written
+to) and does the following:
+- registers `orders-api` (project harness only) and writes the two onboarding files
+  `/agent-spec-onboard` would write, because onboarding is an agent action and cannot run offline;
+- builds the four-repo mesh;
+- records a past fix in `orders-worker` and remembers one fact in `orders-api`
+  ("routes are a public contract"), so the digest and the Impact tab have a fact to show;
+- replays one recorded Cursor conversation through the real hooks;
+- sends one edit of `orders_api/routes.py` to the real risk gate, which blocks it;
+- proposes one more fact ("order ids are idempotency keys");
+- ingests the platform database.
+
+Open the printed dashboard URL, and keep a terminal in `/tmp/agent-spec-demo/orders-api`.
+
+**Before each rehearsal (H-053):** `python3 examples/mesh-demo/demo-dryrun.py` builds the demo
+twice in throwaway directories with the network off (`unshare -rn` on Linux), drives every
+beat below with the same commands and the same dashboard calls the buttons make, and prints
+each beat's time. A failed check names the beat. It does not replace rehearsing the talk.
 
 | Time | Do | The audience sees |
 |---|---|---|
-| 0:00–1:00 **Live** | In Cursor type `/agent-spec-investigate why does <a real failing test> fail` | The request appears at the top of the feed and its graph grows as hooks fire: prompt → skill → `agent-spec-search` subagent → reads → a red guard node if a whole-file read is blocked → response. The waterfall marks the slowest step. |
-| 1:00–1:30 **Inspect** | Click the subagent node, then the Responses tab | Its task, summary, tool-call count, files touched and measured duration; then every response in order. "Copy investigate prompt" hands any span back to the agent. |
-| 1:30–2:15 **Coach** | Review tab → copy `/agent-spec-session-review <id>` into Cursor; then open Coach | The grade and findings land, each linked to a span (hovering highlights it). Coach shows the top three issues across reviewed sessions with their weekly trend, a copyable fix prompt each, and measured p50/p95 per span kind. |
-| 2:15–3:00 **Learning** | Open Learning | For each fact linked to a finding class (`/agent-spec-remember --addresses …`): findings per session before vs after it was recorded. A flat line is shown as flat. |
+| 0:00–0:30 **Install** | Show the `install.sh --register` line from the setup output, then `ls .cursor/hooks .agent-spec/bin` | The harness is plain files in the repo: hooks, rules and stdlib Python. There is no service to run. |
+| 0:30–1:00 **Digest** | `python3 .agent-spec/bin/agent-spec-digest.py` | The block every new chat starts with: stack, graph, pipeline, last session and remembered facts, about 1.7 KB in place of opening four files. |
+| 1:00–1:45 **Cross-repo blast radius** | `python3 .agent-spec/bin/graphify-mesh.py query --file orders-api:orders_api/routes.py`, then `python3 .agent-spec/bin/agent-spec-recall.py "worker processes orders.created twice"` | `shop-ui` calls `POST /api/orders` in this file, and `orders-worker` consumes the topic it publishes. Recall returns a fix recorded in a *different* repo and cites `orders-worker:.agent-spec/experience.jsonl:1`. |
+| 1:45–2:30 **Tier-3 edit blocked** | Project › Risk | The agent's edit of `routes.py` waits there. The tier is 3 because another repo calls the file. The agent was told to wait, and was not told how to approve its own action. |
+| 2:30–3:00 **Approved in the dashboard** | Click **Approve once** | The approval works for one retry within 30 minutes, and the decision is a row in `metrics/risk.jsonl`. |
+| 3:00–3:45 **Impact** | Project › Sessions → the `conv-recorded-1` request → Impact tab | Tokens kept out of the chat (estimated, labelled as such), the raw-code-full rule checks, and the facts the digest injected. Say what "kept out of the chat" means: re-send savings in the parent context, not a lower total bill. |
+| 3:45–4:15 **Learning proposal approved** | Project › Proposals → **Approve** on "order ids are idempotency keys" | The fact moves into memory. The next chat's digest carries it, and the decision is audited in `metrics/proposals.jsonl`. |
+| 4:15–5:00 **Audit export** | The conversation → **Export audit**, then `python3 .agent-spec/bin/agent-spec-platform.py audit --verify <file>` | A redacted JSONL of requests, tool actions, risk decisions and outcomes, hash-chained line by line. `--verify` names the first line that was edited. |
 
-**If Cursor or the network misbehaves:** open any request and press **Replay** — the
-recorded trace plays at real speed (1×/4×/16×) under a *Recorded* badge.
+**Optional 30 seconds, local model (H-052):** when Ollama is running on this machine, the
+Console tab runs a question against it with nothing leaving the machine. It is the only live
+agent that works with the network off. Skip it when the Console says no backend. Cursor itself
+cannot reach a local Ollama without a public tunnel, so the demo never claims it can.
 
-**What is not shown as measured:** token counts on tool and subagent spans (only
-`afterAgentResponse` carries measured input, output and cache counts; see
-`tests/fixtures/hooks/README.md`), and durations from Cursor's local store, which are
-estimated from message timestamps and badged so.
+**If anything misbehaves:** open the recorded request and press **Replay**. The trace plays at
+real speed under a *Recorded* badge. A recorded fallback video of this script is still owed
+(H-051); it has to be captured on the demo machine.
+
+**Afterwards:** `./uninstall.sh --unregister /tmp/agent-spec-demo/orders-api` removes the demo
+project from the registry.
+
+**What is not shown as measured:** token counts on tool and subagent spans. Only
+`afterAgentResponse` carries measured input, output and cache counts (see
+`tests/fixtures/hooks/README.md`). Durations from Cursor's local store are estimated from
+message timestamps and badged so.
 
 ---
 

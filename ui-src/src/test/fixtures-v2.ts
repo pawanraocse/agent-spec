@@ -486,7 +486,8 @@ export const V2_ROUTES: Record<string, unknown> = {
     "tokens_input": 1200,
     "tokens_output": 300,
     "tokens_cache_read": 0,
-    "bytes_in": 900
+    "bytes_in": 900,
+    "context": {"schema": "agent-spec-search", "pruned": true, "passthrough_bytes": 4800, "context_bytes": 120, "reason": null}
    },
    {
     "step_id": "s2",
@@ -527,7 +528,8 @@ export const V2_ROUTES: Record<string, unknown> = {
     "duration_ms": 2500,
     "tokens": 13900
    }
-  ]
+  ],
+  "context": {"steps": 1, "pruned": 1, "passthrough_bytes": 4800, "context_bytes": 120}
  },
  "/api/runs/req-1/events": {
   "events": []
@@ -568,19 +570,17 @@ export const V2_ROUTES: Record<string, unknown> = {
   ]
  },
  "/api/compare": {
-  "a": {
-   "session_id": "conv-1",
-   "tokens": 15400,
-   "runs": 2,
-   "tools": 3
-  },
-  "b": {
-   "session_id": "conv-2",
-   "tokens": 4000,
-   "runs": 1,
-   "tools": 1
-  },
-  "delta_tokens": 11400,
-  "delta_runs": 1
+  "a": {"session_id": "conv-1", "provenance": "measured", "requests": 2, "tool_calls": 3, "tool_failures": 1,
+        "files_edited": 1, "requests_with_edits": 1, "verified_requests": 1, "guard_blocks": 0, "subagents": 1,
+        "compactions": 0, "rework_files": 0, "tokens": {"input": 9000, "output": 400, "cache_read": 6000, "cache_write": 0, "total": 15400},
+        "skills": ["agent-spec-raw-code-full"],
+        "quality": {"provenance": "ai_judged", "overall": 4, "dimensions": {"relevance": 4, "verification": 3}},
+        "context": {"provenance": "measured", "digest_bytes": 1700, "facts_injected": 3, "facts": ["risk gate"]}},
+  "b": {"session_id": "conv-2", "provenance": "measured", "requests": 1, "tool_calls": 1, "tool_failures": 0,
+        "files_edited": 0, "requests_with_edits": 0, "verified_requests": 0, "guard_blocks": 0, "subagents": 0,
+        "compactions": 0, "rework_files": 0, "tokens": null, "skills": [], "quality": null, "context": null},
+  "delta": {"requests": 1, "tool_calls": 2, "tool_failures": 1, "files_edited": 1, "verified_requests": 1,
+            "guard_blocks": 0, "subagents": 1, "compactions": 0, "rework_files": 0},
+  "text": null
  }
 };

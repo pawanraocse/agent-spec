@@ -17,14 +17,22 @@ type Step = {
   tokens_output?: number;
   tokens_cache_read?: number;
   bytes_in?: number;
+  context?: StepContext | null;
 };
+// P4-015: a typed step's context, pruned to its handoff input vs the full pass-through.
+type StepContext = { schema?: string; pruned: boolean; passthrough_bytes: number; context_bytes: number; reason?: string | null };
 type Subagent = { agent?: string; model?: string; status: string; latency_ms?: number; error?: string };
 type RunDetailPayload = {
   run?: Record<string, unknown>;
   steps?: Step[];
   subagents?: Subagent[];
   waterfall?: { name: string; kind: string; ordinal: number; status: string; duration_ms?: number; tokens?: number }[];
+  context?: { steps: number; pruned: number; passthrough_bytes: number; context_bytes: number } | null;
 };
+
+function cut(full: number, kept: number): number {
+  return full > 0 ? Math.round((100 * (full - kept)) / full) : 0;
+}
 
 const WORKFLOWS = [
   {
@@ -235,6 +243,14 @@ export function RunDetail() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Run {id}</h1>
+      {detail?.context && (
+        <p className="text-xs text-muted-foreground" data-testid="run-context">
+          Handoff context: <Num p="measured">{detail.context.context_bytes}</Num> B sent to typed steps instead of{" "}
+          <Num p="measured">{detail.context.passthrough_bytes}</Num> B pass-through (
+          <Num p="measured">{cut(detail.context.passthrough_bytes, detail.context.context_bytes)}%</Num> less;{" "}
+          <Num p="measured">{detail.context.pruned}</Num> of <Num p="measured">{detail.context.steps}</Num> steps pruned)
+        </p>
+      )}
       <div className="rounded-lg border border-border p-3">
         <p className="mb-2 text-xs text-muted-foreground">Step graph (waterfall)</p>
         <ol className="flex flex-wrap gap-2 text-xs">
@@ -305,6 +321,21 @@ export function RunDetail() {
                 <dt className="text-muted-foreground">Bytes in</dt>
                 <dd><Num p="measured">{selectedStep.bytes_in ?? 0}</Num></dd>
               </div>
+              {selectedStep.context && (
+                <div>
+                  <dt className="text-muted-foreground">Context ({selectedStep.context.schema})</dt>
+                  <dd title={selectedStep.context.reason ?? undefined}>
+                    {selectedStep.context.pruned ? (
+                      <>
+                        <Num p="measured">{selectedStep.context.context_bytes}</Num> of{" "}
+                        <Num p="measured">{selectedStep.context.passthrough_bytes}</Num> B
+                      </>
+                    ) : (
+                      <>not pruned: <Num p="measured">{selectedStep.context.passthrough_bytes}</Num> B</>
+                    )}
+                  </dd>
+                </div>
+              )}
             </dl>
           )}
           {tab === "subagents" && (

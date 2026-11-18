@@ -110,6 +110,57 @@ class IndexTest(Project):
         self.assertEqual((third["indexed"], third["removed"]), (1, 1))
 
 
+class ReviewRegressionTest(Project):
+    """Fixes from the 2026-11-18 H-001 review of retrieval.py and signals.py."""
+
+    def test_terms_are_built_from_redacted_text(self):
+        write(self.project, "src/settings.py",
+              'AWS_SECRET_ACCESS_KEY = "AKIAQWERTYUIOPASDFGH"\nGITHUB_TOKEN = "ghp_abcdefghijklmnopqrstuvwxyz0123456789"\n')
+        self.index()
+        conn = self.conn()
+        terms = " ".join(r[0] for r in conn.execute("SELECT terms FROM chunks WHERE source = 'src/settings.py'"))
+        conn.close()
+        self.assertNotIn("abcdefghijklmnopqrstuvwxyz", terms)
+        self.assertNotIn("qwertyuiopasdfgh", terms.lower())
+
+    def test_tracked_build_directory_is_indexed(self):
+        write(self.project, "tools/build/compile.py", "def compileAll():\n    return 1\n")
+        import subprocess
+        subprocess.run(["git", "init", "-q", self.project], check=True)
+        subprocess.run(["git", "-C", self.project, "add", "-A"], check=True)
+        files = retrieval.project_files(self.project)
+        self.assertIn("tools/build/compile.py", files)
+        self.assertIn(".agent-spec/memory/facts/f1.md", files)
+
+    def test_memory_survives_the_file_cap(self):
+        old = retrieval.MAX_FILES
+        retrieval.MAX_FILES = 1
+        try:
+            self.assertEqual(retrieval.project_files(self.project), [".agent-spec/memory/facts/f1.md"])
+        finally:
+            retrieval.MAX_FILES = old
+
+    def test_non_object_json_is_an_embed_error(self):
+        class Handler(BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_POST(self):
+                body = b"[1, 2]"
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+        srv = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            with self.assertRaises(retrieval.EmbedError):
+                retrieval._post_json("http://127.0.0.1:%d/api/embed" % srv.server_address[1], {}, 5)
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+
 class SearchTest(Project):
     def test_keyword_finds_identifiers_and_cites_lines(self):
         self.index()
@@ -260,6 +311,22 @@ class SignalsTest(unittest.TestCase):
         self.assertEqual(sig["guard_blocks"], 1)
         self.assertTrue(sig["responded"])
         self.assertEqual(sig["rework_later"], {"files": [], "later_edits": {}})
+
+    def test_tool_edit_without_file_event_still_counts(self):
+        spans = [
+            {"span_id": "a", "trace_id": "g", "kind": "edit", "name": "afterFileEdit", "start": "2026-01-01T00:00:01",
+             "attributes": {"file_path": "/p/a.py"}},
+            {"span_id": "b", "trace_id": "g", "kind": "edit", "name": "StrReplace", "start": "2026-01-01T00:00:01",
+             "attributes": {"target": "file_path=/p/a.py"}},
+            {"span_id": "c", "trace_id": "g", "kind": "edit", "name": "Delete", "start": "2026-01-01T00:00:02",
+             "attributes": {"target": "file_path=/p/b.py"}},
+        ]
+        sig = signals.for_trace({"trace_id": "g", "session_id": "s", "source": "hook"}, spans)
+        self.assertEqual(sig["files_edited"]["files"], ["/p/a.py", "/p/b.py"])
+
+    def test_env_prefix_in_shell_command_is_kept(self):
+        span = {"attributes": {"target": "CI=1 pytest -q"}}
+        self.assertEqual(signals._target(span), "CI=1 pytest -q")
 
     def test_rework_in_later_request(self):
         rows = hook_rows() + [dict(r, id=r["id"] + "x", generation_id="gen-2",

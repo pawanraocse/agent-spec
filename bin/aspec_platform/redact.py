@@ -21,6 +21,13 @@ _PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-
                           re.S)
 _URL_CRED = re.compile(r"(://[^/\s:@]+:)([^@\s/]+)(@)")
 _AWS = re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")
+# Vendor tokens with a fixed prefix. The entropy check exempts snake_case identifiers, and
+# `ghp_<36 alnum>` splits into two word-shaped parts, so these are matched by prefix first.
+_VENDOR = re.compile(
+    r"\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|glpat-[A-Za-z0-9_-]{20,}|"
+    r"xox[abposr]-[A-Za-z0-9-]{10,}|sk-(?:live_|test_|proj-|ant-)?[A-Za-z0-9_-]{20,}|"
+    r"[rs]k_(?:live|test)_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|npm_[A-Za-z0-9]{36}|"
+    r"hf_[A-Za-z0-9]{30,}|pypi-[A-Za-z0-9_-]{50,})")
 _KV = re.compile(r"(?<!\w)((?:[\w.-]*?)(?:" + _KEYWORDS + r")[\w.-]*)(['\"]?\s*[:=]\s*)"
                  r"((?:(?:Bearer|Basic|Token)\s+)?(?:\"[^\"\n]*\"|'[^'\n]*'|(?![{\[(])[^\s,;&\"'«$<]{4,}))", re.I)
 _BEARER = re.compile(r"\b(Bearer\s+)(?=[A-Za-z0-9._~+/=-]*[\d._~+/=-])[A-Za-z0-9._~+/=-]{8,}", re.I)
@@ -69,6 +76,7 @@ def redact(text) -> str:
     text = _PRIVATE_KEY.sub(_marker("private_key"), text)
     text = _URL_CRED.sub(lambda m: m.group(1) + _marker("url_credentials") + m.group(3), text)
     text = _AWS.sub(_marker("aws_key"), text)
+    text = _VENDOR.sub(_marker("token"), text)
     text = _KV.sub(lambda m: m.group(1) + m.group(2) + _marker("secret"), text)
     text = _BEARER.sub(lambda m: m.group(1) + _marker("bearer"), text)
     return _high_entropy(text)

@@ -41,7 +41,9 @@ preflight when the workspace is the package clone itself or has no source files.
 ## 2. Do not read what you can query — 35,814 B per file avoided
 
 - `graphify-cli.py context --task "<task>"`, then `query --file`. 152 B, not 35,966 B.
-- `grep -n` for the line, then read a range around it. Never a whole file.
+- Text, not structure → `grep -n` for the line, then read a range around it. Never a
+  whole file. If `rg` is on PATH, prefer `rg -n --max-columns 200` (skips ignored files,
+  truncates minified lines); otherwise use `grep`. Never install it or retry on failure.
 - `git diff --stat` before any full diff.
 - Broad sweep → `agent-spec-search` subagent. Noisy command → `agent-spec-verify`.
   Their context is discarded; yours is re-read.

@@ -10,6 +10,11 @@ import { skillIcon, type Skill } from "../features/skillMeta";
 import { Automations } from "./Automations";
 import { Governance } from "./Governance";
 import { Home } from "./Home";
+import { IndexHealth } from "./IndexHealth";
+import { Risk } from "./Risk";
+import { Proposals } from "./Proposals";
+import { Repos } from "./Repos";
+import { SkillEffectiveness } from "../features/SkillEffectiveness";
 import { Knowledge } from "./Knowledge";
 import { RunDetail, Runs } from "./Runs";
 import { SessionDetail, Sessions } from "./Sessions";
@@ -27,6 +32,7 @@ function Catalog() {
       <p className="text-xs text-muted-foreground">
         <Num p="measured">{q.data?.skills.length ?? 0}</Num> skills · <Num p="measured">{q.data?.self_described ?? 0}</Num> describe themselves with a <code>dashboard:</code> block. Uses are counted from request traces.
       </p>
+      <SkillEffectiveness />
       {[...groups.entries()].map(([cat, list]) => (
         <section key={cat}>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{cat}</h3>
@@ -96,6 +102,10 @@ const TABS = [
   { to: "sessions", label: "Session history" },
   { to: "runs", label: "Runs" },
   { to: "memory", label: "Memory" },
+  { to: "repos", label: "Repos" },
+  { to: "proposals", label: "Proposals" },
+  { to: "risk", label: "Risk" },
+  { to: "index", label: "Index health" },
   { to: "health", label: "Health" },
   { to: "overview", label: "Overview" },
 ];
@@ -123,6 +133,10 @@ export function Project() {
           <Route path="runs" element={<div className="p-6"><Runs /></div>} />
           <Route path="runs/:id" element={<div className="p-6"><RunDetail /></div>} />
           <Route path="memory" element={<div className="p-6"><Knowledge /></div>} />
+          <Route path="repos" element={<Repos />} />
+          <Route path="proposals" element={<Proposals />} />
+          <Route path="risk" element={<Risk />} />
+          <Route path="index" element={<IndexHealth />} />
           <Route path="health" element={<div className="p-6"><Governance /></div>} />
           <Route path="overview" element={<div className="p-6"><Home /></div>} />
         </Routes>

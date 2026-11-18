@@ -21,7 +21,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, cursor_sessions, traces
+from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, audit_export, cursor_sessions, health, mesh_view, proposals, risk_view, session_compare, skill_effect, traces, views
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_DIR = os.path.join(HERE, "ui")
@@ -49,6 +49,18 @@ POST_MAX_BODY = 65536
 PROMPT_MAX = 16384
 CURSOR_SESSION_ID = re.compile(r"^/api/cursor/session/([^/]+)$")
 REQUEST_ID = re.compile(r"^/api/requests/([^/]{1,400})$")
+# H-044: ids taken from a URL path. They reach file paths (runs/<id>/events.jsonl, reviews/<id>.json)
+# and cursor-agent argv (--resume <id>), so nothing but word characters, dots, colons and dashes,
+# and never a leading dash or dot.
+PATH_ID = re.compile(r"^[\w:][\w.:-]{0,159}$")
+WORKFLOW_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+def _argv_text(text: str) -> str:
+    """H-044: a prompt is the last cursor-agent argument; one that starts with '-' would be
+    parsed as an option. A leading space keeps it a positional argument and changes nothing
+    the model reads."""
+    return " " + text if text.startswith("-") else text
 LIVE_POLL_S = 0.5
 LIVE_MAX_S = 600  # a stream closes after this; EventSource reconnects from Last-Event-ID
 LIVE_BATCH = 200
@@ -91,7 +103,7 @@ def _search(project, conn, q, ask=False):
 # DV-012/DV-041/DV-050/DV-056: read routes that need the project as well as the connection.
 PROJECT_ROUTES = {
     "/api/requests": lambda project, conn, q: traces.list_requests(project, conn, _filters(q), _limit(q, 50), _offset(q)),
-    "/api/conversations": lambda project, conn, q: traces.list_conversations(project, conn, _filters(q), _limit(q, 200), _offset(q)),
+    "/api/conversations": lambda project, conn, q: views.list_conversations(project, conn, _filters(q), _limit(q, 200), _offset(q)),
     "/api/coach/lag": lambda project, conn, q: traces.lag(project, conn, _first(q, "since")),
     "/api/context": lambda project, conn, q: traces.context_overview(project, conn),
     "/api/coach/issues": lambda project, conn, q: observe.coach_issues(project, conn),
@@ -99,13 +111,43 @@ PROJECT_ROUTES = {
     "/api/panels": lambda project, conn, q: observe.panels(project),
     "/api/catalog": lambda project, conn, q: observe.catalog(project, conn),
     "/api/automations": lambda project, conn, q: automations.overview(project),
+    "/api/index-health": lambda project, conn, q: health.overview(project, conn),
+    "/api/risk": lambda project, conn, q: risk_view.overview(project),
+    "/api/skill-effectiveness": lambda project, conn, q: skill_effect.overview(project, conn),
+    "/api/proposals": lambda project, conn, q: proposals.overview(project),
+    "/api/mesh": lambda project, conn, q: mesh_view.overview(project, conn),
+    "/api/mesh/query": lambda project, conn, q: _mesh_query(project, q),
+    "/api/audit-export": lambda project, conn, q: _audit_export(project, conn, q),
     "/api/showcase": lambda project, conn, q: showcase.overview(project, conn),
+    "/api/compare": lambda project, conn, q: api_compare(project, conn, q),
     "/api/skill-savings": lambda project, conn, q: skill_savings.overview(project, conn, *traces.all_traces(project, conn)),
     "/api/search": lambda project, conn, q: _search(project, conn, q),
     "/api/ask": lambda project, conn, q: _search(project, conn, q, ask=True),
     "/api/index": lambda project, conn, q: retrieval.index_status(conn) if conn is not None else {"ready": False, "by_kind": {}},
     "/api/signals": lambda project, conn, q: _signals(project, conn, q),
 }
+
+
+def _mesh_query(project, q):
+    try:
+        return mesh_view.query(project, _first(q, "file") or "")
+    except ValueError as exc:
+        raise ApiError(400, str(exc))
+
+
+def _audit_export(project, conn, q):
+    """P3-011: the sealed JSONL for one conversation, with its own verification."""
+    sid = _first(q, "session")
+    if not sid:
+        raise ApiError(400, "session is required")
+    if not PATH_ID.match(sid):  # H-044: the id becomes the download's filename
+        raise ApiError(400, "invalid session id")
+    rows = audit_export.build(project, conn, sid)
+    if not rows:
+        raise ApiError(404, "no traces for session %s" % sid)
+    text = audit_export.to_jsonl(rows)
+    return {"session_id": sid, "lines": len(rows), "verify": audit_export.verify(text), "jsonl": text,
+            "filename": "agent-spec-audit-%s.jsonl" % sid[:36]}
 
 
 def _signals(project, conn, q):
@@ -196,6 +238,8 @@ def api_runs(conn, params):
 
 
 def api_run_detail(conn, run_id):
+    if not PATH_ID.match(run_id or ""):
+        raise ApiError(404, "run not found")
     detail = insights.run_detail(conn, run_id)
     if detail is None:
         raise ApiError(404, "run not found")
@@ -234,6 +278,8 @@ def api_sessions(conn, params):
 
 
 def api_session_detail(conn, session_id, project=None):
+    if not PATH_ID.match(session_id or ""):
+        raise ApiError(404, "session not found")
     detail = insights.session_detail(conn, session_id, project=project)
     if detail is None:
         raise ApiError(404, "session not found")
@@ -244,16 +290,15 @@ def api_skills(conn, params, project):
     return insights.skills_catalog(conn, project)
 
 
-def api_compare(conn, params):
+def api_compare(project, conn, params):
+    """PI-010: two conversations side by side (session_compare.compare)."""
     a, b = _first(params, "a"), _first(params, "b")
     if not a or not b:
         raise ApiError(400, "compare needs a and b (session ids)")
     try:
-        return savings.compare(conn, a, b)
+        return session_compare.compare(project, conn, a, b)
     except LookupError as exc:
         raise ApiError(404, str(exc))
-    except RuntimeError as exc:
-        raise ApiError(502, str(exc))
 
 
 def api_cursor_workspaces(conn, params):
@@ -261,6 +306,8 @@ def api_cursor_workspaces(conn, params):
 
 
 def api_cursor_session(conn, composer_id):
+    if not PATH_ID.match(composer_id or ""):
+        raise ApiError(404, "cursor session not found")
     detail = cursor_sessions.get_cursor_session_detail(composer_id)
     if not detail:
         raise ApiError(404, "cursor session not found")
@@ -268,7 +315,7 @@ def api_cursor_session(conn, composer_id):
 
 
 ROUTES = {"/api/health": api_health, "/api/runs": api_runs, "/api/tasks": api_tasks,
-          "/api/savings": api_savings, "/api/sessions": api_sessions, "/api/compare": api_compare,
+          "/api/savings": api_savings, "/api/sessions": api_sessions,
           "/api/home": api_home, "/api/gaps": api_gaps, "/api/skills": None,
           "/api/cursor/workspaces": api_cursor_workspaces}
 
@@ -349,10 +396,12 @@ def make_handler(project: str, token: str):
             self.send_header("Content-Security-Policy", _csp())
             self.end_headers()
 
-        ALLOW_POST = frozenset(("/api/agent/sessions", "/api/seed", "/api/automations"))
+        ALLOW_POST = frozenset(("/api/agent/sessions", "/api/seed", "/api/automations", "/api/index-health", "/api/risk", "/api/proposals", "/api/mesh"))
 
         def _read_body(self) -> bytes:
             length = int(self.headers.get("Content-Length") or "0")
+            if length < 0:  # H-044: rfile.read(-1) would read until the client hangs up
+                raise ApiError(400, "invalid content-length")
             if length > POST_MAX_BODY:
                 raise ApiError(413, "body too large")
             return self.rfile.read(length) if length else b""
@@ -395,11 +444,44 @@ def make_handler(project: str, token: str):
                     return self._json(200, automations.set_enabled(project, str(body.get("id") or ""), body["enabled"]))
                 except ValueError as exc:
                     return self._json(400, {"error": str(exc)})
+            if path == "/api/mesh":
+                # P3-007: add or remove a mesh member; runs graphify-mesh.py, logged as mesh-add/remove.
+                try:
+                    result = mesh_view.change(project, str(body.get("action") or ""), str(body.get("path") or ""),
+                                              str(body.get("repo_id") or ""))
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
+                return self._json(200, dict(result, mesh=mesh_view.overview(project, None)))
+            if path == "/api/proposals":
+                # PI-009: approve / reject / promote / deprecate one proposal; audited in proposals.jsonl.
+                try:
+                    result = proposals.decide(project, str(body.get("kind") or ""), str(body.get("id") or ""),
+                                              str(body.get("decision") or ""))
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
+                return self._json(200, dict(result, proposals=proposals.overview(project)))
+            if path == "/api/risk":
+                # H-030: approve or deny one blocked tier-3 action. The approval is used once by
+                # the agent's retry; every decision is a row in metrics/risk.jsonl (P3-012).
+                try:
+                    result = risk_view.decide(project, str(body.get("key") or ""), str(body.get("decision") or ""))
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
+                return self._json(200, dict(result, risk=risk_view.overview(project)))
+            if path == "/api/index-health":
+                # H-020: Rebuild graph / Refresh mesh. Same guards as /api/automations; each run
+                # is written to automation.jsonl so the Automations panel shows it.
+                try:
+                    result = health.run_action(project, str(body.get("action") or ""))
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
+                return self._json(200, dict(result, health=health.overview(project, None)))
             if path == "/api/seed":
                 action = body.get("action", "seed")
                 payload = demo_seed.remove(project) if action == "remove" else demo_seed.seed(project)
                 return self._json(200, payload)
-            if path == "/api/agent/sessions" or AGENT_MSG.match(path) or AGENT_CANCEL.match(path):
+            if path == "/api/agent/sessions" or AGENT_MSG.match(path) or AGENT_CANCEL.match(path) or WF_START.match(path):
+                # H-044: starting a workflow launches cursor-agent too, so it obeys the same switch.
                 if not console_status()["enabled"]:
                     return self._json(404, {"ok": False, "error": "console_frozen", "hint": CONSOLE_HINT})
             model_args = []
@@ -416,6 +498,7 @@ def make_handler(project: str, token: str):
                 mode = body.get("mode", "ask")
                 if mode not in ("ask", "plan", "agent"):
                     return self._json(400, {"error": "invalid mode"})
+                prompt = _argv_text(prompt)
                 argv = ["-p", "--mode", mode, "--output-format", "stream-json", "--stream-partial-output",
                         "--trust", "--workspace", project, prompt] if mode in ("ask", "plan") else [
                     "-p", "--output-format", "stream-json", "--stream-partial-output", "--trust",
@@ -431,13 +514,15 @@ def make_handler(project: str, token: str):
                 return self._json(200, result)
             if (m := AGENT_MSG.match(path)):
                 chat_id = m.group(1)
+                if not PATH_ID.match(chat_id):
+                    return self._json(400, {"error": "invalid chat id"})
                 prompt = str(body.get("prompt") or "")
                 if len(prompt) > PROMPT_MAX:
                     return self._json(413, {"error": "prompt too large"})
                 if not prompt.strip():
                     return self._json(400, {"error": "prompt required"})
                 argv = ["-p", "--resume", chat_id, "--output-format", "stream-json", "--stream-partial-output",
-                        "--trust", "--workspace", project] + model_args + [prompt]
+                        "--trust", "--workspace", project] + model_args + [_argv_text(prompt)]
                 job_id = common.ulid()
                 result = job_registry.launch(job_id, argv, project)
                 return self._json(200 if result.get("ok") else 503, result)
@@ -446,6 +531,10 @@ def make_handler(project: str, token: str):
             if (w := WF_START.match(path)):
                 wf = w.group(1)
                 inp = str(body.get("input") or "")
+                if not WORKFLOW_NAME.match(wf):
+                    return self._json(400, {"error": "invalid workflow name"})
+                if len(inp) > PROMPT_MAX:
+                    return self._json(413, {"error": "input too large"})
                 prompt = "/agent-spec-hub-runner %s %s" % (wf, inp)
                 argv = ["-p", "--approve-mcps", "--output-format", "stream-json", "--trust",
                         "--workspace", project, prompt]
@@ -499,7 +588,7 @@ def make_handler(project: str, token: str):
                         except ApiError as exc:
                             return self._json(exc.status, {"error": exc.message})
                     else:
-                        payload = traces.request_detail(project, conn, unquote(REQUEST_ID.match(path).group(1)))
+                        payload = views.request_detail(project, conn, unquote(REQUEST_ID.match(path).group(1)))
                         if payload is None:
                             return self._json(404, {"error": "request not found"})
                 finally:
@@ -541,6 +630,8 @@ def make_handler(project: str, token: str):
                     elif path == "/api/health/doctor":
                         payload = platform_data.api_doctor(project)
                     elif (rev := RUN_EVENTS.match(path)):
+                        if not PATH_ID.match(rev.group(1)):
+                            raise ApiError(404, "run not found")
                         payload = platform_data.api_run_events(project, rev.group(1))
                     elif session is not None:
                         payload = api_session_detail(conn, session.group(1), project)

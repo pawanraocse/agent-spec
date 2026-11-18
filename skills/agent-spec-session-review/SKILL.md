@@ -116,11 +116,13 @@ Then write a dashboard panel (Project › Panels; schema in `docs/DASHBOARD.md`)
 ## 4. Close the learning loop
 
 If a category already appears in three or more earlier reviews
-(`ls .agent-spec/metrics/reviews/`), propose one fact to the user, do not write it yourself:
+(`ls .agent-spec/metrics/reviews/`), queue one fact for the user's approval; never `add` it
+yourself. It waits in the dashboard's Project › Proposals inbox until someone approves it:
 
 ```bash
-./.agent-spec/bin/agent-spec-memory.py add --type constraint --subject "<short>" \
-  --addresses <category> --source "review <conversation_id>" "<one-sentence rule>"
+./.agent-spec/bin/agent-spec-memory.py propose --type constraint --subject "<short>" \
+  --addresses <category> --source "review <conversation_id>" \
+  --evidence "<n> reviews: <conversation ids>" "<one-sentence rule>"
 ```
 
 The Learning view then measures whether that category becomes rarer after the fact's date.

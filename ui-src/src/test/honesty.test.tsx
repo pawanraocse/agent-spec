@@ -3,6 +3,11 @@ import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { Automations } from "../pages/Automations";
+import { IndexHealth } from "../pages/IndexHealth";
+import { Risk } from "../pages/Risk";
+import { Proposals } from "../pages/Proposals";
+import { Repos } from "../pages/Repos";
+import { SkillEffectiveness } from "../features/SkillEffectiveness";
 import { Coach } from "../pages/Coach";
 import { Governance } from "../pages/Governance";
 import { Home } from "../pages/Home";
@@ -14,6 +19,8 @@ import { Live } from "../pages/Live";
 import { Ask } from "../pages/Ask";
 import { Impact } from "../features/Impact";
 import { fixtureFetch } from "./fixtures";
+import { V2_ROUTES } from "./fixtures-v2";
+import { SessionCompare, type CompareResult } from "../features/SessionCompare";
 
 /** DV-005: no figure on a v3 page unless it comes with provenance. A text node containing a
  *  digit must sit inside an element carrying data-provenance; identifiers, timestamps and
@@ -61,6 +68,49 @@ describe("page-level honesty (DV-005)", () => {
     expect(unlabelledFigures(container)).toEqual([]);
     expect(getByRole("switch", { name: /Suggest a fresh chat/ })).toHaveProperty("disabled", true);
     expect(getByRole("switch", { name: /Refresh the knowledge graph: on/ }).getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("Index health: every figure carries provenance, drift and the last failure are shown (H-020)", async () => {
+    const { container, findByText, getByRole } = mount("/index", <IndexHealth />);
+    await findByText("Knowledge graph");
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(container.textContent).toContain("graph is older than HEAD");
+    expect(container.textContent).toContain("main @ c044f4f");
+    expect(container.textContent).toContain("No space left on device");
+    expect(getByRole("button", { name: /Rebuild graph/ })).toBeTruthy();
+  });
+
+  it("Risk: every figure carries provenance, a blocked action can be approved (H-030)", async () => {
+    const { container, findByText, getByRole } = mount("/risk", <Risk />);
+    await findByText("Waiting for approval");
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(container.textContent).toContain("ui-src/src/lib/utils.ts");
+    expect(getByRole("button", { name: /Approve once/ })).toBeTruthy();
+    expect(getByRole("button", { name: /Deny/ })).toBeTruthy();
+  });
+
+  it("Skill effectiveness: rates are measured, quality is AI-judged and gated on sample size (PI-011)", async () => {
+    const { container, findByText } = mount("/skills", <SkillEffectiveness />);
+    await findByText("agent-spec-investigate");
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(container.querySelector('[data-provenance="ai_judged"]')?.textContent).toBe("4.0");
+    expect(container.textContent).toContain("not enough data");
+  });
+
+  it("Proposals: every figure carries provenance; each item can be approved or rejected (PI-009)", async () => {
+    const { container, findByText, getAllByRole } = mount("/proposals", <Proposals />);
+    await findByText("Waiting for you");
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(getAllByRole("button", { name: /approve/i }).length).toBe(2);
+    expect(container.textContent).toContain("retry budget");
+  });
+
+  it("Repos: every figure carries provenance; drift is flagged (P3-006)", async () => {
+    const { container, findByText } = mount("/repos", <Repos />);
+    await findByText("Who calls whom");
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(container.textContent).toContain("drifted");
+    expect(container.textContent).toContain("orders-api → acme-common");
   });
 
   it("Live: every figure carries provenance", async () => {
@@ -167,5 +217,13 @@ describe("page-level honesty (DV-005)", () => {
   it("the check catches a bare number", () => {
     const { container } = render(<div><span>42 requests</span><span data-provenance="measured">7</span></div>);
     expect(unlabelledFigures(container)).toEqual(["42 requests"]);
+  });
+
+  it("session compare labels every figure and marks review scores AI-judged (PI-010)", () => {
+    const result = V2_ROUTES["/api/compare"] as CompareResult;
+    const { container } = render(<SessionCompare result={result} />);
+    expect(unlabelledFigures(container)).toEqual([]);
+    expect(container.querySelectorAll('[data-provenance="ai_judged"]').length).toBeGreaterThan(0);
+    expect(container.textContent).toContain("verification");
   });
 });

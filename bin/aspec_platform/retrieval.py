@@ -27,6 +27,7 @@ import math
 import os
 import re
 import subprocess
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -42,6 +43,8 @@ CHUNK_MIN, CHUNK_MAX = 40, 80          # lines; split at a boundary once past MI
 REQUEST_BODY_CHARS = 6000
 EMBED_BATCH = 32
 EMBED_PER_PASS = 512                   # background passes catch up; one pass never stalls
+EMBED_PASS_SECONDS = 20                # ingest holds the write transaction; embedding stops here
+EMBED_TIMEOUT = 30
 RRF_K = 60
 
 TEXT_EXT = {
@@ -59,6 +62,7 @@ AGENT_SPEC_SKIP = ("platform/", "metrics/", "bin/", "graph/knowledge-graph.json"
 # not import each other, so the list is restated here).
 SECRET_GLOBS = (".env", ".env.*", "*.pem", "*.key", "*.p12", "*.pfx", "id_rsa*", "id_ed25519*",
                 "credentials*", "*.keystore", "*secret*.json", ".npmrc", ".pypirc", ".netrc")
+GIT_ALWAYS_SKIP = {".git", "node_modules"}
 LOCKFILES = ("package-lock.json", "yarn.lock", "pnpm-lock.yaml", "poetry.lock", "Cargo.lock", "go.sum")
 
 BOUNDARY = re.compile(r"^(?:\s{0,4})(?:async\s+def |def |class |export |function |interface |type |"
@@ -138,16 +142,19 @@ def _walk_files(root: str, project: str):
 def project_files(project: str) -> list:
     """Indexable project-relative paths: git's view of the tree (respects .gitignore) plus the
     .agent-spec/ Markdown artifacts, which are often gitignored but are the project's memory."""
-    files = _git_files(project)
-    if files is None:
-        files = list(_walk_files(project, project))
+    # .agent-spec/ first: when MAX_FILES cuts a large repo, the project's memory must survive.
     spec = os.path.join(project, ".agent-spec")
-    if os.path.isdir(spec):
-        files.extend(_walk_files(spec, project))
+    files = list(_walk_files(spec, project)) if os.path.isdir(spec) else []
+    tracked = _git_files(project)
+    if tracked is None:
+        files.extend(_walk_files(project, project))  # the walk already prunes SKIP_DIRS
+    else:
+        # git already applies .gitignore; a tracked build/ or out/ directory is real source.
+        files.extend(p for p in tracked if not set(p.split("/")[:-1]) & GIT_ALWAYS_SKIP)
     seen, keep = set(), []
     for rel in files:
         rel = rel.replace(os.sep, "/")
-        if rel in seen or any(part in SKIP_DIRS for part in rel.split("/")[:-1]):
+        if rel in seen:
             continue
         seen.add(rel)
         if classify(rel):
@@ -209,8 +216,10 @@ def _file_docs(project: str, rel: str, kind: str):
                     sym = m.group(1)
                     break
         title = rel + (" — " + heading if heading else "") + (" · " + sym if sym else "")
+        clean = redact.redact(body)
+        # Terms come from the redacted text: split identifiers of a secret are still the secret.
         docs.append({"ref": "%s:%d-%d" % (rel, start, end), "title": title, "start_line": start, "end_line": end,
-                     "body": redact.redact(body), "terms": split_terms(rel + " " + body)})
+                     "body": clean, "terms": split_terms(rel + " " + clean)})
     return raw, docs
 
 
@@ -247,7 +256,7 @@ def _trace_doc(t: dict, spans: list) -> dict:
     body = redact.redact("\n".join(parts))[:REQUEST_BODY_CHARS]
     title = (t.get("prompt") or "request %s" % t["trace_id"]).strip().splitlines()[0][:140] if (t.get("prompt") or "").strip() else "request %s" % t["trace_id"]
     return {"ref": t["trace_id"], "title": title, "start_line": None, "end_line": None, "body": body,
-            "terms": split_terms(" ".join(edits + tools)), "session_id": t.get("session_id"), "ts": t.get("start")}
+            "terms": split_terms(redact.redact(" ".join(edits + tools))), "session_id": t.get("session_id"), "ts": t.get("start")}
 
 
 def _review_docs(path: str, review: dict) -> list:
@@ -355,11 +364,16 @@ def index_traces(conn, project: str, stats: dict, now: str) -> None:
         spans = by_trace.get(tid, [])
         stamp = "%s:%s:%d:%s" % (t.get("end"), t.get("status"), len(spans), t.get("source"))
         prev = known.get(("request", tid))
-        if prev and prev[0] == stamp:
+        # The stamp alone misses a prompt recovered from a transcript later, or response
+        # text that changed without a new span, so the passage's own hash decides.
+        doc = _trace_doc(t, spans)
+        sha = common.sha256(doc["body"] + "\0" + doc["title"])
+        if prev and prev[1] == sha:
+            if prev[0] != stamp:
+                conn.execute("UPDATE index_sources SET stamp = ? WHERE kind = 'request' AND source = ?", (stamp, tid))
             stats["unchanged"] += 1
             continue
-        doc = _trace_doc(t, spans)
-        _replace(conn, "request", tid, stamp, common.sha256(doc["body"]), [doc], now)
+        _replace(conn, "request", tid, stamp, sha, [doc], now)
         stats["indexed"] += 1
         stats["chunks"] += 1
     for key in set(known) - present:
@@ -433,9 +447,12 @@ def _post_json(url: str, body: dict, timeout: float) -> dict:
                                  headers={"Content-Type": "application/json"}, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310 — URL checked above
-            return json.loads(resp.read().decode("utf-8"))
+            data = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, OSError, ValueError) as exc:
         raise EmbedError("%s: %s" % (url, exc)) from exc
+    if not isinstance(data, dict):
+        raise EmbedError("%s: expected a JSON object, got %s" % (url, type(data).__name__))
+    return data
 
 
 class OllamaEmbedder:
@@ -454,7 +471,7 @@ class OllamaEmbedder:
     def embed(self, texts: list, role: str = "document") -> list:
         if self.prefix:
             texts = [(self.prefix[1] if role == "query" else self.prefix[0]) + t for t in texts]
-        data = _post_json(self.url + "/api/embed", {"model": self.model, "input": texts}, timeout=120)
+        data = _post_json(self.url + "/api/embed", {"model": self.model, "input": texts}, timeout=EMBED_TIMEOUT)
         vecs = data.get("embeddings")
         if not isinstance(vecs, list) or len(vecs) != len(texts):
             raise EmbedError("unexpected /api/embed response")
@@ -491,12 +508,17 @@ def _unpack(blob: bytes) -> array.array:
     return a
 
 
-def embed_pending(conn, embedder, limit: int = EMBED_PER_PASS) -> int:
+def embed_pending(conn, embedder, limit: int = EMBED_PER_PASS, budget: float = EMBED_PASS_SECONDS) -> int:
+    """Embed chunks that have no vector for this model, stopping after `budget` seconds:
+    the caller's write transaction is open, so a slow model must not hold the lock."""
     rows = conn.execute(
         "SELECT c.chunk_id, c.title, c.body FROM chunks c LEFT JOIN chunk_vectors v "
         "ON v.chunk_id = c.chunk_id AND v.model = ? WHERE v.chunk_id IS NULL LIMIT ?", (embedder.name, limit)).fetchall()
     done = 0
+    deadline = time.monotonic() + budget
     for i in range(0, len(rows), EMBED_BATCH):
+        if done and time.monotonic() > deadline:
+            break
         batch = rows[i:i + EMBED_BATCH]
         vecs = embedder.embed([("%s\n%s" % (r["title"], r["body"]))[:4000] for r in batch])
         conn.executemany("INSERT OR REPLACE INTO chunk_vectors (chunk_id, model, dim, vec) VALUES (?,?,?,?)",
@@ -567,7 +589,7 @@ def vector_hits(conn, embedder, q: str, filters: dict, limit: int, scan: int = 5
     rows = conn.execute(
         "SELECT c.chunk_id, c.kind, c.source, c.ref, c.title, c.start_line, c.end_line, c.session_id, c.ts, "
         "substr(c.body, 1, 320) AS head, v.vec FROM chunk_vectors v JOIN chunks c ON c.chunk_id = v.chunk_id "
-        "WHERE v.model = ?%s LIMIT ?" % where, [embedder.name] + args + [scan]).fetchall()
+        "WHERE v.model = ?%s ORDER BY c.chunk_id DESC LIMIT ?" % where, [embedder.name] + args + [scan]).fetchall()
     scored = []
     for r in rows:
         vec = _unpack(r["vec"])
@@ -624,7 +646,8 @@ def index_status(conn) -> dict:
     except Exception:  # noqa: BLE001
         return {"ready": False, "by_kind": {}, "vectors": {}, "last": None, "embedder": None, "mode": "keyword"}
     embedder = get_embedder()
-    mode = "hybrid" if embedder and vectors.get(embedder.name) else "keyword"
+    semantic_on = fusion_weight(conn)["semantic_weight"] > 0  # search() skips a zero-weight list
+    mode = "hybrid" if embedder and vectors.get(embedder.name) and semantic_on else "keyword"
     return {"ready": bool(by_kind), "by_kind": by_kind, "vectors": vectors,
             "last": json.loads(last[0]) if last else None, "embedder": embedder.name if embedder else None, "mode": mode}
 

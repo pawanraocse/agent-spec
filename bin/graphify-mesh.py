@@ -95,6 +95,24 @@ def repo_id_for(path: str, given: str | None) -> str:
     return rid
 
 
+def member_head(path: str):
+    """HEAD of a member repo, or None when it is not a git checkout (H-012)."""
+    try:
+        res = subprocess.run(["git", "-C", path, "rev-parse", "HEAD"], capture_output=True, text=True, timeout=5)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return res.stdout.strip() if res.returncode == 0 else None
+
+
+def drifted(entry: dict) -> bool:
+    """True when the member's HEAD moved since its graph was built. A member that is not a
+    git checkout, or was built before head_sha was recorded, cannot be judged: False."""
+    if not entry.get("head_sha") or not os.path.isdir(entry.get("path") or ""):
+        return False
+    head = member_head(entry["path"])
+    return bool(head) and head != entry["head_sha"]
+
+
 def build_member(hub: str, entry: dict) -> None:
     out = os.path.join(hub_paths(hub)["members"], entry["repo_id"])
     proc = subprocess.run([sys.executable, BUILD, "--quiet", "--out", out], cwd=entry["path"],
@@ -106,6 +124,7 @@ def build_member(hub: str, entry: dict) -> None:
     with open(graph, "rb") as fh:
         entry["graph_sha"] = hashlib.sha1(fh.read()).hexdigest()
     entry["updated"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    entry["head_sha"] = member_head(entry["path"])
 
 
 def qualified_names(path: str, packages: set) -> list:
@@ -391,13 +410,17 @@ def cmd_build(args, hub):
     manifest = load_manifest(hub)
     if not manifest["repos"]:
         raise SystemExit("error: the mesh is empty; run graphify-mesh.py add <path>")
+    rebuilt = []
     for entry in manifest["repos"]:
         graph = os.path.join(hub_paths(hub)["members"], entry["repo_id"], "knowledge-graph.json")
-        if args.refresh or not os.path.isfile(graph):
+        # H-012: a member whose HEAD moved (pull, branch switch) is rebuilt; the rest are reused,
+        # so --refresh is only needed to force every member.
+        if args.refresh or not os.path.isfile(graph) or drifted(entry):
             if not os.path.isdir(entry["path"]):
                 raise SystemExit("error: %s: %s is gone; remove it or restore the path"
                                  % (entry["repo_id"], entry["path"]))
             build_member(hub, entry)
+            rebuilt.append(entry["repo_id"])
     save_json(hub_paths(hub)["manifest"], manifest)
     graph = merge(hub, manifest)
     save_json(hub_paths(hub)["out"], graph)
@@ -405,6 +428,7 @@ def cmd_build(args, hub):
     print("mesh: %d repos, %d nodes, %d cross-repo edges, largest component %d (%s)" % (
         s["repos"], len(graph["nodes"]), s["cross_repo_edges"], len(s["largest_component"]),
         ", ".join(s["largest_component"])))
+    print("rebuilt: %s" % (", ".join(rebuilt) or "none (every member is at the HEAD it was built from)"))
     if s["stale_members"]:
         print("stale: %s predate graph 5.3; run graphify-mesh.py build --refresh" % ", ".join(s["stale_members"]))
     return 0
@@ -412,6 +436,7 @@ def cmd_build(args, hub):
 
 def cmd_stats(args, hub):
     s = summarize(load_mesh(hub))
+    s["drifted"] = [e["repo_id"] for e in load_manifest(hub)["repos"] if drifted(e)]
     if args.json:
         print(json.dumps(s, indent=2))
         return 0
@@ -421,6 +446,8 @@ def cmd_stats(args, hub):
         print("  %-40s %d" % (pair, n))
     for comp in s["components"]:
         print("component: %s" % ", ".join(comp))
+    if s["drifted"]:
+        print("drifted: %s moved since the mesh was built; run graphify-mesh.py build" % ", ".join(s["drifted"]))
     return 0
 
 

@@ -46,6 +46,7 @@ remove_skills() {
     fi
   done
   rm -f "$ROOT_MARKER"
+  rm -f "${CURSOR_SKILLS}/.algosec-agent-spec-lean" "${CURSOR_SKILLS}/.algosec-agent-spec-full"
 }
 
 unregister_workspace() {

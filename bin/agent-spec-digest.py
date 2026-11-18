@@ -140,7 +140,58 @@ def graph_line():
         stats.get("internal_edges", "?"),
         stats.get("cycles", "?"),
     )
-    return line + ("\nmost depended on: " + hot if hot else "")
+    line += "\nmost depended on: " + hot if hot else ""
+    where = git_label(graph.get("git"))
+    if where:
+        line += "\ngraph reflects: " + where
+    status = load_json(os.path.join(SPEC, "graph", ".status.json")) or {}
+    fail = status.get("last_failure") if isinstance(status, dict) else None
+    if status.get("state") == "failed" and isinstance(fail, dict):
+        line += "\ngraph: last build FAILED at %s — %s | fix: %s" % (
+            str(fail.get("finished", "?"))[:16], fail.get("error") or "?", REBUILD_HINT)
+    return line
+
+
+def mesh_line():
+    """H-012: mesh members whose HEAD moved since the mesh build; "" when none or no mesh."""
+    manifest = load_json(os.path.join(SPEC, "mesh.json"))
+    if not isinstance(manifest, dict):
+        return ""
+    moved = []
+    for r in (manifest.get("repos") or [])[:20]:
+        if not isinstance(r, dict) or not r.get("head_sha") or not os.path.isdir(r.get("path") or ""):
+            continue
+        try:
+            head = subprocess.run(["git", "-C", r["path"], "rev-parse", "HEAD"], capture_output=True,
+                                  text=True, timeout=2).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if head and head != r["head_sha"]:
+            moved.append(r.get("repo_id") or r["path"])
+    if not moved:
+        return ""
+    return ("mesh: %s moved since the mesh build; cross-repo edges may be stale | fix: "
+            "./.agent-spec/bin/graphify-mesh.py build" % ", ".join(moved))
+
+
+def git_label(g):
+    """`main @ 1a2b3c4 (dirty)`; a merge or rebase in progress is called out, not hidden (H-011)."""
+    if not isinstance(g, dict) or not g.get("head_sha"):
+        return ""
+    label = "%s @ %s" % (g.get("branch") or "?", g["head_sha"][:7])
+    if g.get("dirty"):
+        label += " (uncommitted changes)"
+    if g.get("operation"):
+        label += " — built during a %s%s; structure may be mid-change" % (
+            g["operation"], " with %d conflicted file(s)" % g["conflicts"] if g.get("conflicts") else "")
+    try:
+        head = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"], capture_output=True,
+                              text=True, timeout=2).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        head = ""
+    if head and head != g["head_sha"]:
+        label += " — HEAD is now %s; graph lags until the next build" % head[:7]
+    return label
 
 
 def remembered():
@@ -300,6 +351,9 @@ def build_digest():
     out.append(graph_line())
     if graph_status:
         out.append("graph: " + graph_status)
+    mesh = mesh_line()
+    if mesh:
+        out.append(mesh)
     out.append("pipeline: " + gate())
 
     team = team_line()

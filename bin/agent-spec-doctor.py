@@ -189,6 +189,9 @@ def check_graph(ctx):
         finished = datetime.fromisoformat(status["finished"])
     except (KeyError, ValueError):
         return [("graph", "WARN", "graph has no build status (built by an older harness)", rebuild)]
+    if status.get("state") == "failed":
+        err = (status.get("last_failure") or {}).get("error") or status.get("error") or "unknown error"
+        return [("graph", "FAIL", "last graph build failed: %s" % err, rebuild)]
     age = (datetime.now() - finished).total_seconds() / 86400.0
     if age > GRAPH_STALE_DAYS:
         return [("graph", "WARN",

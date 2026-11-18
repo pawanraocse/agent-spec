@@ -88,6 +88,15 @@ class RedactTest(unittest.TestCase):
             once = redact.redact(text)
             self.assertEqual(redact.redact(once), once)
 
+    def test_vendor_prefixed_tokens(self):
+        # ghp_<36> splits into word-shaped parts, which the identifier exemption used to keep.
+        for tok in ("ghp_abcdefghijklmnopqrstuvwxyz0123456789", "github_pat_" + "A1b2" * 12,
+                    "xoxb-1234567890-abcdefghij", "sk-proj-abcdefghij1234567890ABCD",
+                    "glpat-abcdefghij1234567890", "AIza" + "B" * 35):
+            self.assertNotIn(tok, redact.redact("token " + tok + " end"), tok)
+        for keep in ("sk-learn", "task-list_view_component", "ghp_short"):
+            self.assertIn(keep, redact.redact("x " + keep + " y"), keep)
+
     def test_non_string_inputs(self):
         self.assertEqual(redact.redact(None), "")
         self.assertEqual(redact.redact(12), "12")

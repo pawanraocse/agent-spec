@@ -589,6 +589,18 @@ def _run_steps(events, result) -> list:
             if info.get("status") != "pending"]
 
 
+def _context_stats(ctx):
+    """P4-015: the numeric context-pruning record a step carries, or None."""
+    if not isinstance(ctx, dict):
+        return None
+    try:
+        return {"schema": str(ctx.get("schema") or ""), "pruned": bool(ctx.get("pruned")),
+                "passthrough_bytes": int(ctx.get("passthrough_bytes") or 0),
+                "context_bytes": int(ctx.get("context_bytes") or 0), "reason": ctx.get("reason")}
+    except (TypeError, ValueError):
+        return None
+
+
 def _ingest_run_dir(conn, rd, stats) -> None:
     run = common.read_json(os.path.join(rd, "run.json"))
     if not isinstance(run, dict) or not run.get("run_id"):
@@ -643,7 +655,7 @@ def _ingest_run_dir(conn, rd, stats) -> None:
              int(tk.get("input", 0)), int(tk.get("output", 0)),
              json.dumps(redact_obj({"agent": actor.get("agent"), "model": actor.get("model"),
                                     "skill": actor.get("skill"), "attempt": p.get("attempt"),
-                                    "error": p.get("error")}))))
+                                    "error": p.get("error"), "context": _context_stats(p.get("context"))}))))
         stats["steps"] += 1
     _run_trace(conn, run, rid, steps)
     stats["runs"] += 1
@@ -776,6 +788,23 @@ def ingest_events(conn, project) -> dict:
     return dict(stats)
 
 
+def store_for_project(convs, project) -> list:
+    """Cursor's local store is machine-wide. A project's dashboard keeps only the conversations
+    whose workspace is this project (or a folder inside it), so one project never shows another's
+    prompts. A conversation with no recorded workspace is left out. AGENT_SPEC_CURSOR_STORE=all
+    keeps every workspace."""
+    root = os.path.realpath(project)
+    out = []
+    for c in convs or []:
+        ws = c.get("workspace") if isinstance(c, dict) else None
+        if not ws:
+            continue
+        real = os.path.realpath(ws)
+        if real == root or real.startswith(root + os.sep):
+            out.append(c)
+    return out
+
+
 def ingest_traces(conn, project) -> dict:
     """DV-010: hook events and (unless AGENT_SPEC_CURSOR_STORE=0) Cursor's local store -> traces/spans.
 
@@ -787,9 +816,13 @@ def ingest_traces(conn, project) -> dict:
     h_traces, h_spans = tr.build_from_events(rows)
     tr.persist(conn, h_traces, h_spans, ["hook"])
     stats["hook_traces"], stats["spans"] = len(h_traces), len(h_spans)
-    if os.environ.get("AGENT_SPEC_CURSOR_STORE", "1") != "0":
+    mode = os.environ.get("AGENT_SPEC_CURSOR_STORE", "1")
+    if mode != "0":
         from . import cursor_sessions
-        s_traces, s_spans = tr.build_from_store(cursor_sessions.store_conversations())
+        convs = cursor_sessions.store_conversations()
+        if mode != "all":
+            convs = store_for_project(convs, project)
+        s_traces, s_spans = tr.build_from_store(convs)
         tr.persist(conn, s_traces, s_spans, ["cursor_store"])
         stats["store_traces"] = len(s_traces)
         stats["spans"] += len(s_spans)

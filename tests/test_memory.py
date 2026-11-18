@@ -270,6 +270,28 @@ def test_v2_invalid_field_values_flagged():
         assert res.returncode == 1 and res.stdout.count("BAD-FIELD") == 4, res.stdout
 
 
+
+def test_digest_ranks_facts_about_the_files_in_play_first():
+    """Self-learning digest: past the byte cap, a fact about the file being changed beats a
+    newer, unrelated one."""
+    with tempfile.TemporaryDirectory() as t:
+        subprocess.run(["git", "init", "-q", t], check=True)
+        for i in range(30):
+            write_fact(t, "f%02d" % i, "constraint", "unrelated rule %d" % i,
+                       "Something about billing exports and invoices number %d that is long enough to fill." % i,
+                       created="2026-11-%02d" % (i % 28 + 1))
+        write_fact(t, "old-retrieval", "gotcha", "rank fusion weights",
+                   "retrieval.py fuses BM25 and vectors; tune it with rag-eval.", created="2025-01-01")
+        os.makedirs(os.path.join(t, "bin"))
+        with open(os.path.join(t, "bin", "retrieval.py"), "w") as fh:
+            fh.write("x = 1\n")
+        subprocess.run(["git", "-C", t, "add", "-A"], check=True)
+        out = run(t, "digest").stdout.splitlines()
+        assert out[0].startswith("- [gotcha] rank fusion weights"), out[:2]
+        env_off = dict(os.environ, AGENT_SPEC_DIGEST_RELEVANCE="0")
+        off = subprocess.run([sys.executable, MEMORY, "digest"], cwd=t, capture_output=True, text=True, env=env_off)
+        assert not off.stdout.startswith("- [gotcha] rank fusion weights"), "relevance can be turned off"
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

@@ -92,6 +92,22 @@ class RunDirTest(unittest.TestCase):
         for base, _dirs, names in os.walk(rd):
             self.assertFalse([n for n in names if n.endswith(".tmp")], base)
 
+    def test_typed_step_output_is_checked_against_its_handoff_schema(self):
+        """P4-013: a successful step run by a typed agent must return its schema's shape."""
+        rid = self.sb.start()
+        self.sb.run("step-start", rid, "a", "--agent", "agent-spec-verify")
+        code, out, _ = self.sb.run("step-end", rid, "a", "--status", "success", "--output-json", '{"verdict": "PASS"}')
+        result = out if isinstance(out, dict) else json.loads(out)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["status"], "failed")
+        self.assertIn("handoff schema agent-spec-verify", result["error"])
+        self.assertIn("$.command: required", result["error"])
+        rid = self.sb.start()
+        self.sb.run("step-start", rid, "a", "--agent", "agent-spec-verify")
+        good = '{"command": "pytest -q", "verdict": "PASS", "summary": "12 passed", "failures": []}'
+        code, out, _ = self.sb.run("step-end", rid, "a", "--status", "success", "--output-json", good)
+        self.assertEqual((out if isinstance(out, dict) else json.loads(out))["status"], "success", out)
+
     def test_secrets_are_redacted_in_request_and_payload(self):
         rid = self.sb.start(request="deploy with password=hunter2 and Bearer abc.def.ghi key AKIAABCDEFGHIJKLMNOP")
         self.sb.run("event", rid, "decision", "--payload-json",

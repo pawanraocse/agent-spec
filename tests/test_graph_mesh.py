@@ -122,6 +122,30 @@ class GraphMeshTest(unittest.TestCase):
         with open(os.path.join(self.hub, ".agent-spec", "mesh.json"), encoding="utf-8") as fh:
             self.assertEqual(json.load(fh)["repos"], [])
 
+    def test_build_rebuilds_only_members_whose_head_moved(self):
+        """H-012: a branch switch in one member rebuilds that member only, without --refresh."""
+        g = lambda root, *a: subprocess.run(  # noqa: E731
+            ["git", "-C", root, "-c", "user.email=t@example.invalid", "-c", "user.name=t", *a],
+            check=True, capture_output=True)
+        for n in ("lib", "svc"):
+            g(self.repos[n], "init", "-q", "-b", "main")
+            g(self.repos[n], "add", "-A")
+            g(self.repos[n], "commit", "-qm", "init")
+        self.add_all(("lib", "svc"))
+        with open(os.path.join(self.hub, ".agent-spec", "mesh.json"), encoding="utf-8") as fh:
+            entry = {r["repo_id"]: r for r in json.load(fh)["repos"]}
+        self.assertEqual(len(entry["lib"]["head_sha"]), 40)
+        self.assertIn("rebuilt: none", self.mesh("build"))
+        g(self.repos["lib"], "checkout", "-q", "-b", "feature")
+        java(self.repos["lib"], "com.acme.lib.Numbers")
+        g(self.repos["lib"], "add", "-A")
+        g(self.repos["lib"], "commit", "-qm", "numbers")
+        self.assertIn("drifted: lib", self.mesh("stats"))
+        out = self.mesh("build")
+        self.assertIn("rebuilt: lib", out)
+        self.assertNotIn("svc", out.split("rebuilt:")[1].splitlines()[0])
+        self.assertNotIn("drifted", self.mesh("stats"))
+
     def test_build_out_leaves_project_index_alone(self):
         out = os.path.join(self.tmp, "outdir")
         subprocess.run([sys.executable, BUILD, "--quiet", "--out", out], cwd=self.repos["svc"], check=True,
@@ -158,6 +182,43 @@ def mesh_mod():
 
 
 J = "src/main/java/com/acme/%s/%s.java"
+
+
+class NextJsRoutesTest(unittest.TestCase):
+    """H-013: Next.js file-system API routes become routes with verbs, so a call from another
+    repo matches them like any annotated controller."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.hub = os.path.join(self.tmp, "hub")
+        os.makedirs(os.path.join(self.hub, ".agent-spec"))
+        r = lambda name: os.path.join(self.tmp, name)  # noqa: E731
+        write(r("users"), "package.json", '{"name": "users", "dependencies": {"next": "14.2.0"}}')
+        write(r("users"), "src/app/api/users/[id]/route.ts",
+              "export async function GET(req: Request) { return Response.json({}); }\n"
+              "export async function DELETE() { return new Response(null); }\n")
+        write(r("users"), "pages/api/orders/index.ts",
+              "export default function h(req, res) { if (req.method === 'POST') res.status(201).end(); }\n")
+        write(r("shop"), "src/client.js",
+              "import axios from 'axios';\nexport const u = (id) => axios.get(`http://users/api/users/${id}`);\n"
+              "export const o = () => axios.post('http://users/api/orders', {});\n")
+        for n in ("users", "shop"):
+            p = subprocess.run([sys.executable, MESH, "add", r(n)], cwd=self.hub, capture_output=True, text=True, timeout=120)
+            self.assertEqual(p.returncode, 0, p.stderr)
+        p = subprocess.run([sys.executable, MESH, "build"], cwd=self.hub, capture_output=True, text=True, timeout=120)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        with open(os.path.join(self.hub, ".agent-spec", "graph", "mesh-graph.json"), encoding="utf-8") as fh:
+            self.graph = json.load(fh)
+
+    def test_routes_have_verbs_and_params(self):
+        routes = {n["id"]: n.get("routes") for n in self.graph["nodes"]}
+        self.assertEqual(routes["users:src/app/api/users/[id]/route.ts"], ["DELETE /api/users/{id}", "GET /api/users/{id}"])
+        self.assertEqual(routes["users:pages/api/orders/index.ts"], ["POST /api/orders"])
+
+    def test_calls_from_another_repo_match(self):
+        targets = {e["target"] for e in self.graph["edges"] if e.get("cross_repo") and e.get("type") == "http"}
+        self.assertIn("users:pages/api/orders/index.ts", targets)
 
 
 class MeshHttpMessageTest(unittest.TestCase):

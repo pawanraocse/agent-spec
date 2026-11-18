@@ -724,24 +724,31 @@ def context_overview(project, conn):
     }
 
 
-def list_conversations(project, conn, filters, limit=200, offset=0):
-    """Every Cursor conversation with at least one trace, newest first, rolled up from its requests.
-
-    One row per session_id across sources, so a chat recorded by hooks and also read from
-    Cursor's local store appears once. Counts are sums of the per-request counts; the
-    provenance is "measured" only when every request came from hooks."""
-    traces, spans = all_traces(project, conn)
-    usage = context_usage()
+def conversation_groups(traces, filters):
+    """session_id -> its traces matching the conversation filters, oldest first."""
     sub = {k: v for k, v in filters.items() if k in ("source", "workspace", "skill", "status", "since", "until", "origin")}
     groups = {}
     for t in traces:
         if not t.get("session_id") or not _match(t, sub):
             continue
         groups.setdefault(t["session_id"], []).append(t)
+    for ts in groups.values():
+        ts.sort(key=lambda t: t.get("start") or "")
+    return groups
+
+
+def list_conversations(project, conn, filters, limit=200, offset=0, loaded=None):
+    """Every Cursor conversation with at least one trace, newest first, rolled up from its requests.
+
+    One row per session_id across sources, so a chat recorded by hooks and also read from
+    Cursor's local store appears once. Counts are sums of the per-request counts; the
+    provenance is "measured" only when every request came from hooks."""
+    traces, spans = loaded or all_traces(project, conn)
+    usage = context_usage()
+    groups = conversation_groups(traces, filters)
     reviews_dir = os.path.join(common.agent_spec_dir(project), "metrics", "reviews")
     rows = []
     for sid, ts in groups.items():
-        ts.sort(key=lambda t: t.get("start") or "")
         name = next((t.get("session_name") for t in ts if t.get("session_name")), None)
         first_prompt = next((t.get("prompt") for t in ts if t.get("prompt")), None)
         row = {
@@ -772,17 +779,10 @@ def list_conversations(project, conn, filters, limit=200, offset=0):
     rows.sort(key=lambda r: r.get("end") or r.get("start") or "", reverse=True)
     page = rows[offset:offset + limit]
     if page:  # the budget is per chat: compute it for the rows returned, not every chat
-        from . import skill_savings
         wanted = {r["session_id"] for r in page}
         billed = _billed_by_session(traces, spans, wanted)
-        by_trace = {}
-        for s in spans:
-            by_trace.setdefault(s["trace_id"], []).append(s)
         for row in page:
             row["context"] = session_context(project, row["session_id"], usage, billed.get(row["session_id"]))
-            sv = skill_savings.for_session(project, conn, groups[row["session_id"]], by_trace)
-            row["savings"] = {k: sv[k] for k in ("kept_out", "resend_avoided", "net_kept_out", "net_resend_avoided",
-                                                 "skill_cost", "raw_code")}
     return {"total": len(rows), "limit": limit, "offset": offset, "conversations": page,
             "facets": {"workspaces": sorted({r["workspace"] for r in rows if r.get("workspace")})}}
 
@@ -799,8 +799,12 @@ def load_review(project, session_id):
         return None
 
 
-def request_detail(project, conn, trace_id):
-    traces, spans = all_traces(project, conn)
+def request_detail(project, conn, trace_id, loaded=None):
+    """One request with its spans, responses, review and context.
+
+    Signals, impact and skill savings are added by views.request_detail; they import
+    this module, so computing them here made traces part of an import cycle."""
+    traces, spans = loaded or all_traces(project, conn)
     trace = next((t for t in traces if t["trace_id"] == trace_id), None)
     if trace is None:
         return None
@@ -818,27 +822,9 @@ def request_detail(project, conn, trace_id):
                                                key=lambda t: t.get("start") or "")]
     ctx = session_context(project, trace["session_id"],
                           billed=_billed_by_session(traces, spans, {trace["session_id"]}).get(trace["session_id"]))
-    from . import signals
-    session = [t for t in traces if t["session_id"] == trace["session_id"]]
-    sids = {t["trace_id"] for t in session}
-    sig = signals.for_trace(trace, mine, session, [s for s in spans if s["trace_id"] in sids])
     quality = next((q for q in (review or {}).get("quality") or [] if isinstance(q, dict) and q.get("trace_id") == trace_id), None)
-    from . import impact
-    try:
-        imp = impact.for_request(project, conn, trace, mine, ctx)
-    except Exception as exc:  # the impact view is additive; never take the request page down with it
-        imp = {"error": str(exc)[:200]}
-    from . import skill_savings
-    try:
-        by_trace = {}
-        for s in spans:
-            if s["trace_id"] in sids:
-                by_trace.setdefault(s["trace_id"], []).append(s)
-        saved = skill_savings.for_session(project, conn, session, by_trace)
-    except Exception as exc:  # additive, like impact
-        saved = {"error": str(exc)[:200]}
     return {"trace": trace, "spans": mine, "responses": responses, "review": review, "session_requests": siblings,
-            "context": ctx, "signals": sig, "quality": quality, "impact": imp, "session_savings": saved}
+            "context": ctx, "quality": quality}
 
 
 # ---- Coach measurements (DV-041, exact) ------------------------------------------------------

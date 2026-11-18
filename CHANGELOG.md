@@ -2,6 +2,112 @@
 
 ## Unreleased
 
+- **Optional ripgrep in raw-code-full**: §2 now names `rg -n --max-columns 200` as the
+  preferred text search when `rg` is on PATH, with `grep -n` as the fallback. Graphify still
+  comes first for structural questions; ripgrep is never required or installed.
+- **Timed offline dry run (H-053)**: `examples/mesh-demo/demo-dryrun.py` builds the demo twice
+  in throwaway directories inside `unshare -rn` (loopback only) and drives every beat against
+  the real dashboard, timing each. It found three failures, all fixed.
+- **First chat's injected facts recorded (H-005)**: the sessionStart hook skipped
+  `metrics/injections.jsonl` when `metrics/` did not exist yet, which is every freshly
+  registered project, so that chat's Impact tab listed no facts. It now creates the folder.
+- **Demo content (H-051)**: setup writes the two onboarding files and one remembered fact, so
+  the digest is not an onboarding notice and Impact has a fact to show.
+
+- **Offline 5-minute demo (H-051, H-052)**: `demo.md` is now a single story covering install,
+  digest, cross-repo blast radius and recall, a blocked tier-3 edit, approval, Impact, a learning
+  proposal and an audit export. `examples/mesh-demo/demo-setup.sh` prepares it with no network,
+  through the real hooks and gate. Local Ollama gets an optional Console slot.
+- **Fix: a project's dashboard showed other projects' Cursor chats.** Conversations from
+  Cursor's local store are now limited to this project's workspace; set
+  `AGENT_SPEC_CURSOR_STORE=all` for the machine-wide view.
+- **Multi-repo Graphify closed (P3-001)**: on the six real service modules of cloud-infra-lite,
+  all 29 cross-repo import edges were correct and none were missed (precision and recall 100%),
+  measured with `examples/mesh-demo/measure_imports.py`. HTTP edges from an Angular client that
+  builds its URLs at runtime are not detected; the evidence file records this.
+- **Security pass over the dashboard API (H-044)**: starting a workflow from the dashboard now
+  follows the Agent Console switch, checks the workflow name and caps the input length.
+  Negative `Content-Length` values are rejected. Prompts that start with `-` can no longer be
+  read as cursor-agent options. IDs taken from URLs are checked before they reach a file path.
+- **Cross-repo experience recall (P3-014)**: `agent-spec-recall.py "<task>"` searches the
+  experience stores of every repo in the same mesh, and `/agent-spec-learn recall` now uses it.
+  A fix recorded in one service is found from another and cited as
+  `<repo>:.agent-spec/experience.jsonl:<line>`. Peer repos are only read.
+- **Session comparison (PI-010)**: Sessions → A/B Compare puts two conversations side by side.
+  Each column shows tokens, the measured outcome signals (tool failures, files edited, whether
+  the session verified after its last edit, rework, guard blocks, subagents, compactions), the
+  session review's quality scores (AI-judged) and the injected digest context. Each column has
+  its provenance, and missing data shows as a dash instead of 0. This fixes the old view, which
+  always showed a zero delta.
+- **Lean installs stay lean (H-006)**: a full install now writes a `.algosec-agent-spec-full`
+  marker next to the lean one. When a skill install has neither marker because it predates
+  them, the skill sync treats it as lean when all six SDLC design skills are missing. Existing
+  lean installs no longer get those skills back on the next sync.
+- **Typed handoffs enforced and pruned (P4-013, P4-015)**: `agent-spec-run.py step-end` exits 4
+  when a typed step's output does not match its `agents/handoffs/<name>.json` schema; the step
+  is recorded as failed and the error names the field. `step-start` now returns a `context` for
+  a typed step that holds only its handoff input fields, taken from `--inputs-json` and then
+  from upstream outputs. When that would drop a required field, it returns the full pass-through
+  and the reason instead. Both sizes are recorded on the step, and the run page shows the bytes
+  sent against the pass-through.
+- **Risk gate with human approval (P4-011, P4-012, H-030, P4-016)**: `bin/agent-spec-risk.py`
+  puts every tool call in a tier from the dependency graph. Tier 0 is reads and tests, tier 2 is a
+  file with 10+ direct dependents or in a core layer, and tier 3 is 20+ dependents, a migration,
+  a file another repo calls, or a destructive shell command. Shell writes (`sed -i`, `>`, `tee`,
+  `mv`) are classified like edits. preToolUse records tier 2 and blocks tier 3 until someone
+  clicks **Approve once** in Project › Risk. The approval works for a single retry within 30
+  minutes. The gate's own config, approvals and code can't be changed by the agent, and no
+  approval unlocks them. The CLI `approve` only works for a person at a terminal. Thresholds live
+  in `.agent-spec/risk.json` (`enforce`: block, warn or off). A classifier error lets the call
+  through and is logged.
+- **Hash-chained session audit (P3-011)**: `agent-spec-platform.py audit --session <id>` and the
+  **Export audit** button write a redacted JSONL file: requests, tool actions, risk decisions and
+  outcomes, each line chained to the one before by sha256. `audit --verify` reports the first
+  line that was edited, removed or reordered.
+- **Index health panel (H-020, H-021)**: Project › Index health shows the following:
+  - whether the graph is current against git HEAD, plus its branch, SHA and dirty state
+  - the last build, its duration and the files reparsed
+  - any failure a background git-hook build left behind
+  - mesh members that drifted, the search index, and the size of every append-only log
+
+  The Rebuild graph, Refresh mesh and Archive old rows buttons each log an automation row.
+- **Branch-aware graph (H-011)**: the graph records the branch, `head_sha`, dirty state, and any
+  merge or rebase in progress with its conflict count. The digest prints `graph reflects: main @ 1a2b3c4`
+  and flags when HEAD has moved on. A crashed build leaves `state: failed` with the error, the
+  doctor reports it as FAIL, and `last_failure` survives later builds.
+- **Mesh drift (H-012)**: `graphify-mesh.py build` rebuilds only the members whose HEAD moved, so
+  `--refresh` is no longer needed after a pull. `stats`, the digest and the dashboard name the
+  members that drifted.
+- **Next.js API routes (H-013)**: `pages/api/**` and `app/**/route.ts` become routes with verbs
+  (`[id]` becomes `{id}`; route groups are dropped), so calls from other repos link to them.
+- **Demo mesh (H-010)**: `examples/mesh-demo` contains four repos with real `imports`, `http` and
+  `message` edges between them. Precision and recall are both 100% on the fixture.
+- **Log retention (H-041)**: when a log grows past 5 MB, rows older than 90 days move to
+  `archive/<name>.<YYYY-MM>.jsonl` at the end of the chat. Nothing is deleted, and appends that
+  arrive mid-rewrite are kept. Configure it in `.agent-spec/retention.json`. Each line in
+  `injections.jsonl` is now capped at its fact prefix.
+- **RAG review fixes (H-001)**: the following changes came out of the review:
+  - Index terms are built from redacted text.
+  - Recovered prompts trigger a reindex.
+  - Memory is indexed first under the file cap.
+  - Embedding stops after 20 s inside the ingest transaction.
+  - Tracked `build/` directories are indexed.
+  - The status mode matches what search actually does.
+
+  Separately, redaction now recognises vendor tokens (`ghp_`, `github_pat_`, `xox?-`,
+  `sk-`, `glpat-`, `AIza`, `npm_`, `hf_`).
+- **Token tooling**: `agent-spec-tokens.py overhead` now reads Claude Code transcripts that begin
+  with bookkeeping rows, and picks the newest session across Cursor and Claude. The memory
+  `INDEX.md` is down from 9,737 B to 6,793 B, and the doctor is clean.
+- **No import cycles**: request detail and conversation list enrichment moved to
+  `aspec_platform/views.py`, so `traces` no longer imports `signals`, `impact` or `skill_savings`.
+- **CI and one-command verification (H-040, H-002)**: `bin/agent-spec-check-all.sh` runs pytest,
+  selftest, lint-refs, the project-copy check, tsc, vitest and the UI gzip budget.
+  `.github/workflows/ci.yml` runs the same checks on Python 3.9 and 3.12 on Linux and macOS, plus
+  a UI job and an install, register and uninstall job.
+- **Fail-open proof (H-046)**: every hook exits 0, and preToolUse allows the call, when its
+  helpers are deleted, the graph is corrupt, the disk is full, or `.agent-spec` is read-only.
+
 - **Tokens saved per chat, on the board**: the Impact tab opens with what the raw-code rules saved
   across the whole chat (graph queries, ranged reads, subagents, and now targeted edits against a
   rewrite), plus the re-sends avoided on every later model call. Session rows carry a −N chip

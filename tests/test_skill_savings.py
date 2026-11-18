@@ -11,7 +11,7 @@ import unittest
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(REPO, "bin"))
 
-from aspec_platform import skill_savings, traces  # noqa: E402
+from aspec_platform import skill_savings, traces, views  # noqa: E402
 
 
 def ev(n, event, conv, gen, **kw):
@@ -85,9 +85,9 @@ class SkillSavingsTest(unittest.TestCase):
         self.assertEqual(o["top"][0]["session_id"], "c1")
 
     def test_api_fields(self):
-        detail = traces.request_detail(self.project, None, "g2")
+        detail = views.request_detail(self.project, None, "g2")
         self.assertEqual(detail["session_savings"]["kept_out"], 1890)
-        convs = traces.list_conversations(self.project, None, {})
+        convs = views.list_conversations(self.project, None, {})
         self.assertEqual(convs["conversations"][0]["savings"]["kept_out"], 1890)
         self.assertTrue(convs["conversations"][0]["savings"]["raw_code"]["active"])
 

@@ -48,7 +48,7 @@ class O020ProofTest(unittest.TestCase):
         rid = out["run_id"]
         trace = read_json(os.path.join(self.sb.run_dir(rid), "run.json"))["trace_id"]
         steps = [
-            ("gather", "agent-spec-search", '{"files":[{"path":"bin/agent-spec-run.py","why":"plumbing"}]}'),
+            ("gather", "agent-spec-search", '{"matches":[{"path":"bin/agent-spec-run.py","line":1,"note":"plumbing"}]}'),
             ("analyze", "generalPurpose", '{"findings":[],"confidence":"HIGH"}'),
             ("summarize", "generalPurpose", '{"summary":"ok","citations":["bin/agent-spec-run.py:1"]}'),
         ]

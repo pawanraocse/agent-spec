@@ -87,22 +87,32 @@ def cursor_transcripts(cwd=None):
 
 
 def transcript_format(path):
-    """'cursor' or 'claude' from the first JSONL record."""
+    """'cursor' or 'claude' from the first records that say which.
+
+    Claude Code transcripts can open with bookkeeping rows (queue-operation,
+    custom-title, summary) that carry a top-level "type" and a sessionId but no
+    message, so the first line alone is not enough. Cursor rows have a top-level
+    "role" and never a "type".
+    """
     try:
         with open(path, encoding="utf-8", errors="replace") as fh:
-            for line in fh:
+            for n, line in enumerate(fh):
+                if n >= 200:
+                    break
                 line = line.strip()
                 if not line:
                     continue
-                entry = json.loads(line)
-                if entry.get("type") == "attachment":
-                    return "claude"
-                if entry.get("role") in ("user", "assistant"):
+                try:
+                    entry = json.loads(line)
+                except ValueError:
+                    continue
+                if not isinstance(entry, dict):
+                    continue
+                if entry.get("role") in ("user", "assistant") and "type" not in entry:
                     return "cursor"
-                if entry.get("type") == "assistant":
+                if entry.get("type") or entry.get("sessionId"):
                     return "claude"
-                break
-    except (OSError, ValueError):
+    except OSError:
         pass
     return "cursor"
 
@@ -195,10 +205,28 @@ def resolve(args):
         print("no such transcript: %s" % args.file, file=sys.stderr)
         return None
     found = transcripts(claude_only=claude_only)
+    if not claude_only:
+        # Default is Cursor-first, but a newer Claude Code session in the same folder
+        # is the one the user is asking about; picking a stale Cursor chat reported
+        # "no harness blocks" for a live Claude session.
+        claude = transcripts(claude_only=True)
+        newest = max(found[:1] + claude[:1], key=_mtime, default=None)
+        if newest:
+            if newest not in found[:1]:
+                print("(newest transcript is a Claude Code session: %s)"
+                      % os.path.basename(newest), file=sys.stderr)
+            return newest
     if found:
         return found[0]
     explain_no_transcripts(claude_only=claude_only)
     return None
+
+
+def _mtime(path):
+    try:
+        return os.path.getmtime(path)
+    except OSError:
+        return 0
 
 
 def explain_no_transcripts(claude_only=False):

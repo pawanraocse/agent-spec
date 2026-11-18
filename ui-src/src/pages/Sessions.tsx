@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { apiGet } from "../api/client";
 import { Metric } from "../components/Metric";
+import { SessionCompare, type CompareResult } from "../features/SessionCompare";
 import {
   Play,
   RotateCcw,
@@ -27,12 +28,6 @@ type SavingsData = {
   weights?: Record<string, number>;
 };
 
-type CompareResult = {
-  a?: { session_id: string; tokens?: number; runs?: number; tools?: number };
-  b?: { session_id: string; tokens?: number; runs?: number; tools?: number };
-  delta_tokens?: number;
-  delta_runs?: number;
-};
 
 export { ConversationList as Sessions } from "../features/ConversationList";
 
@@ -286,7 +281,7 @@ export function SessionDetail() {
           <div>
             <h3 className="text-sm font-semibold text-foreground">A/B Session Comparison</h3>
             <p className="text-muted-foreground">
-              Pick another session to calculate deltas in tokens, turns, and duration
+              Pick another session to compare tokens, outcome signals, review quality and injected context
             </p>
           </div>
 
@@ -315,27 +310,7 @@ export function SessionDetail() {
             </Button>
           </div>
 
-          {compareResult && (
-            <div className="grid gap-3 sm:grid-cols-3 pt-3 border-t border-border">
-              <Metric
-                label="Delta Tokens"
-                value={compareResult.delta_tokens?.toLocaleString() ?? "0"}
-                provenance="measured"
-              />
-              <Metric
-                label="Delta Turns"
-                value={compareResult.delta_runs ?? 0}
-                provenance="measured"
-              />
-              <Metric
-                label="Relative Efficiency"
-                value={
-                  (compareResult.delta_tokens || 0) < 0 ? "More Efficient" : "Larger Footprint"
-                }
-                provenance="estimated"
-              />
-            </div>
-          )}
+          {compareResult && <SessionCompare result={compareResult} />}
         </Card>
       )}
     </div>

@@ -4,6 +4,7 @@ test_platform_db
 test_backlog
 test_blast_radius
 test_run_dir
+test_handoff_step
 test_resume
 test_status
 test_workflow_validate
@@ -17,6 +18,9 @@ test_graph_symbols
 test_api_security
 test_api
 test_savings
+test_session_compare
+test_recall
+test_store_scope
 test_ingest_runs
 test_o020_framework_proof
 test_insights
@@ -34,3 +38,15 @@ test_automations
 test_retrieval
 test_local_agent
 test_skill_savings
+test_tokens
+test_graph_git
+test_retention
+test_health
+test_risk
+test_risk_api
+test_audit_export
+test_fail_open
+test_mesh_demo
+test_skill_effect
+test_proposals
+test_mesh_api

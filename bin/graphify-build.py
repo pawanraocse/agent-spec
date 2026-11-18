@@ -14,6 +14,7 @@ import ast
 import json
 import time
 import argparse
+import subprocess
 
 # Cycle detection recurses to the depth of the longest import chain.
 sys.setrecursionlimit(10000)
@@ -784,7 +785,43 @@ TOPIC_CONSUME_PATTERNS = [
 ]
 
 
-def extract_signals(content):
+NEXT_PAGES_API = re.compile(r"(?:^|/)pages/(api/.+?)\.(?:js|jsx|ts|tsx|mjs)$")
+NEXT_APP_ROUTE = re.compile(r"(?:^|/)app/((?:.+/)?)route\.(?:js|jsx|ts|tsx|mjs)$")
+NEXT_APP_VERB = re.compile(r"export\s+(?:async\s+)?(?:function|const|let|var)\s+(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\b")
+NEXT_PAGES_VERB = re.compile(r"req\.method\s*(?:===?|!==?)\s*['\"](GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)['\"]"
+                             r"|case\s+['\"](GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)['\"]")
+
+
+def _next_segments(path):
+    """Next.js file-system path -> URL path: `[id]` -> `{id}`, `[...slug]` and `[[...slug]]`
+    -> `{slug}`, `(group)` and `@slot` folders dropped, `index` dropped."""
+    out = []
+    for seg in path.strip("/").split("/"):
+        if not seg or seg == "index" or (seg.startswith("(") and seg.endswith(")")) or seg.startswith("@"):
+            continue
+        m = re.fullmatch(r"\[{1,2}(?:\.\.\.)?([^\]]+)\]{1,2}", seg)
+        out.append("{%s}" % m.group(1) if m else seg)
+    return "/" + "/".join(out)
+
+
+def nextjs_routes(rel, content):
+    """H-013: routes Next.js serves from the file's own path (pages/api/** and app/**/route.ts),
+    with verbs from the exported handlers (app router) or req.method checks (pages router)."""
+    rel = rel.replace("\\", "/")
+    m = NEXT_APP_ROUTE.search(rel)
+    if m:
+        url = _next_segments(m.group(1))
+        verbs = sorted(set(NEXT_APP_VERB.findall(content))) or ["ANY"]
+        return ["%s %s" % (v, url) for v in verbs]
+    m = NEXT_PAGES_API.search(rel)
+    if m and "/_" not in "/" + m.group(1):
+        url = _next_segments(m.group(1))
+        verbs = sorted({a or b for a, b in NEXT_PAGES_VERB.findall(content)}) or ["ANY"]
+        return ["%s %s" % (v, url) for v in verbs]
+    return []
+
+
+def extract_signals(content, rel=""):
     """Endpoints served, hosts called, topics produced and consumed."""
     def hits(patterns):
         out = set()
@@ -803,6 +840,8 @@ def extract_signals(content):
         calls.add("[dynamic]")
 
     routes = extract_routes(content)
+    if rel and rel.endswith((".js", ".jsx", ".ts", ".tsx", ".mjs")):
+        routes = sorted(set(routes) | set(nextjs_routes(rel, content)))[:MAX_ROUTES_PER_FILE]
     http_calls = extract_http_calls(content)
     calls |= {c["target"] for c in http_calls if c["target"] and not c["target"].startswith("config:")}
     calls.discard("[dynamic]") if len(calls) > 1 else None
@@ -862,7 +901,7 @@ def wire_edges(file_signals, service_by_file, service_roots, aliases=None):
 # The cache is keyed by the parser version, so changing a pattern above
 # invalidates every entry rather than silently serving stale extractions.
 # ---------------------------------------------------------------------------
-PARSER_VERSION = "5.3.1"  # bump on ANY extractor change: the cache is keyed by it
+PARSER_VERSION = "5.3.2"  # bump on ANY extractor change: the cache is keyed by it
 CACHE_PATH = os.path.join(OUTPUT_DIR, ".cache.json")
 
 
@@ -883,7 +922,8 @@ def save_cache(entries):
     try:
         tmp_path = CACHE_PATH + ".tmp"
         with open(tmp_path, "w", encoding="utf-8") as fh:
-            json.dump({"parser": PARSER_VERSION, "files": entries}, fh)
+            # dumps() takes the C encoder in one shot; dump() streams through Python (H-043).
+            fh.write(json.dumps({"parser": PARSER_VERSION, "files": entries}, separators=(",", ":")))
         os.replace(tmp_path, CACHE_PATH)
     except OSError:
         pass
@@ -1048,7 +1088,7 @@ def parse_file(rel, cache):
         content = ""
 
     entry = {"stamp": stamp, "imports": extract_imports(rel, content),
-             "signals": extract_signals(content), "symbols": extract_symbols(rel, content)}
+             "signals": extract_signals(content, rel), "symbols": extract_symbols(rel, content)}
     return entry, True
 
 
@@ -1219,6 +1259,108 @@ graph TD
     print("Wrote KNOWLEDGE-GRAPH.md")
 
 
+def git_state(root):
+    """Branch, HEAD and working-tree state the graph is built from (H-011).
+
+    `operation` is "merge", "rebase", "cherry-pick" or "revert" while one is in progress, and
+    `conflicts` counts unmerged paths, so a graph built mid-conflict is labelled rather than
+    presented as fresh. Not a git repository, or git missing: {}.
+    """
+    def git(*args):
+        try:
+            res = subprocess.run(["git", "-C", root] + list(args), capture_output=True,
+                                 text=True, timeout=5)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return res.stdout.strip() if res.returncode == 0 else None
+
+    head = git("rev-parse", "HEAD")
+    if not head:
+        return {}
+    gitdir = git("rev-parse", "--git-dir") or ".git"
+    if not os.path.isabs(gitdir):
+        gitdir = os.path.join(root, gitdir)
+    operation = None
+    for marker, name in (("rebase-merge", "rebase"), ("rebase-apply", "rebase"),
+                         ("MERGE_HEAD", "merge"), ("CHERRY_PICK_HEAD", "cherry-pick"),
+                         ("REVERT_HEAD", "revert")):
+        if os.path.exists(os.path.join(gitdir, marker)):
+            operation = name
+            break
+    unmerged = git("diff", "--name-only", "--diff-filter=U") or ""
+    porcelain = git("status", "--porcelain", "--untracked-files=no")
+    return {
+        "branch": git("symbolic-ref", "--short", "-q", "HEAD") or "(detached)",
+        "head_sha": head,
+        "dirty": bool(porcelain) if porcelain is not None else None,
+        "operation": operation,
+        "conflicts": len([p for p in unmerged.splitlines() if p]),
+    }
+
+
+def repeat_history_line():
+    """Append the last stats-history row again with a fresh timestamp (no-op builds)."""
+    path = os.path.join(OUTPUT_DIR, "stats-history.jsonl")
+    try:
+        with open(path, "rb") as fh:
+            fh.seek(max(0, os.path.getsize(path) - 4096))
+            last = fh.read().strip().splitlines()[-1]
+        row = json.loads(last)
+        row["ts"] = datetime.now().isoformat(timespec="milliseconds")  # distinct from the build it repeats
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(row) + "\n")
+    except (OSError, ValueError, IndexError):
+        pass
+
+
+def read_status():
+    try:
+        with open(os.path.join(OUTPUT_DIR, ".status.json"), encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def unchanged_since_last_build(files, cache):
+    """True when the last build succeeded and every file, stamp and the git state match it."""
+    status = read_status()
+    if status.get("state") != "ok" or not os.path.isfile(os.path.join(OUTPUT_DIR, "knowledge-graph.json")):
+        return False
+    if len(files) != len(cache) or status.get("files") is None:
+        return False
+    for rel in files:
+        hit = cache.get(rel)
+        if not hit:
+            return False
+        try:
+            st = os.stat(os.path.join(PROJECT_ROOT, rel))
+        except OSError:
+            return False
+        if hit.get("stamp") != [int(st.st_mtime), st.st_size]:
+            return False
+    return git_state(PROJECT_ROOT) == (status.get("git") or {})
+
+
+def write_status(status):
+    """`.status.json` for the digest, the doctor and the dashboard. A failure is kept as
+    `last_failure` after later successful builds, so a background error stays visible."""
+    path = os.path.join(OUTPUT_DIR, ".status.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            prev = json.load(fh)
+    except (OSError, ValueError):
+        prev = {}
+    if status.get("state") == "failed":
+        status["last_failure"] = {"finished": status["finished"], "error": status.get("error")}
+    elif isinstance(prev, dict) and prev.get("last_failure"):
+        status["last_failure"] = prev["last_failure"]
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    with open(path + ".tmp", "w", encoding="utf-8") as fh:
+        json.dump(status, fh)
+    os.replace(path + ".tmp", path)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Build the Graphify knowledge graph")
     parser.add_argument("--quiet", action="store_true")
@@ -1261,6 +1403,18 @@ def main():
     by_path, by_dotted = build_index(files)
     service_roots = detect_services()
     cache = load_cache(args.rebuild)
+
+    # H-043 fast path: nothing changed since the last good build — same files, same stamps,
+    # same git state — so the graph on disk is already right. Re-encoding it costs ~2 s on a
+    # 20,000-file repo, which is most of the sessionStart budget.
+    if not args.rebuild and unchanged_since_last_build(files, cache):
+        status = read_status()
+        write_status(dict(status, finished=datetime.now().isoformat(), reparsed=0,
+                          duration_ms=int((time.monotonic() - started) * 1000), noop=True))
+        repeat_history_line()  # the trend line keeps one row per build, changed or not
+        if not args.quiet:
+            print("unchanged: %d files, graph left as built" % len(files))
+        return
 
     nodes, edges = [], []
     external = Counter()
@@ -1378,6 +1532,7 @@ def main():
         "project": os.path.basename(PROJECT_ROOT),
         "generated": datetime.now().isoformat(),
         "generator": "graphify-build",
+        "git": git_state(PROJECT_ROOT),
         "stack": stack,
         "stats": {k: v for k, v in stats.items() if k != "orphans"},
         "orphan_count": len(orphans),
@@ -1412,12 +1567,9 @@ def main():
                       os.path.join(OUTPUT_DIR, "CONVENTIONS.md"))
 
     # Freshness signal for the digest and the doctor: what this run did and how long it took.
-    status_path = os.path.join(OUTPUT_DIR, ".status.json")
-    with open(status_path + ".tmp", "w", encoding="utf-8") as fh:
-        json.dump({"state": "ok", "finished": datetime.now().isoformat(),
-                   "duration_ms": int((time.monotonic() - started) * 1000),
-                   "reparsed": reparsed, "files": len(nodes)}, fh)
-    os.replace(status_path + ".tmp", status_path)
+    write_status({"state": "ok", "finished": datetime.now().isoformat(),
+                  "duration_ms": int((time.monotonic() - started) * 1000),
+                  "reparsed": reparsed, "files": len(nodes), "git": graph["git"]})
 
     # Platform trend line (D-006): one JSON line per successful build; fail-silent.
     try:
@@ -1443,4 +1595,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (SystemExit, KeyboardInterrupt):
+        raise
+    except Exception as exc:  # H-021: git-hook builds discard output; leave the error on disk
+        try:
+            write_status({"state": "failed", "finished": datetime.now().isoformat(),
+                          "error": ("%s: %s" % (type(exc).__name__, exc))[:300]})
+        except OSError:
+            pass
+        raise

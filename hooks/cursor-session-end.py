@@ -132,6 +132,29 @@ def rotate_snapshot(project, session=None):
                    int((time.time() - started) * 1000), session)
 
 
+def apply_retention(project, session=None):
+    """H-041: archive old rows of oversized logs at chat end. Only files over their size cap
+    are read, so a project under the cap pays one stat() per file."""
+    script = os.path.join(project, ".agent-spec", "bin", "agent-spec-platform.py")
+    if not os.path.isfile(script) or not automation_enabled(project, "log-retention"):
+        return
+    started = time.time()
+    try:
+        res = subprocess.run([sys.executable, script, "retain", "--apply", "--project", project], cwd=project,
+                             stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=ROTATE_TIMEOUT_S)
+        if res.returncode != 0:
+            status, reason = "failed", ((res.stderr or "").strip().splitlines()[-1:] or ["exit %d" % res.returncode])[0]
+        else:
+            actions = (json.loads(res.stdout or "{}") or {}).get("actions") or []
+            if not actions:
+                return  # nothing over its cap: no row, so the run log is not flooded
+            status, reason = "ok", "; ".join("%s: %s rows" % (a.get("file"), a.get("archived_rows", a.get("archived_files", 0)))
+                                             for a in actions)
+    except (OSError, ValueError, subprocess.SubprocessError) as exc:
+        status, reason = "failed", type(exc).__name__
+    log_automation(project, "log-retention", status, reason[:200], int((time.time() - started) * 1000), session)
+
+
 def context_nudge(project, conversation_id):
     """One measured follow-up per chat when a reset pays for itself (context budget).
 
@@ -205,6 +228,7 @@ def main():
         refresh_graph(project, payload.get("conversation_id") or session)
     if event == "sessionEnd":
         rotate_snapshot(project, payload.get("conversation_id") or session)
+        apply_retention(project, payload.get("conversation_id") or session)
 
     # /agent-spec-hook-probe leaves this marker; afterAgentResponse and stop have fired by now,
     # so hand the chat its own collect turn. One-shot: the marker goes before the reply does.

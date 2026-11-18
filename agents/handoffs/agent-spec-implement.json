@@ -1,0 +1,29 @@
+{
+  "$comment": "Typed handoff for a workflow step run with skill agent-spec-implement (P4-013). agent-spec-run.py step-end checks a successful step's output against `output` and fails the step when it does not match.",
+  "version": "1.0.0",
+  "input": {
+    "type": "object",
+    "required": ["task"],
+    "properties": {
+      "task": {"type": "string"},
+      "files": {"type": "array", "items": {"type": "string"}, "maxItems": 50}
+    }
+  },
+  "output": {
+    "type": "object",
+    "required": ["files_changed", "tests", "summary"],
+    "properties": {
+      "files_changed": {"type": "array", "items": {"type": "string"}, "maxItems": 100},
+      "tests": {
+        "type": "object",
+        "required": ["command", "verdict"],
+        "properties": {
+          "command": {"type": "string"},
+          "verdict": {"type": "string", "enum": ["PASS", "FAIL", "ERROR", "NOT_RUN"]}
+        }
+      },
+      "summary": {"type": "string"},
+      "risks": {"type": "array", "items": {"type": "string"}, "maxItems": 10}
+    }
+  }
+}

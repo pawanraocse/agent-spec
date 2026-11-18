@@ -3,12 +3,14 @@
 
 Run: python3 tests/test_api_security.py
 """
+import http.client
 import os
 import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _api_support import ApiCase  # noqa: E402
+from aspec_platform import serve  # noqa: E402
 
 
 class SecurityTest(ApiCase):
@@ -77,6 +79,57 @@ class SecurityTest(ApiCase):
             status, _, body = self.request(path)
             self.assertIn(status, (401, 404), path)
             self.assertNotIn(b"import", body)
+
+
+class H044Test(ApiCase):
+    """H-044 security pass over the older API surface."""
+
+    def post(self, path, body=b"{}", **headers):
+        hdrs = {"Content-Type": "application/json"}
+        hdrs.update(headers)
+        conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        conn.putrequest("POST", path, skip_host=True)
+        conn.putheader("Host", "127.0.0.1:%d" % self.port)
+        conn.putheader("X-Agent-Spec-Token", self.token)
+        for k, v in hdrs.items():
+            conn.putheader(k, v)
+        conn.endheaders()
+        if body:
+            conn.send(body)
+        resp = conn.getresponse()
+        out = (resp.status, resp.read())
+        conn.close()
+        return out
+
+    def test_negative_content_length_is_rejected_without_reading(self):
+        status, body = self.post("/api/automations", body=b"", **{"Content-Length": "-1"})
+        self.assertEqual(status, 400, body)
+
+    def test_workflow_start_obeys_the_console_switch(self):
+        old = os.environ.get("AGENT_SPEC_CONSOLE")
+        os.environ["AGENT_SPEC_CONSOLE"] = "0"
+        try:
+            status, body = self.post("/api/workflows/rca/start", b'{"input": "PROJ-1"}')
+        finally:
+            if old is None:
+                os.environ.pop("AGENT_SPEC_CONSOLE", None)
+            else:
+                os.environ["AGENT_SPEC_CONSOLE"] = old
+        self.assertEqual(status, 404)
+        self.assertIn(b"console_frozen", body)
+
+    def test_path_ids_are_validated(self):
+        for path in ("/api/runs/-x", "/api/runs/.hidden/events", "/api/sessions/a%2Fb", "/api/cursor/session/-rf"):
+            status, _, body = self.request(path)
+            self.assertEqual(status, 404, path)
+            self.assertNotIn(b"Traceback", body)
+
+    def test_option_like_prompt_stays_positional(self):
+        self.assertEqual(serve._argv_text("--force do it"), " --force do it")
+        self.assertEqual(serve._argv_text("fix -x"), "fix -x")
+        self.assertFalse(serve.PATH_ID.match("-rf"))
+        self.assertFalse(serve.WORKFLOW_NAME.match("rca --approve"))
+        self.assertTrue(serve.PATH_ID.match("01JD7QZ8V4:abc-1.2"))
 
 
 if __name__ == "__main__":

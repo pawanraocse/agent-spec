@@ -165,6 +165,34 @@ def test_refuses_the_home_directory():
     assert not os.path.exists(os.path.join(home, ".agent-spec"))
 
 
+
+
+def test_unmarked_lean_install_stays_lean():
+    """H-006: a lean install from before the markers keeps lean on the next skill sync."""
+    home, proj = workspace()
+    run(home, proj)
+    dest = os.path.join(home, ".cursor", "skills")
+    for marker in (".algosec-agent-spec-lean", ".algosec-agent-spec-full"):
+        if os.path.exists(os.path.join(dest, marker)):
+            os.remove(os.path.join(dest, marker))
+    for name in ("agent-spec-prd", "agent-spec-hld", "agent-spec-lld", "agent-spec-intent",
+                 "agent-spec-requirements", "agent-spec-tech-spec", "agent-spec-ask"):
+        shutil.rmtree(os.path.join(dest, name), ignore_errors=True)
+    code, out = run(home, proj)
+    assert code == 0 and out["skills"] == "installed", out
+    assert os.path.isfile(os.path.join(dest, "agent-spec-ask", "SKILL.md")), "drift still repaired"
+    assert not os.path.isdir(os.path.join(dest, "agent-spec-prd")), "an unmarked lean install stays lean"
+    assert os.path.isfile(os.path.join(dest, ".algosec-agent-spec-lean")), "the sync marks it from now on"
+
+
+def test_full_install_writes_its_marker():
+    home, proj = workspace()
+    run(home, proj)
+    dest = os.path.join(home, ".cursor", "skills")
+    assert os.path.isfile(os.path.join(dest, ".algosec-agent-spec-full"))
+    assert not os.path.exists(os.path.join(dest, ".algosec-agent-spec-lean"))
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

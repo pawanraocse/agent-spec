@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Bot, ChevronDown, ChevronRight, Copy, FileText, Pencil, Search, ShieldAlert, Wrench } from "lucide-react";
+import { AlertTriangle, Bot, ChevronDown, ChevronRight, Copy, Download, FileText, Pencil, Search, ShieldAlert, Wrench } from "lucide-react";
+import { apiGet } from "../api/client";
 import { useConversations, useRequests, type Conversation } from "../api/traces";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -123,6 +124,26 @@ function Detail({ c }: { c: Conversation }) {
   const [copied, setCopied] = useState(false);
   const reqs = [...(data?.requests ?? [])].sort((a, b) => (a.start || "").localeCompare(b.start || ""));
   const review = `/agent-spec-session-review ${c.session_id}`;
+  const [exporting, setExporting] = useState(false);
+  const [exportNote, setExportNote] = useState("");
+  // P3-011: download the sealed export; the server already verified its chain.
+  const exportAudit = async (sid: string) => {
+    setExporting(true);
+    try {
+      const res = await apiGet<{ jsonl: string; filename: string; verify: { ok: boolean } }>(`/api/audit-export?session=${encodeURIComponent(sid)}`);
+      const url = URL.createObjectURL(new Blob([res.jsonl], { type: "application/x-ndjson" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportNote(res.verify.ok ? "Exported, chain verified" : "Exported, chain FAILED");
+    } catch {
+      setExportNote("Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-3 border-t border-border/60 bg-muted/20 px-9 py-3">
@@ -132,6 +153,10 @@ function Detail({ c }: { c: Conversation }) {
         <span className="ml-auto flex gap-2">
           <Button size="sm" variant="outline" onClick={async () => { if (await copyText(review)) { setCopied(true); setTimeout(() => setCopied(false), 1500); } }} title="Paste into Cursor to have the agent grade this chat">
             <Copy size={12} />{copied ? "Copied" : "Copy review prompt"}
+          </Button>
+          <Button size="sm" variant="outline" disabled={exporting} onClick={() => exportAudit(c.session_id)}
+            title="Hash-chained JSONL of every request, tool action and risk decision; verify with agent-spec-platform.py audit --verify">
+            <Download size={12} />{exporting ? "Exporting…" : exportNote || "Export audit"}
           </Button>
           {c.has_transcript ? (
             <Button size="sm" variant="outline" onClick={() => navigate(`/project/sessions/${encodeURIComponent(c.session_id)}`)}>

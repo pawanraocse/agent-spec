@@ -22,16 +22,21 @@ Reuse log: `.agent-spec/experience-reuse.jsonl` (`{"ts", "exp_id", "task"}`), wr
    - If declined: update candidate status to `"status": "declined"`.
 2. If no staged candidates, fall back to lines in `experience.jsonl` with `corrections` > 0, newest first, at most 10.
    - For each, ask one question: "What did you correct, and is it still true?"
-   - Record confirmed ones with `agent-spec-memory.py add`.
+   - Record confirmed ones with `agent-spec-memory.py add`; queue unconfirmed ones with
+     `agent-spec-memory.py propose --evidence "<why>"` for the Proposals inbox.
 3. Report: facts added, corrections declined, nothing else.
 
 ## recall
 
-1. Take the task text. Pick its 3-5 most specific words.
-2. `grep -i` those words in the `task` field of `experience.jsonl`; prefer `status: success`, then
-   fewest `retries` and `corrections`, then lowest `tokens`. Show the top 3 as one line each:
-   `exp_id | status | gates | retries | task`.
-3. For each shown, append one line to `experience-reuse.jsonl`.
+1. Run `./.agent-spec/bin/agent-spec-recall.py "<task text>"`. It searches this project's
+   `experience.jsonl` and those of the repos that share a mesh with it (P3-014). It skips
+   deprecated rows and ranks by matched task words, then promoted, then `status: success`, fewest retries and
+   corrections, and lowest tokens. It prints the top 3 as
+   `exp_id | status | gates | retries | task  [<repo>:<file>:<line>]`.
+2. Keep the bracketed citation when you report a match, so a fix from another repo names that
+   repo.
+3. The script appends the shown matches to this project's `experience-reuse.jsonl`. Do not
+   log them again.
 4. Tell the developer what the best one did differently (gates, workflow) and stop. Never inject
    an experience into context unasked; it is a pointer, not a fact.
 
@@ -47,8 +52,8 @@ Reuse log: `.agent-spec/experience-reuse.jsonl` (`{"ts", "exp_id", "task"}`), wr
    human decisions to `gate: human`. Replace concrete ticket IDs, branches and paths with
    `<KEY>`, `<BRANCH>`, `<PATH>` parameters. Keep the description under 150 characters.
 4. Validate it: `python3 bin/agent-spec-run.py validate .agent-spec/skill-proposals/<slug>.md`.
-5. Stop. Publishing a proposal into `skills/agent-spec-wf-<slug>/` is a human decision: show the
-   draft, ask once, and only copy it with an explicit yes. Never auto-publish.
+5. Stop. Publishing a proposal is a human decision made in the dashboard's Project › Proposals
+   inbox (it validates and copies the draft). Never copy it yourself.
 
 ## Hard stops
 

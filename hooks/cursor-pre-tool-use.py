@@ -462,6 +462,70 @@ def deny(message, user_message="algosec-agent-spec input discipline", rule="inpu
     return 0
 
 
+def _risk_module():
+    """.agent-spec/bin/agent-spec-risk.py, loaded once; None when this project predates it."""
+    path = os.path.join(os.getcwd(), ".agent-spec", "bin", "agent-spec-risk.py")
+    if not os.path.isfile(path):
+        return None
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("agent_spec_risk", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def risk_gate(tool, args, session_id):
+    """True when the call was denied (the verdict is written). P4-012: tier 0-1 pass, tier 2 passes with a recorded warning, tier 3 waits for a
+    one-use approval from the dashboard (or `agent-spec-risk.py approve`). Fail-open: a
+    classifier error allows the call and is written to metrics/risk.jsonl."""
+    project = os.getcwd()
+    try:
+        risk = _risk_module()
+        if risk is None:
+            return None
+        cfg = risk.config(project)
+        if cfg.get("enforce") == "off":
+            return None
+        result = risk.classify(project, tool, args)
+    except Exception as exc:
+        try:
+            with open(os.path.join(project, ".agent-spec", "metrics", "risk.jsonl"), "a", encoding="utf-8") as fh:
+                fh.write(json.dumps({"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "event": "error",
+                                     "tool": str(tool), "error": ("%s: %s" % (type(exc).__name__, exc))[:300]}) + "\n")
+        except Exception:
+            pass
+        return None
+    tier = result.get("tier", 0)
+    if tier < 2:
+        return None
+    what = result.get("file") or result.get("target") or tool
+    if tier == 2 or cfg.get("enforce") == "warn":
+        risk._audit(project, {"event": "warned", "key": risk.action_key(result), "tier": tier, "tool": result["tool"],
+                              "target": what, "reasons": result.get("reasons"), "session": session_id})
+        return None
+    if result.get("protected"):
+        # The gate's own approvals, config and code: no approval unlocks these for the agent.
+        risk._audit(project, {"event": "blocked", "tier": 3, "tool": result["tool"], "target": what,
+                              "reasons": result.get("reasons"), "session": session_id, "protected": True})
+        deny("Risk gate (P4-012): %s — %s. The agent may not change the gate or approve its own actions; "
+             "tell the user what you need and stop." % (what, "; ".join(result.get("reasons") or [])),
+             "algosec-agent-spec risk gate: protected path (%s)" % what,
+             rule="P4-012-protected", target=what)
+        return True
+    if risk.consume_approval(project, result, session_id):
+        return None
+    risk.record_blocked(project, result, session_id)
+    deny(
+        "Risk tier 3 (P4-012): %s — %s. This change waits for a person: ask the user to approve it in "
+        "the dashboard (Project > Risk), then retry the same call. Do not work around it with a "
+        "different tool, and do not try to approve it yourself."
+        % (what, "; ".join(result.get("reasons") or [])),
+        "algosec-agent-spec risk gate: tier 3 change needs approval (%s)" % what,
+        rule="P4-012-tier3", target=what,
+    )
+    return True
+
+
 def main():
     try:
         raw = sys.stdin.buffer.read().decode("utf-8", "replace")
@@ -518,6 +582,9 @@ def main():
         or payload.get("sessionId")
         or "none"
     )
+
+    if risk_gate(tool, args, session_id):
+        return 0  # the deny verdict is already written
 
     threshold = token_threshold()
     session_tokens = track_session_tokens(session_id, payload, len(raw))

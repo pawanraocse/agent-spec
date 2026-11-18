@@ -93,6 +93,25 @@ LEAN_SKILLS = frozenset(("agent-spec-intent", "agent-spec-hld", "agent-spec-lld"
 
 
 LEAN_MARKER = ".algosec-agent-spec-lean"  # written by install.sh --lean, removed by a full install
+FULL_MARKER = ".algosec-agent-spec-full"  # written by a full install, removed by install.sh --lean
+
+
+def install_is_lean(dest):
+    """H-006: whether the skill sync should pass --lean.
+
+    A marker decides when one exists. An install from before the markers has neither: it is
+    lean when every lean-excluded skill is absent while other agent-spec skills are present,
+    which a full install never leaves behind. Anything else is full."""
+    if os.path.isfile(os.path.join(dest, LEAN_MARKER)):
+        return True
+    if os.path.isfile(os.path.join(dest, FULL_MARKER)):
+        return False
+    try:
+        names = set(os.listdir(dest))
+    except OSError:
+        return False
+    others = {n for n in names if n.startswith("agent-spec") and n not in LEAN_SKILLS}
+    return bool(others) and not (names & LEAN_SKILLS)
 
 
 def skills_dir():
@@ -205,8 +224,8 @@ def ensure(root, check_only):
         else:
             started = time.time()
             cmd = ["bash", os.path.join(package, "install.sh"), "--skills-only"]
-            if os.path.isfile(os.path.join(skills_dir(), LEAN_MARKER)):
-                cmd.append("--lean")  # keep a lean install lean; no marker means a full install
+            if install_is_lean(skills_dir()):
+                cmd.append("--lean")  # keep a lean install lean, including one from before the markers
             try:
                 res = subprocess.run(cmd, cwd=package, capture_output=True, text=True,
                                      timeout=INSTALL_TIMEOUT_S, stdin=subprocess.DEVNULL)

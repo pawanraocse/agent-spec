@@ -25,6 +25,15 @@ def remembered_lines(text):
     return out
 
 
+INJECTION_LINE_MAX = 160
+
+
+def _cap(line):
+    """Cut a digest fact line after its prefix; a line whose subject runs past the cap (no
+    colon inside it) is kept whole so the prefix match still works."""
+    return line[:INJECTION_LINE_MAX] if ":" in line[:INJECTION_LINE_MAX] else line
+
+
 def record_injection(payload, text):
     """Append which facts this session's digest carried to metrics/injections.jsonl.
 
@@ -32,11 +41,18 @@ def record_injection(payload, text):
     conversation. Best effort; a failure here never blocks the digest."""
     try:
         conv = str(payload.get("conversation_id") or payload.get("session_id") or "")
-        metrics = os.path.join(os.getcwd(), ".agent-spec", "metrics")
-        if not conv or not os.path.isdir(metrics):
+        harness = os.path.join(os.getcwd(), ".agent-spec")
+        metrics = os.path.join(harness, "metrics")
+        if not conv or not os.path.isdir(harness):
             return
+        # A freshly registered project has no metrics/ until some hook writes it; the first
+        # chat's injection must not be lost to that (H-005).
+        os.makedirs(metrics, exist_ok=True)
         row = {"ts": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "conversation_id": conv,
-               "digest_bytes": len(text.encode("utf-8")), "facts": remembered_lines(text)}
+               "digest_bytes": len(text.encode("utf-8")),
+               # Readers match a line by its "- [type] subject:" prefix, so the body after it
+               # is dead weight; capping each line keeps this log ~60% smaller.
+               "facts": [_cap(line) for line in remembered_lines(text)]}
         with open(os.path.join(metrics, "injections.jsonl"), "a", encoding="utf-8") as fh:
             fh.write(json.dumps(row) + "\n")
     except Exception:

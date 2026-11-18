@@ -154,8 +154,12 @@ copy_skills() {
     fi
     installed=$((installed + 1))
   done
-  # ensure.py's skill sync reads this to keep a lean install lean (and a full one full).
-  if [ "$LEAN" = "true" ]; then : > "${dest}/.algosec-agent-spec-lean"; else rm -f "${dest}/.algosec-agent-spec-lean"; fi
+  # ensure.py's skill sync reads these to keep a lean install lean and a full one full (H-006).
+  if [ "$LEAN" = "true" ]; then
+    : > "${dest}/.algosec-agent-spec-lean"; rm -f "${dest}/.algosec-agent-spec-full"
+  else
+    : > "${dest}/.algosec-agent-spec-full"; rm -f "${dest}/.algosec-agent-spec-lean"
+  fi
   echo -e "  ${GREEN}✓${NC} ${installed} skills → ${dest}$([ "$skipped" -gt 0 ] && echo "   (${skipped} lean-excluded)")"
 }
 
@@ -381,7 +385,7 @@ EOF
   cp "${REPO_DIR}/bin/agent-spec-receipt.py" "${project_root}/.agent-spec/bin/agent-spec-receipt.py"
   cp "${REPO_DIR}/bin/agent-spec-roi.py"     "${project_root}/.agent-spec/bin/agent-spec-roi.py"
   # Phase 2 platform (stdlib only, DEC-12): backlog/blast-radius/run CLIs + data layer package
-  for b in agent-spec-backlog.py agent-spec-blast-radius agent-spec-run.py agent-spec-platform.py agent-spec-mcp-filter.py; do
+  for b in agent-spec-backlog.py agent-spec-blast-radius agent-spec-run.py agent-spec-platform.py agent-spec-mcp-filter.py agent-spec-risk.py agent-spec-recall.py; do
     cp "${REPO_DIR}/bin/${b}" "${project_root}/.agent-spec/bin/${b}"
   done
   rm -rf "${project_root}/.agent-spec/bin/aspec_platform"

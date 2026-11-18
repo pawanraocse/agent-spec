@@ -254,6 +254,45 @@ def cmd_ask(args) -> int:
     return 0 if result["hits"] else 1
 
 
+def cmd_audit(args) -> int:
+    """P3-011: export one conversation as hash-chained JSONL, or verify an export."""
+    from aspec_platform import audit_export
+    if args.verify:
+        with open(args.verify, encoding="utf-8") as fh:
+            result = audit_export.verify(fh.read())
+        print(json.dumps(result))
+        return 0 if result["ok"] else 1
+    if not args.session:
+        print("error: --session or --verify is required", file=sys.stderr)
+        return 2
+    project = common.find_project(args.project)
+    try:
+        conn = db.connect(db.db_path(project), readonly=True) if os.path.isfile(db.db_path(project)) else None
+    except Exception:
+        conn = None
+    rows = audit_export.build(project, conn, args.session)
+    if not rows:
+        print("error: no traces for session %s" % args.session, file=sys.stderr)
+        return 1
+    text = audit_export.to_jsonl(rows)
+    if args.out:
+        with open(args.out, "w", encoding="utf-8") as fh:
+            fh.write(text)
+        print("wrote %s (%d lines, head %s)" % (args.out, len(rows), rows[-1]["hash"][:12]))
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
+def cmd_retain(args) -> int:
+    """H-041: archive old rows of oversized append-only files (dry run unless --apply)."""
+    from aspec_platform import retention
+    project = common.find_project(args.project)
+    actions = retention.apply(project) if args.apply else retention.plan(project)
+    print(json.dumps({"applied": bool(args.apply), "config": retention.config(project), "actions": actions}, indent=2))
+    return 0
+
+
 def cmd_signals(args) -> int:
     """PI-006: measured outcome signals for one request (the review skill's quality evidence)."""
     from aspec_platform import signals
@@ -381,6 +420,16 @@ def main(argv=None) -> int:
     p.add_argument("--no-refresh", action="store_true")
     p.add_argument("--json", action="store_true")
     p.set_defaults(fn=cmd_rag_eval)
+    p = sub.add_parser("audit", help="hash-chained JSONL audit of one conversation, or verify one (P3-011)")
+    p.add_argument("--project")
+    p.add_argument("--session", help="conversation id to export")
+    p.add_argument("--out", help="file to write (default stdout)")
+    p.add_argument("--verify", metavar="FILE", help="check an export's hash chain; exit 1 on any edit")
+    p.set_defaults(fn=cmd_audit)
+    p = sub.add_parser("retain", help="archive old rows of append-only logs over their size cap (H-041)")
+    p.add_argument("--project")
+    p.add_argument("--apply", action="store_true", help="move rows; without it, print the plan only")
+    p.set_defaults(fn=cmd_retain)
     p = sub.add_parser("signals", help="measured outcome signals for one request (JSON)")
     p.add_argument("--project")
     p.add_argument("--request", required=True, help="trace id (generation_id)")

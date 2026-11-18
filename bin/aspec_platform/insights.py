@@ -124,7 +124,15 @@ def run_detail(conn, request_id):
     run.pop("transcript_path", None)
     steps = [dict(s) for s in conn.execute(
         "SELECT step_id, ordinal, kind, name, status, started, duration_ms, tokens_input, tokens_output, "
-        "tokens_cache_read, bytes_in, whole_file FROM steps WHERE request_id = ? ORDER BY ordinal", (request_id,))]
+        "tokens_cache_read, bytes_in, whole_file, detail_json FROM steps WHERE request_id = ? ORDER BY ordinal",
+        (request_id,))]
+    for s in steps:
+        try:
+            detail = json.loads(s.pop("detail_json") or "{}")
+        except ValueError:
+            detail = {}
+        s["context"] = detail.get("context") if isinstance(detail, dict) else None
+    ctx = [s["context"] for s in steps if isinstance(s.get("context"), dict)]
     tools = {}
     for s in steps:
         t = tools.setdefault(s["name"], {"name": s["name"], "kind": s["kind"], "calls": 0, "tokens": 0,
@@ -143,6 +151,9 @@ def run_detail(conn, request_id):
         "SELECT agent, model, status, latency_ms, error FROM subagent_runs WHERE parent_request_id = ? "
         "ORDER BY started, id", (request_id,))]
     return {"run": run, "steps": steps, "events": events, "subagents": subagents,
+            "context": {"steps": len(ctx), "pruned": sum(1 for c in ctx if c.get("pruned")),
+                        "passthrough_bytes": sum(c.get("passthrough_bytes") or 0 for c in ctx),
+                        "context_bytes": sum(c.get("context_bytes") or 0 for c in ctx)} if ctx else None,
             "tools": sorted(tools.values(), key=lambda t: (-t["tokens"], t["name"])),
             "waterfall": [{"name": s["name"], "kind": s["kind"], "ordinal": s["ordinal"], "status": s["status"],
                            "duration_ms": s["duration_ms"],

@@ -587,19 +587,25 @@ def cmd_step_start(args):
                  payload={"choice": "reuse", "key": key, "reason": "idempotency key matches a success"})
             return {"ok": True, "step": args.step, "reuse": True, "key": key,
                     "output": os.path.join(rd, prior["output"])}
+        context, ctx_stats = _step_context(rd, checkpoint, needs, inputs, os.getcwd(),
+                                           [args.agent or (planned or {}).get("agent"),
+                                            args.skill or (planned or {}).get("skill")])
         span = "s-" + secrets.token_hex(6)
         attempts = (prior.get("attempts", 0) if prior else 0) + 1
         checkpoint[args.step] = {
             "status": "running", "key": key, "attempts": attempts, "span_id": span,
             "started": iso_from_ms(now_ms()), "started_ms": now_ms(), "needs": needs,
             "writes": csv(args.writes) or (planned["writes"] if planned else []),
-            "agent": args.agent, "model": args.model, "skill": args.skill,
+            "agent": args.agent, "model": args.model, "skill": args.skill, "context": ctx_stats,
         }
         save_checkpoint(rd, checkpoint)
         emit(rd, run, "step.started", step_id=args.step, actor=actor, span_id=span,
              payload={"attempt": attempts, "key": key, "needs": needs,
-                      "writes": checkpoint[args.step]["writes"]})
-    return {"ok": True, "step": args.step, "reuse": False, "key": key, "attempt": attempts}
+                      "writes": checkpoint[args.step]["writes"], "context": ctx_stats})
+    result = {"ok": True, "step": args.step, "reuse": False, "key": key, "attempt": attempts}
+    if ctx_stats is not None:
+        result.update(context=context, context_stats=ctx_stats)
+    return result
 
 
 def read_output(args):
@@ -651,9 +657,80 @@ def sanitize_error(text, max_chars=1000):
     return head + (marker % truncated_count) + tail
 
 
+def _handoff_schema(project, names, side):
+    """P4-013: (module, name, schema) for the `side` ("input" or "output") of the first handoff
+    schema found for the step's agent or skill (`.cursor/agents/handoffs/<name>.json`, else the
+    package's `agents/handoffs/`); (None, None, None) when none applies. A broken schema file
+    never fails a step."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(here, "aspec_platform", "handoffs.py")
+    if not os.path.isfile(path):
+        return None, None, None
+    try:
+        spec = importlib.util.spec_from_file_location("aspec_handoffs", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        schemas = mod.load_schemas(project)
+        if not schemas:
+            schemas = mod.load_schemas(os.path.dirname(here))
+    except Exception:  # noqa: BLE001
+        return None, None, None
+    for name in names:
+        schema = (schemas.get(name) or {}).get(side) if name else None
+        if isinstance(schema, dict):
+            return mod, name, schema
+    return None, None, None
+
+
+def _handoff_errors(project, names, output):
+    """P4-013: schema errors for a step's output; [] when no schema applies."""
+    mod, name, schema = _handoff_schema(project, names, "output")
+    if mod is None:
+        return [], None
+    return mod.validate(output, schema), name
+
+
+def _step_context(rd, checkpoint, needs, inputs, project, names):
+    """P4-015: the context a typed step's subagent receives, and what it saves.
+
+    Pass-through is what the runner would otherwise send: the step's inputs plus every `needs`
+    step's whole output. A step whose agent or skill has an `input` schema gets only that
+    schema's properties, taken from its inputs first and then from upstream outputs in `needs`
+    order. When that projection misses a required field or fails the schema, the step gets the
+    pass-through and the reason, never a context that drops what it needs."""
+    upstream = {}
+    for n in sorted(needs):
+        rel = (checkpoint.get(n) or {}).get("output")
+        if rel:
+            saved = read_json(os.path.join(rd, rel)) if os.path.isfile(os.path.join(rd, rel)) else None
+            upstream[n] = saved.get("output") if isinstance(saved, dict) else None
+    passthrough = {"inputs": inputs, "upstream": upstream}
+    full_bytes = len(canonical(passthrough))
+    mod, name, schema = _handoff_schema(project, names, "input")
+    if mod is None:
+        return None, None
+    props = schema.get("properties") or {}
+    pruned = {k: v for k, v in (inputs or {}).items() if k in props} if isinstance(inputs, dict) else {}
+    for n in needs:
+        out = upstream.get(n)
+        if isinstance(out, dict):
+            for k in props:
+                if k not in pruned and k in out:
+                    pruned[k] = out[k]
+    problems = mod.validate(pruned, schema)
+    if problems:
+        stats = {"schema": name, "pruned": False, "passthrough_bytes": full_bytes, "context_bytes": full_bytes,
+                 "reason": "; ".join(problems[:3])}
+        return passthrough, stats
+    stats = {"schema": name, "pruned": True, "passthrough_bytes": full_bytes,
+             "context_bytes": len(canonical(pruned))}
+    return pruned, stats
+
+
 def cmd_step_end(args):
     check_step_id(args.step)
     output = redact(read_output(args))
+    handoff_error = None
     rd = run_path(args.run)
     with RunLock(rd):
         run, checkpoint = load_run(rd), load_checkpoint(rd)
@@ -664,6 +741,16 @@ def cmd_step_end(args):
                                               "started_ms": now_ms(), "started": iso_from_ms(now_ms())}
         out_sha = sha256(canonical(output))
         error = sanitize_error(redact(args.error)) if args.error else None
+        if args.status == "success":
+            step = plan_step(run, args.step) or {}
+            names = [entry.get("agent") or step.get("agent"), entry.get("skill") or step.get("skill")]
+            problems, schema_name = _handoff_errors(os.getcwd(), names, output)
+            if problems:
+                # A typed step that returned the wrong shape is a failed step, with the fix in the error.
+                args.status = "failed"
+                handoff_error = ("handoff schema %s: %s. Re-run the step and return JSON matching the `output` "
+                                 "schema in agents/handoffs/%s.json" % (schema_name, "; ".join(problems[:5]), schema_name))
+                error = sanitize_error(handoff_error)
         finished_ms = now_ms()
         rel = os.path.join("steps", args.step, "output.json")
         write_json_atomic(os.path.join(rd, rel), {
@@ -683,7 +770,8 @@ def cmd_step_end(args):
              actor={"role": None, "agent": entry.get("agent"), "model": entry.get("model"),
                     "skill": entry.get("skill")},
              span_id=entry["span_id"], payload={"status": args.status, "attempt": entry["attempts"],
-                                                "output_sha": out_sha, "error": error},
+                                                "output_sha": out_sha, "error": error,
+                                                "context": entry.get("context")},
              tokens={"input": tokens["input"], "output": tokens["output"], "cache_read": 0,
                      "estimated": not given},
              cost_usd=cost, duration_ms=duration)
@@ -692,8 +780,11 @@ def cmd_step_end(args):
         if exceeded:
             emit(rd, run, "budget.exceeded", step_id=args.step,
                  payload={"cost_usd": total_cost, "max_cost_usd": run["budgets"]["max_cost_usd"]})
-    return {"ok": True, "step": args.step, "status": args.status, "output_sha": out_sha,
-            "cost_usd": total_cost, "budget_exceeded": exceeded}
+    result = {"ok": handoff_error is None, "step": args.step, "status": args.status, "output_sha": out_sha,
+              "cost_usd": total_cost, "budget_exceeded": exceeded}
+    if handoff_error:
+        result["error"] = handoff_error
+    return result
 
 
 def cmd_event(args):
@@ -946,7 +1037,9 @@ def main(argv=None):
     try:
         args = build_parser().parse_args(argv)
         result = args.fn(args)
-        code = 0
+        # P4-013: step-end recorded the step but rejected its output against the handoff
+        # schema. Exit 4 so a shell caller cannot mistake it for a recorded success.
+        code = 4 if result.get("ok") is False else 0
     except Usage as exc:
         result, code = {"ok": False, "error": str(exc)}, 2
     except Refused_with as exc:

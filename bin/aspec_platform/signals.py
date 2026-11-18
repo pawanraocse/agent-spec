@@ -19,7 +19,9 @@ MISSING = re.compile(r"(no such file|not found|does not exist|ENOENT|cannot find
 FAILED = ("error", "failed", "blocked")
 
 
-KEY_PREFIX = re.compile(r"^\w+=")
+# Hook spans write `file_path=/p/a.py`; only that attribute prefix is stripped, so a shell
+# command such as `CI=1 pytest` keeps its environment assignment.
+KEY_PREFIX = re.compile(r"^(?:file_path|target|path|command|cmd)=")
 
 
 def _target(s: dict) -> str:
@@ -33,7 +35,9 @@ def _edited(spans: list) -> list:
     afterFileEdit); when afterFileEdit spans exist they alone are counted."""
     ok = [s for s in spans if s["kind"] == "edit" and s.get("status") not in FAILED]
     file_events = [s for s in ok if (s.get("attributes") or {}).get("file_path")]
-    return file_events or ok
+    # A tool edit whose file never got an afterFileEdit event is still an edit.
+    covered = {_target(s) for s in file_events}
+    return file_events + [s for s in ok if s not in file_events and _target(s) not in covered]
 
 
 def for_trace(trace: dict, spans: list, session_traces=None, session_spans=None) -> dict:
@@ -57,7 +61,8 @@ def for_trace(trace: dict, spans: list, session_traces=None, session_spans=None)
     missing = [s["span_id"] for s in failed
                if MISSING.search(str((s.get("attributes") or {}).get("error_message") or ""))]
 
-    last_edit = edits[-1]["start"] if edits else None
+    starts = [s["start"] for s in edits if s.get("start")]
+    last_edit = max(starts) if starts else None
     verify = [s for s in spans if s["kind"] == "tool" and (s.get("name") or "").lower() in ("shell", "terminal", "bash", "run_terminal_cmd")
               and VERIFY.search(_target(s))]
     verified_after = [s for s in verify if last_edit and (s.get("start") or "") >= last_edit]
@@ -94,7 +99,8 @@ def for_trace(trace: dict, spans: list, session_traces=None, session_spans=None)
         "missing_path_errors": {"count": len(missing), "span_ids": missing},
         "files_edited": {"count": len(files), "files": sorted(files), "edit_spans": len(edits),
                          "churn": sorted(f for f, ids in files.items() if len(ids) >= 3)},
-        "verification": {"ran_after_last_edit": bool(verified_after) if edits else None,
+        # None when there were no edits, or no edit carries a time to compare against.
+        "verification": {"ran_after_last_edit": bool(verified_after) if last_edit else None,
                          "commands": [{"span_id": s["span_id"], "command": _target(s)[:200], "status": s.get("status")}
                                       for s in verify][:10]},
         "guard_blocks": sum(1 for s in spans if s["kind"] == "guard"),

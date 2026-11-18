@@ -1,75 +1,65 @@
-## 2026-11-15 (later) — Impact tab for the hackathon story; memory injections recorded; review and 10 fixes
+## 2026-11-18 — Production push: guardrails, dashboard control, RAG fixes (uncommitted)
 
-### Why
-The user ran the dashboard on a `/agent-spec-raw-code-full` request and could not explain the feature: no tokens saved on the request page, the trace looked like "grep, not graphify", and nothing showed memory or self-learning. Investigation: `/api/savings` existed only project-wide (Project → Sessions → Savings, 74,140 tokens estimated); Cursor's hook payloads carry no file content sizes (Read `out` = 82–107 B); graphify calls were drawn as "Shell"; receipts had `facts_injected: null` and `fact_injections` had no rows, so memory use was never recorded. In that trace, 61 of the tool calls (most Grep and Read) ran inside 2 `agent-spec-search` subagents; the main context had 6 calls, the first `graphify context`.
+**Done (todo-plan.md rows closed with docs/evidence/):** H-001 H-002 H-003 H-004 H-010 H-011
+H-012 H-013 H-020 H-021 H-030 H-040 H-041 H-043 H-046 P3-006 P3-007 P3-011 P3-012 P4-011
+P4-012 P4-016 PI-009 PI-011. Partly done: P3-001, H-042, H-044.
+New modules: `bin/agent-spec-risk.py`, `aspec_platform/{views,health,retention,risk_view,audit_export,skill_effect,proposals,mesh_view}.py`.
+New dashboard tabs under Project: Repos, Proposals, Risk, Index health. Also new: a Skill
+effectiveness card, and an Export audit button on each conversation. `bin/agent-spec-check-all.sh`
+was green before the P4-013 work started.
 
-### Done (uncommitted, on top of the uncommitted Slice 6f/6g work)
-- **Impact tab** (default tab on a request page): `bin/aspec_platform/impact.py` + `ui-src/src/features/Impact.tsx`, wired into `traces.request_detail` as `impact` (wrapped in try/except so it never breaks the page). Cards: tokens kept out of the chat vs plain Cursor (estimated: subagent-internal tool output, graph query priced as one median indexed file, unread part of ranged reads; bytes ÷ 4); raw-code-full rule checks (measured; `pass: null` = not applicable, left out of the score); memory injected; what agent-spec adds to the prompt (rules/skills/subagent definitions from Cursor's own context breakdown). On the raw-code-full review trace: 17,741 of 20,181 tokens kept out, 4 of 4 rules, harness fixed cost 11,017 tokens.
-- **Injected facts recorded.** `hooks/cursor-session-start.py` (copied to `.cursor/hooks/agent-spec-session-start.py`) parses the payload's `conversation_id` and appends `{ts, conversation_id, digest_bytes, facts}` to `.agent-spec/metrics/injections.jsonl`. `ingest.ingest_memory` matches lines to facts by `- [type] subject:` prefix (`match_facts`) into `fact_injections` for every trace of the conversation; `observe.learning` now joins `traces` as well as `requests`. The Impact tab reads injections.jsonl live (`impact.injection_row`), not the table.
-- **Graph queries named.** `traces.tool_category()` names a Shell call to `graphify-cli.py` / `agent-spec-memory.py` "graphify <sub>" / "memory <sub>" and stores `category`, `tool_name`, `read_chars`, `file_bytes` on tool spans.
-- **Read extent for ranged reads.** `hooks/cursor-event.py` records `read_chars` + `file_bytes` for explicit ranges via `_ranged_extent` (stat only, no decode).
-- Docs: `docs/DASHBOARD.md` "Impact tab" section; `CHANGELOG.md` entries.
+**Done later the same day — P4-013 and P4-015:** `step-end` exits 4 when it records a handoff
+violation. `step-start` returns a pruned `context` (handoff input fields only) for typed steps,
+with pass-through and context byte counts that are shown on the run page. The hub-runner skill text
+is updated, and `tests/test_handoff_step.py` has 10 cases. `bin/agent-spec-check-all.sh` was all
+green after this. Not measured on a live Cursor workflow run.
 
-### Review (high effort) and fixes — all 10 fixed
-1. `ingest.ALL` ran memory before traces → injections joined stale traces; `traces` now precedes `memory`. 2. Impact read `fact_injections`, which the server never refreshes → reads injections.jsonl live. 3. Edit spans counted as "other". 4. `SEARCH_TOOL` prefix matched `search_replace`. 5. Any `read*` tool (ReadLints) counted as a file read. 6. Unknown `ranged` treated as whole-file. 7. "Guard rails held" always passed → removed from rules. 8. "Graph before search" failed requests that never searched → n/a. 9. `agent-spec-ensure.py` skill sync forced `--lean` when no lean skill was installed → `install.sh` now writes `~/.cursor/skills/.algosec-agent-spec-lean` on `--lean` and removes it on a full install; ensure passes `--lean` only when the marker exists. 10. Ranged reads decoded the whole file in the hook → stat only.
-- Tests: `tests/test_impact.py` (new, in `platform-suites.txt`), `tests/test_cursor_event.py` (+1), `tests/test_ensure.py` (+1), vitest Impact honesty test. Final: pytest 442 passed, fast platform 58, vitest 22, tsc clean, UI build within gzip budget.
+**Open:** H-005 (needs live Cursor), H-006 (needs a decision: an unmarked lean install vs the
+earlier review rule that a full install stays full), P3-014, PI-010, H-045, H-050–H-053,
+T-042, and a full H-044 pass over the older API.
 
-### Corrections to my own earlier work this session
-- First Impact build defaulted to the Impact tab unconditionally and broke the DV-055 honesty test (it expects the Orchestration graph); the default is now Impact only when `impact` is present without an error.
-- Several Impact figures were plain text and failed the provenance (DV-005) check; all wrapped in `<Num>`, fact subjects marked `data-figure-exempt`.
-- My first ensure regression test expected a missing-lean-skills full install to stay without them; wrong — no marker means a full install, which correctly restores them.
-- Items 1–8 and 10 of the review were defects in code I wrote earlier the same session.
+**Next:** commit on a branch (nothing is committed yet).
 
-### Open
-- Not verified live: a new Cursor chat should show its injected facts on the Impact tab. Chats before 2026-11-15 have none (Cursor transcripts do not carry the digest; no backfill).
-- Existing `--lean` installs have no marker yet: the next skill sync adds the six SDLC skills back unless `./install.sh --lean` is re-run once.
-- "Kept out of the chat" is re-send savings in the parent context, not lower total billing: subagents still spend tokens. Say so when presenting.
-- Hackathon demo not run: same prompt in plain Cursor vs `/agent-spec-raw-code-full`, compare Impact tabs and Project → Sessions → Compare.
-- Untracked `retrieval.py`, `signals.py`, `skills/agent-spec-ask/` were outside the review (it covered `git diff HEAD` only).
-- Earlier opens still stand: full `bin/agent-spec-selftest.sh` not re-run; project `.agent-spec/bin/aspec_platform` copy older than `bin/`.
-- Nothing committed. Dashboard running on `127.0.0.1:8765` (token rotates per launch).
+## 2026-11-18 (later) — Goal run: close every open todo-plan row, compact after each
 
-### Load next session
-`bin/aspec_platform/impact.py` (`for_request`, `tool_rows`, `rule_checks`, `injection_row`, `injected_facts`), `bin/aspec_platform/traces.py` (`tool_category`, `request_detail`), `bin/aspec_platform/ingest.py` (`ALL`, `match_facts`, `_ingest_injections`), `hooks/cursor-session-start.py`, `ui-src/src/features/Impact.tsx`.
+**Done:** P4-013 (step-end exits 4 on a handoff violation), P4-015 (typed steps get a pruned
+`context` and the run page shows the bytes saved), H-006 (a full install now writes
+`.algosec-agent-spec-full`, and `install_is_lean` in `agent-spec-ensure.py` treats an unmarked
+install as lean when all six SDLC skills are missing). check-all was green after P4-015.
 
-## 2026-11-15 (evening) — Local Ollama mode, Console restored, Showcase, RAG eval, per-chat skill savings; committed and pushed
+**PI-010 done:** `/api/compare` is now a project route on `aspec_platform/session_compare.py`. It
+returns per-session signals, tokens, review quality (`ai_judged`) and injected context, plus the
+a − b delta. The UI is `features/SessionCompare.tsx`. A correction: in the old UI the zero delta
+always showed, because the API never returned `delta_tokens`.
 
-### Why
-The user has no usable Cursor plan: every `cursor-agent` prompt returns `ActionRequiredError: You've hit your usage limit`, so the dashboard could not issue a query and request `145456cc…` stayed `incomplete` with only a `beforeSubmitPrompt` event (no tools, so no tokens saved). They asked for an end-to-end test on their Ollama, the Console stream back, a dashboard that shows tokens, efficiency, accuracy, RAG and new prompts, then a token cut and per-chat raw-code savings "on the board".
+**P3-014 done:** `bin/agent-spec-recall.py` searches this project's experience store and those of
+its mesh peers (mesh.json members, plus registered hubs that list this project) and cites
+`<repo>:.agent-spec/experience.jsonl:<line>`. It only reads peers. `install.sh` ships it to projects,
+and the learn skill's recall step calls it.
 
-### Done — committed as `b59e517` on `main` (fast-forward of `feat/harness-automation`) and pushed to `origin/main`
-- **Local agent**: `bin/agent-spec-ollama-agent.py` takes `cursor-agent -p` arguments, runs a read-only tool loop (ranged `Read`, `Grep`, `graphify_context`, `search_project`) on Ollama and fires the project's `.cursor/hooks.json` hooks with Cursor-shaped payloads (sessionStart digest, beforeSubmitPrompt, preToolUse deny honoured, postToolUse, afterAgentResponse with Ollama token counts, stop). `cursor_version` `ollama-agent/1.0` → `traces.py` origin `local` (shown in Live, labelled "Local model"). `--bare` drops the digest, guard and harness tools for A/B. Result line carries `request_id`, `usage`, `tools`, `step_usage`.
-- **Ollama discovery**: `bin/aspec_platform/ollama.py` — loopback, else the WSL default gateway (`172.28.32.1:11434` here) counts as local; anything else needs `AGENT_SPEC_ALLOW_REMOTE_MODELS=1`. Probe cache keyed on the candidate list; a pinned `AGENT_SPEC_OLLAMA_URL` is returned without probing so `_post_json` still refuses remote URLs. `retrieval.py` uses it.
-- **Console**: `GET /api/agent/jobs/<id>/stream` (dropped in `7b9d249`) restored as `serve._agent_stream`; `GET /api/agent/status`; optional `model` (validated by `agent_exec.MODEL_RE`), prompt/mode validation. `agent_exec.backend()`: auto = Ollama unless `AGENT_SPEC_CONSOLE=1` (then cursor-agent); `AGENT_SPEC_CONSOLE=0` turns the Console off. SSE frames: `session`, `message`, `tool`, `done` (exit code 0 was reported as -1 before; fixed). `Console.tsx` is a streaming chat; Showcase and Console are in the nav.
-- **RAG**: `rag-embed` (2,762 chunks with `nomic-embed-text`, pulled into the Windows Ollama), nomic task prefixes (`#task-prefix` vector name), `rag_eval.py` + `rag-eval` CLI (golden set written by `qwen2.5-coder:7b` at `.agent-spec/eval/rag-golden.jsonl`, history in `meta`), weighted RRF with a self-tuned semantic weight (`rag:fusion`, 0 skips the embed call). 60 cases: keyword hit@5 65% MRR 0.480, semantic 48%/0.405, plain hybrid 55%/0.457, tuned ×0.25 60%/0.496.
-- **A/B bench**: `bin/agent-spec-bench.py` + `.agent-spec/eval/agent-bench.jsonl` (6 "which file" prompts). **Launcher** `bin/agent-spec-live.py` (Ollama check, embed pull, ingest, embed, eval, serve with `AGENT_SPEC_EMBED`/`AGENT_SPEC_LLM`).
-- **Token cut** in the local agent (measured with `step_usage`): stop at the first repeated call, `slim_digest` (stack line + facts sharing 2+ words with the prompt), short tool schema, one search hit per file with its purpose line (code/doc/memory only, no `tests/` unless asked), `compact_history` to 280 chars, 80-line default Read, temperature 0. Harness arm 65,568 → 21,646 prompt tokens, 5/6 → 4/6 correct; bare 2/6 on 17,058.
-- **Showcase** (`showcase.py`, `/api/showcase`, `Showcase.tsx`) and **per-chat skill savings** (`skill_savings.py`, `/api/skill-savings`, `SkillSavings.tsx`): levers graph / ranged reads / subagents / targeted edits (new), × later model calls in the chat, minus the raw-code SKILL.md size re-sent the same way. On the Impact tab ("This chat so far"), Sessions rows (−N chip, ⚡ when raw-code on) and the Showcase hero. Board: 68,694 kept out, 187,335 re-sends avoided, 96,370 skill cost, net ≈98,280 (estimated). raw-code vs plain ratio hidden until each side has 5+ comparable requests (now 1 vs 16).
-- Tests: `tests/test_local_agent.py` (20), `tests/test_skill_savings.py` (5), both in `platform-suites.txt` and `test-platform-fast.sh`. 34 of 34 suites, 22 vitest, tsc clean, UI within gzip budget. Live browser walkthroughs (Playwright) on Console, request Impact, Showcase, Sessions: no page errors.
-- Docs: `docs/DASHBOARD.md` "Local mode", "Tokens saved by the raw-code rules", six spaces; `README.md` Local mode row; `CHANGELOG.md`.
+**H-044 done:** the full API pass found 4 issues, all fixed in `serve.py` (`PATH_ID`,
+`WORKFLOW_NAME`, `_argv_text`, the console gate on workflow start, negative Content-Length). The
+evidence is in `docs/evidence/H-044.md`.
 
-### Corrections to my own earlier work this session
-- Auto backend first picked `cursor-agent` because it is installed; it is over its plan limit, so auto now prefers Ollama.
-- `qwen3:4b` narrated its reasoning; default changed to `qwen2.5-coder:7b`.
-- The agent looped on one identical Read (pulled toward `ui-src/src/lib/utils.ts` by the digest's "most depended on" line) and stopped empty; added repeat skipping and a tool-free final answer.
-- `ollama.probe()` cached across `AGENT_SPEC_OLLAMA_URL` changes; keyed the cache on the candidates.
-- The first token cut over-reached: "answer as soon as a hit matches" plus search hits from past requests (earlier answers to the bench prompts, leaking into the A/B) took the harness to 0/6, then 3/6. Restored the confirm-step instruction and excluded request/review kinds.
-- The Console's own `2026.11.15-ollama` version matched DV-064's CLI pattern and would have hidden Console requests; renamed and given origin `local`.
-- First skill-savings comparison claimed 6.5×, then 16.2× on n=1 raw-code request; restricted to comparable hook requests with tools and gated at 5 per side. It also ignored the skill's own cost until the user's own earlier question ("does raw-code cost more?") prompted netting it out.
-- `pkill -f "agent-spec-platform.py serve"` killed my own shell twice (already a remembered gotcha).
-- `tests/test_platform_guard.py` gained a `PLATFORM_ENTRY_POINTS` allowlist for the three new scripts; they import `aspec_platform` by design.
+**P3-001 closed:** on the six cloud-infra-lite modules meshed from a scratch hub, 29 of 29 import
+edges were correct and none were missed. There is no HTTP edge from the Angular frontend, because
+its URLs are built at runtime. The script is `examples/mesh-demo/measure_imports.py`.
 
-### Open
-- Cursor itself cannot use the local Ollama: its custom-model setting routes through Cursor's servers (needs a public tunnel; not set up, and Agent mode may still need a plan [MEDIUM]).
-- Memory over cap: 64 facts vs 40 (`INDEX.md` 9,737 B vs 8,000). The doctor's `prune --older-than 90` is a no-op (all facts recent, constraints never pruned). Needs a decision: merge facts or raise the limit. This session added 3 facts.
-- graphify `context` ranks `bin/agent-spec-tokens.py` for "tokens saved" questions; only the agent's `search_project` works around it.
-- The local agent's slimmed digest differs from what the sessionStart hook records in `injections.jsonl` (the hook records the full digest's facts).
-- The A/B is 6 prompts; the before/after token numbers mix temperature 0.2 and 0. RAG history entries were measured on different golden sets (30 vs 60 cases).
-- Full `bin/agent-spec-selftest.sh` still not re-run; project `.agent-spec/bin/aspec_platform` copy still older than `bin/`.
-- `feat/harness-automation` is local only (same commit as `main`). Dashboard may still be running via `agent-spec-live.py` on `127.0.0.1:8765`.
+**H-052 decided, H-051 built (video owed):** `examples/mesh-demo/demo-setup.sh` sets up the
+offline demo through the real hooks and gate, and `demo.md` is the 5-minute story. Fixes made along
+the way: store chats are scoped to the project (`ingest.store_for_project`), and recall reads
+`repo_id` from mesh.json.
 
-### Load next session
-`bin/agent-spec-ollama-agent.py` (`main`, `slim_digest`, `compact_history`, `project_search`, `final_answer`), `bin/aspec_platform/skill_savings.py` (`for_session`, `overview`), `bin/aspec_platform/agent_exec.py` (`backend`), `bin/aspec_platform/serve.py` (`console_status`, `_agent_stream`), `bin/aspec_platform/rag_eval.py`, `ui-src/src/features/SkillSavings.tsx`, `ui-src/src/pages/Showcase.tsx`.
+**H-042 advanced:** the WSL2 install cycle ran green here, and CI has an `install-windows` Git Bash
+job. Still open: the first CI run (`.github/` is uncommitted) and one manual run on real Windows.
+
+**Order for the rest of the goal:** P3-001 → H-052 → H-051 → H-042
+(the CI part) → final review. H-005, H-045, H-050 and H-053 need a person, live Cursor or the demo
+machine. Do not push the T-042 tag without the user's go-ahead.
+
+**Files for next session:** `bin/agent-spec-ensure.py` (`install_is_lean`), `bin/agent-spec-run.py`
+(`_step_context`, `_handoff_schema`), `ui-src/src/pages/Runs.tsx`, `tests/test_handoff_step.py`.
+Nothing is committed.
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -131,3 +121,33 @@ The user has no usable Cursor plan: every `cursor-agent` prompt returns `ActionR
 - **2026-11-14 (evening) — Slice 6g: project intelligence (local index, Ask space) and outcome quality** — Review against the "AI experience intelligence platform" brief. Traced hooks → `events.jsonl` → `ingest.py` → 
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261115-133220.md`. Nothing is deleted.
 - **2026-11-15 — Gap review of Slice 6g; skill drift sync; headless CLI requests named, closed and hidden** — Gap review of Slice 6g. Read the diff of `serve.py`, `ingest.py`, `traces.py`, `db.py`, `retrieval.py` and the
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261118-105937.md`. Nothing is deleted.
+- **2026-11-15 (later) — Impact tab for the hackathon story; memory injections recorded; review and 10 fixes** — The user ran the dashboard on a `/agent-spec-raw-code-full` request and could not explain the feature: no toke
+**Update, same session:** P4-013 is closed: `step-end` checks the output schema, the example workflow
+gather step returns the `agent-spec-search` shape, and there is a test. The graph fast path still
+writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates. Nothing is committed.
+### 2026-11-18 (later) — H-053 scripted dry run, H-005 fix
+- Built `examples/mesh-demo/demo-dryrun.py`: two offline (`unshare -rn`) timed runs, 10/10 beats, ~2.9 s each.
+- Fixed `hooks/cursor-session-start.py`: the first chat in a freshly registered project lost its
+  injections.jsonl row because `metrics/` did not exist yet (H-005).
+- `demo-setup.sh` now writes onboarding files, remembers one fact and proposes a different one.
+- H-005, H-053 now `[~]`: the live Cursor chat and the presenter's two rehearsals are owed.
+- Still needs a person: H-045, H-050 (plain Cursor vs harness), T-042 (tag approval), H-042 CI run, H-051 video.
+- check-all green, all 7 gates. Nothing committed. Memory 75 facts against a cap of 40: prune.
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261118-161329.md`. Nothing is deleted.
+- **2026-11-15 (evening) — Local Ollama mode, Console restored, Showcase, RAG eval, per-chat skill savings; committed and pushed** — The user has no usable Cursor plan: every `cursor-agent` prompt returns `ActionRequiredError: You've hit your 
+
+### 2026-11-18 (end) — goal cleared, session closed
+
+- The goal "complete all and review, compact after each" was cleared by the user with `/goal clear`
+  after the remaining rows proved to need a person; it was not completed.
+- Closed this session: P4-013, P4-015, H-006, PI-010, P3-014, H-044, P3-001, H-052.
+- Partly done: H-005, H-053 (scripted parts done and verified), H-042 (CI job added; it has not run on GitHub yet),
+  H-051 (the video is owed).
+- Not started, each needs the user: H-045 (fresh-user test), H-050 (plain Cursor vs harness),
+  T-042 (`v3.0.0` tag needs approval).
+- State: all check-all gates green; nothing committed, all changes are in the working tree on `main`.
+  Next session: commit on a new branch (needs the user's go-ahead), push so the H-042 CI job runs.
+- Housekeeping owed: memory holds 75 facts against a cap of 40; run `agent-spec-memory.py prune`.
+- Files to load next time: `todo-plan.md` (open rows), `docs/evidence/H-005.md`, `docs/evidence/H-053.md`,
+  `examples/mesh-demo/demo-dryrun.py`.

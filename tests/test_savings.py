@@ -92,7 +92,7 @@ class SavingsTest(ApiCase):
         conn.commit()
         conn.close()
         data = self.get_json("/api/compare?a=S1&b=S2")
-        self.assertEqual((data["a"], data["b"]), ("S1", "S2"))
+        self.assertEqual((data["a"]["session_id"], data["b"]["session_id"]), ("S1", "S2"))
         self.assertGreater(len(data["text"].strip()), 0)
 
     def test_compare_unknown_session_is_404_and_never_takes_paths(self):

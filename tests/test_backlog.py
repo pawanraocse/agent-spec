@@ -15,6 +15,9 @@ import unittest
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLI = os.path.join(REPO, "bin", "agent-spec-backlog.py")
 PLAN = os.path.join(REPO, "todo-plan.md")
+# The live plan was consolidated on 2026-11-16 and no longer carries the slice-era rows the
+# mutation tests pin; they run on a frozen excerpt of the old format instead.
+LEGACY = os.path.join(REPO, "tests", "fixtures", "todo-plan-legacy.md")
 GUIDE = os.path.join(REPO, "docs", "IMPLEMENTATION-GUIDE.md")
 
 
@@ -32,7 +35,7 @@ class BacklogTest(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.plan = os.path.join(self.tmp, "todo-plan.md")
-        shutil.copy(PLAN, self.plan)
+        shutil.copy(LEGACY, self.plan)
         # The live plan moves on as work completes; pin the row these tests mutate to open.
         text = slurp(self.plan)
         text = re.sub(r"(\| )`\[[x~-]\]`( \| D-004\.1 \|)", r"\1`[ ]`\2", text, count=1)
@@ -52,18 +55,20 @@ class BacklogTest(unittest.TestCase):
 
     def test_parses_real_plan(self):
         rows = json.loads(run("json").stdout)  # default locations = repo root
-        self.assertGreaterEqual(len(rows), 100)
+        self.assertGreaterEqual(len(rows), 30)
         for r in rows:
             self.assertTrue(r["task_id"], r)
             self.assertIn(r["status"], ("[ ]", "[~]", "[x]", "[-]"))
+            for key in ("title", "acceptance", "effort", "evidence"):
+                self.assertIn(key, r)
         by_id = {r["task_id"]: r for r in rows}
         self.assertEqual(len(by_id), len(rows), "duplicate IDs")
-        d = by_id["D-004.1"]
+
+    def test_parses_legacy_slice_format(self):
+        d = {r["task_id"]: r for r in self.rows()}["D-004.1"]
         self.assertEqual(d["p_number"], "P2.7")
         self.assertEqual(d["deps"], ["P2.3"])
         self.assertEqual(d["slice"], "5")
-        for key in ("title", "acceptance", "effort", "evidence"):
-            self.assertIn(key, d)
 
     def test_list_find_show(self):
         out = self.cli("list", "--status", "[ ]", "--slice", "5").stdout
