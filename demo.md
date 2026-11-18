@@ -50,9 +50,9 @@ each beat's time. A failed check names the beat. It does not replace rehearsing 
 | 1:00–1:45 **Cross-repo blast radius** | `python3 .agent-spec/bin/graphify-mesh.py query --file orders-api:orders_api/routes.py`, then `python3 .agent-spec/bin/agent-spec-recall.py "worker processes orders.created twice"` | `shop-ui` calls `POST /api/orders` in this file, and `orders-worker` consumes the topic it publishes. Recall returns a fix recorded in a *different* repo and cites `orders-worker:.agent-spec/experience.jsonl:1`. |
 | 1:45–2:30 **Tier-3 edit blocked** | Inbox › Risky edits | The agent's edit of `routes.py` waits there. The tier is 3 because another repo calls the file. The agent was told to wait, and was not told how to approve its own action. |
 | 2:30–3:00 **Approved in the dashboard** | Click **Approve once** | The approval works for one retry within 30 minutes, and the decision is a row in `metrics/risk.jsonl`. |
-| 3:00–3:45 **Impact** | Activity › Chats → `conv-recorded-1` → its request → Impact tab | Tokens kept out of the chat (estimated, labelled as such), the raw-code-full rule checks, and the facts the digest injected. Say what "kept out of the chat" means: re-send savings in the parent context, not a lower total bill. |
+| 3:00–3:45 **Impact** | Activity › Requests → `/agent-spec-hook-probe collect` (the recorded chat, `conv-recorded-1`) → Impact tab | Every figure carries its Measured or Estimated badge. This recording reads no files, so it keeps **0** tokens out: say so, and do not claim a saving it does not show. Then scroll to the raw-code-full rule checks (3 of 3 held) and the fact the digest injected ("routes are a public contract"). Where a chat does keep tokens out, the saving is re-sends in that chat's context, not a lower total bill. |
 | 3:45–4:15 **Learning proposal approved** | Inbox › Proposals → **Approve** on "order ids are idempotency keys" | The fact moves into memory. The next chat's digest carries it, and the decision is audited in `metrics/proposals.jsonl`. |
-| 4:15–5:00 **Audit export** | The conversation → **Export audit**, then `python3 .agent-spec/bin/agent-spec-platform.py audit --verify <file>` | A redacted JSONL of requests, tool actions, risk decisions and outcomes, hash-chained line by line. `--verify` names the first line that was edited. |
+| 4:15–5:00 **Audit export** | Activity › Chats → expand "Rename GET /api/orders/{id}…" → **Export audit**, then `python3 .agent-spec/bin/agent-spec-platform.py audit --verify <file>` | A redacted JSONL of requests, tool actions, risk decisions and outcomes, hash-chained line by line. `--verify` names the first line that was edited. |
 
 **Optional 30 seconds, local model (H-052):** when Ollama is running on this machine, the
 Console tab runs a question against it with nothing leaving the machine. It is the only live
@@ -60,8 +60,11 @@ agent that works with the network off. Skip it when the Console says no backend.
 cannot reach a local Ollama without a public tunnel, so the demo never claims it can.
 
 **If anything misbehaves:** open the recorded request and press **Replay**. The trace plays at
-real speed under a *Recorded* badge. A recorded fallback video of this script is still owed
-(H-051); it has to be captured on the demo machine.
+real speed under a *Recorded* badge. If the machine itself fails, play
+[`docs/demo/fallback-demo.mp4`](docs/demo/fallback-demo.mp4) (97 s, no audio): the same story,
+terminal commands run live while recording and the dashboard driven in a real browser.
+Re-record it after a UI change with `examples/mesh-demo/record-video.mjs` (its header has the
+three commands).
 
 **Afterwards:** `./uninstall.sh --unregister /tmp/agent-spec-demo/orders-api` removes the demo
 project from the registry.

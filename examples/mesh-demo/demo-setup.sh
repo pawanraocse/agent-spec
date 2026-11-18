@@ -95,6 +95,12 @@ echo "5/7 recorded conversation replayed through the hooks"
 python3 - "$HUB" <<'PY'
 import json, os, subprocess, sys
 hub = sys.argv[1]
+# The prompt first, through the real hook, so the chat is listed by what was asked.
+prompt = {"hook_event_name": "beforeSubmitPrompt", "conversation_id": "demo-conv-risk",
+          "generation_id": "demo-gen-risk", "cwd": hub, "workspace_roots": [hub],
+          "prompt": "Rename GET /api/orders/{id} to /api/order/{id}"}
+subprocess.run("python3 .cursor/hooks/agent-spec-cursor-event.py", shell=True, cwd=hub,
+               input=json.dumps(prompt).encode(), capture_output=True, timeout=60)
 payload = {"hook_event_name": "preToolUse", "conversation_id": "demo-conv-risk", "generation_id": "demo-gen-risk",
            "session_id": "demo-conv-risk", "cwd": hub, "workspace_roots": [hub], "tool_name": "Write",
            "tool_input": {"file_path": os.path.join(hub, "orders_api", "routes.py"),

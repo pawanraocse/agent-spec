@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Demo fallback video (H-051).** `docs/demo/fallback-demo.mp4` plays the five-minute story
+  if the demo machine fails; `examples/mesh-demo/record-video.mjs` re-records it against a
+  fresh demo build, running each terminal command live. The demo's blocked edit now carries
+  its prompt, and `demo.md`'s Impact beat says the recorded chat keeps 0 tokens out instead of
+  promising a saving.
 - **Windows Git Bash install (H-042).** `--register` no longer reports a false `FAIL digest`
   when stdin is a pipe that stays open (`curl … | bash`, CI): the doctor runs its checks with
   stdin closed instead of handing over its own. The doctor and recall map the `/c/Users/...`
