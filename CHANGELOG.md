@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Windows Git Bash install (H-042).** `--register` no longer reports a false `FAIL digest`
+  when stdin is a pipe that stays open (`curl … | bash`, CI): the doctor runs its checks with
+  stdin closed instead of handing over its own. The doctor and recall map the `/c/Users/...`
+  paths Git Bash writes into the registry to `C:/Users/...` on Windows, so a registered
+  project is recognised.
 - **Fresh-user pass (H-045).** README › Install gains a dashboard step and the right skill count
   (35). The server creates its database schema before the first request, so a page opened
   straight after `--register` no longer fails with `no such table: steps`. An empty project's

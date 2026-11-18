@@ -89,7 +89,10 @@ def load_json(path):
 
 def run(cmd, cwd, timeout=20):
     try:
-        return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+        # Never hand a child our stdin: digest --cursor-hook reads it to EOF, and under
+        # `curl | bash` or any non-tty pipe that EOF never comes.
+        return subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, capture_output=True,
+                              text=True, timeout=timeout)
     except Exception:
         return None
 
@@ -226,6 +229,15 @@ def check_memory_lint(ctx):
     return out
 
 
+def native_path(p: str, nt: bool = os.name == "nt") -> str:
+    """Registry lines are written by install.sh. Under Git Bash that is `/c/Users/...`, which
+    Windows Python would read as `C:\\c\\Users\\...`; map the drive back first."""
+    m = re.match(r"^/([a-zA-Z])(/.*)?$", p)
+    if nt and m:
+        p = m.group(1).upper() + ":" + (m.group(2) or "/")
+    return os.path.realpath(p)
+
+
 def check_register(ctx):
     registry = os.path.join(ctx.skills_dir, ".algosec-agent-spec-projects")
     here = os.path.realpath(ctx.project)
@@ -235,9 +247,9 @@ def check_register(ctx):
         lines = [l.strip() for l in open(registry, encoding="utf-8") if l.strip()]
     except OSError:
         lines = []
-    if any(os.path.realpath(l) == here for l in lines):
+    if any(native_path(l) == here for l in lines):
         return [("register", "OK", "workspace is registered", "")]
-    parent = next((l for l in lines if here.startswith(os.path.realpath(l) + os.sep)), None)
+    parent = next((l for l in lines if here.startswith(native_path(l) + os.sep)), None)
     if parent:
         return [("register", "WARN", "you are inside registered root %s but %s is not itself registered "
                  "(open the registered folder in Cursor)" % (parent, here), ctx.register_cmd())]

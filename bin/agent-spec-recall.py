@@ -69,11 +69,21 @@ def manifest_members(hub):
     return out
 
 
+
+def native_path(p: str, nt: bool = os.name == "nt") -> str:
+    """Registry lines are written by install.sh. Under Git Bash that is `/c/Users/...`, which
+    Windows Python would read as `C:\\c\\Users\\...`; map the drive back first."""
+    m = re.match(r"^/([a-zA-Z])(/.*)?$", p)
+    if nt and m:
+        p = m.group(1).upper() + ":" + (m.group(2) or "/")
+    return os.path.realpath(p)
+
+
 def registry():
     path = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".algosec-agent-spec-projects")
     try:
         with open(path, encoding="utf-8") as fh:
-            return [os.path.realpath(l.strip()) for l in fh if l.strip()]
+            return [native_path(l.strip()) for l in fh if l.strip()]
     except OSError:
         return []
 

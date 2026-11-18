@@ -322,9 +322,41 @@ def test_mcp_schema_within_budget_ok():
         sb.close()
 
 
+def test_registry_paths_from_git_bash_map_to_windows_drives():
+    import importlib.util
+    for script in ("agent-spec-doctor.py", "agent-spec-recall.py"):
+        spec = importlib.util.spec_from_file_location("m", os.path.join(REPO_DIR, "bin", script))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        # install.sh under Git Bash writes /c/Users/...; Windows Python must read C:/Users/...
+        win = mod.native_path("/c/Users/me/app", nt=True)
+        assert win.replace("\\", "/").endswith("C:/Users/me/app"), (script, win)
+        assert mod.native_path("/c/Users/me/app", nt=False) == os.path.realpath("/c/Users/me/app")
+        assert mod.native_path("/home/me/app", nt=True) == os.path.realpath("/home/me/app")
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:
         fn()
         print("  ok", fn.__name__)
     print("%d doctor/install tests passed" % len(tests))
+
+
+def test_digest_check_does_not_wait_on_an_open_stdin():
+    # `curl | bash` and other non-tty pipes leave stdin open; digest --cursor-hook reads
+    # stdin to EOF, so the doctor must not hand its own stdin to the child (H-042).
+    sb = Sandbox(git=True)
+    try:
+        sb.install()
+        script = os.path.join(sb.proj, ".agent-spec", "bin", "agent-spec-doctor.py")
+        proc = subprocess.Popen([sys.executable, script, "--json"], cwd=sb.proj, env=sb.env,
+                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+        try:
+            out = proc.stdout.read()  # stdin stays open until the doctor has finished
+        finally:
+            proc.stdin.close()
+            proc.wait(timeout=30)
+        digest = [c for c in json.loads(out)["checks"] if c["id"] == "digest"]
+        assert digest and digest[0]["status"] == "OK", digest
+    finally:
+        sb.close()
