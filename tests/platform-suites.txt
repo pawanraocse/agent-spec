@@ -50,3 +50,7 @@ test_mesh_demo
 test_skill_effect
 test_proposals
 test_mesh_api
+test_livetest_view
+test_cursor_bench
+test_groq_agent
+test_memory_view

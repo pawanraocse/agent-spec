@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bot, Check, Copy, Cpu, ExternalLink, Loader2, Send, Square, Wrench, User } from "lucide-react";
+import { Bot, Check, Copy, Cpu, ExternalLink, FileSearch, FlaskConical, History, Lightbulb, Loader2, Network, Search, Send, Square, Wrench, User } from "lucide-react";
 import { apiGet, apiPost, getToken } from "../api/client";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -21,11 +21,12 @@ type Turn = {
 
 /** Prompts that exercise the harness: graph-first context, ranged reads, memory, RAG. */
 const TEMPLATES = [
-  { label: "Find the code", prompt: "Which source file computes the dashboard's tokens-saved estimate from whole-file reads? Name the file and the function." },
-  { label: "Blast radius", prompt: "What depends on bin/aspec_platform/retrieval.py? List the files a change there could break." },
-  { label: "How it works", prompt: "How does the Agent Console pick its agent backend? Name the file and the function." },
-  { label: "Review a file", prompt: "Read bin/aspec_platform/ollama.py in ranges and name the single biggest risk in it, with the line." },
-  { label: "Past sessions", prompt: "What did the last session change? Use the project's memory and past requests." },
+  { label: "Find the code", icon: Search, prompt: "Which source file computes the dashboard's tokens-saved estimate from whole-file reads? Name the file and the function." },
+  { label: "Blast radius", icon: Network, prompt: "What depends on bin/aspec_platform/retrieval.py? List the files a change there could break." },
+  { label: "How it works", icon: Lightbulb, prompt: "How does the Agent Console pick its agent backend? Name the file and the function." },
+  { label: "Review a file", icon: FileSearch, prompt: "Read bin/aspec_platform/ollama.py in ranges and name the single biggest risk in it, with the line." },
+  { label: "Past sessions", icon: History, prompt: "What did the last session change? Use the project's memory and past requests." },
+  { label: "Live tests", icon: FlaskConical, prompt: "Which file runs the live test matrix on Ollama, and what does case L09 check? Name the file and the method." },
 ];
 
 function argSummary(args?: Record<string, unknown>): string {
@@ -168,7 +169,7 @@ export function Console() {
         <Card className="border-warning/40 p-4 text-xs text-warning">{s.hint}</Card>
       )}
 
-      <div className="flex flex-wrap gap-1.5" aria-label="Prompt templates">
+      {turns.length > 0 && <div className="flex flex-wrap gap-1.5" aria-label="Prompt templates">
         {TEMPLATES.map((t) => (
           <button key={t.label} type="button" disabled={running || !s?.enabled}
                   onClick={() => setPrompt(t.prompt)}
@@ -176,14 +177,36 @@ export function Console() {
             {t.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       <div className="min-h-[240px] flex-1 space-y-4 overflow-auto" aria-live="polite">
         {turns.length === 0 && (
-          <Card className="p-6 text-center text-xs text-muted-foreground">
-            Pick a template or type a question. The agent reads the dependency graph before files, reads in ranges,
-            and the harness guard blocks wasteful calls — watch the tool chips.
-          </Card>
+          <div className="flex flex-col items-center gap-6 py-6 text-center">
+            <div className="relative">
+              <div aria-hidden className="absolute inset-0 -z-10 rounded-full bg-primary/20 blur-2xl" />
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg">
+                <Bot size={22} />
+              </span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold tracking-tight">Ask the harnessed agent</h2>
+              <p className="mx-auto max-w-lg text-xs text-muted-foreground">
+                It reads the dependency graph before files, reads in ranges, and the harness guard blocks wasteful or
+                unsafe calls. Watch the tool chips; every answer is traced to Activity.
+              </p>
+            </div>
+            <div className="grid w-full gap-2 sm:grid-cols-2 lg:grid-cols-3" aria-label="Prompt templates">
+              {TEMPLATES.map((t) => (
+                <button key={t.label} type="button" disabled={running || !s?.enabled} onClick={() => setPrompt(t.prompt)}
+                  className="group rounded-lg border border-border bg-card p-3 text-left transition-all hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-md disabled:pointer-events-none disabled:opacity-50">
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <t.icon size={14} className="text-primary" aria-hidden />{t.label}
+                  </span>
+                  <span className="mt-1 line-clamp-2 block text-[11px] text-muted-foreground group-hover:text-foreground/80">{t.prompt}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {turns.map((t, i) => (
           <div key={i} className="space-y-2">

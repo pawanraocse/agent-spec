@@ -10,13 +10,17 @@ Governs every reply and tool call until `/agent-spec-verbose`, "normal mode", or
 
 The tool discipline itself (batch calls, never poll, graph before reading, `grep -n` then a
 ranged Read, capped output, targeted edits, subagents for sweeps, snapshot and compact at task
-boundaries) is the always-on rule `.cursor/rules/agent-spec.mdc`. This skill makes it binding
-and adds only what that rule does not carry. Anything in context is re-sent on every later call.
+boundaries) is the code-work rule `.cursor/rules/agent-spec-workflow.mdc`. This skill makes it
+binding and adds only what that rule does not carry. Anything in context is re-sent on every
+later call, so the cheapest turn is the one with no tool calls.
 
 ## Preflight
 
-Before the first reply, from the opened workspace, run once:
+Only with the first **Code work** tool call (tiers in `.cursor/rules/agent-spec.mdc`), and
+only when no `<agent-spec-digest>` is in context, run once from the opened workspace:
 `python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"`.
+A Direct question gets its answer with zero tool calls; a digest in context already proves
+the workspace is registered.
 `"next": "/agent-spec-onboard"` → run that procedure yourself. `"registered": "failed"` or
 `"refused"`, or no marker file → report the `error` in one line and continue without the
 harness. Never ask the user to install or onboard. Skip in the package clone itself or a

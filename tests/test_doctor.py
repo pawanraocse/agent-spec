@@ -360,3 +360,26 @@ def test_digest_check_does_not_wait_on_an_open_stdin():
         assert digest and digest[0]["status"] == "OK", digest
     finally:
         sb.close()
+
+
+def test_doctor_memory_prune_hint_fits_the_limit():
+    """The suggested prune age must free enough index bytes, and never count constraints."""
+    import importlib.util
+    from datetime import datetime
+    spec = importlib.util.spec_from_file_location("doctor", os.path.join(REPO_DIR, "bin", "agent-spec-doctor.py"))
+    doctor = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(doctor)
+    t = tempfile.mkdtemp()
+    try:
+        for day in range(1, 11):
+            kind = "constraint" if day == 1 else "gotcha"
+            with open(os.path.join(t, "202611%02d-f%d-abc.md" % (day, day)), "w") as fh:
+                fh.write("---\ntype: %s\n---\nbody\n" % kind)
+        per_line = doctor.MEMORY_INDEX_LIMIT // 10
+        now = datetime(2026, 11, 30)
+        # Two lines over: drop the two oldest non-constraint facts (Nov 2 and Nov 3), keep Nov 4.
+        days = doctor.prune_days(t, 2 * per_line, now)
+        assert days == (now - datetime(2026, 11, 3)).days - 1, days
+        assert doctor.prune_days(t, 10 * per_line, now) is None  # constraints are never pruned
+    finally:
+        shutil.rmtree(t)

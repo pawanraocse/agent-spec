@@ -1,7 +1,8 @@
 # Skills (Cursor)
 
 On-demand workflows installed to `~/.cursor/skills/<name>/SKILL.md`. Standing rules:
-`.cursor/rules/agent-spec.mdc` (from `CURSOR.md`).
+`.cursor/rules/agent-spec.mdc` (always-on core, from `CURSOR.md`) and
+`.cursor/rules/agent-spec-workflow.mdc` (code work only, from `CURSOR-WORKFLOW.md`).
 
 ## Daily use
 

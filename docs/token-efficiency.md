@@ -112,7 +112,11 @@ depends on whether it changes what the model sees:
 | Behavior change | many `.cursor/rules/` files, a long skill listing, a large memory tree | Weigh tokens against what the model stops seeing. |
 
 Always-on rules belong in **`CURSOR.md` → `.cursor/rules/agent-spec.mdc`**: loaded once
-into the cached prefix. Do not duplicate standing rules via per-prompt injection. A dense
+into the cached prefix, and paid on every turn, including a one-line question that needs no
+tools. Keep it to the scale-to-task tiers and hard stops; anything only code work uses
+(graph-first search, implement gates, subagents, tool discipline) goes in
+**`CURSOR-WORKFLOW.md` → `.cursor/rules/agent-spec-workflow.mdc`**, an Agent Requested rule
+that loads only when the task needs it. Do not duplicate standing rules via per-prompt injection. A dense
 memory index is not waste when each line carries a durable fact the digest should not
 re-guess.
 

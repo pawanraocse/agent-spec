@@ -100,6 +100,7 @@ if [ -f "$PROJECTS_FILE" ]; then
     if [ -d "$line" ]; then
       ok=1
       [ -f "$line/.cursor/rules/agent-spec.mdc" ] || { echo "  WARN rule missing: $line"; ok=0; missing=1; }
+      [ -f "$line/.cursor/rules/agent-spec-workflow.mdc" ] || { echo "  WARN workflow rule missing: $line"; ok=0; missing=1; }
       [ -f "$line/.cursor/hooks.json" ] || { echo "  WARN hooks.json missing: $line"; ok=0; missing=1; }
       [ -f "$line/.cursor/hooks/agent-spec-session-start.py" ] || { echo "  WARN session hook missing: $line"; ok=0; missing=1; }
       [ -f "$line/.cursor/hooks/agent-spec-pre-tool-use.py" ] || { echo "  WARN preToolUse hook missing: $line"; ok=0; missing=1; }
@@ -140,6 +141,7 @@ if [ $# -ge 1 ]; then
   fi
   for f in \
     .cursor/rules/agent-spec.mdc \
+    .cursor/rules/agent-spec-workflow.mdc \
     .cursor/hooks.json \
     .cursor/hooks/agent-spec-session-start.py \
     .cursor/hooks/agent-spec-pre-tool-use.py \

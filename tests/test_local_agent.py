@@ -153,8 +153,11 @@ if data.get("hook_event_name") == "sessionStart":
     print(json.dumps({"additional_context": "stack: DIGEST-MARKER\nlast session: dropped for local models\n- [gotcha] savings live in where module: kept"}))
 elif data.get("hook_event_name") == "preToolUse":
     path = str((data.get("tool_input") or {}).get("file_path", ""))
-    print(json.dumps({"permission": "deny", "agent_message": "whole-file read blocked"} if path.endswith("big.py")
-                     else {"permission": "allow"}))
+    if path.endswith(".env"):
+        print(json.dumps({"permission": "deny", "agent_message": "algosec-agent-spec quarantine: blocked sensitive path (env-file)"}))
+    else:
+        print(json.dumps({"permission": "deny", "agent_message": "whole-file read blocked"} if path.endswith("big.py")
+                         else {"permission": "allow"}))
 '''
 
 
@@ -249,6 +252,47 @@ class OllamaAgentTest(EnvCase):
         self.assertNotIn("graphify_context", tools)
         self.assertNotIn("search_project", tools)
         self.assertTrue(lines[-1]["bare"])
+
+    def test_several_text_tool_calls_all_run(self):
+        """qwen2.5-coder:14b writes calls as JSON lines in content (live test L07)."""
+        text = ('{"name": "Read", "arguments": {"file_path": "src/a.py"}}\n'
+                '{"name": "Grep", "arguments": {"pattern": "savings"}}')
+        lines, events, _ = self.run_agent([{"content": text}, {"content": "src/a.py"}])
+        self.assertEqual(lines[-1]["result"], "src/a.py")
+        self.assertEqual(lines[-1]["tools"], 2)
+        self.assertEqual([e["event"] for e in events].count("postToolUse"), 2)
+
+    def test_bare_arm_keeps_the_secret_quarantine(self):
+        """--bare drops the input-discipline guard but never the secret quarantine (live test L11)."""
+        for name, body in ((".env", "CANARY_SECRET=x1\n"), ("src/big.py", "x = 1\n")):
+            with open(os.path.join(self.project, name), "w") as fh:
+                fh.write(body)
+        turns = [{"call": ("Read", {"file_path": ".env"})}, {"call": ("Read", {"file_path": "src/big.py"})},
+                 {"content": "done"}]
+        _, events, fake = self.run_agent(turns, "--bare")
+        tools = [m["content"] for m in fake.chats[-1]["messages"] if m["role"] == "tool"]
+        self.assertTrue(tools[0].startswith("denied by harness: algosec-agent-spec quarantine"), tools[0])
+        self.assertNotIn("CANARY_SECRET", "".join(tools))
+        self.assertIn("x = 1", tools[1])  # the whole-file guard stays off in the baseline
+        self.assertNotIn("sessionStart", [e["event"] for e in events])
+
+    def test_chat_history_is_redacted_and_private(self):
+        """The --resume store never keeps a pasted secret in clear (live test L10)."""
+        fake = FakeOllama([{"content": "src/a.py"}])
+        self.addCleanup(fake.close)
+        env = dict(os.environ, AGENT_SPEC_OLLAMA_URL=fake.url, HOOK_LOG=self.log, HOME=self.tmp)
+        proc = subprocess.run([sys.executable, AGENT, "-p", "--workspace", self.project,
+                               "my key is AKIAZZLIVETEST00042Q, where is savings"], capture_output=True, text=True,
+                              timeout=60, env=env)
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        conv = [json.loads(x) for x in proc.stdout.splitlines() if x.strip()][-1]["session_id"]
+        store = os.path.join(self.tmp, ".cache", "agent-spec", "ollama-chats", conv + ".json")
+        with open(store) as fh:
+            saved = fh.read()
+        self.assertNotIn("AKIAZZLIVETEST00042Q", saved)
+        self.assertIn("redacted", saved)
+        if os.name == "posix":
+            self.assertEqual(os.stat(store).st_mode & 0o777, 0o600)
 
     def test_skill_prompt_loads_the_installed_skill(self):
         skill = os.path.join(self.tmp, ".cursor", "skills", "agent-spec-demo")

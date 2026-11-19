@@ -66,14 +66,15 @@ measured rather than assumed.
 
 ## Keep it bounded
 
-Forty facts is the cap. Past it the digest drops the oldest, by age rather than by
-importance, which is the wrong thing to lose. When `list` says the store is over:
+Forty facts is the cap. The digest carries only what fits its byte cap, ranked by the files
+in play, then constraints, then age. When `list` says the store is over, retire a wrong or
+stale fact by id (`forget <id>` moves it aside, recoverable), or preview a prune:
 
 ```bash
 ./.agent-spec/bin/agent-spec-memory.py prune --older-than 180 --dry-run
 ```
 
-Read what it would remove before removing it.
+The dashboard's Memory page does the same with Edit, Forget and Prune, each audited.
 
 ## Hard stops
 

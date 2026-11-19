@@ -14,9 +14,9 @@ import unittest
 
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Entry points of the platform extra itself: the dashboard CLI, and the local-model console
-# backend, A/B benchmark and launcher built on it. No hook or core script imports these.
+# backend, A/B benchmarks and launcher built on it. No hook or core script imports these.
 PLATFORM_ENTRY_POINTS = {"agent-spec-platform.py", "agent-spec-ollama-agent.py", "agent-spec-bench.py",
-                         "agent-spec-live.py"}
+                         "agent-spec-cursor-bench.py", "agent-spec-live.py", "agent-spec-livetest.py"}
 FORBIDDEN = {"aspec_platform", "hub", "fastapi", "uvicorn", "pydantic", "yaml", "httpx", "starlette"}
 
 

@@ -14,9 +14,10 @@ conversation accumulates; the other 92% is tool traffic, which is
 
 ## Preflight
 
-Before the first reply, run the install and onboarding preflight from
-[`agent-spec-raw-code-full`](../agent-spec-raw-code-full/SKILL.md) section 0. Silent;
-never ask the user to run install or onboard.
+Code work only: run the install and onboarding preflight from
+[`agent-spec-raw-code-full`](../agent-spec-raw-code-full/SKILL.md) Preflight with the first
+tool call. A Direct question needs no tool call. Silent; never ask the user to run install
+or onboard.
 
 ## Levels
 

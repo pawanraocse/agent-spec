@@ -63,6 +63,13 @@ BENIGN = [
 
 
 class RedactTest(unittest.TestCase):
+
+    def test_file_line_citations_are_not_secrets(self):
+        for cite in ("docs/token-checklist.md:1-40", "bin/aspec_platform/secret_scan.py:12", "api_token.ts:7-9"):
+            self.assertEqual(redact.redact("[1] %s (doc)" % cite), "[1] %s (doc)" % cite)
+        self.assertIn("«redacted:secret»", redact.redact("password: 1234"))
+        self.assertIn("«redacted:secret»", redact.redact("token.json: abcd1234efgh"))
+
     def test_secret_corpus_is_redacted(self):
         for text, secret, kind in SECRETS:
             out = redact.redact(text)

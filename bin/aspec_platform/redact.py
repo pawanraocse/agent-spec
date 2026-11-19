@@ -27,9 +27,11 @@ _VENDOR = re.compile(
     r"\b(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{40,}|glpat-[A-Za-z0-9_-]{20,}|"
     r"xox[abposr]-[A-Za-z0-9-]{10,}|sk-(?:live_|test_|proj-|ant-)?[A-Za-z0-9_-]{20,}|"
     r"[rs]k_(?:live|test)_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{35}|npm_[A-Za-z0-9]{36}|"
-    r"hf_[A-Za-z0-9]{30,}|pypi-[A-Za-z0-9_-]{50,})")
+    r"hf_[A-Za-z0-9]{30,}|pypi-[A-Za-z0-9_-]{50,}|gsk_[A-Za-z0-9]{40,})")
 _KV = re.compile(r"(?<!\w)((?:[\w.-]*?)(?:" + _KEYWORDS + r")[\w.-]*)(['\"]?\s*[:=]\s*)"
                  r"((?:(?:Bearer|Basic|Token)\s+)?(?:\"[^\"\n]*\"|'[^'\n]*'|(?![{\[(])[^\s,;&\"'«$<]{4,}))", re.I)
+_FILE_KEY = re.compile(r"\.[A-Za-z][A-Za-z0-9]{0,5}$")
+_LINES = re.compile(r"\d+(?:-\d+)?$")
 _BEARER = re.compile(r"\b(Bearer\s+)(?=[A-Za-z0-9._~+/=-]*[\d._~+/=-])[A-Za-z0-9._~+/=-]{8,}", re.I)
 _CANDIDATE = re.compile(r"(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{32,}={0,2}(?![A-Za-z0-9+/_-])")
 _HEX = re.compile(r"[0-9a-fA-F]+")
@@ -68,6 +70,13 @@ def _high_entropy(text: str) -> str:
     return _CANDIDATE.sub(repl, text)
 
 
+def _kv_marker(m) -> str:
+    # `token-checklist.md:1-40` is a citation (file:line range), not a key/value pair.
+    if _FILE_KEY.search(m.group(1)) and _LINES.match(m.group(3)) and m.group(2) == ":":
+        return m.group(0)
+    return m.group(1) + m.group(2) + _marker("secret")
+
+
 def redact(text) -> str:
     """Return `text` with secrets replaced by `«redacted:<kind>»` markers."""
     if text is None:
@@ -77,7 +86,7 @@ def redact(text) -> str:
     text = _URL_CRED.sub(lambda m: m.group(1) + _marker("url_credentials") + m.group(3), text)
     text = _AWS.sub(_marker("aws_key"), text)
     text = _VENDOR.sub(_marker("token"), text)
-    text = _KV.sub(lambda m: m.group(1) + m.group(2) + _marker("secret"), text)
+    text = _KV.sub(_kv_marker, text)
     text = _BEARER.sub(lambda m: m.group(1) + _marker("bearer"), text)
     return _high_entropy(text)
 

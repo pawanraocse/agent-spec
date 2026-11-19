@@ -13,6 +13,7 @@ import { IndexHealth } from "./IndexHealth";
 import { Repos } from "./Repos";
 import { SkillEffectiveness } from "../features/SkillEffectiveness";
 import { Knowledge } from "./Knowledge";
+import { LiveTests } from "./LiveTests";
 
 const KnowledgeGraph = lazy(() => import("../features/KnowledgeGraph"));
 
@@ -106,6 +107,7 @@ const TABS: SpaceTab[] = [
   { to: "repos", label: "Repos" },
   { to: "index", label: "Search index" },
   { to: "health", label: "Health" },
+  { to: "live", label: "Live tests" },
 ];
 
 /** Project space: what the harness knows about this codebase and whether it is healthy. */
@@ -121,6 +123,7 @@ export function Project() {
         <Route path="repos" element={<Repos />} />
         <Route path="index" element={<IndexHealth />} />
         <Route path="health" element={<div className="p-6"><Governance /></div>} />
+        <Route path="live" element={<LiveTests />} />
       </Routes>
     </Space>
   );

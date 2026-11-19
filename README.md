@@ -28,6 +28,7 @@ Feature detail: [docs/features.md](docs/features.md).
 | **Measurement** | `agent-spec-tokens.py` on Cursor agent JSONL ([usage](#measuring-usage)) |
 | **Skills** | 35 commands → `~/.cursor/skills/` via `./install.sh` |
 | **Local mode** | `bin/agent-spec-live.py`: dashboard Console, Ask and an A/B benchmark on a free Ollama model, no Cursor plan ([details](docs/DASHBOARD.md#local-mode-no-cursor-plan-needed)) |
+| **Live tests** | `bin/agent-spec-livetest.py`: 18 end-to-end cases on local Ollama models (install, hooks, guards, Console, Ask), shown on Project › Live tests ([details](docs/LIVE-TESTING.md)) |
 | **Self-test** | `./bin/agent-spec-selftest.sh` — package shape, install idempotency, no Claude paths |
 
 ---
@@ -91,7 +92,8 @@ Day-1 path, Windows (Git Bash/WSL), team defaults, adoption checklist and QA che
 `doctor: OK` → `/agent-spec-onboard` once → snapshot + compact (new chat) at task boundaries.
 Full checkbox list: [QUICKSTART › Adoption checklist](docs/QUICKSTART.md#adoption-checklist-paste-into-confluence).
 
-**What lands in a registered project:** `agent-spec.mdc` (from `CURSOR.md`), hooks,
+**What lands in a registered project:** `agent-spec.mdc` (always-on core, from `CURSOR.md`),
+`agent-spec-workflow.mdc` (code-work protocol, on demand, from `CURSOR-WORKFLOW.md`), hooks,
 `agent-spec-search` / `agent-spec-verify` subagents, graph, gate, memory, `bin/`.
 
 ---

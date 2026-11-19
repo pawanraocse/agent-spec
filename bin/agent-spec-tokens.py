@@ -950,10 +950,22 @@ def audit_cursor_project(proj, limits, global_skills, out):
                     "both rules ride in the cached prefix every turn and can contradict each other on reply shape",
                     "set alwaysApply: false in %s and invoke it on demand; keep one always-on style rule" % f,
                 ))
-        if len(rule_files) > 1:
+        def always_on(name):
+            # An .mdc with alwaysApply: false is Agent Requested or glob-attached: Cursor sends
+            # only its description until the task needs it, so it is not prefix weight.
+            if not name.endswith(".mdc"):
+                return True
+            try:
+                head = open(os.path.join(rules_dir, name), encoding="utf-8").read(2048)
+            except OSError:
+                return True
+            return not re.search(r"(?m)^alwaysApply:\s*false", head)
+
+        always_files = [f for f in rule_files if always_on(f)]
+        if len(always_files) > 1:
             out.append((
                 rules_dir,
-                "%d always-on rule files (Cursor loads all of them every chat)" % len(rule_files),
+                "%d always-on rule files (Cursor loads all of them every chat)" % len(always_files),
                 "each file sits in the cached prefix for the whole session",
                 "keep one standing rules file (agent-spec.mdc); move the rest to skills on demand",
             ))

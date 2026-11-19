@@ -21,7 +21,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, audit_export, cursor_sessions, health, mesh_view, proposals, risk_view, session_compare, skill_effect, traces, views
+from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, audit_export, cursor_sessions, health, livetest_view, memory_view, mesh_view, proposals, risk_view, session_compare, skill_effect, traces, views
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_DIR = os.path.join(HERE, "ui")
@@ -125,6 +125,7 @@ PROJECT_ROUTES = {
     "/api/ask": lambda project, conn, q: _search(project, conn, q, ask=True),
     "/api/index": lambda project, conn, q: retrieval.index_status(conn) if conn is not None else {"ready": False, "by_kind": {}},
     "/api/signals": lambda project, conn, q: _signals(project, conn, q),
+    "/api/livetest": lambda project, conn, q: livetest_view.overview(project),
 }
 
 
@@ -398,7 +399,7 @@ def make_handler(project: str, token: str):
             self.send_header("Content-Security-Policy", _csp())
             self.end_headers()
 
-        ALLOW_POST = frozenset(("/api/agent/sessions", "/api/seed", "/api/automations", "/api/index-health", "/api/risk", "/api/proposals", "/api/mesh"))
+        ALLOW_POST = frozenset(("/api/agent/sessions", "/api/seed", "/api/automations", "/api/index-health", "/api/risk", "/api/proposals", "/api/mesh", "/api/livetest", "/api/memory"))
 
         def _read_body(self) -> bytes:
             length = int(self.headers.get("Content-Length") or "0")
@@ -454,6 +455,13 @@ def make_handler(project: str, token: str):
                 except ValueError as exc:
                     return self._json(400, {"error": str(exc)})
                 return self._json(200, dict(result, mesh=mesh_view.overview(project, None)))
+            if path == "/api/memory":
+                # Add, edit (supersede), forget or prune facts through agent-spec-memory.py; audited.
+                try:
+                    result = memory_view.change(project, body)
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
+                return self._json(200, dict(result, memory=memory_view.overview(project, None)))
             if path == "/api/proposals":
                 # PI-009: approve / reject / promote / deprecate one proposal; audited in proposals.jsonl.
                 try:
@@ -478,6 +486,13 @@ def make_handler(project: str, token: str):
                 except ValueError as exc:
                     return self._json(400, {"error": str(exc)})
                 return self._json(200, dict(result, health=health.overview(project, None)))
+            if path == "/api/livetest":
+                # Live test matrix (bin/agent-spec-livetest.py), one run at a time, in the background.
+                try:
+                    result = livetest_view.start(project, body)
+                except ValueError as exc:
+                    return self._json(400, {"error": str(exc)})
+                return self._json(200 if result.get("ok") else 409, dict(result, live=livetest_view.overview(project)))
             if path == "/api/seed":
                 action = body.get("action", "seed")
                 payload = demo_seed.remove(project) if action == "remove" else demo_seed.seed(project)
@@ -622,7 +637,7 @@ def make_handler(project: str, token: str):
                             depth = 2
                         payload = platform_data.api_graph_blast(project, file_arg, depth)
                     elif path == "/api/memory":
-                        payload = platform_data.api_memory(conn)
+                        payload = memory_view.overview(project, conn)
                     elif path == "/api/experiences":
                         payload = platform_data.api_experiences(conn)
                     elif path == "/api/gates":

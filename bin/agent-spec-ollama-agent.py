@@ -17,6 +17,12 @@ would, tagged with the model name `ollama:<model>`.
 
 Settings: AGENT_SPEC_OLLAMA_URL (default: loopback, then the Windows host under WSL; see
 aspec_platform/ollama.py), AGENT_SPEC_OLLAMA_MODEL or --model (default qwen2.5-coder:7b when installed).
+
+A model named `groq:<name>` (e.g. groq:openai/gpt-oss-120b) runs the same loop on Groq's
+OpenAI-compatible API instead, with Groq's measured token counts. That sends the prompt and every
+file the agent reads to Groq, so it needs AGENT_SPEC_ALLOW_REMOTE_MODELS=1, plus a key in
+GROQ_API_KEY or in ~/.config/agent-spec/groq_api_key (owner-only). AGENT_SPEC_GROQ_URL overrides
+the endpoint. A rate-limit reply (HTTP 429) is waited out, up to RETRY_WAIT_CAP seconds per call.
 Stdlib only.
 """
 from __future__ import annotations
@@ -27,11 +33,12 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 import uuid
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from aspec_platform import ollama  # noqa: E402
+from aspec_platform import ollama, redact  # noqa: E402
 
 MAX_STEPS = 6
 READ_CAP = 12000
@@ -48,10 +55,14 @@ DIGEST_KEEP = ("stack:",)         # digest header lines a local model can use; t
 REPEAT_NOTE = "You already made this exact call; its result is above. Make a different call or answer now."
 HARNESS_SYSTEM = ("You are a coding assistant working in %s. For any 'where is / which file' question, call "
                   "search_project first, then graphify_context or a ranged Read to confirm. Never read a whole "
-                  "large file. Answer with the file path, no preamble.\n%s")
+                  "large file. Answer every part of the question, naming each file path. No preamble.\n%s")
 BARE_SYSTEM = "You are a coding assistant working in %s. Use the tools to look at the code. Answer the question."
 CHAT_DIR = os.path.join(os.path.expanduser("~"), ".cache", "agent-spec", "ollama-chats")
 VERSION = "ollama-agent/1.0"  # traces.py tags any version naming ollama as origin "local"
+# Remote OpenAI-compatible providers, chosen by a model prefix: name -> (url env, default url, key env).
+PROVIDERS = {"groq": ("AGENT_SPEC_GROQ_URL", "https://api.groq.com/openai/v1", "GROQ_API_KEY")}
+KEY_DIR = os.path.join(os.path.expanduser("~"), ".config", "agent-spec")
+RETRY_WAIT_CAP = 120
 
 TOOLS = [
     {"type": "function", "function": {
@@ -124,9 +135,139 @@ def pick_model(requested: str | None, models: list) -> str:
     return names[0]
 
 
+NUDGE = "No tool call is possible here. Answer the question in plain text from what you already have."
+
+
+class ProviderError(Exception):
+    """A remote provider refused the call; `code` is the agent's exit code."""
+
+    def __init__(self, message: str, code: int = 1):
+        super().__init__(message)
+        self.code = code
+
+
+def remote(model: str | None):
+    """(provider, base url, provider model name) for a `<provider>:<name>` model, else None.
+    Ollama names have a colon too (qwen2.5-coder:7b); only a known provider prefix counts."""
+    head, _, name = (model or "").partition(":")
+    if head not in PROVIDERS or not name:
+        return None
+    url_env, default, _ = PROVIDERS[head]
+    return head, (os.environ.get(url_env) or default).rstrip("/"), name
+
+
+def api_key(provider: str) -> str:
+    var = PROVIDERS[provider][2]
+    key = (os.environ.get(var) or "").strip()
+    path = os.path.join(KEY_DIR, var.lower())
+    if not key and os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
+            key = fh.read().strip()
+    return key
+
+
+def openai_messages(messages: list) -> list:
+    """The loop's Ollama-shaped history as OpenAI chat messages: tool calls get ids, arguments
+    become JSON strings, and each tool result answers the oldest unanswered call."""
+    out, pending, n = [], [], 0
+
+    def close_pending():
+        while pending:  # every call must be answered before the next non-tool message
+            out.append({"role": "tool", "tool_call_id": pending.pop(0), "content": "(no result)"})
+
+    for m in messages:
+        role = m["role"]
+        if role == "tool":
+            if pending:
+                out.append({"role": "tool", "tool_call_id": pending.pop(0), "content": m.get("content") or ""})
+            else:
+                out.append({"role": "user", "content": m.get("content") or ""})
+            continue
+        close_pending()
+        if role == "assistant" and m.get("tool_calls"):
+            calls = []
+            for c in m["tool_calls"]:
+                fn = c.get("function") or {}
+                args = fn.get("arguments")
+                n += 1
+                pending.append("call_%d" % n)
+                calls.append({"id": pending[-1], "type": "function", "function": {
+                    "name": fn.get("name", ""), "arguments": args if isinstance(args, str) else json.dumps(args or {})}})
+            out.append({"role": "assistant", "content": m.get("content") or None, "tool_calls": calls})
+        else:
+            out.append({"role": role, "content": m.get("content") or ""})
+    close_pending()
+    return out
+
+
+def openai_chat(provider: str, url: str, model: str, messages: list, on_delta, tools: list) -> dict:
+    """One /chat/completions call, shaped like chat()'s return so the loop is unchanged."""
+    body = {"model": model, "messages": openai_messages(messages), "temperature": 0}
+    if tools:
+        body["tools"] = tools
+    data, waited, nudged = None, 0.0, 0
+    while data is None:
+        req = urllib.request.Request(url + "/chat/completions", data=json.dumps(body).encode(), headers={
+            "Content-Type": "application/json", "Authorization": "Bearer " + api_key(provider),
+            # Groq sits behind Cloudflare, which refuses urllib's default "Python-urllib" agent (1010).
+            "User-Agent": "agent-spec-local-agent/1.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=300) as resp:  # noqa: S310 — ollama.allowed() checked
+                data = json.load(resp)
+        except urllib.error.HTTPError as exc:
+            raw = exc.read().decode("utf-8", "replace")
+            try:
+                err = json.loads(raw).get("error") or {}
+            except ValueError:
+                err = {}
+            if exc.code == 429:
+                try:
+                    wait = max(1.0, float(exc.headers.get("retry-after") or 5))
+                except ValueError:
+                    wait = 5.0
+                if waited + wait <= RETRY_WAIT_CAP:
+                    time.sleep(wait)
+                    waited += wait
+                    continue
+                # A wait past the cap is a quota (Groq's free tier also caps tokens per day): the
+                # caller cannot run now, so exit 3 and let a benchmark stop instead of recording zeros.
+                msg = redact.redact(str(err.get("message") or raw)[:300])
+                raise ProviderError("%s HTTP 429: %s" % (provider, msg), 3)
+            if exc.code == 400 and err.get("code") == "tool_use_failed":
+                # The model wrote a malformed call; its raw text goes to the text-call parser, as
+                # a small Ollama model's JSON-in-prose does.
+                text = str(err.get("failed_generation") or "")
+                if (not tools or not text_tool_calls(text)) and nudged < 2:
+                    # Nothing to run (no tools offered, or no parseable call): ask again for prose
+                    # rather than recording an empty answer.
+                    nudged += 1
+                    body["messages"] = body["messages"] + [{"role": "user", "content": NUDGE}]
+                    continue
+                on_delta(text)
+                return {"message": {"content": text, "tool_calls": []}, "prompt_eval_count": None, "eval_count": None}
+            msg = redact.redact(str(err.get("message") or raw)[:300])
+            raise ProviderError("%s HTTP %d: %s" % (provider, exc.code, msg), 3 if exc.code in (401, 403, 404) else 1)
+        except (urllib.error.URLError, OSError) as exc:
+            raise ProviderError("%s unreachable: %s" % (provider, exc), 3)
+    msg = ((data.get("choices") or [{}])[0].get("message")) or {}
+    content = msg.get("content") or ""
+    if content:
+        on_delta(content)
+    calls = [{"function": {"name": (c.get("function") or {}).get("name", ""),
+                           "arguments": (c.get("function") or {}).get("arguments") or "{}"}}
+             for c in msg.get("tool_calls") or []]
+    usage = data.get("usage") or {}
+    return {"message": {"content": content, "tool_calls": calls}, "prompt_eval_count": usage.get("prompt_tokens"),
+            "eval_count": usage.get("completion_tokens"),
+            "cached_tokens": (usage.get("prompt_tokens_details") or {}).get("cached_tokens")}
+
+
 def chat(url: str, model: str, messages: list, think: bool, on_delta, tools=None) -> dict:
     """Streams one /api/chat turn; text deltas go to on_delta. Returns the assembled message
-    plus Ollama's measured prompt_eval_count / eval_count."""
+    plus Ollama's measured prompt_eval_count / eval_count. A `groq:` model goes to openai_chat."""
+    r = remote(model)
+    if r:
+        return openai_chat(r[0], r[1], r[2], messages, on_delta, TOOLS if tools is None else tools)
     body = {"model": model, "messages": messages, "tools": TOOLS if tools is None else tools, "stream": True,
             "options": {"temperature": 0}}
     if think:
@@ -154,8 +295,11 @@ class Hooks:
     """Runs the commands registered in <workspace>/.cursor/hooks.json, as Cursor does."""
 
     # The harness's own behaviour (digest injection, the input-discipline guard). --bare skips
-    # these and keeps only the observers, so the baseline is traced the same way.
-    HARNESS_EVENTS = ("sessionStart", "preToolUse")
+    # these and keeps only the observers, so the baseline is traced the same way. The secret
+    # quarantine is the exception: --bare still fires preToolUse and honours a quarantine deny,
+    # because a benchmark baseline must never send .env or a private key to the model.
+    HARNESS_EVENTS = ("sessionStart",)
+    BARE_DENY = "quarantine:"
 
     def __init__(self, workspace: str, base: dict, bare: bool = False):
         self.workspace, self.base, self.bare = workspace, base, bare
@@ -179,6 +323,8 @@ class Hooks:
                 outputs.append(json.loads(out) if out.startswith("{") else {})
             except (OSError, subprocess.SubprocessError, ValueError, KeyError):
                 outputs.append({})
+        if self.bare and event == "preToolUse":  # keep only the secret quarantine's denies
+            outputs = [o for o in outputs if self.BARE_DENY in str(o.get("agent_message") or "")]
         return outputs
 
 
@@ -284,18 +430,38 @@ def final_answer(url: str, model: str, think: bool, prompt: str, results: list, 
     return chat(url, model, msgs, think, on_delta, [])
 
 
-def text_tool_call(content: str):
-    """Small models sometimes write the call as JSON text instead of a tool_calls entry."""
-    m = re.search(r"\{.*\}", content or "", re.S)
-    if not m:
-        return None
-    try:
-        obj = json.loads(m.group(0))
-    except ValueError:
-        return None
-    if isinstance(obj, dict) and obj.get("name") in ("Read", "Grep", "graphify_context", "search_project"):
-        return {"function": {"name": obj["name"], "arguments": obj.get("arguments") or obj.get("parameters") or {}}}
-    return None
+TEXT_TOOLS = ("Read", "Grep", "graphify_context", "search_project")
+TEXT_NAMES = {n.lower(): n for n in TEXT_TOOLS}
+
+
+def text_tool_calls(content: str) -> list:
+    """Small models sometimes write calls as JSON text instead of tool_calls entries, and
+    qwen2.5-coder:14b writes several, one per line (live test L07). Every object naming a known
+    tool becomes a call; prose around them is ignored."""
+    calls, dec, text, i = [], json.JSONDecoder(), content or "", 0
+    while True:
+        i = text.find("{", i)
+        if i < 0:
+            return calls
+        try:
+            obj, end = dec.raw_decode(text, i)
+        except ValueError:
+            i += 1
+            continue
+        name = TEXT_NAMES.get(str(obj.get("name") or "").lower()) if isinstance(obj, dict) else None
+        if name:  # gpt-oss on Groq writes "grep" for Grep
+            args = obj.get("arguments") or obj.get("parameters") or {}
+            calls.append({"function": {"name": name, "arguments": args}})
+        i = end
+
+
+def save_history(store: str, messages: list) -> None:
+    """Persist the chat for --resume, redacted and owner-only: prompts and tool output can carry
+    secrets (a pasted key, a file the --bare arm read without the guard)."""
+    fd = os.open(store, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(redact.redact_obj(messages), fh)
+    os.chmod(store, 0o600)
 
 
 def main(argv: list) -> int:
@@ -307,16 +473,32 @@ def main(argv: list) -> int:
     if not opts["prompt"]:
         emit({"type": "result", "result": "error: no prompt"})
         return 2
-    found = ollama.probe(force=True)
-    if not found["reachable"]:
-        emit({"type": "result", "result": "error: Ollama is not reachable at " + ", ".join(ollama.candidates())})
-        return 3
-    url, model = found["url"], pick_model(opts.get("model"), found["models"])
-    think = ollama.supports(found["models"], model, "thinking")
+    requested = opts.get("model") or os.environ.get("AGENT_SPEC_OLLAMA_MODEL")
+    rem = remote(requested)
+    if rem:
+        provider, url, _ = rem
+        if not ollama.allowed(url):
+            emit({"type": "result", "result": "error: %s is a remote model; it receives the prompt and every file the "
+                  "agent reads. Set AGENT_SPEC_ALLOW_REMOTE_MODELS=1 to allow it." % requested})
+            return 3
+        if not api_key(provider):
+            var = PROVIDERS[provider][2]
+            emit({"type": "result", "result": "error: no %s key: set %s or write it to %s" % (
+                provider, var, os.path.join(KEY_DIR, var.lower()))})
+            return 3
+        model, think, tag = requested, False, requested
+    else:
+        found = ollama.probe(force=True)
+        if not found["reachable"]:
+            emit({"type": "result", "result": "error: Ollama is not reachable at " + ", ".join(ollama.candidates())})
+            return 3
+        url, model = found["url"], pick_model(opts.get("model"), found["models"])
+        think = ollama.supports(found["models"], model, "thinking")
+        tag = "ollama:" + model
     conv = opts["resume"] or str(uuid.uuid4())
     gen = str(uuid.uuid4())
     bare = opts["bare"]
-    base = {"conversation_id": conv, "generation_id": gen, "model": "ollama:" + model,
+    base = {"conversation_id": conv, "generation_id": gen, "model": tag,
             "cursor_version": VERSION + ("+bare" if bare else ""), "workspace_roots": [workspace], "cwd": workspace}
     hooks = Hooks(workspace, base, bare)
     tools = [t for t in TOOLS if t["function"]["name"] not in HARNESS_TOOLS] if bare else TOOLS
@@ -336,7 +518,7 @@ def main(argv: list) -> int:
             messages[0]["content"] += "\n\n<skill name=\"%s\">\n%s\n</skill>" % (name, body)
     hooks.fire("beforeSubmitPrompt", {"prompt": opts["prompt"], "attachments": []})
     messages.append({"role": "user", "content": opts["prompt"]})
-    emit({"type": "system", "subtype": "init", "session_id": conv, "request_id": gen, "model": "ollama:" + model})
+    emit({"type": "system", "subtype": "init", "session_id": conv, "request_id": gen, "model": tag})
 
     tokens_in = tokens_out = tool_calls = 0
     step_usage = []
@@ -354,11 +536,12 @@ def main(argv: list) -> int:
         tokens_in += int(reply.get("prompt_eval_count") or 0)
         tokens_out += int(reply.get("eval_count") or 0)
         step_usage.append({"step": loops, "prompt_tokens": reply.get("prompt_eval_count"),
+                           **({"cached_tokens": reply["cached_tokens"]} if reply.get("cached_tokens") is not None else {}),
                            "system_chars": len(messages[0]["content"]) if not last else 0,
                            "schema_chars": len(json.dumps(tools)) if not last else 0,
                            "tool_result_chars": sum(len(m["content"]) for m in messages if m["role"] == "tool") if not last else 0})
         msg = reply.get("message") or {}
-        calls = [] if last else (msg.get("tool_calls") or ([c] if (c := text_tool_call(msg.get("content"))) else []))
+        calls = [] if last else (msg.get("tool_calls") or text_tool_calls(msg.get("content")))
         messages.append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": calls} if calls
                         else {"role": "assistant", "content": msg.get("content") or ""})
         if not calls:
@@ -407,13 +590,16 @@ def main(argv: list) -> int:
 
     hooks.fire("afterAgentResponse", {"text": answer, "input_tokens": tokens_in, "output_tokens": tokens_out})
     hooks.fire("stop", {"status": "completed", "loop_count": loops})
-    with open(store, "w", encoding="utf-8") as fh:
-        json.dump(messages, fh)
-    emit({"type": "result", "result": answer, "session_id": conv, "request_id": gen, "model": "ollama:" + model,
+    save_history(store, messages)
+    emit({"type": "result", "result": answer, "session_id": conv, "request_id": gen, "model": tag,
           "steps": loops, "bare": bare, "tools": tool_calls, "step_usage": step_usage,
           "usage": {"input_tokens": tokens_in, "output_tokens": tokens_out}})
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except ProviderError as exc:  # a refused remote call ends the turn with a readable result line
+        emit({"type": "result", "result": "error: %s" % exc})
+        sys.exit(exc.code)

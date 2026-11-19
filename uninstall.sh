@@ -53,7 +53,7 @@ unregister_workspace() {
   local root="$1"
   root="$(cd "$root" && pwd)"
   echo "Unregister $root"
-  rm -f "$root/.cursor/rules/agent-spec.mdc"
+  rm -f "$root/.cursor/rules/agent-spec.mdc" "$root/.cursor/rules/agent-spec-workflow.mdc"
   rm -f "$root/.cursor/hooks/agent-spec-session-start.py"
   rm -f "$root/.cursor/hooks/agent-spec-pre-tool-use.py"
   rm -f "$root/.cursor/hooks/agent-spec-session-end.py"

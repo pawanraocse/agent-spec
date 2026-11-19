@@ -1,74 +1,74 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-18T21:52:31.497299",
+  "generated": "2026-11-19T22:29:02.750239",
   "generator": "graphify-build",
   "git": {
     "branch": "main",
-    "head_sha": "5a49a75d72c4a6556311c2f60d03c7eac556d073",
+    "head_sha": "4852bfe61318aff3d0ead7e34eeff33cbff86bb9",
     "dirty": true,
     "operation": null,
     "conflicts": 0
   },
   "stack": "Node.js + React",
   "stats": {
-    "files": 209,
-    "internal_edges": 483,
+    "files": 219,
+    "internal_edges": 518,
     "integration_edges": 1,
-    "external_packages": 86,
-    "test_files": 78,
+    "external_packages": 90,
+    "test_files": 84,
     "cycles": 0,
     "services": 2,
     "endpoints": 25,
     "topics": 1,
     "layer_violations": 0,
     "languages": {
-      "python": 144,
-      "typescript": 60,
+      "python": 152,
+      "typescript": 62,
       "javascript": 5
     },
     "layers": {
-      "unknown": 114,
-      "test": 78,
-      "controller": 10,
+      "unknown": 116,
+      "test": 84,
+      "controller": 12,
       "config": 5,
       "util": 2
     },
     "most_depended": [
       [
         "ui-src/src/api/client.ts",
-        35
+        39
       ],
       [
         "bin/aspec_platform/__init__.py",
-        30
+        34
       ],
       [
         "ui-src/src/lib/utils.ts",
-        30
-      ],
-      [
-        "ui-src/src/components/Num.tsx",
-        27
+        32
       ],
       [
         "bin/aspec_platform/common.py",
-        25
+        29
+      ],
+      [
+        "ui-src/src/components/Num.tsx",
+        28
       ],
       [
         "ui-src/src/components/ui/card.tsx",
-        22
+        23
       ],
       [
         "bin/aspec_platform/traces.py",
         21
       ],
       [
-        "bin/aspec_platform/db.py",
-        19
+        "ui-src/src/components/ui/badge.tsx",
+        21
       ],
       [
-        "ui-src/src/components/ui/badge.tsx",
+        "bin/aspec_platform/db.py",
         19
       ],
       [
@@ -79,47 +79,47 @@
     "top_external": [
       [
         "os",
-        125
+        133
       ],
       [
         "json",
-        112
+        119
       ],
       [
         "sys",
-        106
+        114
       ],
       [
         "__future__",
-        80
+        88
       ],
       [
         "subprocess",
-        57
+        64
       ],
       [
         "unittest",
-        54
+        59
       ],
       [
         "tempfile",
-        53
+        57
       ],
       [
         "datetime",
-        52
+        54
       ],
       [
         "re",
-        44
+        46
       ],
       [
         "shutil",
-        37
+        41
       ]
     ]
   },
-  "orphan_count": 68,
+  "orphan_count": 69,
   "services": {
     "examples/mesh-demo/shop-ui": "shop-ui",
     "ui-src": "ui-src"
@@ -139,10 +139,12 @@
     "test framework": [
       [
         "pytest",
-        176
-      ],
+        173
+      ]
+    ],
+    "dependency injection": [
       [
-        "Jest",
+        "Spring annotations",
         3
       ]
     ],
@@ -155,17 +157,11 @@
     "typing": [
       [
         "type hints",
-        108
+        80
       ],
       [
         "generics",
-        12
-      ]
-    ],
-    "logging": [
-      [
-        "console",
-        2
+        29
       ]
     ]
   },
@@ -187,6 +183,19 @@
       "id": "bin/agent-spec-bench.py",
       "type": "file",
       "path": "bin/agent-spec-bench.py",
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py",
+      "type": "file",
+      "path": "bin/agent-spec-cursor-bench.py",
       "lang": "python",
       "layer": "unknown",
       "service": null,
@@ -275,6 +284,26 @@
       "consumes": []
     },
     {
+      "id": "bin/agent-spec-livetest.py",
+      "type": "file",
+      "path": "bin/agent-spec-livetest.py",
+      "lang": "python",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [
+        {
+          "verb": "ANY",
+          "target": "127.0.0.1",
+          "path": "/",
+          "via": "url"
+        }
+      ],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "bin/agent-spec-mcp-filter.py",
       "type": "file",
       "path": "bin/agent-spec-mcp-filter.py",
@@ -309,7 +338,14 @@
       "service": null,
       "endpoints": [],
       "routes": [],
-      "http_calls": [],
+      "http_calls": [
+        {
+          "verb": "ANY",
+          "target": "api.groq.com",
+          "path": "/openai/v1",
+          "via": "url"
+        }
+      ],
       "produces": [],
       "consumes": []
     },
@@ -605,6 +641,32 @@
       "path": "bin/aspec_platform/insights.py",
       "lang": "python",
       "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py",
+      "type": "file",
+      "path": "bin/aspec_platform/livetest_view.py",
+      "lang": "python",
+      "layer": "controller",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py",
+      "type": "file",
+      "path": "bin/aspec_platform/memory_view.py",
+      "lang": "python",
+      "layer": "controller",
       "service": null,
       "endpoints": [],
       "routes": [],
@@ -1358,6 +1420,19 @@
       "consumes": []
     },
     {
+      "id": "tests/test_cursor_bench.py",
+      "type": "test",
+      "path": "tests/test_cursor_bench.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "tests/test_cursor_event.py",
       "type": "test",
       "path": "tests/test_cursor_event.py",
@@ -1703,6 +1778,26 @@
       "consumes": []
     },
     {
+      "id": "tests/test_groq_agent.py",
+      "type": "test",
+      "path": "tests/test_groq_agent.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [
+        {
+          "verb": "ANY",
+          "target": "127.0.0.1",
+          "path": "/openai/v1",
+          "via": "url"
+        }
+      ],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "tests/test_handoff_step.py",
       "type": "test",
       "path": "tests/test_handoff_step.py",
@@ -1846,6 +1941,19 @@
       "consumes": []
     },
     {
+      "id": "tests/test_livetest_view.py",
+      "type": "test",
+      "path": "tests/test_livetest_view.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "tests/test_local_agent.py",
       "type": "test",
       "path": "tests/test_local_agent.py",
@@ -1888,6 +1996,19 @@
       "id": "tests/test_memory.py",
       "type": "test",
       "path": "tests/test_memory.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "tests/test_memory_view.py",
+      "type": "test",
+      "path": "tests/test_memory_view.py",
       "lang": "python",
       "layer": "test",
       "service": null,
@@ -2906,6 +3027,19 @@
       "consumes": []
     },
     {
+      "id": "ui-src/src/pages/Knowledge.test.tsx",
+      "type": "test",
+      "path": "ui-src/src/pages/Knowledge.test.tsx",
+      "lang": "typescript",
+      "layer": "test",
+      "service": "ui-src",
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "ui-src/src/pages/Knowledge.tsx",
       "type": "file",
       "path": "ui-src/src/pages/Knowledge.tsx",
@@ -2937,6 +3071,19 @@
       "path": "ui-src/src/pages/Live.tsx",
       "lang": "typescript",
       "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx",
+      "type": "test",
+      "path": "ui-src/src/pages/LiveTests.tsx",
+      "lang": "typescript",
+      "layer": "test",
       "service": "ui-src",
       "endpoints": [],
       "routes": [],
@@ -3126,6 +3273,21 @@
       "type": "imports"
     },
     {
+      "source": "bin/agent-spec-cursor-bench.py",
+      "target": "bin/aspec_platform/__init__.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py",
+      "target": "bin/aspec_platform/agent_exec.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py",
+      "target": "bin/aspec_platform/common.py",
+      "type": "imports"
+    },
+    {
       "source": "bin/agent-spec-live.py",
       "target": "bin/aspec_platform/__init__.py",
       "type": "imports"
@@ -3151,6 +3313,31 @@
       "type": "imports"
     },
     {
+      "source": "bin/agent-spec-livetest.py",
+      "target": "bin/aspec_platform/__init__.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py",
+      "target": "bin/aspec_platform/common.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py",
+      "target": "bin/aspec_platform/ollama.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py",
+      "target": "bin/aspec_platform/serve.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
       "source": "bin/agent-spec-ollama-agent.py",
       "target": "bin/aspec_platform/__init__.py",
       "type": "imports"
@@ -3168,6 +3355,11 @@
     {
       "source": "bin/agent-spec-ollama-agent.py",
       "target": "bin/aspec_platform/rag_eval.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py",
+      "target": "bin/aspec_platform/redact.py",
       "type": "imports"
     },
     {
@@ -3396,6 +3588,26 @@
       "type": "imports"
     },
     {
+      "source": "bin/aspec_platform/livetest_view.py",
+      "target": "bin/aspec_platform/common.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py",
+      "target": "bin/aspec_platform/common.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py",
+      "target": "bin/aspec_platform/ingest.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py",
+      "target": "bin/aspec_platform/proposals.py",
+      "type": "imports"
+    },
+    {
       "source": "bin/aspec_platform/mesh_view.py",
       "target": "bin/aspec_platform/common.py",
       "type": "imports"
@@ -3533,6 +3745,16 @@
     {
       "source": "bin/aspec_platform/serve.py",
       "target": "bin/aspec_platform/insights.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py",
+      "target": "bin/aspec_platform/livetest_view.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py",
+      "target": "bin/aspec_platform/memory_view.py",
       "type": "imports"
     },
     {
@@ -3906,6 +4128,21 @@
       "type": "imports"
     },
     {
+      "source": "tests/test_groq_agent.py",
+      "target": "bin/aspec_platform/__init__.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_groq_agent.py",
+      "target": "bin/aspec_platform/redact.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_groq_agent.py",
+      "target": "tests/test_local_agent.py",
+      "type": "imports"
+    },
+    {
       "source": "tests/test_handoff_step.py",
       "target": "tests/_run_helpers.py",
       "type": "imports"
@@ -4051,6 +4288,26 @@
       "type": "imports"
     },
     {
+      "source": "tests/test_livetest_view.py",
+      "target": "tests/_api_support.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_livetest_view.py",
+      "target": "bin/aspec_platform/__init__.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_livetest_view.py",
+      "target": "bin/aspec_platform/livetest_view.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_livetest_view.py",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
       "source": "tests/test_local_agent.py",
       "target": "tests/_api_support.py",
       "type": "imports"
@@ -4097,6 +4354,16 @@
     },
     {
       "source": "tests/test_local_agent.py",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_memory_view.py",
+      "target": "tests/_api_support.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_memory_view.py",
       "target": "ui-src/src/api/client.ts",
       "type": "imports"
     },
@@ -5136,6 +5403,16 @@
       "type": "imports"
     },
     {
+      "source": "ui-src/src/pages/Knowledge.test.tsx",
+      "target": "ui-src/src/test/fixtures.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.test.tsx",
+      "target": "ui-src/src/pages/Knowledge.tsx",
+      "type": "imports"
+    },
+    {
       "source": "ui-src/src/pages/Knowledge.tsx",
       "target": "ui-src/src/api/client.ts",
       "type": "imports"
@@ -5147,7 +5424,22 @@
     },
     {
       "source": "ui-src/src/pages/Knowledge.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.tsx",
       "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.tsx",
+      "target": "ui-src/src/lib/utils.ts",
       "type": "imports"
     },
     {
@@ -5216,6 +5508,31 @@
       "type": "imports"
     },
     {
+      "source": "ui-src/src/pages/LiveTests.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
       "source": "ui-src/src/pages/Project.tsx",
       "target": "ui-src/src/api/client.ts",
       "type": "imports"
@@ -5268,6 +5585,11 @@
     {
       "source": "ui-src/src/pages/Project.tsx",
       "target": "ui-src/src/pages/Knowledge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Project.tsx",
+      "target": "ui-src/src/pages/LiveTests.tsx",
       "type": "imports"
     },
     {
@@ -5637,6 +5959,230 @@
       "line": 72
     },
     {
+      "id": "bin/agent-spec-cursor-bench.py::Abort",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 105
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::SkillMissing",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 109
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::eval_dir",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 113
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::load_tasks",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 117
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::find_cli",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 132
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::cli_version",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 144
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::claude_argv",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 152
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::transcript",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 158
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::run_turn",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 166
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 226
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::preflight_claude",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 287
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::skill_marker",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 303
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::build_template",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 319
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::add_harness",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 341
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::register_harness",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 359
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::git",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 375
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::make_workspace",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 380
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::drop_workspace",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 398
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::run_check",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 409
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::is_correct",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 418
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::run_task",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 430
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::one_turn",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 463
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::totals",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 478
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::delta",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 504
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::chat_sums",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 510
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::sign_p",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 526
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::boot_ci",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 535
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::paired_stats",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 550
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::correctness_stats",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 564
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::paired",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 580
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::report",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 595
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::main",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 685
+    },
+    {
       "id": "bin/agent-spec-digest.py::read",
       "type": "symbol",
       "kind": "function",
@@ -5760,14 +6306,14 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 396
+      "line": 403
     },
     {
       "id": "bin/agent-spec-digest.py::cursor_hook",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 404
+      "line": 411
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx",
@@ -5865,133 +6411,140 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 185
+      "line": 193
+    },
+    {
+      "id": "bin/agent-spec-doctor.py::prune_days",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-doctor.py",
+      "line": 214
     },
     {
       "id": "bin/agent-spec-doctor.py::check_memory",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 206
+      "line": 237
     },
     {
       "id": "bin/agent-spec-doctor.py::check_memory_lint",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 215
+      "line": 248
     },
     {
       "id": "bin/agent-spec-doctor.py::native_path",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 232
+      "line": 265
     },
     {
       "id": "bin/agent-spec-doctor.py::check_register",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 241
+      "line": 274
     },
     {
       "id": "bin/agent-spec-doctor.py::check_version",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 260
+      "line": 293
     },
     {
       "id": "bin/agent-spec-doctor.py::_git_hooks_dir",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 273
+      "line": 306
     },
     {
       "id": "bin/agent-spec-doctor.py::check_git_hooks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 283
+      "line": 316
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 301
+      "line": 334
     },
     {
       "id": "bin/agent-spec-doctor.py::check_audit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 318
+      "line": 351
     },
     {
       "id": "bin/agent-spec-doctor.py::check_coexistence",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 333
+      "line": 371
     },
     {
       "id": "bin/agent-spec-doctor.py::check_onboarding",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 346
+      "line": 384
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 355
+      "line": 393
     },
     {
       "id": "bin/agent-spec-doctor.py::mcp_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 381
+      "line": 419
     },
     {
       "id": "bin/agent-spec-doctor.py::check_mcp",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 389
+      "line": 427
     },
     {
       "id": "bin/agent-spec-doctor.py::check_skill_proposals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 432
+      "line": 470
     },
     {
       "id": "bin/agent-spec-doctor.py::run_checks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 455
+      "line": 493
     },
     {
       "id": "bin/agent-spec-doctor.py::line_summary",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 469
+      "line": 507
     },
     {
       "id": "bin/agent-spec-doctor.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 479
+      "line": 517
     },
     {
       "id": "bin/agent-spec-ensure.py::project_root",
@@ -6026,63 +6579,63 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 99
+      "line": 101
     },
     {
       "id": "bin/agent-spec-ensure.py::skills_dir",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 117
+      "line": 119
     },
     {
       "id": "bin/agent-spec-ensure.py::_tree",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 121
+      "line": 123
     },
     {
       "id": "bin/agent-spec-ensure.py::skill_gaps",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 136
+      "line": 138
     },
     {
       "id": "bin/agent-spec-ensure.py::enabled",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 157
+      "line": 159
     },
     {
       "id": "bin/agent-spec-ensure.py::log_event",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 166
+      "line": 168
     },
     {
       "id": "bin/agent-spec-ensure.py::tail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 181
+      "line": 183
     },
     {
       "id": "bin/agent-spec-ensure.py::ensure",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 185
+      "line": 187
     },
     {
       "id": "bin/agent-spec-ensure.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ensure.py",
-      "line": 266
+      "line": 268
     },
     {
       "id": "bin/agent-spec-gate.py::load_state",
@@ -6204,6 +6757,328 @@
       "line": 48
     },
     {
+      "id": "bin/agent-spec-livetest.py::package_root",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 48
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Fail",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 79
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Skip",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 83
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::check",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 87
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Dashboard",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 134
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Dashboard.__init__",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 137
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Dashboard.raw",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 147
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Dashboard.call",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 158
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Dashboard.sse",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 165
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Dashboard.close",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 183
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 188
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.__init__",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 189
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 199
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 204
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 208
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.dashboard",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 212
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 218
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.metrics_file",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 243
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.jsonl",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 246
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.injection_for",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 256
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.ingest",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 259
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.request_detail",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 263
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.tree_contains",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 269
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L01",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 287
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L02",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 307
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L03",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 326
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L04",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 334
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L05",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 344
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L06",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 352
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L07",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 373
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L08",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 387
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L09",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 403
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L10",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 419
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L11",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 431
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L12",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 447
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L13",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 471
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L14",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 487
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L15",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 505
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L16",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 525
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L17",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 538
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::Run.L18",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 544
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::selected",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 555
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::run_matrix",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 568
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::save",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 634
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::markdown",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 647
+    },
+    {
+      "id": "bin/agent-spec-livetest.py::main",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-livetest.py",
+      "line": 661
+    },
+    {
       "id": "bin/agent-spec-mcp-filter.py::flatten_adf",
       "type": "symbol",
       "kind": "function",
@@ -6250,420 +7125,476 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 50
+      "line": 51
     },
     {
       "id": "bin/agent-spec-memory.py::fact_id",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 55
+      "line": 56
     },
     {
       "id": "bin/agent-spec-memory.py::parse_fact",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 60
+      "line": 61
     },
     {
       "id": "bin/agent-spec-memory.py::_today",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 85
+      "line": 86
     },
     {
       "id": "bin/agent-spec-memory.py::valid_date",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 89
+      "line": 90
     },
     {
       "id": "bin/agent-spec-memory.py::fact_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 100
+      "line": 101
     },
     {
       "id": "bin/agent-spec-memory.py::is_active",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 113
+      "line": 114
     },
     {
       "id": "bin/agent-spec-memory.py::_status_tag",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 117
+      "line": 118
     },
     {
       "id": "bin/agent-spec-memory.py::load_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 122
+      "line": 123
     },
     {
       "id": "bin/agent-spec-memory.py::team_source_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 146
+      "line": 147
     },
     {
       "id": "bin/agent-spec-memory.py::valid_team_fact",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 156
+      "line": 157
     },
     {
       "id": "bin/agent-spec-memory.py::load_team_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 175
+      "line": 176
     },
     {
       "id": "bin/agent-spec-memory.py::_key",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 185
+      "line": 186
     },
     {
       "id": "bin/agent-spec-memory.py::team_not_overridden",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 189
+      "line": 190
     },
     {
       "id": "bin/agent-spec-memory.py::_tokens",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 211
+      "line": 212
     },
     {
       "id": "bin/agent-spec-memory.py::_topic",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 216
+      "line": 217
     },
     {
       "id": "bin/agent-spec-memory.py::_is_negative",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 220
+      "line": 221
     },
     {
       "id": "bin/agent-spec-memory.py::_jaccard",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 224
+      "line": 225
     },
     {
       "id": "bin/agent-spec-memory.py::lint_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 230
+      "line": 231
     },
     {
       "id": "bin/agent-spec-memory.py::lint_v2",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 260
+      "line": 261
     },
     {
       "id": "bin/agent-spec-memory.py::_print_findings",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 304
+      "line": 305
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_lint",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 309
+      "line": 310
     },
     {
       "id": "bin/agent-spec-memory.py::index_text",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 320
+      "line": 321
     },
     {
       "id": "bin/agent-spec-memory.py::write_index",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 334
+      "line": 337
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_index",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 340
+      "line": 343
     },
     {
       "id": "bin/agent-spec-memory.py::set_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 356
+      "line": 359
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_propose",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 371
+      "line": 374
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_add",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 390
+      "line": 393
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_list",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 460
+      "line": 465
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 474
+      "line": 479
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_show",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 487
+      "line": 492
     },
     {
       "id": "bin/agent-spec-memory.py::_words",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 501
+      "line": 506
     },
     {
       "id": "bin/agent-spec-memory.py::working_set",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 511
+      "line": 516
     },
     {
       "id": "bin/agent-spec-memory.py::rank_for_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 532
+      "line": 537
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 541
+      "line": 546
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_merge_team",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 584
+      "line": 589
+    },
+    {
+      "id": "bin/agent-spec-memory.py::cmd_forget",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-memory.py",
+      "line": 639
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_prune",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 631
+      "line": 653
     },
     {
       "id": "bin/agent-spec-memory.py::_split_snapshot",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 661
+      "line": 683
     },
     {
       "id": "bin/agent-spec-memory.py::_heading_name",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 679
+      "line": 701
     },
     {
       "id": "bin/agent-spec-memory.py::_sections",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 683
+      "line": 705
     },
     {
       "id": "bin/agent-spec-memory.py::_summary_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 688
+      "line": 710
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_snapshots",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 704
+      "line": 726
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_rotate",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 734
+      "line": 756
     },
     {
       "id": "bin/agent-spec-memory.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 782
+      "line": 804
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::skill_body",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 81
+      "line": 92
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::emit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 94
+      "line": 105
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::parse_args",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 98
+      "line": 109
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::pick_model",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 115
+      "line": 126
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::ProviderError",
+      "type": "symbol",
+      "kind": "class",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 141
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::ProviderError.__init__",
+      "type": "symbol",
+      "kind": "method",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 144
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::remote",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 149
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::api_key",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 159
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::openai_messages",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 169
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 203
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::chat",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 127
+      "line": 265
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks",
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 153
+      "line": 294
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 160
+      "line": 304
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks.fire",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 168
+      "line": 312
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::_inside",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 185
+      "line": 331
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::run_tool",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 191
+      "line": 337
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::project_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 221
+      "line": 367
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::slim_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 253
+      "line": 399
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::compact_history",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 269
+      "line": 415
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::final_answer",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 278
+      "line": 424
     },
     {
-      "id": "bin/agent-spec-ollama-agent.py::text_tool_call",
+      "id": "bin/agent-spec-ollama-agent.py::text_tool_calls",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 287
+      "line": 437
+    },
+    {
+      "id": "bin/agent-spec-ollama-agent.py::save_history",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-ollama-agent.py",
+      "line": 458
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 301
+      "line": 467
     },
     {
       "id": "bin/agent-spec-platform.py::cmd_init",
@@ -8455,42 +9386,56 @@
       "type": "symbol",
       "kind": "class",
       "file": "bin/aspec_platform/db.py",
-      "line": 21
+      "line": 22
     },
     {
       "id": "bin/aspec_platform/db.py::db_path",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/db.py",
-      "line": 25
+      "line": 26
     },
     {
       "id": "bin/aspec_platform/db.py::connect",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/db.py",
-      "line": 33
+      "line": 34
+    },
+    {
+      "id": "bin/aspec_platform/db.py::_wal",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/db.py",
+      "line": 51
     },
     {
       "id": "bin/aspec_platform/db.py::schema_version",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/db.py",
-      "line": 50
+      "line": 65
     },
     {
       "id": "bin/aspec_platform/db.py::migrate",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/db.py",
-      "line": 54
+      "line": 69
+    },
+    {
+      "id": "bin/aspec_platform/db.py::_statements",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/db.py",
+      "line": 98
     },
     {
       "id": "bin/aspec_platform/db.py::open_ready",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/db.py",
-      "line": 71
+      "line": 110
     },
     {
       "id": "bin/aspec_platform/demo_seed.py::seed",
@@ -9207,6 +10152,132 @@
       "line": 266
     },
     {
+      "id": "bin/aspec_platform/livetest_view.py::_dir",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 27
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py::_load",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 31
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py::_alive",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 39
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py::running",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 47
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py::overview",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 67
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py::start",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 80
+    },
+    {
+      "id": "bin/aspec_platform/livetest_view.py::_start",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/livetest_view.py",
+      "line": 91
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_body",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 29
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_files",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 36
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_injections",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 45
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::facts",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 55
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::overview",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 75
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_cli",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 84
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_run",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 91
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_local",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 99
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_fields",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 108
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::_days",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 121
+    },
+    {
+      "id": "bin/aspec_platform/memory_view.py::change",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/memory_view.py",
+      "line": 131
+    },
+    {
       "id": "bin/aspec_platform/mesh_view.py::_spec",
       "type": "symbol",
       "kind": "function",
@@ -9480,74 +10551,67 @@
       "line": 71
     },
     {
-      "id": "bin/aspec_platform/platform_data.py::api_memory",
+      "id": "bin/aspec_platform/platform_data.py::api_experiences",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
       "line": 95
     },
     {
-      "id": "bin/aspec_platform/platform_data.py::api_experiences",
-      "type": "symbol",
-      "kind": "function",
-      "file": "bin/aspec_platform/platform_data.py",
-      "line": 105
-    },
-    {
       "id": "bin/aspec_platform/platform_data.py::_has_artifact",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 120
+      "line": 110
     },
     {
       "id": "bin/aspec_platform/platform_data.py::api_gates",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 133
+      "line": 123
     },
     {
       "id": "bin/aspec_platform/platform_data.py::api_run_events",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 164
+      "line": 154
     },
     {
       "id": "bin/aspec_platform/platform_data.py::api_pricing",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 184
+      "line": 174
     },
     {
       "id": "bin/aspec_platform/platform_data.py::api_doctor",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 204
+      "line": 194
     },
     {
       "id": "bin/aspec_platform/platform_data.py::count_demo_seed",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 232
+      "line": 222
     },
     {
       "id": "bin/aspec_platform/platform_data.py::_hook_coverage",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 242
+      "line": 232
     },
     {
       "id": "bin/aspec_platform/platform_data.py::api_status_bar",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/platform_data.py",
-      "line": 261
+      "line": 251
     },
     {
       "id": "bin/aspec_platform/proposals.py::_spec",
@@ -9613,7 +10677,7 @@
       "line": 138
     },
     {
-      "id": "bin/aspec_platform/proposals.py::_audit",
+      "id": "bin/aspec_platform/proposals.py::audit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/proposals.py",
@@ -9624,14 +10688,14 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/proposals.py",
-      "line": 155
+      "line": 156
     },
     {
       "id": "bin/aspec_platform/proposals.py::decide",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/proposals.py",
-      "line": 161
+      "line": 162
     },
     {
       "id": "bin/aspec_platform/rag_eval.py::golden_path",
@@ -9722,35 +10786,42 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/redact.py",
-      "line": 41
+      "line": 43
     },
     {
       "id": "bin/aspec_platform/redact.py::_entropy",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/redact.py",
-      "line": 45
+      "line": 47
     },
     {
       "id": "bin/aspec_platform/redact.py::_high_entropy",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/redact.py",
-      "line": 52
+      "line": 54
+    },
+    {
+      "id": "bin/aspec_platform/redact.py::_kv_marker",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/redact.py",
+      "line": 73
     },
     {
       "id": "bin/aspec_platform/redact.py::redact",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/redact.py",
-      "line": 71
+      "line": 80
     },
     {
       "id": "bin/aspec_platform/redact.py::redact_obj",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/redact.py",
-      "line": 85
+      "line": 94
     },
     {
       "id": "bin/aspec_platform/retention.py::config",
@@ -10240,210 +11311,210 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 131
+      "line": 132
     },
     {
       "id": "bin/aspec_platform/serve.py::_audit_export",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 138
+      "line": 139
     },
     {
       "id": "bin/aspec_platform/serve.py::_signals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 153
+      "line": 154
     },
     {
       "id": "bin/aspec_platform/serve.py::_use_v2_ui",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 164
+      "line": 165
     },
     {
       "id": "bin/aspec_platform/serve.py::_csp",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 168
+      "line": 169
     },
     {
       "id": "bin/aspec_platform/serve.py::_safe_dist_file",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 173
+      "line": 174
     },
     {
       "id": "bin/aspec_platform/serve.py::_inject_token_meta",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 189
+      "line": 190
     },
     {
       "id": "bin/aspec_platform/serve.py::ApiError",
       "type": "symbol",
       "kind": "class",
       "file": "bin/aspec_platform/serve.py",
-      "line": 198
+      "line": 199
     },
     {
       "id": "bin/aspec_platform/serve.py::ApiError.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/aspec_platform/serve.py",
-      "line": 199
+      "line": 200
     },
     {
       "id": "bin/aspec_platform/serve.py::_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 205
+      "line": 206
     },
     {
       "id": "bin/aspec_platform/serve.py::_first",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 213
+      "line": 214
     },
     {
       "id": "bin/aspec_platform/serve.py::api_health",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 218
+      "line": 219
     },
     {
       "id": "bin/aspec_platform/serve.py::api_runs",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 223
+      "line": 224
     },
     {
       "id": "bin/aspec_platform/serve.py::api_run_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 240
+      "line": 241
     },
     {
       "id": "bin/aspec_platform/serve.py::api_home",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 249
+      "line": 250
     },
     {
       "id": "bin/aspec_platform/serve.py::api_gaps",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 253
+      "line": 254
     },
     {
       "id": "bin/aspec_platform/serve.py::api_tasks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 257
+      "line": 258
     },
     {
       "id": "bin/aspec_platform/serve.py::api_savings",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 269
+      "line": 270
     },
     {
       "id": "bin/aspec_platform/serve.py::api_sessions",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 276
+      "line": 277
     },
     {
       "id": "bin/aspec_platform/serve.py::api_session_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 280
+      "line": 281
     },
     {
       "id": "bin/aspec_platform/serve.py::api_skills",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 291
+      "line": 292
     },
     {
       "id": "bin/aspec_platform/serve.py::api_compare",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 295
+      "line": 296
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_workspaces",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 306
+      "line": 307
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_session",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 310
+      "line": 311
     },
     {
       "id": "bin/aspec_platform/serve.py::console_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 329
+      "line": 330
     },
     {
       "id": "bin/aspec_platform/serve.py::make_handler",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 340
+      "line": 341
     },
     {
       "id": "bin/aspec_platform/serve.py::make_server",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 746
+      "line": 761
     },
     {
       "id": "bin/aspec_platform/serve.py::start_hook_log_backfill",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 756
+      "line": 771
     },
     {
       "id": "bin/aspec_platform/serve.py::ensure_db",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 814
+      "line": 829
     },
     {
       "id": "bin/aspec_platform/serve.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 824
+      "line": 839
     },
     {
       "id": "bin/aspec_platform/session_compare.py::summarize",
@@ -13050,6 +14121,153 @@
       "line": 132
     },
     {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_cursor_bench.py",
+      "line": 47
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.test_report_leaves_out_chats_run_in_one_arm",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 49
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 65
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 80
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.rows",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 85
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.test_compare_harness_registers_one_copy_and_counts_graph_calls",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 89
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.test_both_arms_resume_and_report",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 118
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.test_usage_limit_stops_without_rows",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 150
+    },
+    {
+      "id": "tests/test_cursor_bench.py::CursorBenchTest.test_missing_cli",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 156
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_cursor_bench.py",
+      "line": 214
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 217
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 247
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_runs_each_chat_in_a_fresh_copy_and_reports_paired_stats",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 253
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_stops_when_the_skill_never_loads",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 284
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_expired_login_stops_before_any_chat",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 289
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_login_expiring_mid_run_stops_with_exit_3",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 297
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_runs_bare_against_the_harness",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 306
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_stops_when_the_digest_never_arrives",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 331
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_refuses_to_nest_in_claude_code",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 340
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_allow_nested_runs_without_passing_claudecode_on",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 345
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_other_agents_skip_edit_tasks",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 349
+    },
+    {
       "id": "tests/test_cursor_event.py::fixture",
       "type": "symbol",
       "kind": "function",
@@ -13650,6 +14868,13 @@
       "kind": "function",
       "file": "tests/test_doctor.py",
       "line": 345
+    },
+    {
+      "id": "tests/test_doctor.py::test_doctor_memory_prune_hint_fits_the_limit",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_doctor.py",
+      "line": 365
     },
     {
       "id": "tests/test_ensure.py::workspace",
@@ -14441,6 +15666,139 @@
       "kind": "method",
       "file": "tests/test_graph_symbols.py",
       "line": 133
+    },
+    {
+      "id": "tests/test_groq_agent.py::FakeGroq",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_groq_agent.py",
+      "line": 29
+    },
+    {
+      "id": "tests/test_groq_agent.py::FakeGroq.__init__",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 33
+    },
+    {
+      "id": "tests/test_groq_agent.py::FakeGroq.close",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 68
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_groq_agent.py",
+      "line": 73
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 74
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 91
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_tool_loop_on_groq",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 104
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_resume_sends_a_valid_history",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 129
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_remote_endpoint_needs_opt_in",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 141
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_missing_key_and_key_file",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 147
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_rate_limit_is_waited_out",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 158
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_quota_past_the_wait_cap_exits_3",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 164
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_malformed_tool_call_falls_back_to_text_parser",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 171
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_empty_failed_generation_is_retried_not_answered",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 178
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_lowercase_text_call_runs",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 185
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_bad_key_exits_3_without_echoing_it",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 192
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_unknown_model_exits_3",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 198
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_multi_turn_bench_runs_the_local_agent_on_groq",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 203
+    },
+    {
+      "id": "tests/test_groq_agent.py::GroqAgentTest.test_groq_keys_are_redacted",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_groq_agent.py",
+      "line": 225
     },
     {
       "id": "tests/test_handoff_step.py::HandoffStepTest",
@@ -15542,6 +16900,111 @@
       "line": 184
     },
     {
+      "id": "tests/test_livetest_view.py::load_runner",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_livetest_view.py",
+      "line": 20
+    },
+    {
+      "id": "tests/test_livetest_view.py::report",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_livetest_view.py",
+      "line": 27
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_livetest_view.py",
+      "line": 34
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.write",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 35
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.post",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 42
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.test_empty_project",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 52
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.test_latest_and_history",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 59
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.test_stale_running_file_is_cleared",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 69
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.test_post_rejects_a_bad_tier",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 74
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.test_post_launches_once",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 79
+    },
+    {
+      "id": "tests/test_livetest_view.py::LiveTestApi.test_post_needs_origin_and_token",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 92
+    },
+    {
+      "id": "tests/test_livetest_view.py::RunnerMatrix",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_livetest_view.py",
+      "line": 97
+    },
+    {
+      "id": "tests/test_livetest_view.py::RunnerMatrix.test_cases_are_unique_and_bound",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 98
+    },
+    {
+      "id": "tests/test_livetest_view.py::RunnerMatrix.test_tier_selection",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 108
+    },
+    {
+      "id": "tests/test_livetest_view.py::RunnerMatrix.test_markdown_escapes_pipes",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_livetest_view.py",
+      "line": 117
+    },
+    {
       "id": "tests/test_local_agent.py::FakeOllama",
       "type": "symbol",
       "kind": "class",
@@ -15630,210 +17093,231 @@
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 161
+      "line": 164
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 162
+      "line": 165
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.run_agent",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 179
+      "line": 182
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_tool_loop_fires_cursor_hooks_and_reports_usage",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 193
+      "line": 196
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_guard_deny_is_honoured",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 211
+      "line": 214
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_repeated_call_is_not_rerun",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 219
+      "line": 222
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_older_tool_results_are_compacted",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 225
+      "line": 228
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_budget_exhaustion_still_answers",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 235
+      "line": 238
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_bare_arm_skips_harness_hooks_and_tools",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 241
+      "line": 244
+    },
+    {
+      "id": "tests/test_local_agent.py::OllamaAgentTest.test_several_text_tool_calls_all_run",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 256
+    },
+    {
+      "id": "tests/test_local_agent.py::OllamaAgentTest.test_bare_arm_keeps_the_secret_quarantine",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 265
+    },
+    {
+      "id": "tests/test_local_agent.py::OllamaAgentTest.test_chat_history_is_redacted_and_private",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 279
     },
     {
       "id": "tests/test_local_agent.py::OllamaAgentTest.test_skill_prompt_loads_the_installed_skill",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 253
+      "line": 297
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 268
+      "line": 312
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 269
+      "line": 313
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.tearDown",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 275
+      "line": 319
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest._post",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 282
+      "line": 326
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_status_reports_backend",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 294
+      "line": 338
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_session_streams_to_done",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 299
+      "line": 343
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_unknown_job_and_bad_input",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 310
+      "line": 354
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_console_off_switch",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 316
+      "line": 360
     },
     {
       "id": "tests/test_local_agent.py::ConsoleApiTest.test_stream_needs_token",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 322
+      "line": 366
     },
     {
       "id": "tests/test_local_agent.py::write",
       "type": "symbol",
       "kind": "function",
       "file": "tests/test_local_agent.py",
-      "line": 326
+      "line": 370
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 333
+      "line": 377
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 334
+      "line": 378
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.index",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 348
+      "line": 392
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.test_keyword_scores_and_history",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 354
+      "line": 398
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.test_tuned_weight_is_stored_and_used",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 367
+      "line": 411
     },
     {
       "id": "tests/test_local_agent.py::RagEvalTest.test_weighted_fusion",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 387
+      "line": 431
     },
     {
       "id": "tests/test_local_agent.py::ShowcaseTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 394
+      "line": 438
     },
     {
       "id": "tests/test_local_agent.py::ShowcaseTest.test_overview_with_events_and_bench",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 395
+      "line": 439
     },
     {
       "id": "tests/test_local_agent.py::FirstServeTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_local_agent.py",
-      "line": 439
+      "line": 483
     },
     {
       "id": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_local_agent.py",
-      "line": 440
+      "line": 484
     },
     {
       "id": "tests/test_manage_git_hooks.py::run_manage",
@@ -16053,6 +17537,90 @@
       "line": 303
     },
     {
+      "id": "tests/test_memory_view.py::MemoryApiTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_memory_view.py",
+      "line": 25
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 26
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.post",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 32
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.listing",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 43
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.add",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 46
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.audit",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 51
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.test_add_lists_the_text_and_audits",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 55
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.test_edit_supersedes_and_keeps_history",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 62
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.test_forget_moves_the_file_out",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 78
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.test_prune_preview_deletes_nothing",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 86
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.test_refusals",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 103
+    },
+    {
+      "id": "tests/test_memory_view.py::MemoryApiTest.test_subject_newline_cannot_forge_frontmatter",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_memory_view.py",
+      "line": 117
+    },
+    {
       "id": "tests/test_mesh_api.py::MeshApiTest",
       "type": "symbol",
       "kind": "class",
@@ -16207,32 +17775,39 @@
       "line": 47
     },
     {
-      "id": "tests/test_platform_db.py::DbTest.test_newer_database_is_refused",
+      "id": "tests/test_platform_db.py::DbTest.test_migrate_survives_a_concurrent_writer",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_platform_db.py",
       "line": 55
     },
     {
+      "id": "tests/test_platform_db.py::DbTest.test_newer_database_is_refused",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_platform_db.py",
+      "line": 67
+    },
+    {
       "id": "tests/test_platform_db.py::DbTest.test_env_override_wins",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_platform_db.py",
-      "line": 62
+      "line": 74
     },
     {
       "id": "tests/test_platform_db.py::DbTest.test_fts5_round_trip",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_platform_db.py",
-      "line": 71
+      "line": 83
     },
     {
       "id": "tests/test_platform_db.py::DbTest.test_cli_init_creates_db",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_platform_db.py",
-      "line": 78
+      "line": 90
     },
     {
       "id": "tests/test_platform_guard.py::imports_of",
@@ -16690,67 +18265,74 @@
       "line": 65
     },
     {
+      "id": "tests/test_redact.py::RedactTest.test_file_line_citations_are_not_secrets",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_redact.py",
+      "line": 67
+    },
+    {
       "id": "tests/test_redact.py::RedactTest.test_secret_corpus_is_redacted",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 66
+      "line": 73
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_benign_corpus_is_untouched",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 74
+      "line": 81
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_sha_without_context_is_redacted_rule",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 78
+      "line": 85
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_surrounding_text_and_keys_survive",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 82
+      "line": 89
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_idempotent",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 86
+      "line": 93
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_vendor_prefixed_tokens",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 91
+      "line": 98
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_non_string_inputs",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 100
+      "line": 107
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_redact_obj_nested",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 104
+      "line": 111
     },
     {
       "id": "tests/test_redact.py::RedactTest.test_large_text_is_fast",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_redact.py",
-      "line": 116
+      "line": 123
     },
     {
       "id": "tests/test_resume.py::ResumeTest",
@@ -19690,42 +21272,42 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 31
+      "line": 32
     },
     {
       "id": "ui-src/src/pages/Console.tsx::streamJob",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 38
+      "line": 39
     },
     {
       "id": "ui-src/src/pages/Console.tsx::Console",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 60
+      "line": 61
     },
     {
       "id": "ui-src/src/pages/Console.tsx::patch",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 77
+      "line": 78
     },
     {
       "id": "ui-src/src/pages/Console.tsx::send",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 79
+      "line": 80
     },
     {
       "id": "ui-src/src/pages/Console.tsx::stop",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 133
+      "line": 134
     },
     {
       "id": "ui-src/src/pages/Governance.tsx::Governance",
@@ -19756,11 +21338,32 @@
       "line": 35
     },
     {
+      "id": "ui-src/src/pages/Knowledge.test.tsx::mount",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Knowledge.test.tsx",
+      "line": 7
+    },
+    {
+      "id": "ui-src/src/pages/Knowledge.tsx::FactForm",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Knowledge.tsx",
+      "line": 42
+    },
+    {
+      "id": "ui-src/src/pages/Knowledge.tsx::MemoryPanel",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Knowledge.tsx",
+      "line": 75
+    },
+    {
       "id": "ui-src/src/pages/Knowledge.tsx::Knowledge",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Knowledge.tsx",
-      "line": 27
+      "line": 264
     },
     {
       "id": "ui-src/src/pages/Learning.tsx::Learning",
@@ -19777,25 +21380,88 @@
       "line": 15
     },
     {
+      "id": "ui-src/src/pages/LiveTests.tsx::worst",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 51
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::Ring",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 58
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::Chip",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 82
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::History",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 93
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::Detail",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 116
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::Matrix",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 137
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::OwedItems",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 214
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::RunControls",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 235
+    },
+    {
+      "id": "ui-src/src/pages/LiveTests.tsx::LiveTests",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/LiveTests.tsx",
+      "line": 276
+    },
+    {
       "id": "ui-src/src/pages/Project.tsx::Catalog",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Project.tsx",
-      "line": 21
+      "line": 22
     },
     {
       "id": "ui-src/src/pages/Project.tsx::Panels",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Project.tsx",
-      "line": 70
+      "line": 71
     },
     {
       "id": "ui-src/src/pages/Project.tsx::Project",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Project.tsx",
-      "line": 112
+      "line": 114
     },
     {
       "id": "ui-src/src/pages/Proposals.tsx::Proposals",
@@ -20101,6 +21767,311 @@
       "type": "calls"
     },
     {
+      "source": "bin/agent-spec-cursor-bench.py::eval_dir",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::load_tasks",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::find_cli",
+      "target": "bin/aspec_platform/agent_exec.py::_cursor_cli",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::find_cli",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::cli_version",
+      "target": "bin/aspec_platform/agent_exec.py::_cli_argv",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_turn",
+      "target": "bin/agent-spec-cursor-bench.py::Abort",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_turn",
+      "target": "bin/aspec_platform/agent_exec.py::_cli_argv",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_turn",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_turn",
+      "target": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "target": "bin/agent-spec-cursor-bench.py::Abort",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "target": "bin/aspec_platform/agent_exec.py::_cli_argv",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "target": "bin/agent-spec-cursor-bench.py::claude_argv",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "target": "bin/agent-spec-cursor-bench.py::transcript",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::preflight_claude",
+      "target": "bin/agent-spec-cursor-bench.py::drop_workspace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::preflight_claude",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::preflight_claude",
+      "target": "bin/agent-spec-cursor-bench.py::run_claude_turn",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::build_template",
+      "target": "bin/agent-spec-cursor-bench.py::add_harness",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::build_template",
+      "target": "bin/agent-spec-cursor-bench.py::git",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::add_harness",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::register_harness",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::make_workspace",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::make_workspace",
+      "target": "bin/agent-spec-cursor-bench.py::git",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::drop_workspace",
+      "target": "bin/agent-spec-cursor-bench.py::transcript",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::SkillMissing",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::drop_workspace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::is_correct",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::make_workspace",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::one_turn",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::run_check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/agent-spec-cursor-bench.py::run_turn",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::run_task",
+      "target": "bin/aspec_platform/common.py::utc_now",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::one_turn",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::totals",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::chat_sums",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::paired_stats",
+      "target": "bin/agent-spec-cursor-bench.py::boot_ci",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::paired_stats",
+      "target": "bin/agent-spec-cursor-bench.py::chat_sums",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::paired_stats",
+      "target": "bin/agent-spec-cursor-bench.py::sign_p",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::correctness_stats",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::correctness_stats",
+      "target": "bin/agent-spec-cursor-bench.py::sign_p",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::paired",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/agent-spec-cursor-bench.py::correctness_stats",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/agent-spec-cursor-bench.py::delta",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/agent-spec-cursor-bench.py::paired",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/agent-spec-cursor-bench.py::paired_stats",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/agent-spec-cursor-bench.py::totals",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::build_template",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::cli_version",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::eval_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::find_cli",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::load_tasks",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::preflight_claude",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::register_harness",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::report",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::run_task",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::skill_marker",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/aspec_platform/common.py::utc_now",
+      "type": "calls"
+    },
+    {
       "source": "bin/agent-spec-digest.py::resume_lines",
       "target": "bin/agent-spec-digest.py::_bullets",
       "type": "calls"
@@ -20268,6 +22239,16 @@
     {
       "source": "bin/agent-spec-doctor.py::check_graph",
       "target": "bin/agent-spec-doctor.py::load_json",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-doctor.py::prune_days",
+      "target": "bin/agent-spec-doctor.py::read",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-doctor.py::check_memory",
+      "target": "bin/agent-spec-doctor.py::prune_days",
       "type": "calls"
     },
     {
@@ -20573,6 +22554,576 @@
       "type": "calls"
     },
     {
+      "source": "bin/agent-spec-livetest.py::check",
+      "target": "bin/agent-spec-livetest.py::Fail",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.__init__",
+      "target": "bin/aspec_platform/serve.py::make_server",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.call",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.call",
+      "target": "bin/agent-spec-livetest.py::Dashboard.close",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.call",
+      "target": "bin/agent-spec-livetest.py::Dashboard.raw",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.sse",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.sse",
+      "target": "bin/agent-spec-livetest.py::Dashboard.close",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Dashboard.sse",
+      "target": "bin/agent-spec-livetest.py::Dashboard.raw",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.need_live",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.need_hub",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.dashboard",
+      "target": "bin/agent-spec-livetest.py::Dashboard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.dashboard",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.jsonl",
+      "target": "bin/agent-spec-livetest.py::Run.metrics_file",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.injection_for",
+      "target": "bin/agent-spec-livetest.py::Run.jsonl",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.ingest",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.ingest",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.request_detail",
+      "target": "bin/agent-spec-livetest.py::Dashboard.call",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.request_detail",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.request_detail",
+      "target": "bin/agent-spec-livetest.py::Run.dashboard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L01",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L01",
+      "target": "bin/aspec_platform/ollama.py::candidates",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L01",
+      "target": "bin/aspec_platform/ollama.py::chat_models",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L01",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L01",
+      "target": "bin/aspec_platform/ollama.py::is_embed_model",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L01",
+      "target": "bin/aspec_platform/ollama.py::probe",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L02",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L02",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L02",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L03",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L03",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L03",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L04",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L04",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L04",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L05",
+      "target": "bin/agent-spec-livetest.py::Dashboard.call",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L05",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L05",
+      "target": "bin/agent-spec-livetest.py::Run.dashboard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::Run.ingest",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::Run.injection_for",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L06",
+      "target": "bin/agent-spec-livetest.py::Run.request_detail",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L07",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L07",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L07",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L07",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L08",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L08",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L08",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L08",
+      "target": "bin/agent-spec-livetest.py::Run.request_detail",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L09",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L09",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L09",
+      "target": "bin/agent-spec-livetest.py::Run.jsonl",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L09",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L09",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L09",
+      "target": "bin/agent-spec-livetest.py::Run.tree_contains",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L10",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L10",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L10",
+      "target": "bin/agent-spec-livetest.py::Run.ingest",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L10",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L10",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L10",
+      "target": "bin/agent-spec-livetest.py::Run.tree_contains",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L11",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L11",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L11",
+      "target": "bin/agent-spec-livetest.py::Run.injection_for",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L11",
+      "target": "bin/agent-spec-livetest.py::Run.jsonl",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L11",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L11",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::Dashboard.call",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::Run.dashboard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::Run.ingest",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::Run.request_detail",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L12",
+      "target": "bin/agent-spec-livetest.py::Dashboard.sse",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Dashboard.call",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Run.dashboard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Run.ingest",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Run.request_detail",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L13",
+      "target": "bin/agent-spec-livetest.py::Dashboard.sse",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L14",
+      "target": "bin/agent-spec-livetest.py::Skip",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L14",
+      "target": "bin/agent-spec-livetest.py::Dashboard.call",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L14",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L14",
+      "target": "bin/agent-spec-livetest.py::Run.dashboard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L14",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L14",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L15",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L15",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L15",
+      "target": "bin/agent-spec-livetest.py::Run.injection_for",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L15",
+      "target": "bin/agent-spec-livetest.py::Run.metrics_file",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L15",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L15",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L16",
+      "target": "bin/agent-spec-livetest.py::Run.agent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L16",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L16",
+      "target": "bin/agent-spec-livetest.py::Run.need_hub",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L17",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L17",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L18",
+      "target": "bin/agent-spec-livetest.py::check",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L18",
+      "target": "bin/agent-spec-livetest.py::Run.need_live",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::Run.L18",
+      "target": "bin/agent-spec-livetest.py::Run.sh",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::run_matrix",
+      "target": "bin/agent-spec-livetest.py::Run",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::run_matrix",
+      "target": "bin/agent-spec-livetest.py::Dashboard.close",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::run_matrix",
+      "target": "bin/agent-spec-livetest.py::selected",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::run_matrix",
+      "target": "bin/aspec_platform/common.py::utc_now",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::save",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::main",
+      "target": "bin/aspec_platform/common.py::find_project",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::main",
+      "target": "bin/agent-spec-livetest.py::markdown",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::main",
+      "target": "bin/agent-spec-livetest.py::run_matrix",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-livetest.py::main",
+      "target": "bin/agent-spec-livetest.py::save",
+      "type": "calls"
+    },
+    {
       "source": "bin/agent-spec-mcp-filter.py::filter_jira",
       "target": "bin/agent-spec-mcp-filter.py::extract_terms",
       "type": "calls"
@@ -20725,6 +23276,11 @@
     {
       "source": "bin/agent-spec-memory.py::cmd_lint",
       "target": "bin/agent-spec-memory.py::load_team_facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::index_text",
+      "target": "bin/agent-spec-memory.py::is_active",
       "type": "calls"
     },
     {
@@ -20883,6 +23439,16 @@
       "type": "calls"
     },
     {
+      "source": "bin/agent-spec-memory.py::cmd_forget",
+      "target": "bin/agent-spec-memory.py::load_facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_forget",
+      "target": "bin/agent-spec-memory.py::write_index",
+      "type": "calls"
+    },
+    {
       "source": "bin/agent-spec-memory.py::cmd_prune",
       "target": "bin/agent-spec-memory.py::load_facts",
       "type": "calls"
@@ -20933,6 +23499,46 @@
       "type": "calls"
     },
     {
+      "source": "bin/agent-spec-ollama-agent.py::ProviderError.__init__",
+      "target": "bin/agent-spec-ollama-agent.py::Hooks.__init__",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "target": "bin/agent-spec-ollama-agent.py::ProviderError",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "target": "bin/agent-spec-ollama-agent.py::api_key",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "target": "bin/agent-spec-ollama-agent.py::openai_messages",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "target": "bin/aspec_platform/redact.py::redact",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "target": "bin/agent-spec-ollama-agent.py::text_tool_calls",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::chat",
+      "target": "bin/agent-spec-ollama-agent.py::openai_chat",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::chat",
+      "target": "bin/agent-spec-ollama-agent.py::remote",
+      "type": "calls"
+    },
+    {
       "source": "bin/agent-spec-ollama-agent.py::Hooks.fire",
       "target": "bin/aspec_platform/rag_eval.py::run",
       "type": "calls"
@@ -20978,13 +23584,23 @@
       "type": "calls"
     },
     {
-      "source": "bin/agent-spec-ollama-agent.py::text_tool_call",
-      "target": "bin/aspec_platform/retrieval.py::search",
+      "source": "bin/agent-spec-ollama-agent.py::save_history",
+      "target": "bin/aspec_platform/redact.py::redact_obj",
       "type": "calls"
     },
     {
       "source": "bin/agent-spec-ollama-agent.py::main",
       "target": "bin/agent-spec-ollama-agent.py::Hooks",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::main",
+      "target": "bin/aspec_platform/ollama.py::allowed",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::main",
+      "target": "bin/agent-spec-ollama-agent.py::api_key",
       "type": "calls"
     },
     {
@@ -21041,7 +23657,17 @@
     },
     {
       "source": "bin/agent-spec-ollama-agent.py::main",
+      "target": "bin/agent-spec-ollama-agent.py::remote",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::main",
       "target": "bin/agent-spec-ollama-agent.py::run_tool",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-ollama-agent.py::main",
+      "target": "bin/agent-spec-ollama-agent.py::save_history",
       "type": "calls"
     },
     {
@@ -21061,7 +23687,7 @@
     },
     {
       "source": "bin/agent-spec-ollama-agent.py::main",
-      "target": "bin/agent-spec-ollama-agent.py::text_tool_call",
+      "target": "bin/agent-spec-ollama-agent.py::text_tool_calls",
       "type": "calls"
     },
     {
@@ -23227,6 +25853,11 @@
     },
     {
       "source": "bin/aspec_platform/db.py::connect",
+      "target": "bin/aspec_platform/db.py::_wal",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/db.py::connect",
       "target": "bin/aspec_platform/db.py::db_path",
       "type": "calls"
     },
@@ -23237,7 +25868,17 @@
     },
     {
       "source": "bin/aspec_platform/db.py::migrate",
+      "target": "bin/aspec_platform/db.py::_statements",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/db.py::migrate",
       "target": "bin/aspec_platform/db.py::schema_version",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/db.py::_statements",
+      "target": "bin/aspec_platform/db.py::SchemaError",
       "type": "calls"
     },
     {
@@ -24051,6 +26692,151 @@
       "type": "calls"
     },
     {
+      "source": "bin/aspec_platform/livetest_view.py::_dir",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::running",
+      "target": "bin/aspec_platform/livetest_view.py::_alive",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::running",
+      "target": "bin/aspec_platform/livetest_view.py::_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::running",
+      "target": "bin/aspec_platform/livetest_view.py::_load",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::overview",
+      "target": "bin/aspec_platform/livetest_view.py::_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::overview",
+      "target": "bin/aspec_platform/livetest_view.py::_load",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::overview",
+      "target": "bin/aspec_platform/livetest_view.py::running",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::start",
+      "target": "bin/aspec_platform/livetest_view.py::_start",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::_start",
+      "target": "bin/aspec_platform/livetest_view.py::_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::_start",
+      "target": "bin/aspec_platform/livetest_view.py::running",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/livetest_view.py::_start",
+      "target": "bin/aspec_platform/common.py::utc_now",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::_files",
+      "target": "bin/aspec_platform/ingest.py::_fact_files",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::_files",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::facts",
+      "target": "bin/aspec_platform/memory_view.py::_body",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::facts",
+      "target": "bin/aspec_platform/memory_view.py::_files",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::facts",
+      "target": "bin/aspec_platform/ingest.py::_frontmatter",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::facts",
+      "target": "bin/aspec_platform/memory_view.py::_injections",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::overview",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::overview",
+      "target": "bin/aspec_platform/memory_view.py::facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::_cli",
+      "target": "bin/aspec_platform/proposals.py::_bin",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::_run",
+      "target": "bin/aspec_platform/memory_view.py::_cli",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::_run",
+      "target": "bin/aspec_platform/ingest.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::_local",
+      "target": "bin/aspec_platform/memory_view.py::facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::change",
+      "target": "bin/aspec_platform/memory_view.py::_days",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::change",
+      "target": "bin/aspec_platform/memory_view.py::_fields",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::change",
+      "target": "bin/aspec_platform/memory_view.py::_local",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::change",
+      "target": "bin/aspec_platform/memory_view.py::_run",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::change",
+      "target": "bin/aspec_platform/proposals.py::audit",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/memory_view.py::change",
+      "target": "bin/aspec_platform/ingest.py::run",
+      "type": "calls"
+    },
+    {
       "source": "bin/aspec_platform/mesh_view.py::_spec",
       "target": "bin/aspec_platform/common.py::agent_spec_dir",
       "type": "calls"
@@ -24451,13 +27237,8 @@
       "type": "calls"
     },
     {
-      "source": "bin/aspec_platform/proposals.py::_audit",
+      "source": "bin/aspec_platform/proposals.py::audit",
       "target": "bin/aspec_platform/proposals.py::_spec",
-      "type": "calls"
-    },
-    {
-      "source": "bin/aspec_platform/proposals.py::decide",
-      "target": "bin/aspec_platform/proposals.py::_audit",
       "type": "calls"
     },
     {
@@ -24478,6 +27259,11 @@
     {
       "source": "bin/aspec_platform/proposals.py::decide",
       "target": "bin/aspec_platform/proposals.py::_spec",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/proposals.py::decide",
+      "target": "bin/aspec_platform/proposals.py::audit",
       "type": "calls"
     },
     {
@@ -24592,6 +27378,11 @@
     },
     {
       "source": "bin/aspec_platform/redact.py::_high_entropy",
+      "target": "bin/aspec_platform/redact.py::_marker",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/redact.py::_kv_marker",
       "target": "bin/aspec_platform/redact.py::_marker",
       "type": "calls"
     },
@@ -25414,11 +28205,6 @@
     },
     {
       "source": "bin/aspec_platform/serve.py::make_handler",
-      "target": "bin/aspec_platform/platform_data.py::api_memory",
-      "type": "calls"
-    },
-    {
-      "source": "bin/aspec_platform/serve.py::make_handler",
       "target": "bin/aspec_platform/platform_data.py::api_pricing",
       "type": "calls"
     },
@@ -25454,8 +28240,15 @@
     },
     {
       "source": "bin/aspec_platform/serve.py::make_handler",
+      "target": "bin/aspec_platform/memory_view.py::change",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::make_handler",
       "target": "bin/aspec_platform/mesh_view.py::change",
-      "type": "calls"
+      "type": "calls",
+      "confidence": "low"
     },
     {
       "source": "bin/aspec_platform/serve.py::make_handler",
@@ -25527,6 +28320,11 @@
     {
       "source": "bin/aspec_platform/serve.py::start_hook_log_backfill",
       "target": "bin/aspec_platform/ingest.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::start_hook_log_backfill",
+      "target": "bin/aspec_platform/livetest_view.py::start",
       "type": "calls"
     },
     {
@@ -27671,6 +30469,131 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_cursor_bench.py::CursorBenchTest.test_both_arms_resume_and_report",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.rows",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::CursorBenchTest.test_both_arms_resume_and_report",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::CursorBenchTest.test_both_arms_resume_and_report",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::CursorBenchTest.test_usage_limit_stops_without_rows",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::CursorBenchTest.test_usage_limit_stops_without_rows",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_runs_each_chat_in_a_fresh_copy_and_reports_paired_stats",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_runs_each_chat_in_a_fresh_copy_and_reports_paired_stats",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_stops_when_the_skill_never_loads",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_stops_when_the_skill_never_loads",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_expired_login_stops_before_any_chat",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_expired_login_stops_before_any_chat",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_login_expiring_mid_run_stops_with_exit_3",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_login_expiring_mid_run_stops_with_exit_3",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_runs_bare_against_the_harness",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_runs_bare_against_the_harness",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_stops_when_the_digest_never_arrives",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_stops_when_the_digest_never_arrives",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_refuses_to_nest_in_claude_code",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_refuses_to_nest_in_claude_code",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_allow_nested_runs_without_passing_claudecode_on",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_allow_nested_runs_without_passing_claudecode_on",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
       "source": "tests/test_cursor_event.py::CursorEventTest.one",
       "target": "tests/test_cursor_event.py::fixture",
       "type": "calls"
@@ -29018,6 +31941,96 @@
     {
       "source": "tests/test_graph_symbols.py::SymbolsTest.test_trend_line_counts_symbols",
       "target": "tests/test_graph_symbols.py::SymbolsTest.graph",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::FakeGroq.__init__",
+      "target": "tests/test_local_agent.py::write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.setUp",
+      "target": "tests/test_local_agent.py::write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "target": "tests/test_groq_agent.py::FakeGroq",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_tool_loop_on_groq",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_resume_sends_a_valid_history",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_remote_endpoint_needs_opt_in",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_missing_key_and_key_file",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_missing_key_and_key_file",
+      "target": "tests/test_local_agent.py::write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_rate_limit_is_waited_out",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_quota_past_the_wait_cap_exits_3",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_malformed_tool_call_falls_back_to_text_parser",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_empty_failed_generation_is_retried_not_answered",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_lowercase_text_call_runs",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_bad_key_exits_3_without_echoing_it",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_unknown_model_exits_3",
+      "target": "tests/test_groq_agent.py::GroqAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_multi_turn_bench_runs_the_local_agent_on_groq",
+      "target": "tests/test_groq_agent.py::FakeGroq",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_multi_turn_bench_runs_the_local_agent_on_groq",
+      "target": "tests/test_local_agent.py::write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_groq_agent.py::GroqAgentTest.test_groq_keys_are_redacted",
+      "target": "bin/aspec_platform/redact.py::redact",
       "type": "calls"
     },
     {
@@ -30437,6 +33450,76 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_livetest_view.py::LiveTestApi.post",
+      "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_empty_project",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_latest_and_history",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_latest_and_history",
+      "target": "tests/test_livetest_view.py::report",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_latest_and_history",
+      "target": "tests/test_livetest_view.py::LiveTestApi.write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_stale_running_file_is_cleared",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_stale_running_file_is_cleared",
+      "target": "tests/test_livetest_view.py::LiveTestApi.write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_post_rejects_a_bad_tier",
+      "target": "tests/test_livetest_view.py::LiveTestApi.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_post_launches_once",
+      "target": "tests/test_livetest_view.py::LiveTestApi.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::LiveTestApi.test_post_needs_origin_and_token",
+      "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::RunnerMatrix.test_cases_are_unique_and_bound",
+      "target": "tests/test_livetest_view.py::load_runner",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::RunnerMatrix.test_tier_selection",
+      "target": "tests/test_livetest_view.py::load_runner",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::RunnerMatrix.test_markdown_escapes_pipes",
+      "target": "tests/test_livetest_view.py::load_runner",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_livetest_view.py::RunnerMatrix.test_markdown_escapes_pipes",
+      "target": "tests/test_livetest_view.py::report",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_local_agent.py::FakeOllama.__init__",
       "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
       "type": "calls"
@@ -30599,6 +33682,31 @@
     {
       "source": "tests/test_local_agent.py::OllamaAgentTest.test_bare_arm_skips_harness_hooks_and_tools",
       "target": "tests/test_local_agent.py::OllamaAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_several_text_tool_calls_all_run",
+      "target": "tests/test_local_agent.py::OllamaAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_bare_arm_keeps_the_secret_quarantine",
+      "target": "tests/test_local_agent.py::OllamaAgentTest.run_agent",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_bare_arm_keeps_the_secret_quarantine",
+      "target": "tests/test_local_agent.py::write",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_chat_history_is_redacted_and_private",
+      "target": "tests/test_local_agent.py::FakeOllama",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.test_chat_history_is_redacted_and_private",
+      "target": "bin/aspec_platform/rag_eval.py::run",
       "type": "calls"
     },
     {
@@ -31038,6 +34146,81 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_memory_view.py::MemoryApiTest.post",
+      "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.listing",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.add",
+      "target": "tests/test_memory_view.py::MemoryApiTest.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_add_lists_the_text_and_audits",
+      "target": "tests/test_memory_view.py::MemoryApiTest.add",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_add_lists_the_text_and_audits",
+      "target": "tests/test_memory_view.py::MemoryApiTest.audit",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_add_lists_the_text_and_audits",
+      "target": "tests/test_memory_view.py::MemoryApiTest.listing",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_edit_supersedes_and_keeps_history",
+      "target": "tests/test_memory_view.py::MemoryApiTest.add",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_edit_supersedes_and_keeps_history",
+      "target": "tests/test_memory_view.py::MemoryApiTest.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_forget_moves_the_file_out",
+      "target": "tests/test_memory_view.py::MemoryApiTest.add",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_forget_moves_the_file_out",
+      "target": "tests/test_memory_view.py::MemoryApiTest.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_prune_preview_deletes_nothing",
+      "target": "tests/test_memory_view.py::MemoryApiTest.add",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_prune_preview_deletes_nothing",
+      "target": "tests/test_memory_view.py::MemoryApiTest.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_refusals",
+      "target": "tests/test_memory_view.py::MemoryApiTest.listing",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_refusals",
+      "target": "tests/test_memory_view.py::MemoryApiTest.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory_view.py::MemoryApiTest.test_subject_newline_cannot_forge_frontmatter",
+      "target": "tests/test_memory_view.py::MemoryApiTest.listing",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_mesh_api.py::MeshApiTest.post",
       "target": "tests/_api_support.py::ApiCase.request",
       "type": "calls"
@@ -31171,6 +34354,21 @@
     {
       "source": "tests/test_platform_db.py::DbTest.test_migrate_is_idempotent",
       "target": "bin/aspec_platform/db.py::migrate",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_platform_db.py::DbTest.test_migrate_survives_a_concurrent_writer",
+      "target": "bin/aspec_platform/db.py::connect",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_platform_db.py::DbTest.test_migrate_survives_a_concurrent_writer",
+      "target": "bin/aspec_platform/db.py::migrate",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_platform_db.py::DbTest.test_migrate_survives_a_concurrent_writer",
+      "target": "tests/test_platform_db.py::DbTest.tables",
       "type": "calls"
     },
     {
@@ -31721,6 +34919,11 @@
     {
       "source": "tests/test_receipt.py::test_no_transcript_fails_cleanly",
       "target": "tests/test_receipt.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_redact.py::RedactTest.test_file_line_citations_are_not_secrets",
+      "target": "bin/aspec_platform/redact.py::redact",
       "type": "calls"
     },
     {
@@ -34486,6 +37689,26 @@
       "type": "calls"
     },
     {
+      "source": "ui-src/src/pages/Knowledge.test.tsx::mount",
+      "target": "ui-src/src/test/fixtures.ts::fixtureFetch",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.tsx::FactForm",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.tsx::MemoryPanel",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Knowledge.tsx::Knowledge",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
       "source": "ui-src/src/pages/Learning.tsx::Learning",
       "target": "ui-src/src/lib/utils.ts::copyText",
       "type": "calls"
@@ -34513,6 +37736,56 @@
     {
       "source": "ui-src/src/pages/Live.tsx::Live",
       "target": "ui-src/src/api/traces.ts::useRequests",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::Ring",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::Chip",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::Detail",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::Matrix",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::Matrix",
+      "target": "ui-src/src/pages/LiveTests.tsx::worst",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::OwedItems",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::OwedItems",
+      "target": "ui-src/src/pages/LiveTests.tsx::worst",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::RunControls",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::RunControls",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/LiveTests.tsx::LiveTests",
+      "target": "ui-src/src/lib/utils.ts::relTime",
       "type": "calls"
     },
     {
@@ -34664,51 +37937,55 @@
   "external": [
     [
       "os",
-      125
+      133
     ],
     [
       "json",
-      112
+      119
     ],
     [
       "sys",
-      106
+      114
     ],
     [
       "__future__",
-      80
+      88
     ],
     [
       "subprocess",
-      57
+      64
     ],
     [
       "unittest",
-      54
+      59
     ],
     [
       "tempfile",
-      53
+      57
     ],
     [
       "datetime",
-      52
+      54
     ],
     [
       "re",
-      44
+      46
     ],
     [
       "shutil",
-      37
+      41
     ],
     [
       "time",
-      34
+      38
     ],
     [
       "react",
-      32
+      33
+    ],
+    [
+      "lucide-react",
+      26
     ],
     [
       "collections",
@@ -34719,44 +37996,44 @@
       24
     ],
     [
-      "lucide-react",
-      24
-    ],
-    [
       "_run_helpers",
       22
     ],
     [
-      "argparse",
-      19
+      "@tanstack",
+      22
     ],
     [
-      "@tanstack",
-      19
+      "argparse",
+      21
     ],
     [
       "importlib",
-      17
-    ],
-    [
-      "_api_support",
-      17
+      19
     ],
     [
       "http",
+      19
+    ],
+    [
+      "_api_support",
+      19
+    ],
+    [
+      "urllib",
       16
+    ],
+    [
+      "threading",
+      15
     ],
     [
       "react-router-dom",
       15
     ],
     [
-      "urllib",
-      14
-    ],
-    [
-      "threading",
-      12
+      "glob",
+      11
     ],
     [
       "_ingest_support",
@@ -34767,10 +38044,6 @@
       9
     ],
     [
-      "glob",
-      8
-    ],
-    [
       "",
       7
     ],
@@ -34779,16 +38052,16 @@
       7
     ],
     [
-      "statistics",
-      5
-    ],
-    [
       "vitest",
-      5
+      6
     ],
     [
       "uuid",
-      4
+      5
+    ],
+    [
+      "statistics",
+      5
     ],
     [
       "fcntl",
@@ -34819,6 +38092,14 @@
       4
     ],
     [
+      "@testing-library",
+      4
+    ],
+    [
+      "math",
+      3
+    ],
+    [
       "secrets",
       3
     ],
@@ -34835,12 +38116,12 @@
       3
     ],
     [
-      "@testing-library",
+      "@radix-ui",
       3
     ],
     [
-      "@radix-ui",
-      3
+      "platform",
+      2
     ],
     [
       "fnmatch",
@@ -34853,20 +38134,14 @@
     [
       "io",
       2
-    ],
-    [
-      "math",
-      2
-    ],
-    [
-      "ast",
-      2
     ]
   ],
   "unresolved_imports": {
     "__future__.annotations": [
       "bin/agent-spec-bench.py",
+      "bin/agent-spec-cursor-bench.py",
       "bin/agent-spec-live.py",
+      "bin/agent-spec-livetest.py",
       "bin/agent-spec-ollama-agent.py",
       "bin/agent-spec-platform.py",
       "bin/agent-spec-recall.py",
@@ -34884,12 +38159,10 @@
       "bin/aspec_platform/impact.py",
       "bin/aspec_platform/ingest.py",
       "bin/aspec_platform/insights.py",
+      "bin/aspec_platform/livetest_view.py",
+      "bin/aspec_platform/memory_view.py",
       "bin/aspec_platform/mesh_view.py",
-      "bin/aspec_platform/observe.py",
-      "bin/aspec_platform/ollama.py",
-      "bin/aspec_platform/platform_data.py",
-      "bin/aspec_platform/proposals.py",
-      "bin/aspec_platform/rag_eval.py"
+      "bin/aspec_platform/observe.py"
     ],
     "_api_support.ApiCase": [
       "tests/test_api.py",
@@ -34898,7 +38171,9 @@
       "tests/test_context_budget.py",
       "tests/test_health.py",
       "tests/test_insights.py",
+      "tests/test_livetest_view.py",
       "tests/test_local_agent.py",
+      "tests/test_memory_view.py",
       "tests/test_mesh_api.py",
       "tests/test_o020_framework_proof.py",
       "tests/test_proposals.py",
@@ -34988,6 +38263,9 @@
       "bin/graphify-cli.py",
       "bin/graphify-mesh.py"
     ],
+    "concurrent.futures": [
+      "bin/agent-spec-livetest.py"
+    ],
     "contracts.agent_result": [
       "docs/platform-design/templates/agent/handlers.py"
     ],
@@ -35015,6 +38293,7 @@
       "bin/aspec_platform/traces.py",
       "bin/graphify-build.py",
       "bin/graphify-mesh.py",
+      "tests/test_doctor.py",
       "tests/test_ingest_gates.py",
       "tests/test_retention.py"
     ],
@@ -35061,6 +38340,7 @@
     "http.server": [
       "bin/agent-spec-roi.py",
       "bin/aspec_platform/serve.py",
+      "tests/test_groq_agent.py",
       "tests/test_local_agent.py",
       "tests/test_retrieval.py",
       "tests/test_roi.py"
@@ -35068,6 +38348,7 @@
     "http.server.BaseHTTPRequestHandler": [
       "bin/agent-spec-roi.py",
       "bin/aspec_platform/serve.py",
+      "tests/test_groq_agent.py",
       "tests/test_local_agent.py",
       "tests/test_retrieval.py"
     ],
@@ -35077,6 +38358,7 @@
     ],
     "http.server.ThreadingHTTPServer": [
       "bin/aspec_platform/serve.py",
+      "tests/test_groq_agent.py",
       "tests/test_local_agent.py",
       "tests/test_retrieval.py"
     ],
@@ -35089,10 +38371,12 @@
       "hooks/cursor-pre-tool-use.py",
       "hooks/cursor-session-end.py",
       "hooks/cursor-session-start.py",
+      "tests/test_cursor_bench.py",
       "tests/test_doctor.py",
       "tests/test_graph_git.py",
       "tests/test_graph_mesh.py",
       "tests/test_graph_signals.py",
+      "tests/test_livetest_view.py",
       "tests/test_receipt.py",
       "tests/test_risk.py",
       "tests/test_risk_api.py",
@@ -35105,15 +38389,20 @@
     "statistics.median": [
       "bin/aspec_platform/insights.py"
     ],
+    "test_local_agent.RECORDER": [
+      "tests/test_groq_agent.py"
+    ],
     "test_traces.hook_rows": [
       "tests/test_audit_export.py",
       "tests/test_retrieval.py",
       "tests/test_skill_effect.py"
     ],
     "unittest.mock": [
+      "tests/test_livetest_view.py",
       "tests/test_traces.py"
     ],
     "urllib.error": [
+      "bin/agent-spec-ollama-agent.py",
       "bin/aspec_platform/retrieval.py"
     ],
     "urllib.parse": [
@@ -35134,6 +38423,7 @@
     ],
     "urllib.request": [
       "bin/agent-spec-live.py",
+      "bin/agent-spec-livetest.py",
       "bin/agent-spec-ollama-agent.py",
       "bin/aspec_platform/ollama.py",
       "bin/aspec_platform/retrieval.py",

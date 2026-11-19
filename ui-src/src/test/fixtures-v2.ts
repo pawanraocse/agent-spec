@@ -404,11 +404,14 @@ export const V2_ROUTES: Record<string, unknown> = {
     "fact_id": "20261113-agents-is-a-stale-copy-89bdca",
     "type": "gotcha",
     "subject": ".agents is a stale copy",
+    "body": "The .agents folder is a stale copy of skills/ from 2026-10-01; edit skills/, never .agents.",
+    "status": "active",
+    "created": "2026-11-13",
     "bytes": 288,
     "confidence": null,
     "scope": "local",
     "updated": "2026-11-13",
-    "injections_count": 0
+    "injections_count": 4
    },
    {
     "fact_id": "20261113-cursor-hook-payload-cont-8fe02e",
@@ -424,13 +427,17 @@ export const V2_ROUTES: Record<string, unknown> = {
     "fact_id": "20261113-graphify-misreads-this-r-ea9b24",
     "type": "gotcha",
     "subject": "graphify misreads this repo",
+    "status": "superseded",
     "bytes": 427,
     "confidence": "HIGH",
-    "scope": "local",
+    "scope": "team",
     "updated": "2026-11-13",
     "injections_count": 0
    }
-  ]
+  ],
+  "types": ["decision", "constraint", "gotcha", "reference"],
+  "index": {"bytes": 8683, "limit": 8000},
+  "active": 2
  },
  "/api/experiences": {
   "experiences": []

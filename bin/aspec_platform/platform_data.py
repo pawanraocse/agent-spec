@@ -92,16 +92,6 @@ def api_graph_blast(project: str, file_arg: str, depth: int = 2) -> dict:
     }
 
 
-def api_memory(conn) -> dict:
-    facts = []
-    for row in conn.execute(
-            "SELECT m.fact_id, m.type, m.subject, m.bytes, m.confidence, m.scope, m.updated, "
-            "(SELECT COUNT(*) FROM fact_injections fi WHERE fi.fact_id = m.fact_id) AS injections_count "
-            "FROM memory_facts m ORDER BY m.updated DESC"):
-        facts.append(dict(row))
-    return {"facts": facts}
-
-
 def api_experiences(conn) -> dict:
     out = []
     for row in conn.execute(

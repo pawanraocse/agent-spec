@@ -219,6 +219,17 @@ write_mdc() {
     cat "${REPO_DIR}/CURSOR.md"
   } > "${project_root}/.cursor/rules/agent-spec.mdc"
   echo -e "  ${GREEN}✓${NC} .cursor/rules/agent-spec.mdc (from CURSOR.md v${VERSION})"
+  # Agent Requested, not always-on: a Direct reply never pays for the code-work protocol.
+  {
+    echo "---"
+    echo "description: algosec-agent-spec code-work protocol — graph-first search, implement gates, subagents, tool discipline. Apply before any tool call that searches across files, edits source or runs tests."
+    echo "alwaysApply: false"
+    echo "version: ${VERSION}"
+    echo "---"
+    echo ""
+    cat "${REPO_DIR}/CURSOR-WORKFLOW.md"
+  } > "${project_root}/.cursor/rules/agent-spec-workflow.mdc"
+  echo -e "  ${GREEN}✓${NC} .cursor/rules/agent-spec-workflow.mdc (from CURSOR-WORKFLOW.md, on demand)"
 }
 
 # --- shared team facts (T-053) ---------------------------------------------------------
@@ -384,8 +395,11 @@ EOF
   cp "${REPO_DIR}/bin/agent-spec-doctor.py" "${project_root}/.agent-spec/bin/agent-spec-doctor.py"
   cp "${REPO_DIR}/bin/agent-spec-receipt.py" "${project_root}/.agent-spec/bin/agent-spec-receipt.py"
   cp "${REPO_DIR}/bin/agent-spec-roi.py"     "${project_root}/.agent-spec/bin/agent-spec-roi.py"
-  # Phase 2 platform (stdlib only, DEC-12): backlog/blast-radius/run CLIs + data layer package
-  for b in agent-spec-backlog.py agent-spec-blast-radius agent-spec-run.py agent-spec-platform.py agent-spec-mcp-filter.py agent-spec-risk.py agent-spec-recall.py; do
+  # Phase 2 platform (stdlib only, DEC-12): backlog/blast-radius/run CLIs + data layer package.
+  # The Ollama agent ships too: without it the dashboard Console has no free local backend in a
+  # registered project (agent_exec.OLLAMA_AGENT resolves next to aspec_platform/).
+  for b in agent-spec-backlog.py agent-spec-blast-radius agent-spec-run.py agent-spec-platform.py agent-spec-mcp-filter.py agent-spec-risk.py agent-spec-recall.py \
+           agent-spec-ollama-agent.py agent-spec-bench.py agent-spec-live.py agent-spec-livetest.py; do
     cp "${REPO_DIR}/bin/${b}" "${project_root}/.agent-spec/bin/${b}"
   done
   rm -rf "${project_root}/.agent-spec/bin/aspec_platform"

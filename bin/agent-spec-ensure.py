@@ -79,6 +79,8 @@ def registration_gaps(root, package):
     mdc = read(os.path.join(root, ".cursor", "rules", "agent-spec.mdc"))
     if not mdc:
         gaps.append("no rules file")
+    elif not os.path.isfile(os.path.join(root, ".cursor", "rules", "agent-spec-workflow.mdc")):
+        gaps.append("no workflow rule")
     elif package:
         have = re.search(r"(?m)^version:\s*(\S+)", mdc)
         want = read(os.path.join(package, "VERSION")).strip()

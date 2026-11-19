@@ -24,7 +24,7 @@ def _pct(n, d):
 
 def _model_family(model: str | None) -> str:
     m = (model or "unknown").lower()
-    if m.startswith("ollama:"):
+    if m.startswith(("ollama:", "groq:")):
         return m
     return m.split("-")[0] if m else "unknown"
 

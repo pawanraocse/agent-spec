@@ -43,7 +43,12 @@ export function Stat({ label, value, p, hint }: { label: string; value: React.Re
     <div className="rounded-lg border border-border bg-card px-4 py-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</span>
-        <Prov p={p} />
+        {/* Measured is the norm, so it reads quietly; anything less certain keeps the loud badge. */}
+        {p === "measured" ? (
+          <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground" title="Measured from traces">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-success" />measured
+          </span>
+        ) : <Prov p={p} />}
       </div>
       <div className="mt-1 text-xl font-semibold">
         <Num p={p}>{value}</Num>

@@ -52,6 +52,18 @@ class DbTest(unittest.TestCase):
         db.migrate(conn)
         self.assertEqual(conn.execute("SELECT value FROM meta WHERE key='k'").fetchone()[0], "v")
 
+    def test_migrate_survives_a_concurrent_writer(self):
+        """Writer A read version 0, then writer B migrated first: A must skip, not fail."""
+        a, b = db.connect(self.path), db.connect(self.path)
+        db.migrate(b)
+        real, stale_reads = db.schema_version, [0]  # A's first read predates B's migration
+        db.schema_version = lambda conn: stale_reads.pop() if conn is a and stale_reads else real(conn)
+        try:
+            self.assertEqual(db.migrate(a), db.SCHEMA_VERSION)
+        finally:
+            db.schema_version = real
+        self.assertTrue(REQUIRED_TABLES <= self.tables(a))
+
     def test_newer_database_is_refused(self):
         conn = db.connect(self.path)
         db.migrate(conn)

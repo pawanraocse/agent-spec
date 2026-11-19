@@ -144,7 +144,8 @@ def overview(project: str) -> dict:
             "provenance": "measured"}
 
 
-def _audit(project, row):
+def audit(project, row):
+    """One row in metrics/proposals.jsonl: every dashboard decision on what the agent learns (P3-012)."""
     metrics = os.path.join(_spec(project), "metrics")
     os.makedirs(metrics, exist_ok=True)
     row = dict({"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "by": "dashboard"}, **row)
@@ -206,6 +207,6 @@ def decide(project: str, kind: str, item_id: str, decision: str) -> dict:
             fh.write(json.dumps({"ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "exp_id": item_id,
                                  "status": "promoted" if decision == "promote" else "deprecated"}) + "\n")
         result = decision + "d"
-    _audit(project, {"kind": kind, "id": item_id, "decision": decision, "result": result,
+    audit(project, {"kind": kind, "id": item_id, "decision": decision, "result": result,
                      "title": item.get("title")})
     return {"ok": True, "kind": kind, "id": item_id, "decision": decision, "result": result}

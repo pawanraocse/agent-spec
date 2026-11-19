@@ -113,6 +113,12 @@ export function Shell() {
   const { pathname } = useLocation();
   const inbox = useInboxCounts();
   const s = status.data;
+  const live = useQuery({
+    queryKey: ["livetest-bar"],
+    queryFn: () => apiGet<{ latest: { summary: Record<"PASS" | "FAIL" | "SKIP", number>; finished: string } | null; running: unknown }>("/api/livetest"),
+    refetchInterval: 30000,
+  });
+  const lt = live.data?.latest?.summary;
   const hookOk = s?.hooks ? Object.values(s.hooks).filter(Boolean).length : 0;
   const cov = s?.hook_coverage;
 
@@ -176,6 +182,16 @@ export function Shell() {
         ) : (
           <span title="Registered Cursor hooks">hooks {hookOk}/{s?.hooks ? Object.keys(s.hooks).length : 0}</span>
         )}
+        {live.data?.running ? (
+          <Link to="/project/live" className="flex items-center gap-1.5 text-primary hover:text-foreground">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />live tests running
+          </Link>
+        ) : lt ? (
+          <Link to="/project/live" className={cn("flex items-center gap-1.5 hover:text-foreground", lt.FAIL && "text-danger")}
+            title={`Last live test run: ${lt.PASS} pass, ${lt.FAIL} fail, ${lt.SKIP} skip`}>
+            <span className={cn("h-1.5 w-1.5 rounded-full", lt.FAIL ? "bg-danger" : "bg-success")} />live tests {lt.PASS}/{lt.PASS + lt.FAIL}
+          </Link>
+        ) : null}
         <span className="ml-auto">Ctrl/⌘-K to search</span>
       </footer>
       <Palette open={palette} setOpen={setPalette} />

@@ -171,14 +171,22 @@ def check_digest(ctx):
         return [("digest", "FAIL", "digest --cursor-hook did not emit JSON", ctx.register_cmd())]
     size = len(payload.get("additional_context", "").encode("utf-8"))
     out = [("digest", "OK", "digest JSON valid (%d B)" % size, "")]
-    # Always-on cost: the rule file and the digest ride in every turn. 5 % of a turn's context
+    # Always-on cost: the core rule and the digest ride in every turn. 5 % of a turn's context
     # is the Phase 1 overhead target, so report the context size at which this stays below it.
-    rule = os.path.join(ctx.project, ".cursor", "rules", "agent-spec.mdc")
+    # The workflow rule is Agent Requested and loads only for code work, so it is listed apart.
+    rules = os.path.join(ctx.project, ".cursor", "rules")
+    rule = os.path.join(rules, "agent-spec.mdc")
     rule_bytes = os.path.getsize(rule) if os.path.isfile(rule) else 0
+    workflow = os.path.join(rules, "agent-spec-workflow.mdc")
+    workflow_bytes = os.path.getsize(workflow) if os.path.isfile(workflow) else 0
     tokens = (rule_bytes + size) // 4
     out.append(("footprint", "INFO",
-                "always-on ~%d tokens/turn (rule %d B + digest %d B); under 5%% of a turn once "
-                "context exceeds ~%d tokens" % (tokens, rule_bytes, size, tokens * 20), ""))
+                "always-on ~%d tokens/turn (rule %d B + digest %d B; workflow %d B on demand); "
+                "under 5%% of a turn once context exceeds ~%d tokens"
+                % (tokens, rule_bytes, size, workflow_bytes, tokens * 20), ""))
+    if rule_bytes and not workflow_bytes:
+        out.append(("workflow", "WARN", "no .cursor/rules/agent-spec-workflow.mdc — code work "
+                    "loses graph-first and implement gates", ctx.register_cmd()))
     return out
 
 
@@ -203,12 +211,37 @@ def check_graph(ctx):
     return [("graph", "OK", "graph built %.1f days ago, %s files" % (age, status.get("files", "?")), "")]
 
 
+def prune_days(facts_dir: str, excess: int, now=None):
+    """The smallest `prune --older-than` age that frees `excess` bytes of INDEX.md, or None.
+    Prune removes the oldest non-constraint facts first; each index line is about the same size."""
+    dated = []
+    for name in os.listdir(facts_dir) if os.path.isdir(facts_dir) else []:
+        m = re.match(r"(\d{8})-", name)
+        if not m or not name.endswith(".md"):
+            continue
+        if re.search(r"(?m)^type:\s*constraint\s*$", read(os.path.join(facts_dir, name))[:400]):
+            continue
+        dated.append(datetime.strptime(m.group(1), "%Y%m%d"))
+    total = len([n for n in os.listdir(facts_dir) if n.endswith(".md")]) if os.path.isdir(facts_dir) else 0
+    if not dated or not total:
+        return None
+    per_line = MEMORY_INDEX_LIMIT // max(total, 1)
+    dated.sort()
+    need = -(-excess // max(per_line, 1))  # facts to drop, rounded up
+    if need > len(dated):
+        return None
+    # `--older-than N` drops facts created before today minus N days; same-day facts go together.
+    return max(0, ((now or datetime.now()) - dated[need - 1]).days - 1)
+
+
 def check_memory(ctx):
     index = os.path.join(ctx.spec, "memory", "INDEX.md")
     size = os.path.getsize(index) if os.path.isfile(index) else 0
     if size > MEMORY_INDEX_LIMIT:
-        return [("memory", "WARN", "memory INDEX.md is %d B (limit %d)" % (size, MEMORY_INDEX_LIMIT),
-                 "./.agent-spec/bin/agent-spec-memory.py prune --older-than 90")]
+        days = prune_days(os.path.join(ctx.spec, "memory", "facts"), size - MEMORY_INDEX_LIMIT)
+        fix = ("./.agent-spec/bin/agent-spec-memory.py prune --older-than %d --dry-run" % days if days is not None
+               else "merge or delete facts: ./.agent-spec/bin/agent-spec-memory.py lint")
+        return [("memory", "WARN", "memory INDEX.md is %d B (limit %d)" % (size, MEMORY_INDEX_LIMIT), fix)]
     return [("memory", "OK", "memory index %d B (limit %d)" % (size, MEMORY_INDEX_LIMIT), "")]
 
 
@@ -324,10 +357,15 @@ def check_audit(ctx):
         return [("audit", "WARN", "token audit did not run", "")]
     if "no findings" in res.stdout:
         return [("audit", "OK", "token audit: no findings", "")]
-    findings = [l.split("Finding.", 1)[1].strip() for l in res.stdout.splitlines() if "Finding." in l]
-    fixes = [l.split("Fix.", 1)[1].strip() for l in res.stdout.splitlines() if "Fix." in l]
-    return [("audit", "WARN", "token audit: %s" % (findings[0] if findings else "findings"),
-             fixes[0] if fixes else "./.agent-spec/bin/agent-spec-tokens.py audit")]
+    lines = res.stdout.splitlines()
+    findings = [l.split("Finding.", 1)[1].strip() for l in lines if "Finding." in l]
+    fixes = [l.split("Fix.", 1)[1].strip() for l in lines if "Fix." in l]
+    # check_memory already reports the memory index, with a fix that fits; do not say it twice.
+    pairs = [(f, x) for f, x in zip(findings, fixes) if not f.startswith("memory tree")]
+    if findings and not pairs:
+        return [("audit", "OK", "token audit: no findings beyond the memory check", "")]
+    finding, fix = pairs[0] if pairs else ("findings", "./.agent-spec/bin/agent-spec-tokens.py audit")
+    return [("audit", "WARN", "token audit: %s" % finding, fix)]
 
 
 def check_coexistence(ctx):

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import time
 
 from .common import agent_spec_dir
 
@@ -39,12 +40,26 @@ def connect(path=None, readonly: bool = False) -> sqlite3.Connection:
     else:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         conn = sqlite3.connect(path, timeout=BUSY_TIMEOUT_MS / 1000, check_same_thread=False)
-        conn.execute("PRAGMA journal_mode=WAL")
+        _wal(conn)
         conn.execute("PRAGMA synchronous=NORMAL")
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     conn.execute("PRAGMA busy_timeout=%d" % BUSY_TIMEOUT_MS)
     return conn
+
+
+def _wal(conn: sqlite3.Connection) -> None:
+    """Switch to WAL. SQLite answers a contended switch with SQLITE_BUSY at once instead of calling
+    the busy handler, so two writers opening a fresh database need a retry here."""
+    deadline = time.monotonic() + BUSY_TIMEOUT_MS / 1000
+    while True:
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc) or time.monotonic() > deadline:
+                raise
+            time.sleep(0.02)
 
 
 def schema_version(conn: sqlite3.Connection) -> int:
@@ -57,15 +72,39 @@ def migrate(conn: sqlite3.Connection) -> int:
     if current > SCHEMA_VERSION:
         raise SchemaError("database schema v%d is newer than this harness (v%d); upgrade agent-spec"
                           % (current, SCHEMA_VERSION))
-    for index in range(current, SCHEMA_VERSION):
-        with open(os.path.join(HERE, MIGRATIONS[index]), encoding="utf-8") as fh:
-            script = fh.read()
-        try:
-            conn.executescript("BEGIN;\n%s\nPRAGMA user_version = %d;\nCOMMIT;" % (script, index + 1))
-        except sqlite3.Error:
-            conn.rollback()
-            raise
+    # Two writers can both read the old version before either migrates (the dashboard and a hook
+    # ingest on a fresh database). So each step takes the write lock first and re-reads the version
+    # under it; the loser skips. executescript() would commit the lock away, hence per statement.
+    previous, conn.isolation_level = conn.isolation_level, None
+    try:
+        for index in range(current, SCHEMA_VERSION):
+            with open(os.path.join(HERE, MIGRATIONS[index]), encoding="utf-8") as fh:
+                script = fh.read()
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                if schema_version(conn) <= index:
+                    for statement in _statements(script):
+                        conn.execute(statement)
+                    conn.execute("PRAGMA user_version = %d" % (index + 1))
+                conn.execute("COMMIT")
+            except sqlite3.Error:
+                conn.execute("ROLLBACK")
+                raise
+    finally:
+        conn.isolation_level = previous
     return schema_version(conn)
+
+
+def _statements(script: str):
+    """Split a migration into single statements; complete_statement() keeps trigger bodies whole."""
+    buf = ""
+    for line in script.splitlines(keepends=True):
+        buf += line
+        if sqlite3.complete_statement(buf):
+            yield buf
+            buf = ""
+    if any(l.strip() and not l.strip().startswith("--") for l in buf.splitlines()):
+        raise SchemaError("migration ends mid-statement: %r" % buf.strip()[:80])
 
 
 def open_ready(path=None, readonly: bool = False) -> sqlite3.Connection:

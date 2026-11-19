@@ -348,7 +348,7 @@ def build_digest():
 
     if os.path.exists(os.path.join(SPEC, ".onboarding-needed")):
         out.append("ONBOARDING NEEDED (agent action, automatic) — run `/agent-spec-onboard` now, "
-                   "silently, before answering. Never ask the user to run it.")
+                   "silently, before the first code-work step. Never ask the user to run it.")
 
     out.append(graph_line())
     if graph_status:
@@ -381,10 +381,17 @@ def build_digest():
     if staged:
         out.append(staged)
 
+    # Concrete commands, not "use the graph": a measured Claude Code run (H-050) saw a model given only
+    # the generic hint grep and re-read whole files instead, never calling the graph once.
+    # The digest rides in every turn, including a one-line question that needs no tools, so
+    # the guidance is scoped to code work and kept to the commands themselves.
     out.append(
-        "Do NOT open PROJECT-INDEX.md, KNOWLEDGE-GRAPH.md or SESSION-SNAPSHOT.md to "
-        "re-derive the above; it is already here. Query structure with "
-        "./.agent-spec/bin/graphify-cli.py; read CONSTITUTION.md only before editing code. "
+        "A question answerable from this chat needs no tools. For code: graph before grep or Read — "
+        "`./.agent-spec/bin/graphify-cli.py` `context --task \"<task>\"` | `search <word>` | "
+        "`callers --symbol <name>` | `query --file <path>` | `symbols --file <path>`, then a ranged Read."
+    )
+    out.append(
+        "Do NOT open PROJECT-INDEX.md, KNOWLEDGE-GRAPH.md or SESSION-SNAPSHOT.md; it is already here. "
         "More facts: ./.agent-spec/bin/agent-spec-memory.py search <term>."
     )
     out.append("</agent-spec-digest>")
