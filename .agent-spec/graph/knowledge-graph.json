@@ -1,21 +1,21 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-18T21:04:30.641603",
+  "generated": "2026-11-18T21:52:31.497299",
   "generator": "graphify-build",
   "git": {
     "branch": "main",
-    "head_sha": "2a7a7999297169137c3fd8189d7e5791d1e20982",
+    "head_sha": "5a49a75d72c4a6556311c2f60d03c7eac556d073",
     "dirty": true,
     "operation": null,
     "conflicts": 0
   },
   "stack": "Node.js + React",
   "stats": {
-    "files": 208,
-    "internal_edges": 482,
+    "files": 209,
+    "internal_edges": 483,
     "integration_edges": 1,
-    "external_packages": 82,
+    "external_packages": 86,
     "test_files": 78,
     "cycles": 0,
     "services": 2,
@@ -25,10 +25,10 @@
     "languages": {
       "python": 144,
       "typescript": 60,
-      "javascript": 4
+      "javascript": 5
     },
     "layers": {
-      "unknown": 113,
+      "unknown": 114,
       "test": 78,
       "controller": 10,
       "config": 5,
@@ -119,7 +119,7 @@
       ]
     ]
   },
-  "orphan_count": 67,
+  "orphan_count": 68,
   "services": {
     "examples/mesh-demo/shop-ui": "shop-ui",
     "ui-src": "ui-src"
@@ -139,7 +139,11 @@
     "test framework": [
       [
         "pytest",
-        202
+        176
+      ],
+      [
+        "Jest",
+        3
       ]
     ],
     "error handling": [
@@ -151,11 +155,17 @@
     "typing": [
       [
         "type hints",
-        102
+        108
       ],
       [
         "generics",
-        31
+        12
+      ]
+    ],
+    "logging": [
+      [
+        "console",
+        2
       ]
     ]
   },
@@ -1053,6 +1063,19 @@
       "consumes": [
         "orders.created"
       ]
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs",
+      "type": "file",
+      "path": "examples/mesh-demo/record-video.mjs",
+      "lang": "javascript",
+      "layer": "unknown",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
     },
     {
       "id": "examples/mesh-demo/shop-ui/src/orders.js",
@@ -4064,6 +4087,11 @@
     },
     {
       "source": "tests/test_local_agent.py",
+      "target": "bin/aspec_platform/serve.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_local_agent.py",
       "target": "bin/aspec_platform/showcase.py",
       "type": "imports"
     },
@@ -5802,161 +5830,168 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 99
+      "line": 102
     },
     {
       "id": "bin/agent-spec-doctor.py::check_skills",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 105
+      "line": 108
     },
     {
       "id": "bin/agent-spec-doctor.py::_commands",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 125
+      "line": 128
     },
     {
       "id": "bin/agent-spec-doctor.py::check_hooks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 130
+      "line": 133
     },
     {
       "id": "bin/agent-spec-doctor.py::check_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 158
+      "line": 161
     },
     {
       "id": "bin/agent-spec-doctor.py::check_graph",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 182
+      "line": 185
     },
     {
       "id": "bin/agent-spec-doctor.py::check_memory",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 203
+      "line": 206
     },
     {
       "id": "bin/agent-spec-doctor.py::check_memory_lint",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 212
+      "line": 215
+    },
+    {
+      "id": "bin/agent-spec-doctor.py::native_path",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-doctor.py",
+      "line": 232
     },
     {
       "id": "bin/agent-spec-doctor.py::check_register",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 229
+      "line": 241
     },
     {
       "id": "bin/agent-spec-doctor.py::check_version",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 248
+      "line": 260
     },
     {
       "id": "bin/agent-spec-doctor.py::_git_hooks_dir",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 261
+      "line": 273
     },
     {
       "id": "bin/agent-spec-doctor.py::check_git_hooks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 271
+      "line": 283
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 289
+      "line": 301
     },
     {
       "id": "bin/agent-spec-doctor.py::check_audit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 306
+      "line": 318
     },
     {
       "id": "bin/agent-spec-doctor.py::check_coexistence",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 321
+      "line": 333
     },
     {
       "id": "bin/agent-spec-doctor.py::check_onboarding",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 334
+      "line": 346
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 343
+      "line": 355
     },
     {
       "id": "bin/agent-spec-doctor.py::mcp_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 369
+      "line": 381
     },
     {
       "id": "bin/agent-spec-doctor.py::check_mcp",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 377
+      "line": 389
     },
     {
       "id": "bin/agent-spec-doctor.py::check_skill_proposals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 420
+      "line": 432
     },
     {
       "id": "bin/agent-spec-doctor.py::run_checks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 443
+      "line": 455
     },
     {
       "id": "bin/agent-spec-doctor.py::line_summary",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 457
+      "line": 469
     },
     {
       "id": "bin/agent-spec-doctor.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 467
+      "line": 479
     },
     {
       "id": "bin/agent-spec-ensure.py::project_root",
@@ -6785,60 +6820,67 @@
       "line": 58
     },
     {
+      "id": "bin/agent-spec-recall.py::native_path",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-recall.py",
+      "line": 73
+    },
+    {
       "id": "bin/agent-spec-recall.py::registry",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 72
+      "line": 82
     },
     {
       "id": "bin/agent-spec-recall.py::peers",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 81
+      "line": 91
     },
     {
       "id": "bin/agent-spec-recall.py::overrides",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 103
+      "line": 113
     },
     {
       "id": "bin/agent-spec-recall.py::candidates",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 111
+      "line": 121
     },
     {
       "id": "bin/agent-spec-recall.py::rank_key",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 137
+      "line": 147
     },
     {
       "id": "bin/agent-spec-recall.py::recall",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 142
+      "line": 152
     },
     {
       "id": "bin/agent-spec-recall.py::log_reuse",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 153
+      "line": 163
     },
     {
       "id": "bin/agent-spec-recall.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 165
+      "line": 175
     },
     {
       "id": "bin/agent-spec-receipt.py::load_tokens",
@@ -10390,11 +10432,18 @@
       "line": 756
     },
     {
-      "id": "bin/aspec_platform/serve.py::main",
+      "id": "bin/aspec_platform/serve.py::ensure_db",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
       "line": 814
+    },
+    {
+      "id": "bin/aspec_platform/serve.py::main",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/serve.py",
+      "line": 824
     },
     {
       "id": "bin/aspec_platform/session_compare.py::summarize",
@@ -11634,6 +11683,48 @@
       "kind": "function",
       "file": "examples/mesh-demo/orders-worker/orders_worker/consumer.py",
       "line": 5
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs::esc",
+      "type": "symbol",
+      "kind": "function",
+      "file": "examples/mesh-demo/record-video.mjs",
+      "line": 22
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs::sh",
+      "type": "symbol",
+      "kind": "function",
+      "file": "examples/mesh-demo/record-video.mjs",
+      "line": 23
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs::wait",
+      "type": "symbol",
+      "kind": "function",
+      "file": "examples/mesh-demo/record-video.mjs",
+      "line": 31
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs::terminal",
+      "type": "symbol",
+      "kind": "function",
+      "file": "examples/mesh-demo/record-video.mjs",
+      "line": 40
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs::caption",
+      "type": "symbol",
+      "kind": "function",
+      "file": "examples/mesh-demo/record-video.mjs",
+      "line": 47
+    },
+    {
+      "id": "examples/mesh-demo/record-video.mjs::go",
+      "type": "symbol",
+      "kind": "function",
+      "file": "examples/mesh-demo/record-video.mjs",
+      "line": 57
     },
     {
       "id": "examples/mesh-demo/shop-ui/src/orders.js::getOrder",
@@ -13545,6 +13636,20 @@
       "kind": "function",
       "file": "tests/test_doctor.py",
       "line": 308
+    },
+    {
+      "id": "tests/test_doctor.py::test_registry_paths_from_git_bash_map_to_windows_drives",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_doctor.py",
+      "line": 325
+    },
+    {
+      "id": "tests/test_doctor.py::test_digest_check_does_not_wait_on_an_open_stdin",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_doctor.py",
+      "line": 345
     },
     {
       "id": "tests/test_ensure.py::workspace",
@@ -15715,6 +15820,20 @@
       "kind": "method",
       "file": "tests/test_local_agent.py",
       "line": 395
+    },
+    {
+      "id": "tests/test_local_agent.py::FirstServeTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_local_agent.py",
+      "line": 439
+    },
+    {
+      "id": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 440
     },
     {
       "id": "tests/test_manage_git_hooks.py::run_manage",
@@ -19812,11 +19931,18 @@
       "line": 123
     },
     {
+      "id": "ui-src/src/pages/Showcase.tsx::FirstRun",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Showcase.tsx",
+      "line": 190
+    },
+    {
       "id": "ui-src/src/pages/Showcase.tsx::Showcase",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
-      "line": 189
+      "line": 209
     },
     {
       "id": "ui-src/src/test/fixtures.ts::span",
@@ -20152,6 +20278,11 @@
     {
       "source": "bin/agent-spec-doctor.py::check_memory_lint",
       "target": "bin/agent-spec-doctor.py::Ctx.script",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-doctor.py::check_register",
+      "target": "bin/agent-spec-doctor.py::native_path",
       "type": "calls"
     },
     {
@@ -21292,6 +21423,11 @@
     {
       "source": "bin/agent-spec-platform.py::cmd_hooks",
       "target": "bin/aspec_platform/hook_logs.py::write_payloads",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-recall.py::registry",
+      "target": "bin/agent-spec-recall.py::native_path",
       "type": "calls"
     },
     {
@@ -25394,6 +25530,21 @@
       "type": "calls"
     },
     {
+      "source": "bin/aspec_platform/serve.py::ensure_db",
+      "target": "bin/aspec_platform/db.py::db_path",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::ensure_db",
+      "target": "bin/aspec_platform/db.py::open_ready",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py::main",
+      "target": "bin/aspec_platform/serve.py::ensure_db",
+      "type": "calls"
+    },
+    {
       "source": "bin/aspec_platform/serve.py::main",
       "target": "bin/aspec_platform/common.py::find_project",
       "type": "calls"
@@ -26588,6 +26739,36 @@
     {
       "source": "examples/mesh-demo/orders-worker/orders_worker/consumer.py::run",
       "target": "examples/mesh-demo/acme-common/acme_common/money.py::to_cents",
+      "type": "calls"
+    },
+    {
+      "source": "examples/mesh-demo/record-video.mjs::terminal",
+      "target": "examples/mesh-demo/record-video.mjs::esc",
+      "type": "calls"
+    },
+    {
+      "source": "examples/mesh-demo/record-video.mjs::terminal",
+      "target": "examples/mesh-demo/record-video.mjs::sh",
+      "type": "calls"
+    },
+    {
+      "source": "examples/mesh-demo/record-video.mjs::terminal",
+      "target": "examples/mesh-demo/record-video.mjs::wait",
+      "type": "calls"
+    },
+    {
+      "source": "examples/mesh-demo/record-video.mjs::go",
+      "target": "examples/mesh-demo/record-video.mjs::caption",
+      "type": "calls"
+    },
+    {
+      "source": "examples/mesh-demo/record-video.mjs::go",
+      "target": "examples/mesh-demo/record-video.mjs::terminal",
+      "type": "calls"
+    },
+    {
+      "source": "examples/mesh-demo/record-video.mjs::go",
+      "target": "examples/mesh-demo/record-video.mjs::wait",
       "type": "calls"
     },
     {
@@ -28146,6 +28327,21 @@
     },
     {
       "source": "tests/test_doctor.py::test_mcp_schema_within_budget_ok",
+      "target": "tests/test_doctor.py::Sandbox.install",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_doctor.py::test_digest_check_does_not_wait_on_an_open_stdin",
+      "target": "tests/test_doctor.py::Sandbox",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_doctor.py::test_digest_check_does_not_wait_on_an_open_stdin",
+      "target": "tests/test_doctor.py::Sandbox.close",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_doctor.py::test_digest_check_does_not_wait_on_an_open_stdin",
       "target": "tests/test_doctor.py::Sandbox.install",
       "type": "calls"
     },
@@ -30598,6 +30794,31 @@
     },
     {
       "source": "tests/test_local_agent.py::ShowcaseTest.test_overview_with_events_and_bench",
+      "target": "bin/aspec_platform/showcase.py::overview",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
+      "target": "tests/test_local_agent.py::FakeOllama.close",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
+      "target": "bin/aspec_platform/db.py::connect",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
+      "target": "bin/aspec_platform/db.py::db_path",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
+      "target": "bin/aspec_platform/serve.py::ensure_db",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
       "target": "bin/aspec_platform/showcase.py::overview",
       "type": "calls"
     },
@@ -33706,11 +33927,6 @@
     },
     {
       "source": "ui-src/src/components/Shell.tsx::onKey",
-      "target": "ui-src/src/api/client.ts::apiPost",
-      "type": "calls"
-    },
-    {
-      "source": "ui-src/src/components/Shell.tsx::onKey",
       "target": "ui-src/src/lib/utils.ts::cn",
       "type": "calls"
     },
@@ -34519,12 +34735,12 @@
       19
     ],
     [
-      "_api_support",
+      "importlib",
       17
     ],
     [
-      "importlib",
-      16
+      "_api_support",
+      17
     ],
     [
       "http",
@@ -34599,6 +34815,10 @@
       4
     ],
     [
+      "path",
+      4
+    ],
+    [
       "secrets",
       3
     ],
@@ -34612,10 +34832,6 @@
     ],
     [
       "@playwright",
-      3
-    ],
-    [
-      "path",
       3
     ],
     [
@@ -34873,6 +35089,7 @@
       "hooks/cursor-pre-tool-use.py",
       "hooks/cursor-session-end.py",
       "hooks/cursor-session-start.py",
+      "tests/test_doctor.py",
       "tests/test_graph_git.py",
       "tests/test_graph_mesh.py",
       "tests/test_graph_signals.py",

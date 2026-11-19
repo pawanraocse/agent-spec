@@ -1,25 +1,3 @@
-## 2026-11-18 — Production push: guardrails, dashboard control, RAG fixes (uncommitted)
-
-**Done (todo-plan.md rows closed with docs/evidence/):** H-001 H-002 H-003 H-004 H-010 H-011
-H-012 H-013 H-020 H-021 H-030 H-040 H-041 H-043 H-046 P3-006 P3-007 P3-011 P3-012 P4-011
-P4-012 P4-016 PI-009 PI-011. Partly done: P3-001, H-042, H-044.
-New modules: `bin/agent-spec-risk.py`, `aspec_platform/{views,health,retention,risk_view,audit_export,skill_effect,proposals,mesh_view}.py`.
-New dashboard tabs under Project: Repos, Proposals, Risk, Index health. Also new: a Skill
-effectiveness card, and an Export audit button on each conversation. `bin/agent-spec-check-all.sh`
-was green before the P4-013 work started.
-
-**Done later the same day — P4-013 and P4-015:** `step-end` exits 4 when it records a handoff
-violation. `step-start` returns a pruned `context` (handoff input fields only) for typed steps,
-with pass-through and context byte counts that are shown on the run page. The hub-runner skill text
-is updated, and `tests/test_handoff_step.py` has 10 cases. `bin/agent-spec-check-all.sh` was all
-green after this. Not measured on a live Cursor workflow run.
-
-**Open:** H-005 (needs live Cursor), H-006 (needs a decision: an unmarked lean install vs the
-earlier review rule that a full install stays full), P3-014, PI-010, H-045, H-050–H-053,
-T-042, and a full H-044 pass over the older API.
-
-**Next:** commit on a branch (nothing is committed yet).
-
 ## 2026-11-18 (later) — Goal run: close every open todo-plan row, compact after each
 
 **Done:** P4-013 (step-end exits 4 on a handoff violation), P4-015 (typed steps get a pruned
@@ -60,6 +38,60 @@ machine. Do not push the T-042 tag without the user's go-ahead.
 **Files for next session:** `bin/agent-spec-ensure.py` (`install_is_lean`), `bin/agent-spec-run.py`
 (`_step_context`, `_handoff_schema`), `ui-src/src/pages/Runs.tsx`, `tests/test_handoff_step.py`.
 Nothing is committed.
+
+## 2026-11-18 (night) — Dashboard and skills review goal; Windows install fix; fallback video
+
+The goal "fix all issues and gaps … review the dashboard and skills" was cleared by the user
+with `/goal clear`. It was not completed: the rows left open each need a person or a push
+approval the user has not given.
+
+**Committed on `main` (8 commits ahead of origin, not pushed):** bc0a8e8, 7e472bf, e6237ce,
+2a7a799, f6c8877, b28f9e5, 66e81f2, 5a49a75. Earlier in the session I said "7 commits ahead";
+it is 8 (bc0a8e8 was also unpushed).
+
+**Built**
+- Dashboard: five spaces (Impact, Activity, Ask, Inbox, Project); per-chat Savings tab
+  (`views.session_savings`); honest raw-code payback (subagent-owned spans excluded, chats from
+  Cursor's store with no tool sizes counted as `unmeasured`); fixture skills hidden from the
+  catalog; empty-project first-run card; "Load demo data" button removed (it wrote a table no
+  page reads).
+- `serve.ensure_db` creates the schema before serving (fixed `no such table: steps` on a
+  fresh register).
+- `agent-spec-bench.py --skill NAME` compares plain vs skill arms; the Ollama agent loads a
+  `/agent-spec-*` skill body. Measured on qwen2.5-coder:7b: raw-code-full cost +60–65% input
+  tokens with no accuracy gain, because the local Read is already capped at 80 lines.
+  `raw-code-full` SKILL.md cut to 2,541 B (only what the always-on rule does not carry).
+- H-042: on real Windows Git Bash, `--register` reported a false `FAIL digest`. Cause: the
+  doctor passed its own stdin to `digest --cursor-hook`, which reads stdin to EOF; under any
+  open non-tty stdin that never ends, so the 15 s timeout hit. Fix: `stdin=DEVNULL` in the
+  doctor's `run()`. Also `native_path()` maps Git Bash `/c/...` registry paths on Windows.
+  Windows run: install, register (green, 11 s), unregister, uninstall all exit 0.
+- H-051 closed: `docs/demo/fallback-demo.mp4` (97 s, 751 KB), recorded by
+  `examples/mesh-demo/record-video.mjs` (terminal commands run live, dashboard clicked in
+  Playwright). Recording showed the recorded chat keeps 0 tokens out; `demo.md` no longer
+  claims a saving on that beat. `demo-setup.sh` now sends the blocked edit's prompt through
+  `beforeSubmitPrompt`, so the chat is no longer "(untitled chat)".
+
+**Corrections to my own earlier work**
+- The skill payback box first disagreed with the chat page (a Cursor-store chat had cost
+  but no sizes); fixed by excluding unmeasured chats.
+- The chat cost row first showed the wrong figure; it now shows `cost.resend`.
+- My first H-051 caption claimed the Impact beat showed tokens kept out; the frame showed 0.
+  Corrected before committing.
+
+**Open, each needs the user**
+- H-042: the CI install jobs run only after a push. Push not approved.
+- H-005 (live Cursor chat), H-050 Cursor half, H-045 (new person), H-053 (presenter
+  rehearsals), T-042 (`v3.0.0` tag decision).
+- Housekeeping still owed: memory is over its cap; run `agent-spec-memory.py prune`.
+
+**Load next time:** `todo-plan.md` (open rows), `docs/evidence/H-042.md`,
+`docs/evidence/H-051.md`, `demo.md`.
+
+**Gotchas**
+- Never run `pkill -f agent-spec-live.py` in a command whose own text contains that string;
+  it kills its own shell. Kill by PID from `ss -ltnp`.
+- Windows Python's `expanduser` reads `USERPROFILE`, not `HOME`; a sandbox must set both.
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -136,9 +168,7 @@ writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates
 - check-all green, all 7 gates. Nothing committed. Memory 75 facts against a cap of 40: prune.
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261118-161329.md`. Nothing is deleted.
 - **2026-11-15 (evening) — Local Ollama mode, Console restored, Showcase, RAG eval, per-chat skill savings; committed and pushed** — The user has no usable Cursor plan: every `cursor-agent` prompt returns `ActionRequiredError: You've hit your 
-
 ### 2026-11-18 (end) — goal cleared, session closed
-
 - The goal "complete all and review, compact after each" was cleared by the user with `/goal clear`
   after the remaining rows proved to need a person; it was not completed.
 - Closed this session: P4-013, P4-015, H-006, PI-010, P3-014, H-044, P3-001, H-052.
@@ -151,3 +181,5 @@ writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates
 - Housekeeping owed: memory holds 75 facts against a cap of 40; run `agent-spec-memory.py prune`.
 - Files to load next time: `todo-plan.md` (open rows), `docs/evidence/H-005.md`, `docs/evidence/H-053.md`,
   `examples/mesh-demo/demo-dryrun.py`.
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261118-214550.md`. Nothing is deleted.
+- **2026-11-18 — Production push: guardrails, dashboard control, RAG fixes (uncommitted)** — Done (todo-plan.md rows closed with docs/evidence/): H-001 H-002 H-003 H-004 H-010 H-011
