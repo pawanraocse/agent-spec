@@ -174,9 +174,49 @@ python3 bin/agent-spec-cursor-bench.py --agent cursor --compare harness --only a
 python3 bin/agent-spec-cursor-bench.py --agent cursor --compare harness --repeat 3
 ```
 
+### One harness version against another: did 2.1.0 make short prompts cheaper?
+
+`--compare versions --base-ref <ref>` runs two registered harnesses side by side. The base arm
+is installed from this package as committed at `<ref>` (extracted with `git archive`), and the
+head arm from this checkout. Both arms get the project's graph and memory. Each install runs
+under a throwaway `HOME`, so the bench never adds its copies to your workspace registry or
+re-installs your registered workspaces at an older version. By default it runs two task files:
+
+- `evals/direct-bench.jsonl`: short prompts (a definition, a regex, an error message, a
+  two-turn chat) marked `"tier": "direct"` with `"max_tools": 0`, and one `"small"` lookup with
+  `"max_tools": 1`.
+- `evals/harness-bench.jsonl`: graph tasks (callers, importers, blast radius), memory tasks,
+  and `long-dashboard`, a 9-turn chat whose last two turns ask again for facts from turns 1 to 4.
+
+```bash
+python3 bin/agent-spec-cursor-bench.py --agent cursor --compare versions --base-ref 4852bfe --repeat 2  # 2.0.0 vs this checkout
+python3 bin/agent-spec-cursor-bench.py --agent cursor --compare harness --repeat 3                       # graph and memory savings vs bare
+```
+
+Every report, in every mode, also includes:
+
+| Row or table | What it shows |
+|---|---|
+| Within tool budget (max_tools) | Turns that stayed within the task's tool budget. For direct prompts the budget is 0. |
+| Workflow rule reads (turns) | Turns with a tool call that names `agent-spec-workflow.mdc`. Cursor can also attach the rule without a visible read. |
+| Invented file names | File names an answer cites that exist nowhere in the project or in the task's prompts. This counts hallucinations that the `expect` strings would miss. |
+| Per feature | For graph, memory, long-chat, direct and small: tokens, wall time and correctness per arm, plus the number of chats that called graphify-cli at least once. A graph task with 0 graph chats measures only the rule's overhead. |
+| Accuracy by turn position | Correct answers and invented-file turns in turns 1-2, 3-5 and 6+. Drift and made-up answers show up late in a long chat. |
+
+What 2.1.0 should show against 2.0.0: direct prompts at 0 tool calls, all within budget, and
+all input tokens at or below base. Graph tasks keep their graph chats and their correctness.
+What the harness should show against bare: fewer tokens and less wall time on graph tasks, and
+no more invented file names or late-turn misses in `long-dashboard` than bare.
+
 ## Adding a case
 
-Add a row to `CASES` in `bin/agent-spec-livetest.py` (id, tier, per-model, area, owed item,
+Bench tasks: one JSON object per line in an `evals/*.jsonl` file, with `id`, `turns` (each one a
+`prompt` with `expect`, `expect_any` or `check`), and optionally `feature` (graph, memory,
+long-chat) or `tier` (direct, small), `max_tools` (per task or per turn) and `edits: true`. Take
+expected answers from the graph and confirm them with grep, so the ground truth is not the
+model's own guess.
+
+Live-test cases: add a row to `CASES` in `bin/agent-spec-livetest.py` (id, tier, per-model, area, owed item,
 title, pass criterion) and a method of the same name on `Run`. Raise `Fail` with a message that
 names the observed value, and `Skip` when a prerequisite is missing. `tests/test_livetest_view.py`
 checks that every row has a method.

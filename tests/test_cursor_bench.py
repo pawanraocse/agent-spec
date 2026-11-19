@@ -22,6 +22,9 @@ if os.environ.get("FAKE_CWD_LOG"):
     with open(os.environ["FAKE_CWD_LOG"], "a") as fh:
         fh.write(json.dumps({"cwd": os.getcwd(), "rules": os.path.isfile(".cursor/rules/agent-spec.mdc"),
                              "hooks": os.path.isfile(".cursor/hooks.json"),
+                             "workflow": os.path.isfile(".cursor/rules/agent-spec-workflow.mdc"),
+                             "digest_bytes": os.path.getsize(".agent-spec/bin/agent-spec-digest.py")
+                             if os.path.isfile(".agent-spec/bin/agent-spec-digest.py") else 0,
                              "memory": os.path.isdir(".agent-spec/memory/facts"),
                              "onboarding": os.path.exists(".agent-spec/.onboarding-needed")}) + "\n")
 if os.environ.get("FAKE_LIMIT"):
@@ -34,11 +37,15 @@ if prompt.startswith("/agent-spec-raw-code-full"):
                       "tool_call": {"readToolCall": {"args": {"path": "~/.cursor/skills/agent-spec-raw-code-full/SKILL.md"}}}}))
 print(json.dumps({"type": "tool_call", "subtype": "started", "session_id": session,
                   "tool_call": {"readToolCall": {"args": {"path": "x.py"}}}}))
+if os.path.isfile(".cursor/rules/agent-spec-workflow.mdc") and "--resume" not in argv:
+    print(json.dumps({"type": "tool_call", "subtype": "started", "session_id": session,
+                      "tool_call": {"readToolCall": {"args": {"path": ".cursor/rules/agent-spec-workflow.mdc"}}}}))
 if os.path.isfile(".cursor/rules/agent-spec.mdc"):
     print(json.dumps({"type": "tool_call", "subtype": "started", "session_id": session, "tool_call": {
         "shellToolCall": {"args": {"command": "./.agent-spec/bin/graphify-cli.py callers --symbol f"}}}}))
 resumed = "--resume" in argv
-print(json.dumps({"type": "result", "session_id": session, "result": "It is savings.py, 152 B, /api/savings in serve.py",
+answer = "It is savings.py, 152 B, /api/savings in serve.py" + (" and made_up_helper.py" if os.environ.get("FAKE_PHANTOM") else "")
+print(json.dumps({"type": "result", "session_id": session, "result": answer,
                   "usage": {"inputTokens": 100 + (900 if resumed else 0), "outputTokens": 10,
                             "cacheReadTokens": 50, "cacheWriteTokens": 0}}))
 '''
@@ -115,6 +122,105 @@ class CursorBenchTest(unittest.TestCase):
         self.assertIn("| Graph calls (graphify-cli) | 0 | 2 |", proc.stdout)
         self.assertEqual([n for n in os.listdir(self.tmp) if n.startswith("aspec-claude-bench-")], [])
 
+    def _mod(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("cbench", SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_phantom_names_flag_files_the_project_does_not_have(self):
+        mod = self._mod()
+        known = {"serve.py", "savings.py", "readme.md"}
+        got = mod.phantom_names("See bin/aspec_platform/serve.py, routes.py, Node.js, README.md and new.py",
+                                known, {"new.py"})
+        self.assertEqual(got, ["routes.py"])
+
+    def test_report_breaks_out_features_budgets_and_turn_position(self):
+        mod = self._mod()
+
+        def row(task, arm, turn, feature, correct, tools=0, budget=None, phantom=(), graph=0):
+            return {"task": task, "repeat": 1, "arm": arm, "turn": turn, "correct": correct, "feature": feature,
+                    "usage": {"inputTokens": 100}, "tools": tools, "seconds": 1.0, "graph_calls": graph,
+                    "tools_ok": None if budget is None else tools <= budget, "phantom": list(phantom)}
+        rows = [row("d", "bare", 1, "direct", True, 0, 0), row("d", "harness", 1, "direct", True, 2, 0),
+                row("g", "bare", 1, "graph", True, 3), row("g", "harness", 1, "graph", True, 1, graph=1)]
+        rows += [row("l", "bare", n, "long-chat", n < 6, phantom=["x.py"] if n >= 6 else ()) for n in range(1, 8)]
+        rows += [row("l", "harness", n, "long-chat", True) for n in range(1, 8)]
+        text = mod.report(rows, {"agent": "cursor", "compare": "harness", "run_id": "r", "ts": "t", "cli_version": "v",
+                                 "model": "m", "tasks": 3, "turns": 9, "repeat": 1, "os": "x"}, "s")
+        self.assertIn("| Within tool budget (max_tools) | 1/1 | 0/1 | |", text)
+        self.assertIn("| graph | 100 | 100 | +0% | 1.0 | 1.0 | 1/1 | 1/1 | 0/1 | 1/1 | 0 | 0 |", text)
+        self.assertIn("| turns 6+ | 0/2, 2 invented | 2/2, 0 invented |", text)
+        self.assertIn("| Invented file names | 2 | 0 |", text)
+
+    def _git_project(self):
+        for argv in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x",
+                                                     "--allow-empty"]):
+            subprocess.run(["git"] + argv, cwd=self.project, check=True, capture_output=True)
+        os.makedirs(os.path.join(self.project, ".agent-spec", "memory", "facts"))
+        os.makedirs(os.path.join(self.project, ".agent-spec", "graph"))
+        with open(os.path.join(self.project, ".agent-spec", "graph", "knowledge-graph.json"), "w") as fh:
+            fh.write("{}")
+
+    def test_compare_versions_installs_each_arm_from_its_own_ref(self):
+        base = "4852bfe"  # v2.0.0: one always-on rule, no workflow rule
+        if subprocess.run(["git", "-C", REPO, "cat-file", "-e", base + "^{commit}"], capture_output=True).returncode:
+            self.skipTest("history for %s not in this clone" % base)
+        self._git_project()
+        # A user's own registered workspace: the bench's installs must neither list nor refresh it.
+        home = os.path.join(self.tmp, "home")
+        mine = os.path.join(self.tmp, "mine")
+        os.makedirs(os.path.join(home, ".cursor", "skills"))
+        os.makedirs(mine)
+        registry = os.path.join(home, ".cursor", "skills", ".algosec-agent-spec-projects")
+        with open(registry, "w") as fh:
+            fh.write(mine + "\n")
+        cwd_log = os.path.join(self.tmp, "cwd.log")
+        env = dict(os.environ, AGENT_SPEC_FAKE_CURSOR_AGENT=self.fake, FAKE_LOG=self.log, FAKE_CWD_LOG=cwd_log,
+                   TMPDIR=self.tmp, FAKE_PHANTOM="1", HOME=home)
+        proc = subprocess.run([sys.executable, SCRIPT, "--project", self.project, "--tasks", self.tasks,
+                               "--compare", "versions", "--base-ref", base], capture_output=True, text=True,
+                              env=env, timeout=300)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        with open(cwd_log) as fh:
+            seen = [json.loads(x) for x in fh]
+        self.assertTrue(all(x["rules"] and x["hooks"] and x["memory"] for x in seen), seen)
+        self.assertEqual(sorted(x["workflow"] for x in seen), [False, False, True, True])
+        digests = {x["workflow"]: x["digest_bytes"] for x in seen}
+        self.assertNotEqual(digests[False], digests[True], "each arm runs its own version's digest")
+        rows = self.rows()
+        self.assertEqual(sorted({r["arm"] for r in rows}), ["base", "head"])
+        self.assertEqual({r["arm"]: r["workflow_read"] for r in rows if r["turn"] == 1},
+                         {"base": False, "head": True})
+        self.assertTrue(all("made_up_helper.py" in r["phantom"] for r in rows), rows)
+        self.assertIn("harness at 4852bfe", proc.stdout)
+        self.assertIn("| Metric | Base 4852bfe | Head | Change |", proc.stdout)
+        self.assertIn("| Workflow rule reads (turns) | 0 | 1 |", proc.stdout)
+        with open(registry) as fh:
+            self.assertEqual(fh.read(), mine + "\n", "the bench must not add its copies to the user's registry")
+        self.assertFalse(os.path.exists(os.path.join(mine, ".cursor")), "the bench must not refresh user workspaces")
+        self.assertEqual([n for n in os.listdir(self.tmp) if n.startswith("aspec-claude-bench-")], [])
+
+    def test_compare_versions_refuses_an_unknown_ref(self):
+        self._git_project()
+        env = dict(os.environ, AGENT_SPEC_FAKE_CURSOR_AGENT=self.fake, FAKE_LOG=self.log)
+        proc = subprocess.run([sys.executable, SCRIPT, "--project", self.project, "--tasks", self.tasks,
+                               "--compare", "versions", "--base-ref", "no-such-ref-xyz"], capture_output=True,
+                              text=True, env=env, timeout=60)
+        self.assertEqual(proc.returncode, 2)
+        self.assertIn("unknown git ref", proc.stderr)
+
+    def test_task_files_parse_and_direct_tasks_carry_a_budget(self):
+        mod = self._mod()
+        direct = mod.load_tasks(mod.DIRECT_TASKS, None)
+        self.assertGreaterEqual(len(direct), 5)
+        self.assertTrue(all(t.get("max_tools") is not None and t.get("tier") for t in direct))
+        both = mod.load_tasks(mod.DIRECT_TASKS + "," + mod.HARNESS_TASKS, None, edits=True)
+        self.assertEqual(len(both), len(direct) + len(mod.load_tasks(mod.HARNESS_TASKS, None, edits=True)))
+        longest = max(len(t["turns"]) for t in mod.load_tasks(mod.HARNESS_TASKS, None))
+        self.assertGreaterEqual(longest, 8, "a long chat measures accuracy late in the conversation")
+
     def test_both_arms_resume_and_report(self):
         proc = self.run_bench()
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -172,7 +278,8 @@ if os.environ.get("CLAUDECODE"):
 with open(os.environ["FAKE_LOG"], "a") as fh:
     fh.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "claude_md": os.path.exists("CLAUDE.md"),
                          "graph": os.path.isdir(".agent-spec/graph"), "run_state": os.path.isdir(".agent-spec/platform"),
-                         "skill": os.path.isdir(".claude/skills")}) + "\n")
+                         "skill": os.path.isdir(".claude/skills"),
+                         "workflow": os.path.isfile(".cursor/rules/agent-spec-workflow.mdc")}) + "\n")
 with open(os.environ["FAKE_LOG"]) as fh:
     ncall = sum(1 for _ in fh)
 prompt = argv[-1]
@@ -224,7 +331,8 @@ class ClaudeBenchTest(unittest.TestCase):
             fh.write('---\nname: x\n---\n\n# x\n\nGoverns every reply and tool call until "stop".\n')
         self.project = os.path.join(self.tmp, "proj")
         os.makedirs(self.project)
-        for name, body in (("conf.txt", "size=152\n"), ("CURSOR.md", "rule\n"), ("bug.txt", "broken\n")):
+        for name, body in (("conf.txt", "size=152\n"), ("CURSOR.md", "rule\n"), ("CURSOR-WORKFLOW.md", "flow\n"),
+                           ("bug.txt", "broken\n")):
             with open(os.path.join(self.project, name), "w") as fh:
                 fh.write(body)
         for argv in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"]):
@@ -320,6 +428,8 @@ class ClaudeBenchTest(unittest.TestCase):
         self.assertEqual((bare["claude_md"], bare["graph"], bare["skill"]), (False, False, False))
         self.assertEqual((harness["claude_md"], harness["graph"], harness["run_state"], harness["skill"]),
                          (True, True, False, False))
+        # CLAUDE.md points at the code-work rule; Claude Code never attaches it, so it must be there to Read.
+        self.assertEqual((bare["workflow"], harness["workflow"]), (False, True))
         self.assertFalse(any(c["argv"][-1].startswith("/") for c in calls))
         with open(os.path.join(aspec, "eval", "cursor-bench-results.jsonl")) as fh:
             rows = [json.loads(x) for x in fh]

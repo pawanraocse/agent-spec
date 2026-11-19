@@ -10,6 +10,16 @@ claude-haiku-5-5), which bills with the same prompt-cache prices as Cursor's Cla
                                [--tasks FILE] [--skill NAME] [--force] [--timeout S]
     agent-spec-cursor-bench.py --agent claude --compare harness [--repeat N]
 
+`--compare versions --base-ref REF` measures one harness version against another: both arms are
+registered harnesses, the base one installed from this package as committed at REF (extracted
+with `git archive`), the head one from this checkout. Its default tasks are
+`evals/direct-bench.jsonl` (short prompts with a `max_tools` budget: the harness must not make
+them dearer) and `evals/harness-bench.jsonl` (graph and memory tasks, and a long chat).
+
+Every report adds, per arm: workflow-rule reads, invented file names (cited names that exist
+nowhere in the project), a per-feature table (graph, memory, long-chat, direct: tokens, time,
+correctness, chats that used the graph) and accuracy by turn position.
+
 `--compare harness` measures the harness instead of a skill: a bare arm with the project's files
 and nothing else, against a harness arm. Under `--agent claude` the harness arm adds CLAUDE.md
 (CURSOR.md), the project's `.agent-spec/` (graph, memory, digest, CONSTITUTION) and a
@@ -55,6 +65,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import io
 import json
 import math
 import os
@@ -63,6 +74,7 @@ import random
 import re
 import shutil
 import subprocess
+import tarfile
 import tempfile
 import sys
 import time
@@ -89,10 +101,18 @@ CLAUDE_TOOLS = ("Read,Grep,Glob,Edit,Write,MultiEdit,Skill,Bash(python3:*),Bash(
                 "Bash(./.agent-spec/bin/graphify-cli.py:*),Bash(.agent-spec/bin/graphify-cli.py:*),"
                 "Bash(./.agent-spec/bin/agent-spec-digest.py:*),Bash(./.agent-spec/bin/agent-spec-memory.py:*)")
 WS_PREFIX = "aspec-claude-bench-"
-HARNESS_TASKS = os.path.join(os.path.dirname(HERE), "evals", "harness-bench.jsonl")
-# (control, treatment) arm names per comparison; rows carry these names.
-ARMS = {"skill": ("plain", "skill"), "harness": ("bare", "harness")}
-TREATED = {"skill", "harness"}
+PKG = os.path.dirname(HERE)
+HARNESS_TASKS = os.path.join(PKG, "evals", "harness-bench.jsonl")
+# Short prompts that need no repo access: the harness must not make them dearer (v2.1.0 tiers).
+DIRECT_TASKS = os.path.join(PKG, "evals", "direct-bench.jsonl")
+# (control, treatment) arm names per comparison; rows carry these names. `versions` runs the
+# harness from --base-ref (control) against the harness from this checkout (treatment).
+ARMS = {"skill": ("plain", "skill"), "harness": ("bare", "harness"), "versions": ("base", "head")}
+TREATED = {"skill", "harness", "head"}
+# Arms that carry the harness, so the digest must reach them under --agent claude.
+HARNESSED = {"harness", "base", "head"}
+# The on-demand code-work rule (CURSOR-WORKFLOW.md): a tool call naming it is a visible load.
+WORKFLOW_RULE = "agent-spec-workflow.mdc"
 # Run state, history and the dashboard's own data: not part of what a chat is given.
 HARNESS_SKIP = {"platform", "eval", "metrics", "benchmark", "platform.db", "__pycache__", ".build.lock"}
 # A line of every digest; found in the saved chat, the SessionStart hook delivered it.
@@ -114,18 +134,46 @@ def eval_dir(project: str) -> str:
     return os.path.join(common.agent_spec_dir(project), "eval")
 
 
-def load_tasks(path: str, only: str | None, edits: bool = False) -> list:
+def load_tasks(paths: str, only: str | None, edits: bool = False) -> list:
+    """Tasks from one task file, or several joined with commas (e.g. direct and harness tasks in one run)."""
     ids = {i.strip() for i in (only or "").split(",") if i.strip()}
     out = []
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            task = json.loads(line)
-            if task.get("id") and isinstance(task.get("turns"), list) and (not ids or task["id"] in ids) \
-                    and (edits or not task.get("edits")):
-                out.append(task)
+    for path in filter(None, (p.strip() for p in paths.split(","))):
+        if not os.path.isfile(path):
+            continue
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                task = json.loads(line)
+                if task.get("id") and isinstance(task.get("turns"), list) and (not ids or task["id"] in ids) \
+                        and (edits or not task.get("edits")):
+                    out.append(task)
+    return out
+
+
+def package_sha(ref: str) -> str | None:
+    try:
+        return subprocess.check_output(["git", "-C", PKG, "rev-parse", "--verify", "--quiet", ref + "^{commit}"],
+                                       text=True).strip()
+    except (subprocess.SubprocessError, OSError):
+        return None
+
+
+def package_at(ref: str) -> str:
+    """This package as committed at `ref`, extracted to a temp dir: the base arm of --compare versions
+    installs its harness from there. Raises ValueError for a ref git does not know."""
+    sha = package_sha(ref)
+    if not sha:
+        raise ValueError("unknown git ref in %s: %s" % (PKG, ref))
+    data = subprocess.check_output(["git", "-C", PKG, "archive", "--format=tar", sha])
+    out = tempfile.mkdtemp(prefix=WS_PREFIX + "pkg-")
+    with tarfile.open(fileobj=io.BytesIO(data)) as tar:
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(out, filter="data")
+        else:
+            tar.extractall(out)  # noqa: S202 (our own git archive)
     return out
 
 
@@ -184,7 +232,7 @@ def run_turn(cli: str, project: str, prompt: str, model: str | None, session: st
         stdout = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
         stderr, code = "timeout after %ds" % timeout, -1
     row = {"session_id": session, "model": model, "answer": "", "usage": None, "tools": 0, "graph_calls": 0,
-           "skill_read": False, "exit": code, "seconds": round(time.monotonic() - t0, 1)}
+           "skill_read": False, "workflow_read": False, "exit": code, "seconds": round(time.monotonic() - t0, 1)}
     for line in stdout.splitlines():
         try:
             obj = json.loads(line)
@@ -200,6 +248,7 @@ def run_turn(cli: str, project: str, prompt: str, model: str | None, session: st
         elif typ == "tool_call" and obj.get("subtype") == "started":
             row["tools"] += 1
             row["graph_calls"] += GRAPH_CLI in json.dumps(obj)
+            row["workflow_read"] |= WORKFLOW_RULE in json.dumps(obj)
             if skill and skill in json.dumps(obj.get("tool_call") or obj) and "SKILL.md" in json.dumps(obj):
                 row["skill_read"] = True
         elif typ == "result":
@@ -238,7 +287,7 @@ def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session:
         stdout = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
         stderr, code = "timeout after %ds" % timeout, -1
     row = {"session_id": session, "model": model or CLAUDE_MODEL, "answer": "", "usage": None, "cost_usd": None,
-           "tools": 0, "graph_calls": 0, "skill_read": False, "exit": code,
+           "tools": 0, "graph_calls": 0, "skill_read": False, "workflow_read": False, "exit": code,
            "seconds": round(time.monotonic() - t0, 1)}
     error = False
     for line in stdout.splitlines():
@@ -258,6 +307,7 @@ def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session:
                 if isinstance(block, dict) and block.get("type") == "tool_use":
                     row["tools"] += 1
                     row["graph_calls"] += GRAPH_CLI in json.dumps(block)
+                    row["workflow_read"] |= WORKFLOW_RULE in json.dumps(block)
         elif typ == "result":
             row["answer"] = str(obj.get("result") or "")
             error = bool(obj.get("is_error"))
@@ -316,7 +366,7 @@ def skill_marker(skill: str) -> str | None:
     return None
 
 
-def build_template(project: str, skill: str | None, harness: bool = True) -> str:
+def build_template(project: str, skill: str | None, harness: bool = True, package: str | None = None) -> str:
     """The project's files as git sees them (tracked and untracked, not ignored), in a git repo: the start of a
     Claude Code chat. `harness` adds CLAUDE.md, `.agent-spec/` and the digest hook; `skill` installs that skill."""
     tpl = tempfile.mkdtemp(prefix=WS_PREFIX + "tpl-")
@@ -331,24 +381,36 @@ def build_template(project: str, skill: str | None, harness: bool = True) -> str
         skill_dir = os.path.join(os.path.expanduser("~"), ".cursor", "skills", skill)
         shutil.copytree(skill_dir, os.path.join(tpl, ".claude", "skills", skill))
     if harness:
-        add_harness(project, tpl)
+        add_harness(project, tpl, package)
     git(tpl, "init", "-q")
     git(tpl, "add", "-A")
     git(tpl, "commit", "-qm", "bench start", "--allow-empty")
     return tpl
 
 
-def add_harness(project: str, tpl: str) -> None:
-    """What a registered project gives Claude Code: the always-on rule as CLAUDE.md, the project's
-    .agent-spec/ (graph, memory, bins) and the digest once per chat. A resumed turn is the same chat,
-    so the hook matches `startup` only, or the digest would be re-sent on every bench turn."""
-    rule = os.path.join(project, "CURSOR.md")
+def add_harness(project: str, tpl: str, package: str | None = None) -> None:
+    """What a registered project gives Claude Code: the always-on rule as CLAUDE.md, the code-work
+    rule where CLAUDE.md points (Claude Code never attaches it, so this measures the Read fallback),
+    the project's .agent-spec/ (graph, memory, bins) and the digest once per chat. A resumed turn is
+    the same chat, so the hook matches `startup` only, or the digest would be re-sent on every bench
+    turn. `package`: rules and bins from that package checkout instead (--compare versions)."""
+    rules = package or (project if os.path.isfile(os.path.join(project, "CURSOR.md")) else PKG)
+    rule = os.path.join(rules, "CURSOR.md")
     if os.path.isfile(rule):
         shutil.copy2(rule, os.path.join(tpl, "CLAUDE.md"))
+    workflow = os.path.join(rules, "CURSOR-WORKFLOW.md")
+    if os.path.isfile(workflow):
+        os.makedirs(os.path.join(tpl, ".cursor", "rules"), exist_ok=True)
+        shutil.copy2(workflow, os.path.join(tpl, ".cursor", "rules", WORKFLOW_RULE))
     src = common.agent_spec_dir(project)
     if os.path.isdir(src):
         shutil.copytree(src, os.path.join(tpl, ".agent-spec"), symlinks=True,
                         ignore=lambda d, names: [n for n in names if n in HARNESS_SKIP or n.endswith((".db-wal", ".db-shm"))])
+    bins = os.path.join(tpl, ".agent-spec", "bin")
+    if package and os.path.isdir(bins):
+        for name in os.listdir(bins):  # the digest and graph CLI as that version shipped them
+            if os.path.isfile(os.path.join(package, "bin", name)):
+                shutil.copy2(os.path.join(package, "bin", name), os.path.join(bins, name))
     os.makedirs(os.path.join(tpl, ".claude"), exist_ok=True)
     hook = {"hooks": {"SessionStart": [{"matcher": "startup", "hooks": [
         {"type": "command", "command": "python3 .agent-spec/bin/agent-spec-digest.py", "timeout": 20}]}]}}
@@ -356,17 +418,31 @@ def add_harness(project: str, tpl: str) -> None:
         json.dump(hook, fh, indent=1)
 
 
-def register_harness(project: str, tpl: str) -> None:
+def register_harness(project: str, tpl: str, package: str | None = None) -> None:
     """A Cursor harness copy the way a user gets one: install.sh registers it (rules, hooks, bins),
     then the project's own graph and memory replace the empty ones, and onboarding is marked done
-    when the project itself is onboarded, so turn 1 is the task and not /agent-spec-onboard."""
-    proc = subprocess.run(["bash", INSTALL_SH, "--project-only", "--register", tpl], capture_output=True, text=True,
-                          timeout=600)
+    when the project itself is onboarded, so turn 1 is the task and not /agent-spec-onboard.
+    `package`: install from that package checkout instead of this one (--compare versions). The
+    project's own .agent-spec/bin is not copied over the installed bins, so each arm runs the
+    digest and hooks of the version it installed."""
+    install = os.path.join(package, "install.sh") if package else INSTALL_SH
+    # install.sh --register adds the workspace to ~/.cursor/skills' registry and then re-installs every
+    # workspace listed there. Under the real HOME that would leave bench copies in the user's registry
+    # and, for an older --base-ref, downgrade every registered workspace to it. A throwaway HOME keeps
+    # the user's install untouched.
+    home = tempfile.mkdtemp(prefix=WS_PREFIX + "home-")
+    env = dict(os.environ, HOME=home, USERPROFILE=home)
+    try:
+        proc = subprocess.run(["bash", install, "--project-only", "--register", tpl], capture_output=True, text=True,
+                              timeout=600, env=env)
+    finally:
+        shutil.rmtree(home, ignore_errors=True)
     if proc.returncode != 0:
         raise RuntimeError("install.sh --register failed: %s" % (proc.stderr or proc.stdout).strip()[-400:])
     src = common.agent_spec_dir(project)
     shutil.copytree(src, os.path.join(tpl, ".agent-spec"), symlinks=True, dirs_exist_ok=True,
-                    ignore=lambda d, names: [n for n in names if n in HARNESS_SKIP or n.endswith((".db-wal", ".db-shm"))])
+                    ignore=lambda d, names: [n for n in names if n in HARNESS_SKIP or n == "bin"
+                                             or n.endswith((".db-wal", ".db-shm"))])
     marker = os.path.join(tpl, ".agent-spec", ".onboarding-needed")
     if not os.path.exists(os.path.join(src, ".onboarding-needed")) and os.path.exists(marker):
         os.remove(marker)
@@ -406,6 +482,37 @@ def drop_workspace(ws: str, sessions: set) -> None:
         shutil.rmtree(ws, ignore_errors=True)
 
 
+# File names an answer cites. A name that exists nowhere in the project is a hallucination the
+# expect strings would not catch (a confident answer that also invents a file).
+PATH_RE = re.compile(r"(?<![\w/.-])(?:[\w.-]+/)*([A-Za-z0-9_][\w.-]*\.(?:py|tsx?|jsx?|sh|mdc|md|jsonl?|ya?ml|ps1|css|html))\b")
+NOT_FILES = {"node.js", "next.js", "vue.js", "react.js", "express.js", "d3.js", "three.js", "chart.js", "nuxt.js"}
+
+
+def known_names(project: str) -> set:
+    """Base names of every file in the project as git sees it, plus the installed harness files."""
+    try:
+        out = subprocess.check_output(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+                                      cwd=project, stderr=subprocess.DEVNULL).decode()
+        names = {os.path.basename(p).lower() for p in out.split("\0") if p}
+    except (subprocess.SubprocessError, OSError):
+        names = set()
+    for root, dirs, files in os.walk(project):
+        dirs[:] = [d for d in dirs if d not in (".git", "node_modules", "__pycache__")]
+        if os.path.relpath(root, project).split(os.sep)[0] in (".agent-spec", ".cursor"):
+            names.update(f.lower() for f in files)
+    return names
+
+
+def phantom_names(answer: str, known: set, allowed: set) -> list:
+    """Cited file names that are in neither the project nor the task's own prompts."""
+    out = []
+    for m in PATH_RE.finditer(answer or ""):
+        name = m.group(1).lower()
+        if name not in known and name not in allowed and name not in NOT_FILES and name not in out:
+            out.append(name)
+    return out
+
+
 def run_check(cmd: str, cwd: str) -> bool:
     try:
         # No bytecode: a same-size edit in the same second would otherwise be judged on a stale .pyc.
@@ -432,6 +539,8 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
     copies = bool(args.templates)
     cwd = make_workspace(args.templates[arm], task) if copies else project
     rows, session, sessions = [], None, set()
+    allowed = {m.group(1).lower() for t in task["turns"] for m in PATH_RE.finditer(t.get("prompt", ""))}
+    feature = task.get("feature") or task.get("tier") or "other"
     try:
         for n, turn in enumerate(task["turns"], 1):
             prompt = turn["prompt"]
@@ -443,12 +552,15 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
             session = r["session_id"] or session
             sessions.add(session)
             check = run_check(turn["check"], cwd) if turn.get("check") else None
+            budget = turn.get("max_tools", task.get("max_tools"))
             r.update(base, task=task["id"], arm=arm, turn=n, prompt=turn["prompt"], expect=turn.get("expect") or [],
                      check=check, correct=is_correct(r["answer"], turn.get("expect"), turn.get("expect_any"), check),
-                     skill=args.skill if arm == "skill" else None, ts=common.utc_now())
+                     skill=args.skill if arm == "skill" else None, ts=common.utc_now(), feature=feature,
+                     max_tools=budget, tools_ok=None if budget is None else r["tools"] <= budget,
+                     phantom=phantom_names(r["answer"], args.known, allowed))
             if not one_turn(r, task, arm, n, rows):
                 break
-        if claude and arm == "harness" and rows and not any(x["skill_read"] for x in rows):
+        if claude and arm in HARNESSED and rows and not any(x["skill_read"] for x in rows):
             raise SkillMissing("the digest never reached the harness arm of %s: the SessionStart hook in "
                                ".claude/settings.json did not run with --setting-sources project." % task["id"])
         if claude and arm == "skill" and rows and not any(x["skill_read"] for x in rows):
@@ -478,7 +590,7 @@ def one_turn(r: dict, task: dict, arm: str, n: int, rows: list) -> bool:
 def totals(rows: list) -> dict:
     t = {k: 0 for k in USAGE_KEYS}
     t.update(turns=len(rows), scored=0, correct=0, tools=0, seconds=0.0, no_usage=0, skill_read=0, cost_usd=0.0,
-             costed=0, graph_calls=0)
+             costed=0, graph_calls=0, workflow_read=0, budget_scored=0, budget_ok=0, phantom=0, phantom_turns=0)
     for r in rows:
         u = r.get("usage")
         if u:
@@ -493,6 +605,12 @@ def totals(rows: list) -> dict:
         t["graph_calls"] += r.get("graph_calls") or 0
         t["seconds"] += r.get("seconds") or 0
         t["skill_read"] += bool(r.get("skill_read"))
+        t["workflow_read"] += bool(r.get("workflow_read"))
+        if r.get("tools_ok") is not None:
+            t["budget_scored"] += 1
+            t["budget_ok"] += bool(r["tools_ok"])
+        t["phantom"] += len(r.get("phantom") or [])
+        t["phantom_turns"] += bool(r.get("phantom"))
         if isinstance(r.get("cost_usd"), (int, float)):
             t["cost_usd"] += r["cost_usd"]
             t["costed"] += 1
@@ -587,6 +705,48 @@ def paired(rows: list) -> tuple:
     return keep, sum(1 for a in arms.values() if len(a) < 2)
 
 
+def feature_table(rows: list, a: str, b: str) -> list:
+    """Per harness feature (graph, memory, long-chat, direct, small): where the savings come from.
+    "Graph chats" is chats that called graphify-cli at least once: the graph was actually used."""
+    feats = list(dict.fromkeys(r.get("feature") or "other" for r in rows))
+    if feats in ([], ["other"]):
+        return []
+    out = ["", "Per feature (all input tokens, wall time, correct turns, chats that used the graph, invented files):", "",
+           "| Feature | %s tokens | %s tokens | Change | %s s | %s s | %s correct | %s correct | %s graph chats "
+           "| %s graph chats | %s invented | %s invented |" % (a, b, a, b, a, b, a, b, a, b),
+           "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for f in feats:
+        cell = []
+        for treated in (False, True):
+            sel = [r for r in rows if (r.get("feature") or "other") == f and (r["arm"] in TREATED) == treated]
+            t = totals(sel)
+            chats = {(r["task"], r.get("repeat")) for r in sel}
+            used = {(r["task"], r.get("repeat")) for r in sel if r.get("graph_calls")}
+            cell.append((t, "%d/%d" % (len(used), len(chats))))
+        (p, pg), (s, sg) = cell
+        out.append("| %s | %s | %s | %s | %.1f | %.1f | %d/%d | %d/%d | %s | %s | %d | %d |" % (
+            f, format(p["all_input"], ","), format(s["all_input"], ","), delta(p["all_input"], s["all_input"]),
+            p["seconds"], s["seconds"], p["correct"], p["scored"], s["correct"], s["scored"], pg, sg,
+            p["phantom"], s["phantom"]))
+    return out
+
+
+def position_table(rows: list, a: str, b: str) -> list:
+    """Correctness by how deep into the chat a turn is: drift and invented answers show up late."""
+    bands = (("turns 1-2", 1, 2), ("turns 3-5", 3, 5), ("turns 6+", 6, 10 ** 6))
+    if not any((r.get("turn") or 0) >= 3 for r in rows):
+        return []
+    out = ["", "Accuracy by turn position (correct / scored, turns citing an invented file):", "",
+           "| Turns | %s | %s |" % (a, b), "|---|---|---|"]
+    for label, lo, hi in bands:
+        cells = []
+        for treated in (False, True):
+            t = totals([r for r in rows if lo <= (r.get("turn") or 0) <= hi and (r["arm"] in TREATED) == treated])
+            cells.append("%d/%d, %d invented" % (t["correct"], t["scored"], t["phantom_turns"]) if t["turns"] else "—")
+        out.append("| %s | %s | %s |" % (label, cells[0], cells[1]))
+    return out
+
+
 AGENT_TITLE = {"cursor": "Cursor", "local": "Local agent", "claude": "Claude Code"}
 AGENT_LABEL = {"cursor": "Cursor agent", "local": "Not Cursor: bin/agent-spec-ollama-agent.py",
                "claude": "Not Cursor: Claude Code"}
@@ -595,13 +755,21 @@ AGENT_LABEL = {"cursor": "Cursor agent", "local": "Not Cursor: bin/agent-spec-ol
 def report(rows: list, meta: dict, skill: str) -> str:
     rows, unpaired = paired(rows)
     harness = meta.get("compare") == "harness"
+    versions = meta.get("compare") == "versions"
     plain = totals([r for r in rows if r["arm"] not in TREATED])
     withs = totals([r for r in rows if r["arm"] in TREATED])
-    a, b = ("Bare", "Harness") if harness else ("Plain", "/" + skill)
-    what = "harness" if harness else "skill"
+    if versions:
+        a, b, what = "Base %s" % meta.get("base_ref"), "Head", "head"
+        title = "# %s head-to-head: harness at %s (%s) vs this checkout" % (
+            AGENT_TITLE[meta["agent"]], meta.get("base_ref"), (meta.get("base_sha") or "")[:7])
+    elif harness:
+        a, b, what = "Bare", "Harness", "harness"
+        title = "# %s head-to-head: bare vs the agent-spec harness" % AGENT_TITLE[meta["agent"]]
+    else:
+        a, b, what = "Plain", "/" + skill, "skill"
+        title = "# %s head-to-head: plain vs /%s" % (AGENT_TITLE[meta["agent"]], skill)
     lines = [
-        ("# %s head-to-head: bare vs the agent-spec harness" % AGENT_TITLE[meta["agent"]]) if harness else
-        ("# %s head-to-head: plain vs /%s" % (AGENT_TITLE[meta["agent"]], skill)), "",
+        title, "",
         "Run `%s`, %s. %s `%s`, model `%s`, %d task(s) x %d turn(s), %d repeat(s), %s." % (
             meta["run_id"], meta["ts"], AGENT_LABEL[meta["agent"]], meta["cli_version"], meta["model"] or "default",
             meta["tasks"], meta["turns"], meta["repeat"], meta["os"]), "",
@@ -616,12 +784,18 @@ def report(rows: list, meta: dict, skill: str) -> str:
                        ("Cache-read tokens", "cacheReadTokens"), ("Cache-write tokens", "cacheWriteTokens"),
                        ("All input (uncached + cache)", "all_input"), ("Output tokens", "outputTokens"),
                        ("Tool calls", "tools"), ("Graph calls (graphify-cli)", "graph_calls"),
+                       ("Workflow rule reads (turns)", "workflow_read"),
+                       ("Invented file names", "phantom"), ("Turns citing an invented file", "phantom_turns"),
                        ("Wall time (s)", "seconds")):
         if key is None:
             lines.append("| Correct | %d/%d | %d/%d | |" % (plain["correct"], plain["scored"], withs["correct"], withs["scored"]))
         else:
             lines.append("| %s | %s | %s | %s |" % (label, format(plain[key], ","), format(withs[key], ","),
                                                    delta(plain[key], withs[key])))
+    if plain["budget_scored"] or withs["budget_scored"]:
+        lines.append("| Within tool budget (max_tools) | %d/%d | %d/%d | |" % (
+            plain["budget_ok"], plain["budget_scored"], withs["budget_ok"], withs["budget_scored"]))
+    lines += feature_table(rows, a, b) + position_table(rows, a, b)
     metric = "cost_usd" if costed else "all_input"
     fmt = (lambda v: "$%.4f" % v) if costed else (lambda v: format(v, ","))  # noqa: E731
     lines += ["", "Per task (%s, correct turns):" % ("cost" if costed else "all input tokens"), "",
@@ -649,7 +823,12 @@ def report(rows: list, meta: dict, skill: str) -> str:
         notes.append("%d chat(s) ran in one arm only (the run stopped early) and are left out." % unpaired)
     if plain["no_usage"] or withs["no_usage"]:
         notes.append("%d turn(s) returned no usage block and count as 0 tokens." % (plain["no_usage"] + withs["no_usage"]))
-    if meta["agent"] == "cursor":
+    if versions:
+        notes.append("Both arms carry the harness: base installed from %s (%s), head from this checkout; the "
+                     "project's graph and memory in both. A short prompt should cost the same or less in head; "
+                     "graph tasks should keep their graph calls and correctness." % (
+                         meta.get("base_ref"), (meta.get("base_sha") or "")[:12]))
+    elif meta["agent"] == "cursor" and not harness:
         notes.append("Skill file read seen in %d of %d skill-arm turn(s); Cursor may also attach it without a read."
                      % (withs["skill_read"], withs["turns"]))
     elif harness and meta["agent"] == "cursor":
@@ -676,6 +855,9 @@ def report(rows: list, meta: dict, skill: str) -> str:
     else:
         notes.append("The local agent puts the installed SKILL.md in the system prompt on turn 1, the way Cursor "
                      "attaches a skill; it is re-sent on every later model call.")
+    notes.append("Invented file names: file names an answer cites that exist nowhere in the project or the task's "
+                 "prompts. Workflow rule reads: turns with a tool call naming %s; Cursor can also attach it "
+                 "without a visible read." % WORKFLOW_RULE)
     chats = len({(r["task"], r.get("repeat")) for r in rows})
     if chats < 10:
         notes.append("n = %d chats per arm: a smoke test, not a benchmark." % chats)
@@ -688,11 +870,14 @@ def main() -> int:
     ap.add_argument("--model", help="cursor-agent --model (default: the account's default)")
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--only", help="comma-separated task ids")
-    ap.add_argument("--tasks", help="task file (default: evals/cursor-bench.jsonl; with --compare harness, "
-                                     "evals/harness-bench.jsonl)")
-    ap.add_argument("--compare", choices=("skill", "harness"), default="skill",
-                    help="skill: plain vs the skill, harness on in both arms; harness (claude only): bare Claude Code "
-                         "vs CLAUDE.md + .agent-spec/ + the digest hook, no skill")
+    ap.add_argument("--tasks", help="task file, or several joined with commas (default: evals/cursor-bench.jsonl; "
+                                     "with --compare harness, evals/harness-bench.jsonl; with --compare versions, "
+                                     "evals/direct-bench.jsonl,evals/harness-bench.jsonl)")
+    ap.add_argument("--compare", choices=("skill", "harness", "versions"), default="skill",
+                    help="skill: plain vs the skill, harness on in both arms; harness: bare vs the registered "
+                         "harness, no skill; versions: the harness from --base-ref vs the harness from this checkout")
+    ap.add_argument("--base-ref", help="--compare versions: the git ref of this package to install the base arm "
+                                       "from (e.g. v2.0.0 or a commit)")
     ap.add_argument("--skill", default="agent-spec-raw-code-full")
     ap.add_argument("--agent", choices=("cursor", "local", "claude"), default="cursor",
                     help="cursor: cursor-agent; local: bin/agent-spec-ollama-agent.py (Ollama, or groq:<model>); "
@@ -705,11 +890,19 @@ def main() -> int:
     ap.add_argument("--timeout", type=int, default=600, help="seconds per turn")
     args = ap.parse_args()
     project = os.path.abspath(args.project)
-    harness = args.compare == "harness"
-    args.tasks = args.tasks or (HARNESS_TASKS if harness else TASKS)
+    versions = args.compare == "versions"
+    harness = args.compare in ("harness", "versions")
+    args.tasks = args.tasks or (DIRECT_TASKS + "," + HARNESS_TASKS if versions else HARNESS_TASKS if harness else TASKS)
     if harness and args.agent == "local":
-        print("--compare harness runs under --agent claude or cursor", file=sys.stderr)
+        print("--compare %s runs under --agent claude or cursor" % args.compare, file=sys.stderr)
         return 2
+    if versions and not args.base_ref:
+        print("--compare versions needs --base-ref <git ref of this package>", file=sys.stderr)
+        return 2
+    if versions and not package_sha(args.base_ref):
+        print("unknown git ref in %s: %s" % (PKG, args.base_ref), file=sys.stderr)
+        return 2
+    base_pkg = None
     if harness and args.agent == "cursor":
         args.force = True  # both arms: the graph is a shell command
     if harness and not os.path.isfile(os.path.join(common.agent_spec_dir(project), "graph", "knowledge-graph.json")):
@@ -741,7 +934,7 @@ def main() -> int:
             and not os.path.isfile(os.path.join(project, ".cursor", "rules", "agent-spec.mdc")):
         print("warning: %s is not registered (no .cursor/rules/agent-spec.mdc); both arms run without the harness. "
               "Register it: ./install.sh --register %s" % (project, project), file=sys.stderr)
-    tasks = load_tasks(args.tasks, args.only, args.agent == "claude" or harness) if os.path.isfile(args.tasks) else []
+    tasks = load_tasks(args.tasks, args.only, args.agent == "claude" or harness)
     if not tasks:
         print("no tasks in %s" % args.tasks, file=sys.stderr)
         return 2
@@ -753,7 +946,18 @@ def main() -> int:
             return 3
     os.makedirs(eval_dir(project), exist_ok=True)
     args.templates = {}
-    if args.agent == "cursor" and harness:
+    args.known = known_names(project)
+    if versions:
+        base_pkg = package_at(args.base_ref)
+    if args.agent == "cursor" and versions:
+        args.templates = {"base": build_template(project, None, harness=False),
+                          "head": build_template(project, None, harness=False)}
+        register_harness(project, args.templates["base"], base_pkg)
+        register_harness(project, args.templates["head"])
+    elif args.agent == "claude" and versions:
+        args.templates = {"base": build_template(project, None, harness=True, package=base_pkg),
+                          "head": build_template(project, None, harness=True, package=PKG)}
+    elif args.agent == "cursor" and harness:
         args.templates = {"bare": build_template(project, None, harness=False),
                           "harness": build_template(project, None, harness=False)}
         register_harness(project, args.templates["harness"])
@@ -768,7 +972,8 @@ def main() -> int:
     run_id = time.strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:6]
     model = args.model or (CLAUDE_MODEL if args.agent == "claude" else None)
     meta = {"run_id": run_id, "ts": common.utc_now(), "cli_version": cli_version(cli), "model": model,
-            "agent": args.agent, "compare": args.compare,
+            "agent": args.agent, "compare": args.compare, "base_ref": args.base_ref,
+            "base_sha": package_sha(args.base_ref) if versions else None,
             "features": {f: [t["id"] for t in tasks if t.get("feature") == f]
                          for f in sorted({t["feature"] for t in tasks if t.get("feature")})},
             "tasks": len(tasks), "turns": sum(len(t["turns"]) for t in tasks), "repeat": args.repeat,
@@ -798,7 +1003,7 @@ def main() -> int:
         stopped = True
     finally:
         if not args.keep:
-            for tpl in set(args.templates.values()):
+            for tpl in set(args.templates.values()) | ({base_pkg} if base_pkg else set()):
                 shutil.rmtree(tpl, ignore_errors=True)
     text = report(rows, meta, args.skill)
     md_path = os.path.join(eval_dir(project), "cursor-bench-%s.md" % run_id)

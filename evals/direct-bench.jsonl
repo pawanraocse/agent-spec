@@ -1,0 +1,7 @@
+{"id": "http-401-403", "tier": "direct", "max_tools": 0, "turns": [{"prompt": "In two sentences: what is the difference between HTTP 401 and HTTP 403?", "expect": ["401", "403"], "expect_any": ["authenticat", "credential", "log in", "logged in"]}]}
+{"id": "iso-date-regex", "tier": "direct", "max_tools": 0, "turns": [{"prompt": "Give a Python regular expression that matches an ISO date such as 2026-11-19. Reply with the regex only.", "expect_any": ["\\d{4}", "[0-9]{4}"]}]}
+{"id": "nonetype-error", "tier": "direct", "max_tools": 0, "turns": [{"prompt": "Explain this Python error in one sentence: TypeError: 'NoneType' object is not subscriptable", "expect": ["None"]}]}
+{"id": "big-o", "tier": "direct", "max_tools": 0, "turns": [{"prompt": "For large n, is O(n log n) faster than O(n^2)? Answer yes or no and one short reason.", "expect": ["yes"]}]}
+{"id": "commit-message", "tier": "direct", "max_tools": 0, "turns": [{"prompt": "Write a one-line conventional commit message for: fixed a null pointer when the user list is empty.", "expect_any": ["fix:", "fix("]}]}
+{"id": "follow-up-chat", "tier": "direct", "max_tools": 0, "turns": [{"prompt": "What does the acronym REST stand for?", "expect_any": ["representational state transfer"]}, {"prompt": "And in one sentence, how is it different from RPC?", "expect_any": ["resource", "procedure", "action"]}]}
+{"id": "shebang", "tier": "small", "max_tools": 1, "turns": [{"prompt": "What interpreter does the first line of bin/graphify-cli.py name? Reply with the interpreter only.", "expect": ["python3"]}]}
