@@ -40,7 +40,8 @@ Claude Code runs every chat in a fresh copy of the project's files (git's view: 
 untracked, not ignored), with the skill in
 `.claude/skills/` and the harness above (CLAUDE.md, `.agent-spec/`, the digest hook) in both arms, and with
 `--setting-sources project`, so the user's own output style, hooks and memory reach neither arm.
-A task may `setup` the copy (plant a bug) before turn 1; a turn with `check` is correct when
+A task may `setup` the copy (plant a bug) before turn 1; a turn with `"new_chat": true` starts a
+fresh session in the same copy (a context reset at a task boundary); a turn with `check` is correct when
 that shell command exits 0 in the copy afterwards. Correctness combines `check`, `expect` (all
 strings) and `expect_any` (one of them). The copy and its Claude Code session files are deleted
 after the chat unless `--keep`. The report adds Claude Code's cost per chat and a paired test:
@@ -198,8 +199,12 @@ def cli_version(cli: str) -> str:
 
 
 def claude_argv(model: str | None, session: str | None) -> list:
+    # --strict-mcp-config: the user's claude.ai connectors are not covered by --setting-sources and
+    # reconnect on every resumed turn, re-injecting their tool lists (~16k tokens of cache write each
+    # time, at random turns in either arm). Neither arm gets any MCP server.
     argv = ["-p", "--output-format", "stream-json", "--verbose", "--model", model or CLAUDE_MODEL,
-            "--setting-sources", "project", "--permission-mode", "dontAsk", "--allowedTools=" + CLAUDE_TOOLS]
+            "--setting-sources", "project", "--strict-mcp-config", "--permission-mode", "dontAsk",
+            "--allowedTools=" + CLAUDE_TOOLS]
     return argv + (["--resume", session] if session else [])
 
 
@@ -538,12 +543,16 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
     claude = args.agent == "claude"
     copies = bool(args.templates)
     cwd = make_workspace(args.templates[arm], task) if copies else project
-    rows, session, sessions = [], None, set()
+    rows, session, sessions, cost_so_far = [], None, set(), 0.0
     allowed = {m.group(1).lower() for t in task["turns"] for m in PATH_RE.finditer(t.get("prompt", ""))}
     feature = task.get("feature") or task.get("tier") or "other"
     try:
         for n, turn in enumerate(task["turns"], 1):
             prompt = turn["prompt"]
+            if turn.get("new_chat") and n > 1:
+                # A context reset at a task boundary: same workspace (files written so far stay),
+                # a fresh session, so SessionStart fires again and the running cost restarts.
+                session, cost_so_far = None, 0.0
             if arm == "skill" and n == 1:
                 prompt = "/%s %s" % (args.skill, prompt)
             r = run_turn(cli, cwd, prompt, args.model, session, args.force,
@@ -551,6 +560,12 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
                          trust=copies)
             session = r["session_id"] or session
             sessions.add(session)
+            if claude and isinstance(r.get("cost_usd"), (int, float)):
+                # claude -p --resume reports total_cost_usd for the whole session so far: keep the
+                # running total and bill this turn only its own increment.
+                r["cost_cum_usd"] = r["cost_usd"]
+                r["cost_usd"] = round(max(0.0, r["cost_usd"] - cost_so_far), 6)
+                cost_so_far = r["cost_cum_usd"]
             check = run_check(turn["check"], cwd) if turn.get("check") else None
             budget = turn.get("max_tools", task.get("max_tools"))
             r.update(base, task=task["id"], arm=arm, turn=n, prompt=turn["prompt"], expect=turn.get("expect") or [],

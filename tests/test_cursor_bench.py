@@ -308,11 +308,16 @@ if "Change" in prompt:
     with open("conf.txt", "w") as fh:
         fh.write("size=200\n")
 skill = prompt.startswith("/")
+# Like real Claude Code, total_cost_usd under --resume is the session's running total.
+cost_file = os.path.join(folder, session + ".cost")
+total = (float(open(cost_file).read()) if os.path.exists(cost_file) else 0.0) + (0.01 if skill else 0.02)
+with open(cost_file, "w") as fh:
+    fh.write(repr(total))
 print(json.dumps({"type": "system", "subtype": "init", "session_id": session, "model": "claude-haiku-5-5"}))
 print(json.dumps({"type": "assistant", "session_id": session, "message": {"content": [
     {"type": "tool_use", "name": "Read", "input": {}}] * (1 if skill else 2)}}))
 print(json.dumps({"type": "result", "session_id": session, "result": "size is in conf.txt", "is_error": False,
-                  "total_cost_usd": 0.01 if skill else 0.02,
+                  "total_cost_usd": total,
                   "usage": {"input_tokens": 10, "output_tokens": 5, "cache_read_input_tokens": 1000,
                             "cache_creation_input_tokens": 200}}))
 '''
@@ -367,7 +372,7 @@ class ClaudeBenchTest(unittest.TestCase):
         with open(self.log) as fh:
             calls = [json.loads(x) for x in fh]
         first = calls[0]["argv"]
-        for flag in ("--setting-sources", "--model", "--permission-mode"):
+        for flag in ("--setting-sources", "--strict-mcp-config", "--model", "--permission-mode"):
             self.assertIn(flag, first)
         self.assertEqual(first[first.index("--model") + 1], "claude-haiku-5-5")
         self.assertEqual(first[first.index("--setting-sources") + 1], "project")
