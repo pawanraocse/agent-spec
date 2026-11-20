@@ -103,10 +103,10 @@ def test_skill_sync_keeps_the_install_mode():
     for name in ("agent-spec-prd", "agent-spec-hld", "agent-spec-lld", "agent-spec-intent",
                  "agent-spec-requirements", "agent-spec-tech-spec"):
         shutil.rmtree(os.path.join(dest, name))
-    open(os.path.join(dest, ".algosec-agent-spec-lean"), "w").close()
+    open(os.path.join(dest, ".agent-spec-lean"), "w").close()
     shutil.rmtree(os.path.join(dest, "agent-spec-ask"))
     code, out = run(home, proj)
-    assert out["skills"] == "installed" and os.path.isfile(os.path.join(dest, ".algosec-agent-spec-lean")), out
+    assert out["skills"] == "installed" and os.path.isfile(os.path.join(dest, ".agent-spec-lean")), out
     assert not os.path.isdir(os.path.join(dest, "agent-spec-prd")), "a lean install stays lean"
 
 
@@ -172,7 +172,7 @@ def test_unmarked_lean_install_stays_lean():
     home, proj = workspace()
     run(home, proj)
     dest = os.path.join(home, ".cursor", "skills")
-    for marker in (".algosec-agent-spec-lean", ".algosec-agent-spec-full"):
+    for marker in (".agent-spec-lean", ".agent-spec-full"):
         if os.path.exists(os.path.join(dest, marker)):
             os.remove(os.path.join(dest, marker))
     for name in ("agent-spec-prd", "agent-spec-hld", "agent-spec-lld", "agent-spec-intent",
@@ -182,15 +182,15 @@ def test_unmarked_lean_install_stays_lean():
     assert code == 0 and out["skills"] == "installed", out
     assert os.path.isfile(os.path.join(dest, "agent-spec-ask", "SKILL.md")), "drift still repaired"
     assert not os.path.isdir(os.path.join(dest, "agent-spec-prd")), "an unmarked lean install stays lean"
-    assert os.path.isfile(os.path.join(dest, ".algosec-agent-spec-lean")), "the sync marks it from now on"
+    assert os.path.isfile(os.path.join(dest, ".agent-spec-lean")), "the sync marks it from now on"
 
 
 def test_full_install_writes_its_marker():
     home, proj = workspace()
     run(home, proj)
     dest = os.path.join(home, ".cursor", "skills")
-    assert os.path.isfile(os.path.join(dest, ".algosec-agent-spec-full"))
-    assert not os.path.exists(os.path.join(dest, ".algosec-agent-spec-lean"))
+    assert os.path.isfile(os.path.join(dest, ".agent-spec-full"))
+    assert not os.path.exists(os.path.join(dest, ".agent-spec-lean"))
 
 
 if __name__ == "__main__":

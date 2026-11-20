@@ -1,4 +1,4 @@
-# Changelog — algosec-agent-spec
+# Changelog — agent-spec
 
 ## Unreleased
 
@@ -105,7 +105,7 @@
   session review's quality scores (AI-judged) and the injected digest context. Each column has
   its provenance, and missing data shows as a dash instead of 0. This fixes the old view, which
   always showed a zero delta.
-- **Lean installs stay lean (H-006)**: a full install now writes a `.algosec-agent-spec-full`
+- **Lean installs stay lean (H-006)**: a full install now writes a `.agent-spec-full`
   marker next to the lean one. When a skill install has neither marker because it predates
   them, the skill sync treats it as lean when all six SDLC design skills are missing. Existing
   lean installs no longer get those skills back on the next sync.
@@ -356,7 +356,7 @@
   real payload; alternate range keys and stringified `tool_input` are handled.
 - **Measurement habit** (T-012) in QUICKSTART and `token-efficiency.md`; `audit` exits non-zero on
   findings (CI-ready). Doctor reports the always-on footprint and the context size at which it is under 5 %.
-- **Coexistence** (T-013): `audit` and doctor flag `algosec-lean` Always Apply next to `agent-spec.mdc`.
+- **Coexistence** (T-013): `audit` and doctor flag a lean style rule (`*-lean.mdc`) Always Apply next to `agent-spec.mdc`.
 - **Router skill** (T-014): `agent-spec` SKILL.md 4,543 B → under 3 KB; points at `agent-spec-gate.py status`.
 
 **Developer experience**
@@ -400,7 +400,7 @@ auto-harness rule, shared facts, ROI viewer); native PowerShell port; no git tag
 
 ## 1.0.0 — Cursor-only
 
-- Package brand: **algosec-agent-spec** for Cursor only.
+- Package brand: **agent-spec** for Cursor only.
 - Removed Claude Code / Gemini / Antigravity surfaces (`CLAUDE.md`, `GEMINI.md`,
   `.claude`, output-styles, Claude settings/hooks/bench harness).
 - Skills live under `skills/` (flat); install → `~/.cursor/skills/`.
@@ -410,6 +410,6 @@ auto-harness rule, shared facts, ROI viewer); native PowerShell port; no git tag
 - Subagents → `.cursor/agents/` with `model: inherit`.
 - Compact skill: snapshot + new Cursor chat (no Claude `/compact`).
 - Upgrade vs preserve contract documented; registry
-  `~/.cursor/skills/.algosec-agent-spec-projects`.
+  `~/.cursor/skills/.agent-spec-projects`.
 
 Upstream measurement docs retained under `docs/token-*.md`.

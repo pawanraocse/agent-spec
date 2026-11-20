@@ -16,7 +16,7 @@ This does the deterministic part in one command and leaves only the AI step to t
 
 Run it with the clone's path, since an unregistered project has no copy of its own:
 
-  python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"
+  python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"
   ... --check   report only, change nothing (also AGENT_SPEC_AUTO_REGISTER=0)
 
 Prints ONE JSON object. Exit 0 when the project is ready or was made ready, 1 when a step
@@ -53,7 +53,7 @@ def package_dir():
     parent = os.path.dirname(HERE)
     if os.path.isfile(os.path.join(parent, "VERSION")) and os.path.isfile(os.path.join(parent, "install.sh")):
         return parent
-    marker = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".algosec-agent-spec-root")
+    marker = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".agent-spec-root")
     try:
         root = open(marker, encoding="utf-8").read().strip()
     except OSError:
@@ -94,8 +94,8 @@ LEAN_SKILLS = frozenset(("agent-spec-intent", "agent-spec-hld", "agent-spec-lld"
                          "agent-spec-requirements", "agent-spec-tech-spec"))
 
 
-LEAN_MARKER = ".algosec-agent-spec-lean"  # written by install.sh --lean, removed by a full install
-FULL_MARKER = ".algosec-agent-spec-full"  # written by a full install, removed by install.sh --lean
+LEAN_MARKER = ".agent-spec-lean"  # written by install.sh --lean, removed by a full install
+FULL_MARKER = ".agent-spec-full"  # written by a full install, removed by install.sh --lean
 
 
 def install_is_lean(dest):

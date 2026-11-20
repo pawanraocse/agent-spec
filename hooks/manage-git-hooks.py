@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Manage Git lifecycle hooks for algosec-agent-spec automated Graphify indexing.
+"""Manage Git lifecycle hooks for agent-spec automated Graphify indexing.
 
 Actions:
   install <project_root>   - Idempotently install or update post-checkout, post-merge and
                              post-rewrite hooks (rewrite = rebase/amend)
-  uninstall <project_root> - Remove algosec-agent-spec hook blocks from git hooks
+  uninstall <project_root> - Remove agent-spec hook blocks from git hooks
   check <project_root>     - Verify git hooks exist and are executable
 
 Features:
@@ -19,10 +19,15 @@ import stat
 import subprocess
 import sys
 
-MARKER_START = "# >>> algosec-agent-spec auto-index >>>"
-MARKER_END = "# <<< algosec-agent-spec auto-index <<<"
+MARKER_START = "# >>> agent-spec auto-index >>>"
+MARKER_END = "# <<< agent-spec auto-index <<<"
+# Older releases wrote the same block with a prefix before "agent-spec"; match both.
+BLOCK_RE = re.compile(
+    r"# >>> [\w.-]*agent-spec auto-index >>>.*?# <<< [\w.-]*agent-spec auto-index <<<",
+    re.DOTALL,
+)
 
-POST_CHECKOUT_BLOCK = """# >>> algosec-agent-spec auto-index >>>
+POST_CHECKOUT_BLOCK = """# >>> agent-spec auto-index >>>
 # Background re-indexing on branch switch ($3 == 1)
 if [ "${3:-}" = "1" ]; then
   ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -34,9 +39,9 @@ if [ "${3:-}" = "1" ]; then
     fi
   } )
 fi
-# <<< algosec-agent-spec auto-index <<<"""
+# <<< agent-spec auto-index <<<"""
 
-POST_MERGE_BLOCK = """# >>> algosec-agent-spec auto-index >>>
+POST_MERGE_BLOCK = """# >>> agent-spec auto-index >>>
 # Background re-indexing on merge/pull
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ( cd "${ROOT_DIR}" && {
@@ -46,9 +51,9 @@ ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     python3 ./.agent-spec/bin/graphify-build.py --quiet >/dev/null 2>&1 &
   fi
 } )
-# <<< algosec-agent-spec auto-index <<<"""
+# <<< agent-spec auto-index <<<"""
 
-POST_REWRITE_BLOCK = """# >>> algosec-agent-spec auto-index >>>
+POST_REWRITE_BLOCK = """# >>> agent-spec auto-index >>>
 # Background re-indexing on rebase/amend
 ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 ( cd "${ROOT_DIR}" && {
@@ -58,7 +63,7 @@ ROOT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     python3 ./.agent-spec/bin/graphify-build.py --quiet >/dev/null 2>&1 &
   fi
 } )
-# <<< algosec-agent-spec auto-index <<<"""
+# <<< agent-spec auto-index <<<"""
 
 HOOK_BLOCKS = {
     "post-checkout": POST_CHECKOUT_BLOCK,
@@ -129,12 +134,10 @@ def install_hook(hook_path, block):
         with open(hook_path, "r", encoding="utf-8") as f:
             content = f.read()
 
-        if MARKER_START in content and MARKER_END in content:
-            pattern = re.compile(
-                re.escape(MARKER_START) + r".*?" + re.escape(MARKER_END),
-                re.DOTALL,
-            )
-            content = pattern.sub(block, content)
+        m = BLOCK_RE.search(content)
+        if m:
+            # Replace the first block, drop any duplicates (old and new marker side by side).
+            content = content[:m.start()] + block + BLOCK_RE.sub("", content[m.end():])
         else:
             if not content.endswith("\n"):
                 content += "\n"
@@ -155,13 +158,10 @@ def uninstall_hook(hook_path):
     except OSError:
         return
 
-    if MARKER_START not in content:
+    if not BLOCK_RE.search(content):
         return
 
-    pattern = re.compile(
-        r"\n?" + re.escape(MARKER_START) + r".*?" + re.escape(MARKER_END) + r"\n?",
-        re.DOTALL,
-    )
+    pattern = re.compile(r"\n?" + BLOCK_RE.pattern + r"\n?", re.DOTALL)
     new_content = pattern.sub("\n", content).strip()
 
     # If the file only contained our hook (or empty shebang), remove it completely
@@ -186,7 +186,7 @@ def check_hook(hook_path):
     try:
         with open(hook_path, "r", encoding="utf-8") as f:
             content = f.read()
-        return MARKER_START in content and MARKER_END in content
+        return bool(BLOCK_RE.search(content))
     except OSError:
         return False
 

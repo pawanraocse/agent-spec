@@ -1,11 +1,11 @@
-# QUICKSTART — algosec-agent-spec (Cursor)
+# QUICKSTART — agent-spec (Cursor)
 
 ## Day 1 (target: productive in under 10 minutes)
 
 ```bash
-cd /path/to/algosec-agent-spec
+cd /path/to/agent-spec
 ./install.sh                                  # 1. global skills + harness on this repo
-cd /path/to/your/app && /path/to/algosec-agent-spec/install.sh --register-here   # 2. your app repo
+cd /path/to/your/app && /path/to/agent-spec/install.sh --register-here   # 2. your app repo
 ./.agent-spec/bin/agent-spec-doctor.py        # 3. doctor: every line OK, or it prints the fix
 ```
 
@@ -23,13 +23,13 @@ Enable **Hooks** in Cursor Settings and set **Customize → Rules → agent-spec
 ## Install
 
 ```bash
-cd /path/to/algosec-agent-spec
+cd /path/to/agent-spec
 chmod +x install.sh check-install.sh uninstall.sh
 ./install.sh
 ./check-install.sh
 ```
 
-`./install.sh` copies skills to `~/.cursor/skills/` (global, like algosec-lean) and
+`./install.sh` copies skills to `~/.cursor/skills/` (global) and
 applies the harness to this package repo. Restart Cursor or start a **new chat**.
 
 Harness on an app workspace (rules / hooks / `.agent-spec/`):
@@ -92,7 +92,7 @@ you opened a child package. Multi-root: `--register` each root that needs rules.
 | Situation | Guidance |
 |---|---|
 | Older agent-spec clone also installed | Last `./install.sh` wins for `agent-spec-*` skills |
-| algosec-lean Always Apply also on | Do not stack: both ride in the prefix every turn. Set `alwaysApply: false` on one. The doctor and `agent-spec-tokens.py audit` flag it |
+| A lean style rule is also Always Apply | Do not stack: both ride in the prefix every turn. Set `alwaysApply: false` on one. The doctor and `agent-spec-tokens.py audit` flag it |
 | Cloud agent / no hooks | Manual digest (`./.agent-spec/bin/agent-spec-digest.py`); standing rule still applies |
 
 ## Measuring the harness (post-install habit)
@@ -123,7 +123,7 @@ cannot tell them apart. Whole-file reads are instead measured after the fact fro
 `tool_output.content_length` (Coach › Whole-file reads). To see what Cursor
 actually sends the hook: `AGENT_SPEC_HOOK_DEBUG=1` (or, without restarting Cursor,
 `touch .agent-spec/.hook-debug`) writes payload key names, value types and the hook's
-decision (never strings) to `$TMPDIR/algosec-agent-spec-hook-debug.jsonl`.
+decision (never strings) to `$TMPDIR/agent-spec-hook-debug.jsonl`.
 
 ## Session receipts and ROI (optional)
 
@@ -163,7 +163,7 @@ was never merged or was last synced more than 14 days ago. Re-run `--register` t
 ## Upgrade
 
 ```bash
-cd /path/to/algosec-agent-spec
+cd /path/to/agent-spec
 ./install.sh --register "/path/to/workspace"   # refreshes skills + registered projects
 ```
 
@@ -183,9 +183,9 @@ The doctor warns when a workspace's stamped harness version differs from the pac
 ## Adoption checklist (paste into Confluence)
 
 - [ ] Python 3 available (`python3 --version`)
-- [ ] `./install.sh` run from the algosec-agent-spec clone; `./check-install.sh` exits 0
+- [ ] `./install.sh` run from the agent-spec clone; `./check-install.sh` exits 0
 - [ ] App repo registered: `./install.sh --register-here` (from the app folder)
-- [ ] Cursor: Hooks enabled; Rules → agent-spec = Always Apply; algosec-lean not Always Apply
+- [ ] Cursor: Hooks enabled; Rules → agent-spec = Always Apply; no lean style rule Always Apply
 - [ ] New chat shows the digest (`<agent-spec-digest>`) ending in `doctor: OK`
 - [ ] `/agent-spec-onboard` run once; `.agent-spec/.onboarding-needed` gone
 - [ ] Optional: `.agent-spec/team.yaml` filled in; doctor shows `team.yaml valid`

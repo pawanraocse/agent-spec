@@ -70,9 +70,9 @@ Returns every file across the given repos that depends on `file` (direct + trans
 
 **Input:**
 ```yaml
-file: string              # e.g. src/main/java/com/algosec/auth/TokenService.java
+file: string              # e.g. src/main/java/com/acme/auth/TokenService.java
 repos:                    # list of repos to search
-  - repo: string          # e.g. algosec/api-gateway
+  - repo: string          # e.g. acme/api-gateway
     branch: string        # e.g. feature/ENG-1234 or main
 depth: int?               # default 2; max 5
 ```
@@ -148,7 +148,7 @@ branch: string?           # default: main
 **Output:**
 ```yaml
 modules:
-  - module: string        # e.g. com.algosec.auth
+  - module: string        # e.g. com.acme.auth
     files: string[]
     entry_points: string[]
 ```
@@ -175,16 +175,16 @@ This lets agents switch context between branches without re-indexing manually.
 ```yaml
 # Orchestrator resolves repo_context from Jira ticket ENG-1234
 repo_context:
-  - repo: algosec/api-gateway
+  - repo: acme/api-gateway
     branch: feature/ENG-1234-auth-refactor
-  - repo: algosec/auth-service
+  - repo: acme/auth-service
     branch: feature/ENG-1234-auth-refactor
 
 # Step 3 in PR Intelligence Loop:
 call: index.query_blast_radius
 input:
-  file: src/main/java/com/algosec/api/AuthClient.java
-  repos: [algosec/api-gateway@feature/ENG-1234, algosec/auth-service@feature/ENG-1234]
+  file: src/main/java/com/acme/api/AuthClient.java
+  repos: [acme/api-gateway@feature/ENG-1234, acme/auth-service@feature/ENG-1234]
 
 # Result surfaces:
 # - auth-service/TokenValidator.java depends on AuthClient (distance 1)
@@ -197,7 +197,7 @@ input:
 call: index.query_co_change
 input:
   file: common-lib/src/NullSafeMapper.java
-  repos: [algosec/common-lib@main, algosec/payment-service@main]
+  repos: [acme/common-lib@main, acme/payment-service@main]
   since: "2026-07-01"
 
 # Result shows: PaymentProcessor.java co-changes with NullSafeMapper 8x in 90 days

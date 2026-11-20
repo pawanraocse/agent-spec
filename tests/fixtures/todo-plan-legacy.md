@@ -1,4 +1,4 @@
-# algosec-agent-spec — Todo (sole sequenced backlog)
+# agent-spec — Todo (sole sequenced backlog)
 
 > **Strategy & phases:** [`docs/MASTER-PLAN.md`](docs/MASTER-PLAN.md) only.  
 > **v1.1.0 shipped (2026-10-28)** → **v2.0.0** (Phase 2) → **v3.0.0** (Phase 3) → **v4.0.0** (Phase 4 — Autonomous Bots) → **v5.0.0** (Phase 5 — Marketplace)  

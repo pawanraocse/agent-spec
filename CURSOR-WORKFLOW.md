@@ -1,4 +1,4 @@
-# CURSOR-WORKFLOW.md — algosec-agent-spec (code-work protocol)
+# CURSOR-WORKFLOW.md — agent-spec (code-work protocol)
 
 > Installed as `.cursor/rules/agent-spec-workflow.mdc` (Agent Requested, not always-on).
 > `CURSOR.md` sends a task here once it is **Code work**: it searches across files, edits

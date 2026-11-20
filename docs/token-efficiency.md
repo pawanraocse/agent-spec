@@ -67,9 +67,9 @@ project's transcripts:
 
 ```bash
 cd <your-project>
-python3 <path-to-algosec-agent-spec>/bin/agent-spec-tokens.py overhead --all
-python3 <path-to-algosec-agent-spec>/bin/agent-spec-tokens.py overhead
-python3 <path-to-algosec-agent-spec>/bin/agent-spec-tokens.py overhead --file <session>.jsonl
+python3 <path-to-agent-spec>/bin/agent-spec-tokens.py overhead --all
+python3 <path-to-agent-spec>/bin/agent-spec-tokens.py overhead
+python3 <path-to-agent-spec>/bin/agent-spec-tokens.py overhead --file <session>.jsonl
 ```
 
 Use `--all` for the shape of the bill; use the newest session alone to check whether a

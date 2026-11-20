@@ -1,11 +1,11 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-19T22:59:52.491821",
+  "generated": "2026-11-20T06:30:15.199546",
   "generator": "graphify-build",
   "git": {
     "branch": "main",
-    "head_sha": "dae48a1af46ed950b770a87e9ffb581398974a4c",
+    "head_sha": "771d9cea1e780fa1b9b17266095e1c21b3ad6069",
     "dirty": true,
     "operation": null,
     "conflicts": 0
@@ -6537,56 +6537,56 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 384
+      "line": 390
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 393
+      "line": 399
     },
     {
       "id": "bin/agent-spec-doctor.py::mcp_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 419
+      "line": 425
     },
     {
       "id": "bin/agent-spec-doctor.py::check_mcp",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 427
+      "line": 433
     },
     {
       "id": "bin/agent-spec-doctor.py::check_skill_proposals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 470
+      "line": 476
     },
     {
       "id": "bin/agent-spec-doctor.py::run_checks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 493
+      "line": 499
     },
     {
       "id": "bin/agent-spec-doctor.py::line_summary",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 507
+      "line": 513
     },
     {
       "id": "bin/agent-spec-doctor.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 517
+      "line": 523
     },
     {
       "id": "bin/agent-spec-ensure.py::project_root",
@@ -13229,28 +13229,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "hooks/manage-git-hooks.py",
-      "line": 70
+      "line": 75
     },
     {
       "id": "hooks/manage-git-hooks.py::make_executable",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/manage-git-hooks.py",
-      "line": 114
+      "line": 119
     },
     {
       "id": "hooks/manage-git-hooks.py::install_hook",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/manage-git-hooks.py",
-      "line": 122
+      "line": 127
     },
     {
       "id": "hooks/manage-git-hooks.py::uninstall_hook",
       "type": "symbol",
       "kind": "function",
       "file": "hooks/manage-git-hooks.py",
-      "line": 149
+      "line": 152
     },
     {
       "id": "hooks/manage-git-hooks.py::check_hook",

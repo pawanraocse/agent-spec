@@ -4,7 +4,7 @@
 
 | Project | Repository | Purpose |
 |---------|------------|---------|
-| **Agent Hub** | `algosec-agent-hub` (this repo) | Company agentic AI framework — orchestration, agents, memory, eval, templates for **AgentCore** |
+| **Agent Hub** | `agent-hub` (this repo) | Company agentic AI framework — orchestration, agents, memory, eval, templates for **AgentCore** |
 | **agent-spec** | Separate repository | Per-repo developer governance kit (gates, constitution, graphify for **product codebases**) |
 
 Do not describe this repository as an "agent-spec distribution" or assume runtime coupling to the agent-spec repo.

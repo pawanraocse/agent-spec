@@ -22,7 +22,7 @@ import sys
 from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MARKER = "algosec-agent-spec auto-index"
+MARKER = "agent-spec auto-index"
 MEMORY_INDEX_LIMIT = 8000
 GRAPH_STALE_DAYS = 7
 SESSION_MARKER = "agent-spec-session-start.py"
@@ -56,14 +56,14 @@ class Ctx:
 
 
 def find_package():
-    """The algosec-agent-spec clone: this script's parent if it has VERSION, else the marker."""
+    """The agent-spec clone: this script's parent if it has VERSION, else the marker."""
     parent = os.path.dirname(HERE)
     if os.path.isfile(os.path.join(parent, "VERSION")) and os.path.isdir(os.path.join(parent, "skills")):
         return parent
-    marker = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".algosec-agent-spec-root")
+    marker = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".agent-spec-root")
     win = os.environ.get("WIN_CURSOR_HOME")
     if win:
-        marker = os.path.join(win, ".cursor", "skills", ".algosec-agent-spec-root")
+        marker = os.path.join(win, ".cursor", "skills", ".agent-spec-root")
     try:
         root = open(marker, encoding="utf-8").read().strip()
     except OSError:
@@ -272,10 +272,10 @@ def native_path(p: str, nt: bool = os.name == "nt") -> str:
 
 
 def check_register(ctx):
-    registry = os.path.join(ctx.skills_dir, ".algosec-agent-spec-projects")
+    registry = os.path.join(ctx.skills_dir, ".agent-spec-projects")
     here = os.path.realpath(ctx.project)
     if ctx.package and os.path.realpath(ctx.package) == here:
-        return [("register", "INFO", "this is the algosec-agent-spec clone (refreshed by a bare ./install.sh)", "")]
+        return [("register", "INFO", "this is the agent-spec clone (refreshed by a bare ./install.sh)", "")]
     try:
         lines = [l.strip() for l in open(registry, encoding="utf-8") if l.strip()]
     except OSError:
@@ -369,14 +369,20 @@ def check_audit(ctx):
 
 
 def check_coexistence(ctx):
-    """algosec-lean with Always Apply plus agent-spec.mdc doubles the always-on prefix."""
+    """A lean style rule with Always Apply plus agent-spec.mdc doubles the always-on prefix."""
     for base in (os.path.join(ctx.project, ".cursor", "rules"),
                  os.path.join(ctx.cursor_home, "rules")):
-        for name in ("algosec-lean.mdc", "algosec-lean.md"):
+        try:
+            names = sorted(os.listdir(base))
+        except OSError:
+            names = []
+        for name in names:
+            if not name.endswith((".mdc", ".md")) or not re.search(r"(^|[-_.])lean([-_.]|$)", name):
+                continue
             text = read(os.path.join(base, name))
             if re.search(r"(?m)^alwaysApply:\s*true", text):
                 return [("coexistence", "WARN",
-                         "algosec-lean is Always Apply alongside agent-spec.mdc (%s)" % os.path.join(base, name),
+                         "lean style rule is Always Apply alongside agent-spec.mdc (%s)" % os.path.join(base, name),
                          "set alwaysApply: false in that file; keep one always-on style rule")]
     return [("coexistence", "OK", "no stacked always-on style rule", "")]
 

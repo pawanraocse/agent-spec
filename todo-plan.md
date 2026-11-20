@@ -1,4 +1,4 @@
-# algosec-agent-spec — Final todo (sole sequenced backlog)
+# agent-spec — Final todo (sole sequenced backlog)
 
 > Consolidated 2026-11-16 from the old tracker, `dashboard_overhaul.md`, `testing_todo.md`,
 > `.agent-spec/TECH-DEBT-REGISTER.md`, the last session snapshot and the 2026-11-16 review of
@@ -152,4 +152,4 @@ Not required for done. Re-plan from the archive when picked up.
 
 ---
 
-*Algosec Cursor AI · Close rows only in this file. Last updated: 2026-11-16 (consolidated final list).*
+*Close rows only in this file. Last updated: 2026-11-16 (consolidated final list).*

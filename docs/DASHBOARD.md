@@ -217,4 +217,4 @@ python3 tests/test_traces.py && python3 tests/test_cursor_event.py
 
 ---
 
-*Algosec Cursor AI · Control Plane v3 (DEC-16)*
+*Control Plane v3 (DEC-16)*

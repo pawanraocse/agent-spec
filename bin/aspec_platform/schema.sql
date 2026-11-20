@@ -1,4 +1,4 @@
--- algosec-agent-spec platform database, schema v1 (IMPLEMENTATION-GUIDE §4.4).
+-- agent-spec platform database, schema v1 (IMPLEMENTATION-GUIDE §4.4).
 -- The database is DERIVED from files (DEC-04) and rebuildable with
 --   agent-spec-platform.py ingest --rebuild
 -- Single writer: the ingestor (DEC-09). Timestamps are ISO-8601 UTC strings.

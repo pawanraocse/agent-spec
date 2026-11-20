@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Cursor preToolUse hook — algosec-agent-spec input discipline.
+"""Cursor preToolUse hook — agent-spec input discipline.
 
-MARKER: algosec-agent-spec:preToolUse
+MARKER: agent-spec:preToolUse
 
 Fail-open: any parse/logic error returns allow. One nudge per target per session;
 retry goes through. Maps Cursor tool names onto the shared check() rules.
@@ -32,7 +32,7 @@ MARKER_TTL = 86400
 
 
 def nudged_already(session_id, key):
-    root = os.path.join(tempfile.gettempdir(), "algosec-agent-spec-nudge")
+    root = os.path.join(tempfile.gettempdir(), "agent-spec-nudge")
     slug = hashlib.sha1(
         ("%s\x00%s\x00%s" % (session_id, os.getcwd(), key)).encode("utf-8")
     ).hexdigest()[:20]
@@ -119,7 +119,7 @@ def track_session_tokens(session_id, payload, raw_len):
     direct = extract_tokens(payload)
     if not session_id or session_id == "none":
         return direct if direct is not None else (raw_len + 3) // 4
-    root = os.path.join(tempfile.gettempdir(), "algosec-agent-spec-tokens")
+    root = os.path.join(tempfile.gettempdir(), "agent-spec-tokens")
     slug = hashlib.sha1(("%s\x00%s" % (session_id, os.getcwd())).encode("utf-8")).hexdigest()[:20]
     path = os.path.join(root, slug)
     accum = 0
@@ -192,7 +192,7 @@ def debug_log(tool, payload, args, decision=None):
         row = {"ts": time.time(), "tool": tool, "payload_keys": sorted(payload.keys()),
                "arg_keys": sorted(args.keys()), "arg_shape": shape(args),
                "ranged": is_ranged(args), "decision": decision}
-        with open(os.path.join(tempfile.gettempdir(), "algosec-agent-spec-hook-debug.jsonl"), "a") as fh:
+        with open(os.path.join(tempfile.gettempdir(), "agent-spec-hook-debug.jsonl"), "a") as fh:
             fh.write(json.dumps(row) + "\n")
     except OSError:
         pass
@@ -452,7 +452,7 @@ def guard_event(rule, target=""):
         pass
 
 
-def deny(message, user_message="algosec-agent-spec input discipline", rule="input-discipline", target=""):
+def deny(message, user_message="agent-spec input discipline", rule="input-discipline", target=""):
     guard_event(rule, target)
     sys.stdout.write(
         json.dumps(
@@ -513,7 +513,7 @@ def risk_gate(tool, args, session_id):
                               "reasons": result.get("reasons"), "session": session_id, "protected": True})
         deny("Risk gate (P4-012): %s — %s. The agent may not change the gate or approve its own actions; "
              "tell the user what you need and stop." % (what, "; ".join(result.get("reasons") or [])),
-             "algosec-agent-spec risk gate: protected path (%s)" % what,
+             "agent-spec risk gate: protected path (%s)" % what,
              rule="P4-012-protected", target=what)
         return True
     if risk.consume_approval(project, result, session_id):
@@ -524,7 +524,7 @@ def risk_gate(tool, args, session_id):
         "the dashboard (Project > Risk), then retry the same call. Do not work around it with a "
         "different tool, and do not try to approve it yourself."
         % (what, "; ".join(result.get("reasons") or [])),
-        "algosec-agent-spec risk gate: tier 3 change needs approval (%s)" % what,
+        "agent-spec risk gate: tier 3 change needs approval (%s)" % what,
         rule="P4-012-tier3", target=what,
     )
     return True
@@ -547,7 +547,7 @@ def main():
             "Quarantine rule %s (S-002): this tool call touches a secrets/credentials path. "
             "Do not read, edit, list or copy it; ask the user to handle it manually "
             "(use .env.example for templates)." % hit[0],
-            "algosec-agent-spec quarantine: blocked sensitive path (%s)" % hit[0],
+            "agent-spec quarantine: blocked sensitive path (%s)" % hit[0],
             rule="S-002-" + str(hit[0]), target=hit[1],
         )
     if not os.path.isdir("./.agent-spec"):
@@ -602,7 +602,7 @@ def main():
                 "prevent needle-in-haystack degradation and preserve state before proceeding. "
                 "Retry as-is if you wish to continue without compacting."
                 % (session_tokens, threshold),
-                "algosec-agent-spec context threshold nudge (>80k tokens)",
+                "agent-spec context threshold nudge (>80k tokens)",
                 rule="S-004-threshold",
             )
 

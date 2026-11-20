@@ -4,7 +4,7 @@ How to prove v1.1.0 is what [MASTER-PLAN](MASTER-PLAN.md) and [todo-plan](../tod
 Three layers: **A** automated (one command), **B** manual per task (what a human must see),
 **C** exit-gate evidence. **D** lists what is *not* verified.
 
-Run everything from the package clone: `cd /path/to/algosec-agent-spec`.
+Run everything from the package clone: `cd /path/to/agent-spec`.
 
 ---
 
@@ -39,7 +39,7 @@ mkdir -p /tmp/p1-app && cd /tmp/p1-app && git init -q && printf 'import os\n' > 
 
 | # | Task | Steps | Expected |
 |---|---|---|---|
-| B1 | T-030 register-here | `cd /tmp/p1-app && /path/to/algosec-agent-spec/install.sh --register-here` | Registers `/tmp/p1-app` (or its realpath); prints a **Doctor** report at the end; `.cursor/hooks.json`, `.cursor/rules/agent-spec.mdc`, `.agent-spec/bin/agent-spec-doctor.py` exist |
+| B1 | T-030 register-here | `cd /tmp/p1-app && /path/to/agent-spec/install.sh --register-here` | Registers `/tmp/p1-app` (or its realpath); prints a **Doctor** report at the end; `.cursor/hooks.json`, `.cursor/rules/agent-spec.mdc`, `.agent-spec/bin/agent-spec-doctor.py` exist |
 | B2 | T-005 doctor | `./.agent-spec/bin/agent-spec-doctor.py --strict` | `0 FAIL, 0 WARN — green`; INFO lines for onboarding, team.yaml, footprint |
 | B3 | T-005 failure path | `mv .cursor/hooks.json /tmp/h.json` then doctor | `FAIL hooks`, `fix: …/install.sh --register "/tmp/p1-app"`, exit 1. Restore the file |
 | B4 | T-054 digest line | `./.agent-spec/bin/agent-spec-digest.py` | Contains `doctor: OK`. After B3 it reads `doctor: 1 issue(s) — … | fix: …` |
@@ -51,19 +51,19 @@ mkdir -p /tmp/p1-app && cd /tmp/p1-app && git init -q && printf 'import os\n' > 
 | B10 | T-002 index | `$M index --check; cat .agent-spec/memory/INDEX.md` | One `- id \| type \| subject \| text` line per fact, each ≤ 150 chars; `index --check` exit 0; delete a fact file → `--check` exits 1 |
 | B11 | T-002 audit | `./.agent-spec/bin/agent-spec-tokens.py audit --scan .` | No `memory tree` finding while INDEX.md < 8000 B |
 | B12 | T-032 team.yaml | `cp .agent-spec/templates/team.yaml .agent-spec/team.yaml`; uncomment `java_version: 17` and `sdlc_track: fast-track`; digest | `team: java_version=17 sdlc_track=fast-track`. Set `sdlc_track: warp` → line vanishes, doctor `WARN team.yaml: … invalid value for sdlc_track` |
-| B13 | T-031 | `rm "$(git rev-parse --git-path hooks)/post-rewrite"`; doctor; `/path/to/algosec-agent-spec/check-install.sh /tmp/p1-app` | doctor `WARN git-hooks … predates post-rewrite`; check-install prints a re-register hint and exits 1. Re-register fixes both |
+| B13 | T-031 | `rm "$(git rev-parse --git-path hooks)/post-rewrite"`; doctor; `/path/to/agent-spec/check-install.sh /tmp/p1-app` | doctor `WARN git-hooks … predates post-rewrite`; check-install prints a re-register hint and exits 1. Re-register fixes both |
 | B14 | T-022 | Edit `version:` in `.cursor/rules/agent-spec.mdc` to `0.0.1`; doctor; check-install | Both `WARN harness 0.0.1 but package is 1.1.0`; check-install exits 1 |
-| B15 | T-013 | Create `.cursor/rules/algosec-lean.mdc` with `alwaysApply: true`; doctor; `audit --scan .` | doctor `WARN coexistence`; audit finding "algosec-lean is Always Apply…", exit 1, fix `alwaysApply: false` |
+| B15 | T-013 | Create `.cursor/rules/team-lean.mdc` with `alwaysApply: true`; doctor; `audit --scan .` | doctor `WARN coexistence`; audit finding "lean style rule is Always Apply…", exit 1, fix `alwaysApply: false` |
 | B16 | T-014 | `wc -c skills/agent-spec/SKILL.md` | < 3072 (2537 at release). In Cursor: `/agent-spec` still routes; mentions `agent-spec-gate.py status` |
 | B17 | T-010 | `grep -n "Tool discipline" .cursor/rules/agent-spec.mdc` | 7 numbered rules present after `install.sh --register` |
 | B18 | T-011 default | In Cursor (Hooks on), ask the agent to read a > 20 KB file with no range | One nudge; same call retried goes through. Ranged read never nudged |
 | B19 | T-011 hard cap | Run the hook outside Cursor (no `cursor_version` in the payload) with `AGENT_SPEC_READ_HARD_CAP_KB=10` | Same rangeless read denied **every** time, message names the env var. Under Cursor the cap does not apply (T-057): the debug log shows `allow-unobservable-over-cap` instead |
-| B20 | T-011 payload (DEBT-005) | `AGENT_SPEC_HOOK_DEBUG=1` in Cursor's env; do a ranged Read + an edit; `cat "$TMPDIR/algosec-agent-spec-hook-debug.jsonl"` | Rows show `tool` and `arg_keys`. If a ranged Read shows keys other than `path/offset/limit`, add them to `RANGE_KEYS` |
+| B20 | T-011 payload (DEBT-005) | `AGENT_SPEC_HOOK_DEBUG=1` in Cursor's env; do a ranged Read + an edit; `cat "$TMPDIR/agent-spec-hook-debug.jsonl"` | Rows show `tool` and `arg_keys`. If a ranged Read shows keys other than `path/offset/limit`, add them to `RANGE_KEYS` |
 | B21 | T-033 Windows | On Windows with Git Bash: `.\install.ps1 -RegisterHere` from the app folder; then WSL variant `-Register C:\app` | Workspace registered, doctor report printed. **Not verified on this machine** (no PowerShell) |
 | B22 | T-034 / T-020 docs | Read QUICKSTART top to bottom as a new teammate | Day-1 path works verbatim; adoption checklist ticks off with the commands given |
 | B23 | T-012 | `agent-spec-tokens.py list`, then `compare <a> <b>`; `overhead --all` | Commands run; compare prints two transcripts side by side |
 
-Cleanup: `cd /path/to/algosec-agent-spec && ./uninstall.sh --unregister /tmp/p1-app && rm -rf /tmp/p1-app`.
+Cleanup: `cd /path/to/agent-spec && ./uninstall.sh --unregister /tmp/p1-app && rm -rf /tmp/p1-app`.
 
 ---
 
@@ -102,8 +102,8 @@ Run from a normal PowerShell in the clone; record each result in the table at th
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 mkdir C:\p1-app; cd C:\p1-app; git init -q; "import os" | Out-File app.py
-& C:\path\to\algosec-agent-spec\install.ps1 -RegisterHere        # 1 Git Bash
-& C:\path\to\algosec-agent-spec\install.ps1 -Register C:\p1-app   # 2 explicit path
+& C:\path\to\agent-spec\install.ps1 -RegisterHere        # 1 Git Bash
+& C:\path\to\agent-spec\install.ps1 -Register C:\p1-app   # 2 explicit path
 # 3 WSL: make System32\bash.exe first on PATH (or remove Git Bash from PATH), then repeat step 2
 cd C:\p1-app; bash ./.agent-spec/bin/agent-spec-doctor.py --strict
 ```
@@ -129,7 +129,7 @@ What the code review found (no live data needed):
 
 - Cursor's `preToolUse` payload is `tool_name` + `tool_input` (documented). The hook read both correctly.
 - In the session that built Slice 4c, the first **ranged** `Read` of a large file and the first `StrReplace`
-  of a file over 2 KB were each denied once with "algosec-agent-spec input discipline", then allowed on retry.
+  of a file over 2 KB were each denied once with "agent-spec input discipline", then allowed on retry.
   The `StrReplace` denial is consistent with Cursor reporting a targeted edit under the tool name `Write`, which
   the hook nudged as a full rewrite. The ranged-`Read` cause is not proven: either `offset`/`limit` arrive under
   a key the hook does not know, or they are absent from `tool_input`.
@@ -142,7 +142,7 @@ What the code review found (no live data needed):
 
 1. Hardened hook, `sessionEnd`/`stop` hooks and the new rule are already copied into this clone's `.cursor/` (the selftest's register step refreshes the clone). Other registered workspaces need `./install.sh` (bare). Start a new chat so Cursor reloads hooks.
 2. B18: ask the agent to read a > 20 KB file with a range (`offset`/`limit`), then an edit of a > 2 KB file. Expect no denial.
-3. B20: `cat "$TMPDIR/algosec-agent-spec-hook-debug.jsonl"` (marker `.agent-spec/.hook-debug` is already in this clone). Rows
+3. B20: `cat "$TMPDIR/agent-spec-hook-debug.jsonl"` (marker `.agent-spec/.hook-debug` is already in this clone). Rows
    show `tool`, `arg_shape` and `decision`. If a ranged Read shows `ranged: false`, add its real key to `RANGE_KEYS`;
    if `offset`/`limit` are missing from `arg_shape`, the nudge cannot be fixed hook-side and the rule needs a different trigger.
 4. B19: under Cursor the hard cap does not apply (T-057). With `AGENT_SPEC_READ_HARD_CAP_KB=10` and debug on, a read of a larger file logs `allow-unobservable-over-cap`.
@@ -151,7 +151,7 @@ What the code review found (no live data needed):
 
 | Check | Result | Notes |
 |---|---|---|
-| B18 ranged Read not nudged | **pass after fix** (2026-11-13) | First run (`cursor-agent` 2026.11.11, `--model auto`): a Read of `todo-plan.md` with offset 1, limit 40 was denied with "algosec-agent-spec input discipline". Cause is B20, not `RANGE_KEYS`. Fix: under Cursor (`cursor_version` in the payload) the hook allows Reads it cannot judge (`allow-unobservable`). Re-run: both the ranged read and a whole read of `docs/IMPLEMENTATION-GUIDE.md` allowed; `events.jsonl` marks them `ranged: true` (2912 of 56696 B) and `ranged: false` (73888 of 74292 B). |
+| B18 ranged Read not nudged | **pass after fix** (2026-11-13) | First run (`cursor-agent` 2026.11.11, `--model auto`): a Read of `todo-plan.md` with offset 1, limit 40 was denied with "agent-spec input discipline". Cause is B20, not `RANGE_KEYS`. Fix: under Cursor (`cursor_version` in the payload) the hook allows Reads it cannot judge (`allow-unobservable`). Re-run: both the ranged read and a whole read of `docs/IMPLEMENTATION-GUIDE.md` allowed; `events.jsonl` marks them `ranged: true` (2912 of 56696 B) and `ranged: false` (73888 of 74292 B). |
 | StrReplace on > 2 KB file not nudged | **pass after fix** (2026-11-13) | The model called `StrReplace` on a 4840 B file; Cursor's `preToolUse` reported it as `Write` with `{content, file_path}` (the whole new file), and the hook denied it. Same fix: under Cursor a `Write` without `old_string` is allowed. Re-run: allowed and applied. |
 | B19 hard cap | **not applicable under Cursor** | The hook cannot see a range in Cursor (B20), so the cap would deny ranged reads too. It is now skipped for Cursor payloads and still applies elsewhere. |
 | B20 payload shape captured | **done** (2026-11-13) | The model sent `{"path", "offset": 1, "limit": 40}` (agent transcript); the hook received `tool_input` = `{"file_path"}` only (`arg_keys: ["file_path"]`, `ranged: false`). Cursor drops offset/limit before `preToolUse`. The transcript is no fallback: it is written after the tool runs, so at hook time it is one message stale (tried and reverted: it still denied ranged reads and matched a rangeless read to an older range). `postToolUse` for Read does carry `tool_output.content_length`, so full reads are observable after the fact. |

@@ -1,11 +1,11 @@
-# AGENTS.md — algosec-agent-spec (thin router)
+# AGENTS.md — agent-spec (thin router)
 
 > **Cursor-only.** Standing rules live in `CURSOR.md` → installed as
 > `.cursor/rules/agent-spec.mdc`. Do not duplicate the protocol here.
 
 ## Install (when the user asks)
 
-From the **algosec-agent-spec** clone:
+From the **agent-spec** clone:
 
 ```bash
 ./install.sh
@@ -39,7 +39,7 @@ digest/preToolUse do not fire.
 
 - Re-installing overwrites global `agent-spec-*` skills (**last install wins** vs older
   agent-spec clones).
-- Stacking `algosec-lean.mdc` + `agent-spec.mdc` inflates always-on context; prefer one
+- Stacking a lean style rule (`*-lean.mdc`) + `agent-spec.mdc` inflates always-on context; prefer one
   style layer. This package does not ship lean.
 
 ## Uninstall
@@ -50,4 +50,3 @@ digest/preToolUse do not fire.
 ./uninstall.sh --full
 ```
 
-Algosec Cursor AI

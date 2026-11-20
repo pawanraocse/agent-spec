@@ -32,7 +32,7 @@ Run → observe → extract experience → validate → store → reuse next tim
 | 6. Human approval | High-impact learned skills | PR + team lead before "trusted" tier | Org-wide |
 
 > **Key design decision:** Experience (layer 2) is scoped by **repo namespace**, not by agent type.
-> A PR-review agent and an RCA agent both working in `algosec/api-gateway` share the same experience store entry.
+> A PR-review agent and an RCA agent both working in `acme/api-gateway` share the same experience store entry.
 > This is the company-wide sharpness flywheel: every run by any agent makes the next run cheaper and faster — for everyone.
 
 ## Retrieval flow (next run, cross-agent)
@@ -79,7 +79,7 @@ Store per agent or per repo namespace:
 ```yaml
 id: exp-gradle-java-version-mismatch
 agent: agent-hub-pr-review  # or repo-scoped
-repo: algosec/some-service
+repo: acme/some-service
 trigger:
   signals: ["unsupported Java version", "Gradle", "JAVA_HOME"]
   tools_used: [gateway-bitbucket-get-file]

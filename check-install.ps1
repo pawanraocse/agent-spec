@@ -1,9 +1,9 @@
 #Requires -Version 5.1
-# algosec-agent-spec Windows check-install
+# agent-spec Windows check-install
 param([string]$Workspace = "")
 
 $CursorSkills = Join-Path $env:USERPROFILE ".cursor\skills"
-$Projects = Join-Path $CursorSkills ".algosec-agent-spec-projects"
+$Projects = Join-Path $CursorSkills ".agent-spec-projects"
 $missing = 0
 
 Write-Host "Checking $CursorSkills"

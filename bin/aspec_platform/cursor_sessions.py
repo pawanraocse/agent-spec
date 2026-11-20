@@ -556,7 +556,7 @@ def get_cursor_session_detail(composer_id):
         # Parse messages into conversational turns
         messages = []
         if body_text:
-            raw_turns = body_text.split("Algosec Cursor AI\n")
+            raw_turns = re.split(r"(?m)^[^\n]*Cursor AI\n", body_text)
             for idx, turn_chunk in enumerate(raw_turns):
                 chunk = turn_chunk.strip()
                 if not chunk:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Cursor sessionStart hook — algosec-agent-spec.
+"""Cursor sessionStart hook — agent-spec.
 
-MARKER: algosec-agent-spec:sessionStart
+MARKER: agent-spec:sessionStart
 
 Injects the project digest via {"additional_context": ...}. Fail-open: always
 prints valid JSON. Safe outside an agent-spec project (empty {}).

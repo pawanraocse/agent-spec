@@ -52,7 +52,7 @@ def package_root() -> str:
         if cand and os.path.isfile(os.path.join(cand, "install.sh")):
             return cand
     try:
-        with open(os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".algosec-agent-spec-root"),
+        with open(os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".agent-spec-root"),
                   encoding="utf-8") as fh:
             cand = fh.read().strip()
         if os.path.isfile(os.path.join(cand, "install.sh")):

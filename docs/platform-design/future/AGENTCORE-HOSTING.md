@@ -57,7 +57,7 @@ Cursor / Teams / OpenWebUI / service bot
 
 Cedar hides or blocks tools not allowed for the caller. No audience = invisible to all.
 
-## Agent Hub repo role (`algosec-agent-hub`)
+## Agent Hub repo role (`agent-hub`)
 
 This repo does **not** replace AgentCore. It holds:
 
@@ -79,5 +79,5 @@ Before production: PR agent folder to `agentcore-agents`, DevOps deploy to dev.
 
 ## References
 
-- [How to build MCP tools and agents](https://algo-confluence.algosec.com/display/DEVOPS/How+to+build+MCP+tools+and+agents)
-- [DEVOPS-11338 Architecture](https://algo-confluence.algosec.com/display/DEVOPS/DEVOPS-11338+AI+Tools+Platform+Self-Service+Architecture)
+- How to build MCP tools and agents (internal Confluence)
+- DEVOPS-11338 Architecture (internal Confluence)

@@ -859,4 +859,4 @@ Tasks: [`todo-plan.md`](todo-plan.md) Slice 6d (DV-000…DV-062).
 
 ---
 
-*Algosec Cursor AI · Last updated: 2026-11-13*
+*Last updated: 2026-11-13*

@@ -16,7 +16,7 @@ Routes; does not do the work. Pick exactly one skill, say why in one line, invok
 
 The digest already has stack, graph, gate and last session; do not re-read the index or
 snapshot. A Direct question needs no route and no tool call. Code work with no `.agent-spec/`
-or no digest → run `python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"`
+or no digest → run `python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"`
 yourself first. If it prints `"next": "/agent-spec-onboard"` or the digest says **ONBOARDING
 NEEDED** → run `/agent-spec-onboard` yourself, silently, whatever was asked. Never ask the user to.
 

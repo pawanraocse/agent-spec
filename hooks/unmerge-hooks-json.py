@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Remove algosec-agent-spec hook entries from hooks.json."""
+"""Remove agent-spec hook entries from hooks.json."""
 import json
 import sys
 

@@ -173,7 +173,7 @@ class CursorBenchTest(unittest.TestCase):
         mine = os.path.join(self.tmp, "mine")
         os.makedirs(os.path.join(home, ".cursor", "skills"))
         os.makedirs(mine)
-        registry = os.path.join(home, ".cursor", "skills", ".algosec-agent-spec-projects")
+        registry = os.path.join(home, ".cursor", "skills", ".agent-spec-projects")
         with open(registry, "w") as fh:
             fh.write(mine + "\n")
         cwd_log = os.path.join(self.tmp, "cwd.log")

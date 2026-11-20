@@ -44,19 +44,19 @@ def test_clean_harness_exits_zero():
 def test_lean_always_apply_next_to_agent_spec_is_flagged():
     with tempfile.TemporaryDirectory() as t:
         rules = harness_project(t)
-        open(os.path.join(rules, "algosec-lean.mdc"), "w").write("---\nalwaysApply: true\n---\nterse\n")
+        open(os.path.join(rules, "team-lean.mdc"), "w").write("---\nalwaysApply: true\n---\nterse\n")
         res = audit(t)
         assert res.returncode != 0, "findings must fail the audit so CI can gate on it"
-        assert "algosec-lean is Always Apply" in res.stdout, res.stdout
+        assert "lean style rule is Always Apply" in res.stdout, res.stdout
         assert "alwaysApply: false" in res.stdout, "must say how to fix"
 
 
 def test_lean_on_demand_is_not_flagged_as_stacking():
     with tempfile.TemporaryDirectory() as t:
         rules = harness_project(t)
-        open(os.path.join(rules, "algosec-lean.mdc"), "w").write("---\nalwaysApply: false\n---\nterse\n")
+        open(os.path.join(rules, "team-lean.mdc"), "w").write("---\nalwaysApply: false\n---\nterse\n")
         res = audit(t)
-        assert "algosec-lean is Always Apply" not in res.stdout, res.stdout
+        assert "lean style rule is Always Apply" not in res.stdout, res.stdout
 
 
 if __name__ == "__main__":

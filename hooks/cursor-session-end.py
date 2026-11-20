@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Cursor sessionEnd / stop hook — algosec-agent-spec session receipt.
+"""Cursor sessionEnd / stop hook — agent-spec session receipt.
 
-MARKER: algosec-agent-spec:sessionEnd
+MARKER: agent-spec:sessionEnd
 
 Writes .agent-spec/metrics/receipts/<session>.json and upserts a row in
 .agent-spec/metrics/daily.jsonl (T-050 / T-051). Registered for both `sessionEnd` (once,

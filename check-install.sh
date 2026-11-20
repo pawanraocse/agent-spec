@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# algosec-agent-spec — verify Cursor install
+# agent-spec — verify Cursor install
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CURSOR_SKILLS="${HOME}/.cursor/skills"
-PROJECTS_FILE="${CURSOR_SKILLS}/.algosec-agent-spec-projects"
-ROOT_MARKER="${CURSOR_SKILLS}/.algosec-agent-spec-root"
+PROJECTS_FILE="${CURSOR_SKILLS}/.agent-spec-projects"
+ROOT_MARKER="${CURSOR_SKILLS}/.agent-spec-root"
 missing=0
 PKG_VERSION="$(tr -d '[:space:]' < "$REPO_DIR/VERSION" 2>/dev/null || echo unknown)"
 
@@ -21,7 +21,7 @@ version_drift() {
   return 0
 }
 
-echo "algosec-agent-spec check-install"
+echo "agent-spec check-install"
 echo "Package: $REPO_DIR"
 echo "Skills:  $CURSOR_SKILLS"
 echo ""

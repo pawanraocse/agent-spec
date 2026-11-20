@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# algosec-agent-spec — Cursor-only installer (algosec-lean style)
+# agent-spec — Cursor-only installer
 #
 #   ./install.sh                         # skills → ~/.cursor/skills (+ harness on this repo;
 #                                        #   refreshes any previously --register'd workspaces)
@@ -35,8 +35,8 @@ CURSOR_SKILLS="${HOME}/.cursor/skills"
 if [ -n "${WIN_CURSOR_HOME:-}" ] && [ -d "${WIN_CURSOR_HOME}/.cursor" ]; then
   CURSOR_SKILLS="${WIN_CURSOR_HOME}/.cursor/skills"
 fi
-PROJECTS_FILE="${CURSOR_SKILLS}/.algosec-agent-spec-projects"
-ROOT_MARKER="${CURSOR_SKILLS}/.algosec-agent-spec-root"
+PROJECTS_FILE="${CURSOR_SKILLS}/.agent-spec-projects"
+ROOT_MARKER="${CURSOR_SKILLS}/.agent-spec-root"
 
 DO_SKILLS="true"
 DO_PROJECT="false"
@@ -106,7 +106,7 @@ fi
 
 [ -d "${SKILL_SRC}" ] || { echo "✗ not found: ${SKILL_SRC}" >&2; exit 1; }
 
-echo -e "${BLUE}algosec-agent-spec${NC} v${VERSION} (Cursor-only)"
+echo -e "${BLUE}agent-spec${NC} v${VERSION} (Cursor-only)"
 echo -e "  package: ${REPO_DIR}"
 echo ""
 # Package CLIs (doctor/selftest invoke ./bin/* on the clone)
@@ -156,9 +156,9 @@ copy_skills() {
   done
   # ensure.py's skill sync reads these to keep a lean install lean and a full one full (H-006).
   if [ "$LEAN" = "true" ]; then
-    : > "${dest}/.algosec-agent-spec-lean"; rm -f "${dest}/.algosec-agent-spec-full"
+    : > "${dest}/.agent-spec-lean"; rm -f "${dest}/.agent-spec-full"
   else
-    : > "${dest}/.algosec-agent-spec-full"; rm -f "${dest}/.algosec-agent-spec-lean"
+    : > "${dest}/.agent-spec-full"; rm -f "${dest}/.agent-spec-lean"
   fi
   echo -e "  ${GREEN}✓${NC} ${installed} skills → ${dest}$([ "$skipped" -gt 0 ] && echo "   (${skipped} lean-excluded)")"
 }
@@ -210,7 +210,7 @@ write_mdc() {
   mkdir -p "${project_root}/.cursor/rules"
   {
     echo "---"
-    echo "description: algosec-agent-spec standing rules — session protocol, personas, hard stops."
+    echo "description: agent-spec standing rules — session protocol, personas, hard stops."
     echo "alwaysApply: true"
     echo "globs: [\"**/*\"]"
     echo "version: ${VERSION}"
@@ -222,7 +222,7 @@ write_mdc() {
   # Agent Requested, not always-on: a Direct reply never pays for the code-work protocol.
   {
     echo "---"
-    echo "description: algosec-agent-spec code-work protocol — graph-first search, implement gates, subagents, tool discipline. Apply before any tool call that searches across files, edits source or runs tests."
+    echo "description: agent-spec code-work protocol — graph-first search, implement gates, subagents, tool discipline. Apply before any tool call that searches across files, edits source or runs tests."
     echo "alwaysApply: false"
     echo "version: ${VERSION}"
     echo "---"
@@ -345,7 +345,7 @@ install_project() {
 > Append a dated section after every working session. Never overwrite.
 
 ## Session Summary
-algosec-agent-spec installed.
+agent-spec installed.
 
 ## Current Pipeline Gate
 Gate 0: ONBOARDING
@@ -372,8 +372,8 @@ EOF
   # Thin AGENTS.md — create if missing; if present without marker, append pointer
   if [ ! -f "${project_root}/AGENTS.md" ]; then
     cp "${REPO_DIR}/AGENTS.md" "${project_root}/AGENTS.md"
-  elif ! grep -q "algosec-agent-spec\|agent-spec" "${project_root}/AGENTS.md" 2>/dev/null; then
-    printf '\n---\n<!-- algosec-agent-spec: see .cursor/rules/agent-spec.mdc and .agent-spec/ -->\n' \
+  elif ! grep -q "agent-spec\|agent-spec" "${project_root}/AGENTS.md" 2>/dev/null; then
+    printf '\n---\n<!-- agent-spec: see .cursor/rules/agent-spec.mdc and .agent-spec/ -->\n' \
       >> "${project_root}/AGENTS.md"
   fi
 
@@ -435,7 +435,20 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# 1. Machine-wide skills → ~/.cursor/skills  (default; same as algosec-lean)
+# 0. Carry over state files that older releases wrote under a prefixed name
+#    (.<prefix>-agent-spec-projects and friends). Runs before the registry is read.
+# ---------------------------------------------------------------------------
+for legacy in "${CURSOR_SKILLS}"/.*-agent-spec-projects; do
+  [ -f "$legacy" ] || continue
+  cat "$legacy" >> "${PROJECTS_FILE}"
+  awk 'NF && !seen[$0]++' "${PROJECTS_FILE}" > "${PROJECTS_FILE}.tmp" && mv "${PROJECTS_FILE}.tmp" "${PROJECTS_FILE}"
+  rm -f "$legacy"
+  echo -e "  ${GREEN}✓${NC} migrated registry $(basename "$legacy") → $(basename "${PROJECTS_FILE}")"
+done
+rm -f "${CURSOR_SKILLS}"/.*-agent-spec-root "${CURSOR_SKILLS}"/.*-agent-spec-lean "${CURSOR_SKILLS}"/.*-agent-spec-full
+
+# ---------------------------------------------------------------------------
+# 1. Machine-wide skills → ~/.cursor/skills  (default)
 # ---------------------------------------------------------------------------
 if [ "$DO_SKILLS" = "true" ]; then
   echo -e "${YELLOW}Skills → ${CURSOR_SKILLS}${NC}"

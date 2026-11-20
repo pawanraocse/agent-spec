@@ -45,7 +45,7 @@ SECRETS = [
 BENIGN = [
     "Please read the token budget docs and the password hashing section.",
     "tokens estimated at chars/4; no secret here",
-    "/Users/pawan.yadav/development/algosec-agent-spec/bin/aspec_platform/ingest.py",
+    "/Users/pawan.yadav/development/agent-spec/bin/aspec_platform/ingest.py",
     "bin/aspec_platform/transcripts/subagents/children-and-parents/link-order",
     "see docs/IMPLEMENTATION-GUIDE.md section 4.2 for the event schema",
     "agent-spec-implementation-guide-phase-two-ingestor-design-2026",

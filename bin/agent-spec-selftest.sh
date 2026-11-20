@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# algosec-agent-spec Cursor selftest — no Claude Code paths
+# agent-spec Cursor selftest — no Claude Code paths
 set -euo pipefail
 
 HOME_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -96,7 +96,7 @@ EMPTY="${WORK}/emptyscan"
 mkdir -p "${BAD}/.agent-spec" "${BAD}/.cursor/hooks" "${CLEAN}/.agent-spec" "${EMPTY}"
 "$PY" -c "import json,sys; r=sys.argv[1]; json.dump({'version':1,'hooks':{'sessionStart':[{'command':'python3 .cursor/hooks/agent-spec-session-start.py'},{'command':'python3 .cursor/hooks/agent-spec-session-start.py'}],'preToolUse':[{'command':'python3 .cursor/hooks/agent-spec-pre-tool-use.py'}]}}, open(r+'/.cursor/hooks.json','w'))" "${BAD}"
 AUD="$("$PY" "$T" audit --scan "${BAD}" 2>&1 || true)"
-echo "$AUD" | grep -q "2 algosec-agent-spec sessionStart handlers" \
+echo "$AUD" | grep -q "2 agent-spec sessionStart handlers" \
   && ok "audit flags duplicate sessionStart" || bad "audit missed duplicate sessionStart"
 echo "$AUD" | grep -q "hook target missing" \
   && ok "audit flags missing hook script" || bad "audit missed missing hook script"

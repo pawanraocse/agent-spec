@@ -45,7 +45,7 @@ Read-only: no step edits source. The output is a diagnosis, never a fix.
 
 ## Step prompts
 
-**fetch** — Call the Cursor MCP tool `jira___getIssue` (server `user-algosec-atlassian`) for the key
+**fetch** — Call the Cursor MCP tool `jira___getIssue` (the Atlassian MCP server configured in Cursor, e.g. `user-<org>-atlassian`) for the key
 in the request, then `jira___getIssueComments` and `jira___getIssueAttachments`. Pre-filter raw API responses
 using `./.agent-spec/bin/agent-spec-mcp-filter.py` before context injection to prune schemas and metadata. Check
 `reviewed-examples/README.md` for the Jira label convention and read any matching example.

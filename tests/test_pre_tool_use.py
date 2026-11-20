@@ -99,7 +99,7 @@ def test_alternate_payload_shapes_count_as_ranged():
 def test_debug_log_records_shape_not_contents():
     p = project()
     call(p, read(p, "big.txt", offset=1, limit=2), AGENT_SPEC_HOOK_DEBUG="1")
-    log = os.path.join(p, "tmp", "algosec-agent-spec-hook-debug.jsonl")
+    log = os.path.join(p, "tmp", "agent-spec-hook-debug.jsonl")
     assert os.path.exists(log), "debug log not written"
     row = json.loads(open(log).read().splitlines()[-1])
     assert row["tool"] == "Read" and "offset" in row["arg_keys"] and "limit" in row["arg_keys"], row
@@ -134,7 +134,7 @@ def test_debug_marker_file_enables_log_with_decision():
     p = project()
     open(os.path.join(p, ".agent-spec", ".hook-debug"), "w").close()
     call(p, read(p, "big.txt", offset=0, limit=7))
-    log = os.path.join(p, "tmp", "algosec-agent-spec-hook-debug.jsonl")
+    log = os.path.join(p, "tmp", "agent-spec-hook-debug.jsonl")
     row = json.loads(open(log).read().splitlines()[-1])
     assert row["ranged"] is True and row["decision"] == "allow", row
     assert row["arg_shape"]["offset"] == 0 and row["arg_shape"]["path"] == "str", row
@@ -378,7 +378,7 @@ def test_cursor_read_allowed_because_range_is_unobservable():
     # The skipped cap is recorded, so a user who set it can see it did not apply.
     open(os.path.join(p, ".agent-spec", ".hook-debug"), "w").close()
     call(p, payload, AGENT_SPEC_READ_HARD_CAP_KB="10")
-    log = os.path.join(p, "tmp", "algosec-agent-spec-hook-debug.jsonl")
+    log = os.path.join(p, "tmp", "agent-spec-hook-debug.jsonl")
     assert json.loads(open(log).read().splitlines()[-1])["decision"] == "allow-unobservable-over-cap"
 
 

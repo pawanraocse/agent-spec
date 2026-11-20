@@ -99,7 +99,7 @@ input:
     log_text: string?          # Raw logs or stack trace snippet
     log_url: string?           # URL to Jenkins console or S3 log bundle
   repo_context:
-    - repo: string             # e.g. algosec/auth-service
+    - repo: string             # e.g. acme/auth-service
       branch: string?          # e.g. main, release/v24.2
       commit_sha: string?
       release_tag: string?     # e.g. v24.2.1
@@ -114,9 +114,9 @@ status: success | partial | failed
 confidence: HIGH | MEDIUM | LOW | UNKNOWN
 root_cause:
   summary: "NullPointerException in TokenValidator due to missing claim in v24.2 token payload."
-  primary_file: "src/main/java/com/algosec/auth/TokenValidator.java"
+  primary_file: "src/main/java/com/acme/auth/TokenValidator.java"
   primary_line: 142
-  repo: "algosec/auth-service"
+  repo: "acme/auth-service"
   branch: "release/v24.2"
 evidence:
   stack_trace_snippet: "..."

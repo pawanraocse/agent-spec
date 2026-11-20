@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure session token cost and harness overhead (algosec-agent-spec / Cursor).
+"""Measure session token cost and harness overhead (agent-spec / Cursor).
 
 By default, `list`, `session`, `overhead`, `corpus`, `context`, `tools`, and `compare`
 read **Cursor** agent transcripts under
@@ -901,14 +901,14 @@ def audit_cursor_project(proj, limits, global_skills, out):
             if has_harness and not ours:
                 out.append((
                     hooks_path,
-                    "no algosec-agent-spec handler wired for %s" % event,
+                    "no agent-spec handler wired for %s" % event,
                     "standing protocol and digest rely on these hooks",
                     "re-run ./install.sh --register",
                 ))
             if len(ours) > 1:
                 out.append((
                     hooks_path,
-                    "%d algosec-agent-spec %s handlers (expected 1)" % (len(ours), event),
+                    "%d agent-spec %s handlers (expected 1)" % (len(ours), event),
                     "duplicate hook output is re-read every turn",
                     "run hooks/merge-hooks-json.py or reinstall; keep one handler per event",
                 ))
@@ -936,7 +936,7 @@ def audit_cursor_project(proj, limits, global_skills, out):
             rule_files = [f for f in os.listdir(rules_dir) if f.endswith((".mdc", ".md"))]
         except OSError:
             rule_files = []
-        lean = [f for f in rule_files if f.startswith("algosec-lean")]
+        lean = [f for f in rule_files if re.search(r"(^|[-_.])lean([-_.]|$)", f)]
         for f in lean:
             try:
                 always = re.search(r"(?m)^alwaysApply:\s*true",
@@ -946,7 +946,7 @@ def audit_cursor_project(proj, limits, global_skills, out):
             if always and "agent-spec.mdc" in rule_files:
                 out.append((
                     os.path.join(rules_dir, f),
-                    "algosec-lean is Always Apply next to agent-spec.mdc (stacked always-on style rules)",
+                    "lean style rule is Always Apply next to agent-spec.mdc (stacked always-on style rules)",
                     "both rules ride in the cached prefix every turn and can contradict each other on reply shape",
                     "set alwaysApply: false in %s and invoke it on demand; keep one always-on style rule" % f,
                 ))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Merge algosec-agent-spec hooks into a Cursor hooks.json (idempotent).
+"""Merge agent-spec hooks into a Cursor hooks.json (idempotent).
 
 Usage: merge-hooks-json.py <path-to-hooks.json>
 """

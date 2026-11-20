@@ -1,7 +1,7 @@
-# algosec-agent-spec — Master Plan
+# agent-spec — Master Plan
 
-> **One repo. One product.** `algosec-agent-hub` archived Oct 2026.
-> All platform capabilities built into `algosec-agent-spec`.
+> **One repo. One product.** `agent-hub` archived Oct 2026.
+> All platform capabilities built into `agent-spec`.
 
 | Current version | Architecture | IDE support |
 |-----------------|-------------|-------------|
@@ -325,4 +325,3 @@ Week  1 ── 3     4 ──────── 11    12 ───────�
 
 *Last updated: 2026-11-14 · Planning doc version: 3.3.0 (adds DEC-17, project intelligence)*
 
-Algosec Cursor AI

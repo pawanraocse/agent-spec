@@ -1,7 +1,7 @@
 # Platform Design Archive (Imported from Agent Hub)
 
-> **Purpose:** Historical record and reference architecture for Phase 2 platform capabilities in `algosec-agent-spec`.
-> All architectural designs, data flows, workflows, and decisions from `algosec-agent-hub` have been consolidated here.
+> **Purpose:** Historical record and reference architecture for Phase 2 platform capabilities in `agent-spec`.
+> All architectural designs, data flows, workflows, and decisions from `agent-hub` have been consolidated here.
 
 ---
 

@@ -9,7 +9,7 @@ recorded in repo A and found from repo B names repo A.
 
 Peers are the repos that share a mesh with this project (P3-001):
   - the members listed in this project's `.agent-spec/mesh.json` (this project is a hub);
-  - every registered project (`~/.cursor/skills/.algosec-agent-spec-projects`) whose
+  - every registered project (`~/.cursor/skills/.agent-spec-projects`) whose
     `mesh.json` lists this project, plus that hub's other members;
   - any `--peer PATH` given.
 
@@ -80,7 +80,7 @@ def native_path(p: str, nt: bool = os.name == "nt") -> str:
 
 
 def registry():
-    path = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".algosec-agent-spec-projects")
+    path = os.path.join(os.path.expanduser("~"), ".cursor", "skills", ".agent-spec-projects")
     try:
         with open(path, encoding="utf-8") as fh:
             return [native_path(l.strip()) for l in fh if l.strip()]

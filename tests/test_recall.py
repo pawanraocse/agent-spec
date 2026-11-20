@@ -42,7 +42,7 @@ class RecallTest(unittest.TestCase):
         # B is the mesh hub and lists A as a member.
         with open(os.path.join(self.b, ".agent-spec", "mesh.json"), "w") as fh:
             json.dump({"version": 1, "repos": [{"repo_id": "orders", "path": self.a}]}, fh)
-        with open(os.path.join(self.home, ".cursor", "skills", ".algosec-agent-spec-projects"), "w") as fh:
+        with open(os.path.join(self.home, ".cursor", "skills", ".agent-spec-projects"), "w") as fh:
             fh.write("%s\n%s\n" % (self.a, self.b))
         self.addCleanup(shutil.rmtree, self.tmp, True)
 

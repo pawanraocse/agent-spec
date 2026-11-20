@@ -75,7 +75,7 @@ input:
   jira_key: string?          # e.g. ENG-1234
   pr_urls: string[]?         # one or more Bitbucket PR URLs
   repo_context:              # optional override; orchestrator builds this if omitted
-    - repo: string           # e.g. algosec/api-gateway
+    - repo: string           # e.g. acme/api-gateway
       branch: string         # e.g. feature/ENG-1234-auth or main
       pr_id: string?
 ```

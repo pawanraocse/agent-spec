@@ -4,8 +4,8 @@
 > Source of truth for architecture, build order, and integration boundaries.
 > Epic alignment: **DEVOPS-11338** (AgentCore AI Tools Platform)
 > Related Confluence:
-> - [DEVOPS-11338 AI Tools Platform Self-Service Architecture](https://algo-confluence.algosec.com/display/DEVOPS/DEVOPS-11338+AI+Tools+Platform+Self-Service+Architecture)
-> - [How to build MCP tools and agents](https://algo-confluence.algosec.com/display/DEVOPS/How+to+build+MCP+tools+and+agents)
+> - DEVOPS-11338 AI Tools Platform Self-Service Architecture (internal Confluence)
+> - How to build MCP tools and agents (internal Confluence)
 
 ---
 
@@ -28,9 +28,9 @@
 
 ## 1. What Agent Hub is
 
-**Agent Hub** is Algosec's **governed agentic AI framework** — a Python orchestration platform for **more accurate, efficient, and measurable** agentic work. It provides orchestration, memory, adaptive learning, observability, and contracts. **RCA is one use case**, not the product. PR review, digest, triage, and future workflows are additional agents on the same framework.
+**Agent Hub** is a **governed agentic AI framework** — a Python orchestration platform for **more accurate, efficient, and measurable** agentic work. It provides orchestration, memory, adaptive learning, observability, and contracts. **RCA is one use case**, not the product. PR review, digest, triage, and future workflows are additional agents on the same framework.
 
-**Algosec-Hermes:** Hermes-shaped at the pattern level (gateway, memory, MCP, schedule) but **enterprise-grade** — shared, governed, measurable. The moat is **framework + multi-agent orchestration + learning flywheel**, not better prompts or another Cursor skill.
+**Hermes-style:** Hermes-shaped at the pattern level (gateway, memory, MCP, schedule) but **enterprise-grade** — shared, governed, measurable. The moat is **framework + multi-agent orchestration + learning flywheel**, not better prompts or another Cursor skill.
 
 ### What we are NOT building
 
@@ -42,8 +42,8 @@
 
 | Layer | Location | Role |
 |-------|----------|------|
-| **Framework** | `algosec-agent-hub/framework/` | Orchestrator, experience, index, observability, contracts — **build first** |
-| **Agents** | `algosec-agent-hub/agents/<name>/` | Thin workflow definitions plugged into framework API — **after framework is stable** |
+| **Framework** | `agent-hub/framework/` | Orchestrator, experience, index, observability, contracts — **build first** |
+| **Agents** | `agent-hub/agents/<name>/` | Thin workflow definitions plugged into framework API — **after framework is stable** |
 | Deployed runtime | `agentcore-agents/<agent>/` | Company-wide Lambda (Phase 3) |
 | MCP tools | `agentcore-mcp-tools/` + Gateway | Shared Bitbucket, Jira, Confluence, … |
 | Platform rails | `agentcore-mcp-gateway` (DevOps) | Gateway, Cedar, Entra, SSM contract, SDK |
@@ -89,7 +89,7 @@ Agents are thin workflow definitions (step graph, sub-agent handlers, golden eva
 
 ```python
 # Register agent workflow (Phase 2 — after framework stable)
-framework.register_agent("rca", workflow_path="algosec-agent-hub/agents/rca-investigation/workflow.yaml")
+framework.register_agent("rca", workflow_path="agent-hub/agents/rca-investigation/workflow.yaml")
 
 # Register sub-agent handler
 framework.register_sub_agent("logs", handler=logs_agent.run)
@@ -117,7 +117,7 @@ merged = framework.merge_agent_results(results)
 
 ### Phase 1 (local framework)
 
-- Framework runs locally in `algosec-agent-hub`.
+- Framework runs locally in `agent-hub`.
 - Cursor Agent mode triggers framework CLI — not the orchestrator itself.
 - MCP: local Atlassian MCP + `graphify-cli.py` for dev velocity.
 - Langfuse: self-hosted Docker on internal network.
@@ -235,7 +235,7 @@ Hermes is a **personal, self-hosted** agent: one gateway process, learning loop,
 
 ### Competitive landscape: 666_BugBot (BrandFactory)
 
-Reference: [666_BugBot Agent Setup and Invocation](https://algo-confluence.algosec.com/display/ALSaaS/666_BugBot+Agent+Setup+and+Invocation) · repo: `algosec-tools/brandfactory`
+Reference: 666_BugBot Agent Setup and Invocation (internal Confluence) · repo: `acme-tools/brandfactory`
 
 | Dimension | 666_BugBot (today) | Agent Hub (full deploy) |
 |-----------|-------------------|-------------------------|
@@ -298,8 +298,8 @@ Reference: [666_BugBot Agent Setup and Invocation](https://algo-confluence.algos
 ## 8. Phased rollout
 
 Platform references:
-- [How to build MCP tools and agents](https://algo-confluence.algosec.com/display/DEVOPS/How+to+build+MCP+tools+and+agents)
-- [DEVOPS-11338 AI Tools Platform Self-Service Architecture](https://algo-confluence.algosec.com/display/DEVOPS/DEVOPS-11338+AI+Tools+Platform+Self-Service+Architecture)
+- How to build MCP tools and agents (internal Confluence)
+- DEVOPS-11338 AI Tools Platform Self-Service Architecture (internal Confluence)
 
 ### Phase 1 — Framework (local Python + Langfuse)
 
@@ -345,8 +345,8 @@ Plug real agents into proven framework API. **RCA first** (differentiated); PR r
 
 | Agent | Path | Sub-agents |
 |-------|------|------------|
-| RCA Investigation | `algosec-agent-hub/agents/rca-investigation/` | Logs, Repo, Reasoning, Validation |
-| PR Review | `algosec-agent-hub/agents/pr-review/` | Diff, Review, Validation |
+| RCA Investigation | `agent-hub/agents/rca-investigation/` | Logs, Repo, Reasoning, Validation |
+| PR Review | `agent-hub/agents/pr-review/` | Diff, Review, Validation |
 | (future) | `agents/<name>/` | Per workflow |
 
 Each agent provides:
@@ -357,10 +357,10 @@ Each agent provides:
 
 **Phase 2 actions:**
 
-1. `algosec-agent-hub/agents/rca-investigation/` — full RCA workflow (see §12).
+1. `agent-hub/agents/rca-investigation/` — full RCA workflow (see §12).
 2. Run RCA on real trigger (CI or Support ticket).
 3. Verify Langfuse trace + experience flywheel on 2nd run.
-4. `algosec-agent-hub/agents/pr-review/` — same framework pattern.
+4. `agent-hub/agents/pr-review/` — same framework pattern.
 5. `CONTRIBUTING.md` + `templates/agent/` for other teams.
 
 ### Phase 3 — AgentCore deploy
@@ -392,8 +392,8 @@ Port framework + agents to company platform. Logic unchanged; transport changes.
 | Token saving | `framework/context/` | Per-agent budgets | Same |
 | Repo index | `framework/index/` | Repo Agent uses index | Gateway MCP |
 | Langfuse | `framework/observability/` | Per-agent spans | Same |
-| RCA agent | mock only | `algosec-agent-hub/agents/rca-investigation/` | Deployed |
-| PR agent | mock only | `algosec-agent-hub/agents/pr-review/` | Deployed |
+| RCA agent | mock only | `agent-hub/agents/rca-investigation/` | Deployed |
+| PR agent | mock only | `agent-hub/agents/pr-review/` | Deployed |
 
 ---
 
@@ -466,11 +466,11 @@ Local JSON files are the Phase 1 default (zero infra). PostgreSQL is worth explo
 
 ```yaml
 repo_context:
-  - repo: algosec/api-gateway
+  - repo: acme/api-gateway
     branch: feature/JIRA-1234-auth-refactor
-  - repo: algosec/auth-service
+  - repo: acme/auth-service
     branch: main
-  - repo: algosec/common-lib
+  - repo: acme/common-lib
     branch: main
 ```
 
@@ -663,7 +663,7 @@ Agent Hub is the **complete ecosystem**. It writes its own skills and agents. Ex
 | System | Relationship | What Hub does |
 |--------|--------------|---------------|
 | **Log Analyzer** (`ailoganalyzer`) | Pure logic / API — not a skill | Logs sub-agent calls its API directly to get structured log output (stack frames, verdict). Hub never re-parses raw logs. |
-| **666_BugBot** (`algosec-tools/brandfactory`) | Reference only — not an integration target | BugBot is a point tool in BugBot's lane. Hub's RCA agent is a new implementation on the framework. Study BugBot's JIRA structure for domain knowledge only. |
+| **666_BugBot** (`acme-tools/brandfactory`) | Reference only — not an integration target | BugBot is a point tool in BugBot's lane. Hub's RCA agent is a new implementation on the framework. Study BugBot's JIRA structure for domain knowledge only. |
 | **AgentCore** (`agentcore-agents`) | Phase 3 port target | Framework + agents deploy here. Logic unchanged; transport changes. |
 
 **Integration principle:** Hub calls external logic APIs where they already do the job well (e.g., Log Analyzer's log parsing). Hub does **not** adapt, wrap, or depend on BugBot's skill structure. Hub is the new platform.

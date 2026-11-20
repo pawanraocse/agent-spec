@@ -154,7 +154,7 @@ if data.get("hook_event_name") == "sessionStart":
 elif data.get("hook_event_name") == "preToolUse":
     path = str((data.get("tool_input") or {}).get("file_path", ""))
     if path.endswith(".env"):
-        print(json.dumps({"permission": "deny", "agent_message": "algosec-agent-spec quarantine: blocked sensitive path (env-file)"}))
+        print(json.dumps({"permission": "deny", "agent_message": "agent-spec quarantine: blocked sensitive path (env-file)"}))
     else:
         print(json.dumps({"permission": "deny", "agent_message": "whole-file read blocked"} if path.endswith("big.py")
                          else {"permission": "allow"}))
@@ -271,7 +271,7 @@ class OllamaAgentTest(EnvCase):
                  {"content": "done"}]
         _, events, fake = self.run_agent(turns, "--bare")
         tools = [m["content"] for m in fake.chats[-1]["messages"] if m["role"] == "tool"]
-        self.assertTrue(tools[0].startswith("denied by harness: algosec-agent-spec quarantine"), tools[0])
+        self.assertTrue(tools[0].startswith("denied by harness: agent-spec quarantine"), tools[0])
         self.assertNotIn("CANARY_SECRET", "".join(tools))
         self.assertIn("x = 1", tools[1])  # the whole-file guard stays off in the baseline
         self.assertNotIn("sessionStart", [e["event"] for e in events])

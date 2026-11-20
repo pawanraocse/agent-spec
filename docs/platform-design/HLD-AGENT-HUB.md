@@ -72,8 +72,8 @@ graph LR
     end
 
     subgraph yaml["Workflow Definitions (per agent)"]
-        WF1["algosec-agent-hub/agents/rca-investigation/workflow.yaml"]
-        WF2["algosec-agent-hub/agents/pr-review/workflow.yaml"]
+        WF1["agent-hub/agents/rca-investigation/workflow.yaml"]
+        WF2["agent-hub/agents/pr-review/workflow.yaml"]
         WFN["agents/{team-agent}/workflow.yaml"]
     end
 
@@ -92,7 +92,7 @@ graph LR
     end
 
     subgraph tenant_tools["Agent-Specific Tools (e.g. RCA)"]
-        T1["algosec-agent-hub/agents/rca-investigation/tools/normalize_jira.py"]
+        T1["agent-hub/agents/rca-investigation/tools/normalize_jira.py"]
     end
 
     subgraph config["Config (declarative)"]
@@ -128,7 +128,7 @@ Step type decision tree:
 ```
 
 ```yaml
-# algosec-agent-hub/agents/rca-investigation/workflow.yaml
+# agent-hub/agents/rca-investigation/workflow.yaml
 
 id: rca-investigation
 version: "1.0.0"
@@ -148,7 +148,7 @@ steps:
 
   - id: normalize
     execution: sequential
-    run: algosec-agent-hub/agents/rca-investigation/tools/normalize_jira.py   # TENANT tool, not platform script
+    run: agent-hub/agents/rca-investigation/tools/normalize_jira.py   # TENANT tool, not platform script
     args: ["--trigger", "{{trigger}}"]
 
   - id: pre-check
@@ -163,7 +163,7 @@ steps:
       - id: open-pr-gate
         mcp: bitbucket___searchPullRequests     # MCP: is a fix already in flight?
         args:
-          workspace: algosec-tools
+          workspace: acme-tools
           query: "{{trigger.jira}}"
           state: OPEN
         # hub-runner OPEN-PR GATE: if OPEN PR title contains JIRA key → short-circuit
@@ -180,7 +180,7 @@ steps:
       - id: repo-context
         mcp: bitbucket___getFileContent        # MCP: code at fixVersion — not current HEAD
         args:
-          workspace: algosec-tools
+          workspace: acme-tools
           repo_slug: "{{normalize.repo}}"
           commit: "{{pre-check.fixVersion}}"
           path: "{{normalize.affected_files[0]}}"
@@ -196,7 +196,7 @@ steps:
       - "{{investigate.repo-context}}"       # code at the broken version
       - "{{experience}}"                     # past fixes for same signal
       # - "{{investigate.logs}}"             # DEFERRED
-    instruction: "algosec-agent-hub/agents/rca-investigation/SKILL.md"
+    instruction: "agent-hub/agents/rca-investigation/SKILL.md"
     # Cursor also reads config/repo-profiles.yaml to understand repo relationships
 
   - id: validate
@@ -211,7 +211,7 @@ output:
     args:
       issueKey: "{{trigger.jira}}"
       body: "{{validate.output.summary}}"
-    template: algosec-agent-hub/templates/rca-jira.md
+    template: agent-hub/templates/rca-jira.md
 
   - channel: ci_blocker
     when: "{{trigger.source}} == 'jenkins'"
@@ -381,17 +381,17 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor TEAM as Team Engineer
-    participant HUB as algosec-agent-hub repo
+    participant HUB as agent-hub repo
     participant CI as Jenkins CI
     participant HR as hub-runner.md
 
-    TEAM->>HUB: cp -r templates/agent/ algosec-agent-hub/agents/my-agent/
+    TEAM->>HUB: cp -r templates/agent/ agent-hub/agents/my-agent/
     note right of TEAM: Edit workflow.yaml (steps)\nEdit SKILL.md (AI instructions)\nAdd scripts/*.py (data tools)
     TEAM->>HUB: add 5 lines to agent-registry.yaml
     TEAM->>HUB: add eval/golden/my-agent/ fixtures
     TEAM->>HUB: open PR
 
-    CI->>CI: python scripts/validate_workflow.py algosec-agent-hub/agents/my-agent/workflow.yaml
+    CI->>CI: python scripts/validate_workflow.py agent-hub/agents/my-agent/workflow.yaml
     CI->>CI: cursor agent "my-agent --trigger {golden_input}" → diff vs golden_output
     CI-->>TEAM: PR green ✓
 
@@ -632,7 +632,7 @@ end_trace(t, output=data.get("final_result", {}))
 print("trace emitted:", run_id)
 ```
 
-### algosec-agent-hub/agents/rca-investigation/tools/normalize_jira.py (Tenant Tool)
+### agent-hub/agents/rca-investigation/tools/normalize_jira.py (Tenant Tool)
 
 ```python
 import sys, json
@@ -703,10 +703,10 @@ Declarative, AI-readable. Hub-runner.md reads this before every run. Cursor's AI
 
 profiles:
   ASMS:
-    description: "Algosec Management Server — main product"
+    description: "Acme Management Server — main product"
     primary_repos:
-      - algosec-management-server
-      - algosec-policy-engine
+      - acme-management-server
+      - acme-policy-engine
     integration_repos:
       - integration-tests-ci
     ui_repos:
@@ -715,16 +715,16 @@ profiles:
       - angular-shared-libs
 
   AVC:
-    description: "Algosec Violation Center"
+    description: "Acme Violation Center"
     primary_repos:
-      - algosec-violation-center
+      - acme-violation-center
     integration_repos:
       - integration-tests-ci
 
   OBF:
     description: "On-Box Firewall"
     primary_repos:
-      - algosec-obf
+      - acme-obf
 
 # AI extends this at runtime:
 # 1. Reads Jira ticket project key → looks up profile
@@ -748,7 +748,7 @@ the runner inspects PR titles/branches for the trigger JIRA key. If matched → 
 
 ---
 
-### algosec-agent-hub/agents/rca-investigation/tools/seed_from_bugbot.py (one-time bootstrap)
+### agent-hub/agents/rca-investigation/tools/seed_from_bugbot.py (one-time bootstrap)
 
 Import BugBot's years of historical resolutions into Hub's experience store. Hub starts with a full history — run 1 already has experience.
 
@@ -787,7 +787,7 @@ def seed(issues: list[dict]) -> int:
     store(candidates)
     return len(candidates)
 
-# Run: python algosec-agent-hub/agents/rca-investigation/tools/seed_from_bugbot.py --issues '{...}'
+# Run: python agent-hub/agents/rca-investigation/tools/seed_from_bugbot.py --issues '{...}'
 # Output: "seeded N experience candidates from BugBot history"
 ```
 

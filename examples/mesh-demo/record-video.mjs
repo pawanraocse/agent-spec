@@ -59,7 +59,7 @@ const go = async (p) => { await page.goto(base + p); await wait(1.5); };
 // 0. Title
 await page.setContent(`<style>${CARD_CSS} .t{display:flex;flex-direction:column;justify-content:center;height:100vh;padding:0 80px;font-family:system-ui,sans-serif}
   h1{font-size:40px;margin:0 0 12px}p{color:#8b949e;font-size:18px;margin:4px 0}</style>
-  <div class="t"><h1>algosec-agent-spec — the 5-minute demo</h1><p>Recorded fallback for demo.md. Four repos, offline, network off.</p>
+  <div class="t"><h1>agent-spec — the 5-minute demo</h1><p>Recorded fallback for demo.md. Four repos, offline, network off.</p>
   <p>Terminal output is produced live during the recording; the dashboard is driven in a real browser.</p></div>`);
 await wait(4);
 

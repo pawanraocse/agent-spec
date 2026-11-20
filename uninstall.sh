@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# algosec-agent-spec — Cursor uninstall
+# agent-spec — Cursor uninstall
 #
 #   ./uninstall.sh                  # remove machine-wide agent-spec-* skills only
 #   ./uninstall.sh --unregister <ws>  # remove our .cursor harness from one workspace + registry line
@@ -10,8 +10,8 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CURSOR_SKILLS="${HOME}/.cursor/skills"
-PROJECTS_FILE="${CURSOR_SKILLS}/.algosec-agent-spec-projects"
-ROOT_MARKER="${CURSOR_SKILLS}/.algosec-agent-spec-root"
+PROJECTS_FILE="${CURSOR_SKILLS}/.agent-spec-projects"
+ROOT_MARKER="${CURSOR_SKILLS}/.agent-spec-root"
 
 MODE="skills"
 UNREGISTER=""
@@ -46,7 +46,8 @@ remove_skills() {
     fi
   done
   rm -f "$ROOT_MARKER"
-  rm -f "${CURSOR_SKILLS}/.algosec-agent-spec-lean" "${CURSOR_SKILLS}/.algosec-agent-spec-full"
+  rm -f "${CURSOR_SKILLS}/.agent-spec-lean" "${CURSOR_SKILLS}/.agent-spec-full"
+  rm -f "${CURSOR_SKILLS}"/.*-agent-spec-root "${CURSOR_SKILLS}"/.*-agent-spec-lean "${CURSOR_SKILLS}"/.*-agent-spec-full
 }
 
 unregister_workspace() {

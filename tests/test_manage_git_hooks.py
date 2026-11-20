@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Automated test suite for algosec-agent-spec Git lifecycle hook management.
+"""Automated test suite for agent-spec Git lifecycle hook management.
 
 Tests:
 1. Non-git directory handling (fail-open graceful exit).
@@ -54,8 +54,8 @@ def test_git_hooks_lifecycle():
 
             with open(hook_file, "r", encoding="utf-8") as f:
                 content = f.read()
-            assert "# >>> algosec-agent-spec auto-index >>>" in content
-            assert "# <<< algosec-agent-spec auto-index <<<" in content
+            assert "# >>> agent-spec auto-index >>>" in content
+            assert "# <<< agent-spec auto-index <<<" in content
             assert "git rev-parse --show-toplevel" in content
 
             # Verify shell syntax
@@ -74,7 +74,7 @@ def test_git_hooks_lifecycle():
             hook_file = os.path.join(hooks_dir, hook)
             with open(hook_file) as f:
                 content = f.read()
-            assert content.count("# >>> algosec-agent-spec auto-index >>>") == 1, (
+            assert content.count("# >>> agent-spec auto-index >>>") == 1, (
                 f"Duplicate marker block in {hook}"
             )
 
@@ -98,7 +98,7 @@ def test_git_hooks_lifecycle():
         with open(custom_hook) as f:
             merged_content = f.read()
         assert 'echo "Running linter"' in merged_content
-        assert "# >>> algosec-agent-spec auto-index >>>" in merged_content
+        assert "# >>> agent-spec auto-index >>>" in merged_content
 
         # Uninstall should restore custom script and remove only marker block
         res = run_manage("uninstall", tmpdir)
@@ -107,7 +107,7 @@ def test_git_hooks_lifecycle():
         with open(custom_hook) as f:
             restored_content = f.read()
         assert 'echo "Running linter"' in restored_content
-        assert "# >>> algosec-agent-spec auto-index >>>" not in restored_content
+        assert "# >>> agent-spec auto-index >>>" not in restored_content
 
     print("ALL GIT HOOK LIFECYCLE TESTS PASSED.")
 

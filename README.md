@@ -1,6 +1,6 @@
-# algosec-agent-spec
+# agent-spec
 
-**Cursor-only** agent framework for AlgoSec — disciplined engineering on real codebases,
+**Cursor-only** agent framework — disciplined engineering on real codebases,
 with measured context discipline instead of vibe-coding.
 
 Version **2.0.0** (see [`VERSION`](VERSION)). Forked from
@@ -40,7 +40,7 @@ Two layers: machine-wide skills, plus a per-project harness.
 ### 1. Global skills (once per machine)
 
 ```bash
-cd /path/to/algosec-agent-spec
+cd /path/to/agent-spec
 chmod +x install.sh check-install.sh uninstall.sh
 ./install.sh
 ./check-install.sh
@@ -229,7 +229,7 @@ More flow: [docs/QUICKSTART.md](docs/QUICKSTART.md).
 ## Upgrade
 
 ```bash
-cd /path/to/algosec-agent-spec
+cd /path/to/agent-spec
 git pull
 ./install.sh
 ```
@@ -240,7 +240,7 @@ graph (unless `--force-reindex`). [docs/QUICKSTART.md](docs/QUICKSTART.md).
 ## Coexistence
 
 Re-install overwrites global `agent-spec-*` (**last install wins**). Avoid stacking
-**algosec-lean** Always Apply with `agent-spec.mdc`. Install never touches `.env`.
+A lean style rule Always Apply with `agent-spec.mdc`. Install never touches `.env`.
 
 ## Uninstall
 
@@ -269,4 +269,3 @@ Cursor-only — no Claude harness in this tree.
 
 ---
 
-Algosec Cursor AI

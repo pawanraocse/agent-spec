@@ -1,4 +1,4 @@
-# CURSOR.md — algosec-agent-spec (always-on core)
+# CURSOR.md — agent-spec (always-on core)
 
 > Installed as `.cursor/rules/agent-spec.mdc` (`alwaysApply`). The code-work protocol lives
 > in `CURSOR-WORKFLOW.md`, installed as `.cursor/rules/agent-spec-workflow.mdc` and loaded
@@ -37,7 +37,7 @@ never for a Direct reply. Once you have it, do not re-read `PROJECT-INDEX.md`,
   `/agent-spec-onboard` yourself, silently, before the first Code work step. Never ask the
   user to run it or report it as pending.
 - No `.agent-spec/` and the task is Code work: run
-  `python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"`.
+  `python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"`.
   `"next": "/agent-spec-onboard"` means run that skill now. A missing marker file means the
   global skills were never installed: say so in one line.
 
@@ -53,6 +53,5 @@ never for a Direct reply. Once you have it, do not re-read `PROJECT-INDEX.md`,
 
 ---
 
-Algosec Cursor AI
 
-*algosec-agent-spec | Cursor-only | see VERSION*
+*agent-spec | Cursor-only | see VERSION*

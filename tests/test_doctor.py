@@ -117,7 +117,7 @@ def test_doctor_unregistered_workspace_warns():
     sb = Sandbox()
     try:
         sb.install()
-        os.remove(os.path.join(sb.home, ".cursor", "skills", ".algosec-agent-spec-projects"))
+        os.remove(os.path.join(sb.home, ".cursor", "skills", ".agent-spec-projects"))
         res = sb.doctor()
         assert "not in the registry" in res.stdout, res.stdout
     finally:
@@ -168,9 +168,9 @@ def test_doctor_lean_coexistence_warns():
     try:
         sb.install()
         rules = os.path.join(sb.proj, ".cursor", "rules")
-        open(os.path.join(rules, "algosec-lean.mdc"), "w").write("---\nalwaysApply: true\n---\nbe terse\n")
+        open(os.path.join(rules, "team-lean.mdc"), "w").write("---\nalwaysApply: true\n---\nbe terse\n")
         res = sb.doctor()
-        assert "algosec-lean is Always Apply" in res.stdout, res.stdout
+        assert "lean style rule is Always Apply" in res.stdout, res.stdout
     finally:
         sb.close()
 
@@ -202,7 +202,7 @@ def test_register_here_uses_cwd_without_git():
         res = sb.sh("--register-here", cwd=sb.proj)
         assert res.returncode == 0, res.stdout + res.stderr
         assert os.path.isfile(os.path.join(sb.proj, ".cursor", "hooks.json"))
-        reg = open(os.path.join(sb.home, ".cursor", "skills", ".algosec-agent-spec-projects")).read()
+        reg = open(os.path.join(sb.home, ".cursor", "skills", ".agent-spec-projects")).read()
         assert os.path.realpath(sb.proj) in [os.path.realpath(l) for l in reg.split()], reg
     finally:
         sb.close()

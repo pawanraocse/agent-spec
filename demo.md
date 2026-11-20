@@ -1,4 +1,4 @@
-# AlgoSec Agent-Spec: Enterprise AI Context Intelligence
+# Agent-Spec: Enterprise AI Context Intelligence
 
 > **Pitch:** *"The infrastructure layer between AI agents and your codebase — eliminates amnesia, saves 99.6% of structural query tokens, enforces engineering discipline through deterministic pipeline gates, and preserves organizational knowledge across every session."*
 
@@ -222,7 +222,7 @@ Section **§9** is now shipped as the Control Plane v2 SPA; §10 self-learning f
 ## Quick Start
 
 ```bash
-git clone <repo-url> && cd algosec-agent-spec
+git clone <repo-url> && cd agent-spec
 ./install.sh --register /path/to/your/project
 # Open the project in Cursor → new session → digest loads automatically
 ```

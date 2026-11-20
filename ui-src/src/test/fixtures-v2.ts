@@ -167,7 +167,7 @@ export const V2_ROUTES: Record<string, unknown> = {
    {
     "id": "register",
     "status": "INFO",
-    "message": "this is the algosec-agent-spec clone (refreshed by a bare ./install.sh)",
+    "message": "this is the agent-spec clone (refreshed by a bare ./install.sh)",
     "fix": ""
    },
    {

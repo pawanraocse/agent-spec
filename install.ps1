@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-# algosec-agent-spec Windows installer — global skills (algosec-lean style)
+# agent-spec Windows installer — global skills
 param(
   [string]$Register = "",
   [switch]$RegisterHere,
@@ -22,8 +22,8 @@ Get-ChildItem -Directory $SkillsSrc | ForEach-Object {
   Copy-Item -Recurse $_.FullName $dest
   Write-Host "Synced $($_.Name)"
 }
-Set-Content -Path (Join-Path $CursorSkills ".algosec-agent-spec-root") -Value $RepoDir
-Write-Host "Wrote .algosec-agent-spec-root"
+Set-Content -Path (Join-Path $CursorSkills ".agent-spec-root") -Value $RepoDir
+Write-Host "Wrote .agent-spec-root"
 
 # Windows paths must be translated for the bash that will run install.sh:
 #   Git Bash  -> C:/Users/me/app          (forward slashes are enough)

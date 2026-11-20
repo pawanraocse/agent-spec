@@ -1032,4 +1032,3 @@ these depend on an open question.
 
 *Planning doc version: 1.1.0 · 2026-10-29 · Status: final for execution — nothing in §14 is implemented yet.*
 
-Algosec Cursor AI

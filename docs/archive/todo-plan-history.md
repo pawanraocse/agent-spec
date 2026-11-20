@@ -1,4 +1,4 @@
-# algosec-agent-spec — Todo (sole sequenced backlog)
+# agent-spec — Todo (sole sequenced backlog)
 
 > **Strategy & phases:** [`docs/MASTER-PLAN.md`](docs/MASTER-PLAN.md) only.  
 > **v1.1.0 shipped (2026-10-28)** → **v2.0.0** (Phase 2) → **v3.0.0** (Phase 3) → **v4.0.0** (Phase 4 — Autonomous Bots) → **v5.0.0** (Phase 5 — Marketplace)  
@@ -110,7 +110,7 @@ Locked decisions live in MASTER-PLAN — not duplicated here. Close items only i
 | `[x]` | T-010 | **Default tool discipline (no 3.8 KB skill)** | 5–8 bullet rules in always-on `.mdc`; or sessionStart hint when tool-share high | 1d |
 | `[x]` | T-011 | **preToolUse optional hard cap** | Env flag blocks rangeless Read >N KB (default off; nudge stays default) | 0.5d |
 | `[x]` | T-012 | **Post-harness measurement habit** | Documented `agent-spec-tokens.py compare` workflow; optional CI `audit --scan` | 0.5d |
-| `[x]` | T-013 | **Coexistence rule** | Doc/lint: do not stack `algosec-lean` Always Apply + `agent-spec.mdc` | 0.5d |
+| `[x]` | T-013 | **Coexistence rule** | Doc/lint: do not stack a lean style rule (`*-lean.mdc`) Always Apply + `agent-spec.mdc` | 0.5d |
 | `[x]` | T-014 | **Trim router skill** | `agent-spec` SKILL.md <3 KB; points to `agent-spec-gate.py status` | 1d |
 
 ---
@@ -614,4 +614,4 @@ Total ≈ 24.5 days. Minimum demo cut (≈ 17 d): Phase A, DV-010, DV-012, DV-01
 
 ---
 
-*Algosec Cursor AI · Update this file when closing items. Last updated: 2026-11-06 (Phase 4 + Phase 5 added — Grok Bot inspired).*
+*Update this file when closing items. Last updated: 2026-11-06 (Phase 4 + Phase 5 added — Grok Bot inspired).*

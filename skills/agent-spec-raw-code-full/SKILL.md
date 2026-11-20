@@ -18,7 +18,7 @@ later call, so the cheapest turn is the one with no tool calls.
 
 Only with the first **Code work** tool call (tiers in `.cursor/rules/agent-spec.mdc`), and
 only when no `<agent-spec-digest>` is in context, run once from the opened workspace:
-`python3 "$(cat ~/.cursor/skills/.algosec-agent-spec-root)/bin/agent-spec-ensure.py"`.
+`python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"`.
 A Direct question gets its answer with zero tool calls; a digest in context already proves
 the workspace is registered.
 `"next": "/agent-spec-onboard"` → run that procedure yourself. `"registered": "failed"` or

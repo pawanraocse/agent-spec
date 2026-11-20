@@ -1,10 +1,10 @@
-# High-level design — algosec-agent-spec harness
+# High-level design — agent-spec harness
 
-Back-link: [README](../README.md) · [Confluence (canonical publish)](https://algo-confluence.algosec.com/pages/viewpage.action?pageId=234765194)
+Back-link: [README](../README.md) · Confluence (canonical publish, internal)
 
 **Package version:** see [`VERSION`](../VERSION). **Scope:** Cursor IDE engineering harness (client-side only).
 
-> **Confluence:** Paste into [234765194](https://algo-confluence.algosec.com/pages/viewpage.action?pageId=234765194). Diagrams in this doc are **tables only** (no Mermaid). Optional PNG charts available on Confluence.
+> **Confluence:** Paste into the internal Confluence page. Diagrams in this doc are **tables only** (no Mermaid). Optional PNG charts available on Confluence.
 
 ---
 
@@ -27,7 +27,7 @@ Back-link: [README](../README.md) · [Confluence (canonical publish)](https://al
 
 ### 30-second pitch
 
-**algosec-agent-spec** is a **client-side** Cursor harness: global `/agent-spec-*` skills, per-repo rules and hooks, and `.agent-spec/` on disk. No harness servers. It orients the agent in milliseconds, nudges away from expensive context habits, runs **nine SDLC gates (0–8)** when scope requires it, and preserves decisions in git between chats.
+**agent-spec** is a **client-side** Cursor harness: global `/agent-spec-*` skills, per-repo rules and hooks, and `.agent-spec/` on disk. No harness servers. It orients the agent in milliseconds, nudges away from expensive context habits, runs **nine SDLC gates (0–8)** when scope requires it, and preserves decisions in git between chats.
 
 ---
 
@@ -43,12 +43,12 @@ Back-link: [README](../README.md) · [Confluence (canonical publish)](https://al
 
 **Out of scope:**
 
-- Hosted services, runtime components in AlgoSec data centers, or changes to product application CI unless a team opts in (e.g. `agent-spec-selftest.sh`).
+- Hosted services, runtime components in company data centers, or changes to product application CI unless a team opts in (e.g. `agent-spec-selftest.sh`).
 - Mandatory third-party integrations (MCP servers are optional and user-configured in the IDE).
 
 ### 1.1 The Developer Experience: A Day in the Life (Before vs. After)
 
-Compare a typical morning in **vanilla Cursor** vs **with `algosec-agent-spec`** (Confluence-friendly table; no diagram required).
+Compare a typical morning in **vanilla Cursor** vs **with `agent-spec`** (Confluence-friendly table; no diagram required).
 
 | Time | Moment | Vanilla Cursor | With harness |
 |------|--------|----------------|--------------|
@@ -105,7 +105,7 @@ When an engineer works in Cursor, the harness executes through six discrete, non
 
 - **Zero Infrastructure Footprint:** There is no harness daemon, database, or hosted backend. All logic runs client-side under the developer’s local OS user account.
 - **Fail-Open Reliability:** Hooks never block or lock the developer’s IDE. Any error in a hook defaults to `allow`.
-- **Air-Gapped IP & Data Privacy:** No telemetry, source code, or internal AlgoSec business logic leaves the developer’s workstation.
+- **Air-Gapped IP & Data Privacy:** No telemetry, source code, or internal business logic leaves the developer’s workstation.
 - **Non-Destructive Coexistence:** Harness files are stored strictly under `.agent-spec/` and standard `.cursor/` paths. Application source code and `.env` credentials are never modified.
 
 ---
@@ -190,8 +190,8 @@ Source: [token-efficiency.md](token-efficiency.md), [token-checklist.md](token-c
 | Surface | Location | Install |
 |---------|----------|---------|
 | **Global skills** | `~/.cursor/skills/agent-spec-*` | `./install.sh` (once per machine) |
-| **Registry** | `~/.cursor/skills/.algosec-agent-spec-projects` | Updated on `--register` |
-| **Package root marker** | `~/.cursor/skills/.algosec-agent-spec-root` | Points at package clone |
+| **Registry** | `~/.cursor/skills/.agent-spec-projects` | Updated on `--register` |
+| **Package root marker** | `~/.cursor/skills/.agent-spec-root` | Points at package clone |
 | **Project harness** | `.agent-spec/`, `.cursor/rules`, `.cursor/hooks`, `.cursor/agents` | `./install.sh --register "<absolute Cursor workspace root>"` |
 
 ---
@@ -251,7 +251,7 @@ Rather than relying on volatile in-memory chat history or external cloud databas
 
 #### 5.3.1 Snapshot lifecycle & rotation mechanics (Bounded memory vs. unbounded growth)
 
-A common trap in AI development harnesses is allowing project history to grow without bounds. Past a certain point, every new chat session pays a heavy tax re-reading tens of thousands of tokens of stale conversation logs. `algosec-agent-spec` enforces **bounded memory by design**:
+A common trap in AI development harnesses is allowing project history to grow without bounds. Past a certain point, every new chat session pays a heavy tax re-reading tens of thousands of tokens of stale conversation logs. `agent-spec` enforces **bounded memory by design**:
 
 | Dimension | Live File (`SESSION-SNAPSHOT.md`) | Archived Stores (`memory/snapshots/*.md`) |
 |---|---|---|
@@ -279,7 +279,7 @@ The `.agent-spec/` directory is organized into **six architectural pillars**:
 | 2 | **Identity & guardrails** | `CONSTITUTION.md`, `PROJECT-INDEX.md`, `rules/`, `anti-hallucination/` | Constitution, index, anti-hallucination rules |
 | 3 | **Code intelligence** | `graph/knowledge-graph.json`, `graph/KNOWLEDGE-GRAPH.md` | AST graph; blast radius without whole-repo reads |
 | 4 | **Local execution** | `.agent-spec/bin/` (digest, gate, tokens, graphify) | Scripts stay local; hooks call in sub-50 ms |
-| 5 | **Standards & personas** | `personas/`, `coding-standards/` | `@REVIEWER`, `@SECURITY`, AlgoSec standards |
+| 5 | **Standards & personas** | `personas/`, `coding-standards/` | `@REVIEWER`, `@SECURITY`, team standards |
 | 6 | **Delivery pipeline** | `pipeline/`, `sdlc/`, `templates/` | Nine-gate SDLC (0–8) and `agent-spec-gate.py` |
 
 Created / updated / consumed matrix: [Appendix A — Six pillars (detail)](#appendix-a-six-pillars-detail).
@@ -336,7 +336,7 @@ Instead of acting as a generic, agreeable chatbot that rubber-stamps dangerous c
 ## 8. Installation (reproducible)
 
 ```bash
-cd /path/to/algosec-agent-spec
+cd /path/to/agent-spec
 chmod +x install.sh check-install.sh uninstall.sh
 ./install.sh
 ./check-install.sh
@@ -461,7 +461,7 @@ Removing `.agent-spec/` is a separate explicit git decision.
 |---------|--------|
 | Graph freshness | Automatic via Git hooks on checkout/pull & sessionStart safety net; or `/agent-spec-index-project` |
 | Package upgrade | `git pull` + `./install.sh` |
-| Coexistence | Do not stack Always Apply `algosec-lean` + `agent-spec.mdc` |
+| Coexistence | Do not stack Always Apply a lean style rule (`*-lean.mdc`) + `agent-spec.mdc` |
 | Hooks disabled | Run `./.agent-spec/bin/agent-spec-digest.py` manually at session start |
 
 ---
@@ -493,5 +493,4 @@ In the Phase 2 pilot across 10 developers, we measure first-pass PR approval rat
 
 ---
 
-Algosec Cursor AI
 

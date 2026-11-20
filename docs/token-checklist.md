@@ -241,7 +241,7 @@ the chance of a correct first pass, and measure the result in cost per verified 
 
 Our own numbers are the best argument for it: the mode that used 10.5% fewer tokens cost
 2.3% more.
-> **Note (algosec-agent-spec):** Off-diagonal benchmark tasks `05-needle-in-haystack` and `06-hard-algorithm` live in upstream agent-spec only; this Cursor-only package does not ship `benchmarks/`.
+> **Note (agent-spec):** Off-diagonal benchmark tasks `05-needle-in-haystack` and `06-hard-algorithm` live in upstream agent-spec only; this Cursor-only package does not ship `benchmarks/`.
 
 ## Notes on `/agent-spec-raw-code-full`
 
