@@ -1,72 +1,3 @@
-## 2026-11-19 (evening) — Skill verdict, harness-vs-bare bench, graph never called
-
-**Skill verdict.** `/agent-spec-raw-code-full` does not save tokens. Every head-to-head so far
-agrees: 2026-08-30 +9.9% cost (18 runs), 2026-08-31 raw-code +1.4% (26 runs), 2026-11-18 +60%
-input (local agent), 2026-11-19 Groq +35% / +70% input, and the Claude Code smoke run
-`20261119T171257-0a822d` (Haiku 5.5, 2 chats per arm) +30.4% cost with 7/7 correct in both arms.
-The driver in that run was extra tool calls on follow-up questions (savings turn 2: 0 tools
-plain, 3 with the skill), each re-reading the cached prompt. The full `--repeat 3` skill run was
-not done; the recommendation was to stop presenting the skill as a token saver and describe it as
-answer shape. README.md:160 already says "not magic savings"; its token table (README.md:152-158)
-is per-operation payload sizes from pre-fork Claude Code transcripts, not head-to-head runs, and
-its compaction row credits `/agent-spec-compact` with Claude Code's built-in `/compact`. Not
-corrected yet (the user did not answer).
-
-**Bench fixes** (`bin/agent-spec-cursor-bench.py`):
-- An expired Claude login used to record $0 turns and exit 0 (the other session's run
-  `20261119T170447-7f789e` is invalid for this reason). Now: auth strings in LIMIT_MARKERS, a
-  one-turn preflight before any chat (exit 3 with "/login" hint), the skill or digest marker is
-  counted only on turns with output tokens, and a run that stops early exits 3.
-- The WSL CLI login had expired 2026-08-31; the desktop app uses its own login. The user re-ran
-  `/login` and the smoke run then worked.
-- Correction to my own earlier work: the skill bench's template excluded `.agent-spec/`, so both
-  arms got a CLAUDE.md that tells the model to run the digest and graph tools that were not in
-  the copy. Skill mode now gives both arms the full harness.
-
-**New: `--compare harness`** (bare copy vs harness copy, no skill in either arm).
-- Claude: harness = CURSOR.md as CLAUDE.md, the project's `.agent-spec/` (minus platform/, eval/,
-  metrics/, benchmark/, db), a `.claude/settings.json` SessionStart hook (matcher `startup` only,
-  so resumed bench turns do not re-send the digest). No PreToolUse hook.
-- Cursor: harness = copy registered with `install.sh --project-only --register` (2.4 s, touches
-  nothing global), the project's graph and memory copied over, `.onboarding-needed` removed;
-  `--trust --force` in both arms.
-- New report row "Graph calls (graphify-cli)" for both agents.
-- Tasks: `evals/harness-bench.jsonl`, 5 tasks tagged by feature: graph (ask-route,
-  redact-callers, rename-helper), memory (traces-import, new-bin). Edit checks validated to
-  fail before and pass after a reference fix. The user said bug-fix and PR-review tasks are not
-  needed (they were examples).
-- Claude smoke `20261119T173120-3c5fab` (ask-route, traces-import): harness +7.8% cost, 4/4
-  correct both arms, digest in 4 of 4 harness turns, **0 graphify calls**. The harness arm
-  grepped and re-read serve.py five times, like the bare arm. So the +7.8% was pure overhead.
-
-**Why the graph goes unused.** Nothing pushes the model to it. The preToolUse hook does not
-redirect grep/search to graphify; in Cursor its Read/Write nudges are off (Cursor hides ranges),
-leaving only `git diff` and `cat` nudges. The only rule was one line at CURSOR.md:101.
-Fix applied: the digest (`bin/agent-spec-digest.py`, copied to `.agent-spec/bin/`) now lists
-the exact commands (`context --task`, `search`, `callers --symbol`, `query --file`,
-`symbols --file`), 2,332 B; CURSOR.md's tool-discipline line names them too. Not yet measured.
-
-**Graph gaps found (not fixed).** `callers --symbol redact_obj` and `query --file redact.py`
-miss `bin/agent-spec-run.py`, which loads redact.py by path; `endpoints` misses every route in
-serve.py's route dicts. A model that trusts the graph gets the redact-callers task wrong.
-
-**State.** Tests: test_cursor_bench 14 OK, test_digest 14 OK, platform guard OK, lint-refs OK.
-The self-test run was interrupted by the user and not re-run. Nothing committed.
-
-**Next.**
-1. The user runs the Cursor smoke from WSL:
-   `python3 bin/agent-spec-cursor-bench.py --agent cursor --compare harness --only ask-route,traces-import`,
-   then `--repeat 3` if graph calls are above 0. Read the "Graph calls" and "All input tokens"
-   paired rows (Cursor has no cost).
-2. If graph calls stay 0: add a preToolUse rule that nudges a symbol grep/search once toward
-   `graphify-cli callers`/`search`.
-3. Still open: README token-table corrections and the skill description; graph gaps; memory
-   81 facts vs cap 40; INDEX.md over 8,000 B; snapshot headings (### under "Archived") so rotate
-   does not archive.
-
-Files to load: `bin/agent-spec-cursor-bench.py`, `evals/harness-bench.jsonl`,
-`docs/LIVE-TESTING.md`, `bin/agent-spec-digest.py`, `hooks/cursor-pre-tool-use.py`.
-
 ## 2026-11-19 (night) — End-to-end review; memory controls on the dashboard
 
 **Goal.** The user asked for a full review of the project (no redundancy, keep the needed
@@ -124,9 +55,72 @@ digest's "last session" line ignore, so the digest still said 2026-11-18. They w
 Files to load: `bin/aspec_platform/memory_view.py`, `ui-src/src/pages/Knowledge.tsx`,
 `bin/aspec_platform/db.py`, `bin/agent-spec-memory.py`, `todo-plan.md`.
 
+## 2026-11-19/20 (late night) — Short prompts stopped paying for code work; bench measures it
+
+**Goal.** The user found that the harness made short prompts and plain chat dearer than no
+harness. It only paid off for repo search, graph queries and session save/load.
+
+**Cause.** CURSOR.md (4342 B) and the digest (2216 B) rode in every turn. Worse, the rules
+forced tool calls before any answer: the raw-code preflight (`agent-spec-ensure.py`), the
+digest run, onboarding, a graph query and a Pre-Change Declaration. Each tool call re-sends the
+whole context, so a one-line question could cost several full round trips.
+
+**Built, committed on main (not pushed; main is 2 ahead of origin/main).**
+- `dae48a1` — rule split, VERSION 2.1.0. `CURSOR.md` → `.cursor/rules/agent-spec.mdc` is now
+  the always-on core (2564 B). It holds the Direct / Small / Code work tiers, session start and
+  hard stops; a Direct reply makes zero tool calls. `CURSOR-WORKFLOW.md` →
+  `.cursor/rules/agent-spec-workflow.mdc` (`alwaysApply: false`, Agent Requested) holds
+  personas, confidence tags, coding rules, implement gates, subagents and tool discipline.
+  The core tells the model to Read the workflow file with its first tool call if Cursor has not
+  attached it. The digest's guidance shrank to 1988 B and is scoped to code. The raw-code,
+  raw-code-full and router skills now run their preflight only with the first code-work tool
+  call and only when no digest is in context. install, uninstall, check-install, ensure (adds
+  the gap "no workflow rule") and doctor handle the second file. The token audit no longer
+  counts an `alwaysApply: false` rule as always-on. The selftest budget for CURSOR.md is now
+  3200 B, down from 4600 B. The commit also carried the pending live-test work from earlier
+  sessions.
+- `771d9ce` — bench. `evals/direct-bench.jsonl` has six direct prompts (`max_tools` 0) and one
+  small lookup (`max_tools` 1). `--compare versions --base-ref REF` installs the base arm from
+  `git archive REF` and the head arm from this checkout. `harness-bench.jsonl` gained three
+  graph tasks (answers taken from the graph and confirmed with grep) and `long-dashboard`, a
+  nine-turn chat that recalls early facts at the end. Every report adds workflow-rule reads,
+  invented file names (cited names that exist nowhere in the project), a per-feature table
+  (tokens, time, correctness, chats that used the graph) and accuracy by turn position. Docs
+  are in `docs/LIVE-TESTING.md`.
+
+**What broke, and the correction.** `install.sh --register` appends the workspace to
+`~/.cursor/skills/.agent-spec-projects` and then re-installs every workspace listed
+there. Every past `--compare harness` run had left a `/tmp/...aspec-claude-bench-tpl-*` entry
+in the user's registry (11 of them). While debugging the versions mode, a manual install from
+`4852bfe` downgraded all registered workspaces to 2.0.0. They were restored at once with the
+current `install.sh`, and the three existing workspaces were confirmed back on 2.1.0. My
+earlier `install.sh --register "$PWD"` in this session had also refreshed `content-creation-ai`
+to 2.1.0 without my noticing. The bench now runs its installs under a throwaway HOME, and a
+test asserts the user's registry and workspaces are untouched. On the user's request, the
+11 stale bench lines were removed from the registry; a backup was kept in this session's
+scratchpad.
+
+**Also fixed in passing.** The bench's Cursor harness note never printed, because the
+skill-note branch matched first. `register_harness` no longer copies the project's
+`.agent-spec/bin` over the installed bins, so each arm runs its own version's digest.
+
+**Open / owed (live Cursor, not done).**
+- Push main, then on the Cursor machine run
+  `python3 bin/agent-spec-cursor-bench.py --agent cursor --compare versions --base-ref 4852bfe --repeat 2`
+  and `--compare harness --repeat 3`. Pass criteria: direct prompts at 0 tool calls, all within
+  budget, all-input tokens at or below base; graph tasks keep graph chats and correctness; the
+  harness shows no more invented files or late-turn misses than bare in long-dashboard.
+- Main risk: Cursor may not attach the Agent Requested workflow rule for code tasks. Proposed,
+  not built: preToolUse denies the first tool call of a conversation once, with the workflow
+  body in `agent_message` (reusing `nudged_already`), plus `globs` on the workflow mdc.
+- Doctor still flags memory INDEX.md at 8788 B (limit 8000).
+
+Files to load: `CURSOR.md`, `CURSOR-WORKFLOW.md`, `bin/agent-spec-cursor-bench.py`,
+`hooks/cursor-pre-tool-use.py`, `evals/direct-bench.jsonl`, `docs/LIVE-TESTING.md`.
+
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
-- **2026-10-27T13:14:18** — algosec-agent-spec installed.
+- **2026-10-27T13:14:18** — agent-spec installed.
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261113-140506.md`. Nothing is deleted.
 - **2026-10-28T13:56** — Phase 1 (v1.1.0) built and verified: Slices 1-4, T-054, T-040. Selftest sections [1]-[12] pass; doctor --stric
 - **2026-10-28 (afternoon) — Phase 1 completion review** — Re-verified Phase 1 exit gate: `bin/agent-spec-selftest.sh` all pass (unsandboxed; section [3] fails in the re
@@ -196,3 +190,5 @@ writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates
 - **2026-11-18 (end) — goal cleared, session closed** — The goal "complete all and review, compact after each" was cleared by the user with `/goal clear`
 - **2026-11-19 — Live test matrix on Ollama (H-054), 4 defects fixed, Live tests page** — Built `bin/agent-spec-livetest.py`: 18 cases (L01–L18) run for real on local Ollama in a temporary
 - **2026-11-19 (later) — Measuring /agent-spec-raw-code-full: Groq runs, Claude Code bench, H-050** — Question from the user: why L18 showed the skill using more input tokens, and whether it saves
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261120-055846.md`. Nothing is deleted.
+- **2026-11-19 (evening) — Skill verdict, harness-vs-bare bench, graph never called** — Skill verdict. `/agent-spec-raw-code-full` does not save tokens. Every head-to-head so far
