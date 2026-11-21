@@ -61,6 +61,19 @@ OPERANDS = re.compile(r"\b(?:tee(?:\s+-a)?|sed\s+-[a-zA-Z]*i(?:\s+\S+)?|mv|cp|rm
                       r"\s+((?:[^\s;|&<>]+\s*)+)")
 
 
+# Neither of these writes a protected file, and both are everyday: discarding output
+# (`ls .agent-spec/bin/x 2>/dev/null`) and running a harness script with an interpreter
+# (`python3 .agent-spec/bin/agent-spec-memory.py handoff`). Both made the protected-path check
+# below fire on a read or a run (bench run cef508: a search subagent's `ls ... 2>/dev/null` was
+# denied as a change to the gate's code). `python3 -c "open('.agent-spec/risk.json', 'w')"` and
+# `> .agent-spec/bin/x` still match: only the interpreter in front of a harness script is dropped.
+HARMLESS = re.compile(r"\d*>>?\s*(?:/dev/null\b|&\d)|\b(?:python3?|bash|sh)\s+(?=\.?/?\.agent-spec/bin/)")
+
+
+def _without_harmless(command):
+    return HARMLESS.sub(" ", command)
+
+
 def is_protected(rel):
     return any(fnmatch.fnmatch(rel, g) for g in PROTECTED)
 
@@ -175,7 +188,7 @@ def classify(project, tool, args):
         if "agent-spec-risk" in lowered and re.search(r"\b(approve|deny)\b", lowered):
             out.update(tier=3, protected=True, reasons=["approves or denies a gated action; only a person can"])
             return out
-        if any(h in lowered for h in PROTECTED_HINTS) and SHELL_WRITE.search(target):
+        if any(h in lowered for h in PROTECTED_HINTS) and SHELL_WRITE.search(_without_harmless(target)):
             out.update(tier=3, protected=True, reasons=["changes the risk gate's own config, approvals or code"])
             return out
         if DESTRUCTIVE.search(target):

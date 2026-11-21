@@ -122,6 +122,14 @@ class SelfApprovalTest(unittest.TestCase):
             r = risk.classify(self.p, "Shell", {"command": cmd})
             self.assertTrue(r.get("protected"), (cmd, r))
         self.assertFalse(risk.classify(self.p, "Shell", {"command": "cat .agent-spec/risk.json"}).get("protected"))
+        for cmd in ("ls .agent-spec/bin/graphify-cli.py 2>/dev/null", "python3 .agent-spec/bin/agent-spec-memory.py handoff",
+                    "./.agent-spec/bin/graphify-cli.py search redact 2>&1 | head -40",
+                    "bash .agent-spec/bin/x.sh >/dev/null 2>&1"):
+            self.assertFalse(risk.classify(self.p, "Shell", {"command": cmd}).get("protected"), cmd)
+        for cmd in ("python3 -c \"open('.agent-spec/risk.json','w')\"",
+                    "python3 .agent-spec/bin/agent-spec-digest.py > .agent-spec/bin/agent-spec-risk.py",
+                    "ls .agent-spec/bin 2>/dev/null; echo x >> .agent-spec/risk.json"):
+            self.assertTrue(risk.classify(self.p, "Shell", {"command": cmd}).get("protected"), cmd)
 
     def test_shell_write_to_tier3_file_is_tier3(self):
         for cmd in ("sed -i 's/a/b/' hub.py", "cat > db/migrations/0004.sql <<EOF", "echo x >> hub.py",

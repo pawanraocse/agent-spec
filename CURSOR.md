@@ -30,6 +30,11 @@ never for a Direct reply. No `.agent-spec/` at all: run
 `python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"` and follow
 its `"next"`.
 
+Handing off to a new chat: Write only the new `## YYYY-MM-DD — title` section, facts as
+bullets, to `.agent-spec/HANDOFF.md`, then run `./.agent-spec/bin/agent-spec-memory.py handoff
+--promote all` (or `--promote 1,3`). Do not Read or Edit SESSION-SNAPSHOT.md for it, and never
+type fact text into a shell command: backticks inside double quotes run.
+
 ## Hard Stops (every tier)
 
 - Delete files without explicit confirmation

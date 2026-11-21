@@ -18,10 +18,14 @@ Follow `agent-spec-snapshot`: append a dated section to `.agent-spec/SESSION-SNA
 (what was built, what broke, decisions, corrections, files for next session). Append;
 never overwrite.
 
-Promote durable facts:
+Write the section to `.agent-spec/HANDOFF.md` and run
+`./.agent-spec/bin/agent-spec-memory.py handoff --promote all`: it lands above the archive
+index without reading the snapshot. For a section already in the file, promote durable facts
+from it, so each is typed once and never goes through shell quoting:
 
 ```bash
-./.agent-spec/bin/agent-spec-memory.py add --type constraint "<one sentence>"
+./.agent-spec/bin/agent-spec-memory.py promote                 # numbers the section's bullets
+./.agent-spec/bin/agent-spec-memory.py promote --pick 1,3 --type constraint
 ```
 
 Rotate if the snapshot file is large:

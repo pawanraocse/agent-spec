@@ -1,103 +1,54 @@
-## 2026-11-20/21 — Harness cost on Claude Code: bench billing fixed, cost gate, levers under test
+## 2026-11-21 (afternoon) — Full cost gate passed; harness-test/ evidence folder
 
-**Goal.** Prove with live runs that the token levers save money: graph search, the search
-subagent, and snapshot plus a new chat. The user's constraint: the harness must never cost more
-than bare.
-
-**What broke, and the correction.** My first diagnosis was wrong. I blamed the always-on
-prefix, but CURSOR.md plus the digest is only about 1.2k tokens per call. The real faults were
-in the bench, not the harness:
-- `claude -p --resume` reports `total_cost_usd` and `modelUsage` as the session's running total,
-  while `usage` is per turn. The bench summed the running totals, so long chats were overbilled.
-- The claude.ai MCP connectors ignore `--setting-sources project`. They reconnected on resumed
-  turns and wrote about 16k tokens of cache at random turns in either arm. `--strict-mcp-config`
-  removes them.
-
-Each chat's cost, recomputed as its last turn's running total:
-
-| Run | Bare | Harness | Change |
-|---|---|---|---|
-| 4e5bb7 | $0.3301 | $0.4285 | +29.8% |
-| 3a9968 | $0.2744 | $0.2541 | −7.4% |
-| a3a5fd | $0.1018 | $0.1267 | +24.5% |
-
-All three runs predate the fixes.
-
-**Built, committed and pushed to main.**
-- `9dd9333`: each turn is billed its own cost, MCP is isolated, `new_chat` turns start a fresh
-  session in the same copy, and there is a `long-dashboard-compact` task.
-- `2417a73`: a cost gate. `--max-cost-change PCT` defaults to 0, so the run exits 4 when the
-  harness costs more than bare or gets fewer answers right. The verdict line goes into the report.
-
-**Built, not committed.**
-- `CURSOR.md` was trimmed from 2522 B to 1747 B. I removed the install note and the onboarding
-  steps, because the digest already prints ONBOARDING NEEDED.
-- The bench harness arm now installs `agent-spec-search` and `agent-spec-verify` into
-  `.claude/agents/`, and `Agent` is an allowed tool. A new "Subagent calls" metric counts their use.
-- Two new tasks: `traceback-fix` plants a bug in `savings.py` that only a `test_insights.py`
-  traceback reveals, and `env-sweep` is a sweep across files suited to a subagent.
-- `add_harness` takes CURSOR.md from the package, never from the project. A user project with its
-  own CURSOR.md had been benched as if that file were our rule.
-- In `install.sh`, the marker check on an existing AGENTS.md was `grep -q "agent-spec\|agent-spec"`.
-  This was left over from the vendor-name drop in 7101331, and any mention of agent-spec skipped
-  the pointer. It is now `grep -qF ".cursor/rules/agent-spec.mdc"`.
-- The 21 bench tests pass.
-
-**Answered.** install.sh does not write a CURSOR.md into a user's project. It writes the content
-into `.cursor/rules/agent-spec.mdc` and overwrites that file. AGENTS.md is copied in only if it is
-missing; otherwise a pointer is appended. hooks.json is merged.
-
-**Open.**
-- The clean Claude bench (8 tasks × 3 runs, about $2) was still running at snapshot time, so the
-  question "does it save now" has no answer yet. Next: read the newest
-  `.agent-spec/eval/cursor-bench-*.md` for the gate verdict, long-dashboard against
-  long-dashboard-compact, and graph and subagent calls in traceback-fix and env-sweep. If the gate
-  fails (exit 4), fix what the run shows.
-- Commit and push the uncommitted changes, after asking the user.
-- Memory holds 89 facts against a cap of 40, and INDEX.md is over 8000 B. Pruning deletes facts,
-  so it needs the user's confirmation.
-- `/agent-spec-raw-code-full` was measured 5% dearer before. Its SKILL.md is re-read every turn.
-  It needs its own A/B after the harness passes.
-- Not explained: 3 invented file names in the harness long chats of run 4e5bb7, and +56% wall
-  time in run 3a9968.
-- The Ollama 7B model never calls graphify, so local runs cannot test the graph lever.
-
-Files to load: `bin/agent-spec-cursor-bench.py`, `evals/harness-bench.jsonl`,
-`evals/cursor-bench.jsonl`, `CURSOR.md`, the newest `.agent-spec/eval/cursor-bench-*.md`.
-
-## 2026-11-21 — End-to-end review: graph ranking, memory search, warm resume, recall
+### Learned
+- Full gate run 20261121T133335-af3be8 (15 tasks x 3, Claude Code 2.1.328, claude-haiku-5-5) passed: harness $0.2460 against bare $0.2524 (-2.5%, 95% CI -9.0% to +4.2%), 125 against 124 of 126 turns correct. The harness was still dearer in 32 of 45 paired chats (sign test p = 0.0066): short prompts +13% to +29% and edit tasks +8% to +11% from the fixed start-of-chat context, outweighed by graph tasks (savings-importers -54%, views-blast -25%) and the handoff task (-12%). Claim "at least as cheap as bare", never "cheaper on every chat".
+- harness-test/ at the repo root holds the evidence for leadership: README.md (result, supported and unsupported claims, method, reproduce command, file hashes), runs/ (reports 7b6a09, 20d53a, 970b74, ad8ad1, af3be8) and data/ (636 per-turn result rows, the 15 task definitions). It is tracked by git, unlike .agent-spec/eval/, which is ignored.
 
 ### Done
-- Graph `context` now scores symbol names, stems, 4-letter prefixes and IDF, and puts tests after
-  their subject. On commit history, hit@4 went from 20% to 56% and recall@12 from 27% to 53%.
-  Reproduce with `python3 evals/graph_context_eval.py`.
-- `agent-spec-memory.py search` ranks free-text questions (it was a substring match that found 0
-  facts) and takes `--limit`.
-- The digest's warm resume parses `### Open`, `**Open.**` and `Files to load:` shapes, and the
-  snapshot skill prescribes the shape. The digest no longer forbids SESSION-SNAPSHOT.md; it
-  points earlier-chat questions at memory search and then the newest section.
-- Recall drops path tokens and needs two shared words. RAG search keeps at most two chunks per
-  file and drops question filler (MRR 0.450 to 0.457).
-- Small fixes: the receipt fact counter, the `ingest --what` hint, `sessionStart` back in
-  CURSOR.md (the selftest checks it), stale `.algosec-*` names in facts, and the `views-blast`
-  grader.
-- Report: `docs/evidence/REVIEW-2026-11-21.md`. Nothing is committed yet.
+- Watched the gate to its exit line (exit=0, about 29 minutes). Invented file names (bare 3, harness 6) were all on fix-bug turn 1 in both arms, with the same names (token.json, api_token.ts, secret_scan.py), so they are not caused by the harness.
+- Built harness-test/. Checked the copied data for the user's email and home paths: none.
 
 ### Corrections
-- I first assumed the RAG index only refreshed while the dashboard runs. `search` and `ask`
-  already refresh incrementally (0.35 s), so nothing needed to change there.
+- Earlier in this chat I said the refused turn-6 command was refused because of `M=` and `$M`. That was never verified; the other session's reading is that the hand-appending path itself was the cost, and the `handoff` command fixed it either way.
+- One reply ended with only the next-step box and no answer; the user had to ask again.
 
 ### Open
-- The Claude bench run 20261121T083158-7b6a09 was still running. At about 1.5 of 3 repeats the
-  harness was +3.8%. It started before this session's ranking changes, so re-run it after
-  committing to measure them.
-- Memory holds 91 facts against a cap of 40. An age prune would delete load-bearing decisions,
-  so prune by relevance, and only with the user's approval.
-- The installed skills in ~/.cursor/skills predate the vendor-name drop (`.algosec-*` markers).
-  Re-run `./install.sh` when the user agrees.
+- Nothing is committed: memory.py, the bench, CURSOR.md, four skills, two test files, the snapshot sections and now harness-test/. b240f94 is not pushed. Ask before committing and pushing.
+- Run `./install.sh --skills-only` after committing; ~/.claude/skills still serves the old snapshot skill with the `add` example.
+- Next cost lever: the fixed per-chat context (CURSOR.md 2368 B plus the digest) that makes short prompts +13% to +29%.
+- Subagents are untested: 0 Agent calls in every run.
 
 ### Load next session
-`docs/evidence/REVIEW-2026-11-21.md`, `bin/graphify-cli.py`, `bin/agent-spec-digest.py`, `evals/graph_context_eval.py`
+`harness-test/README.md`, `harness-test/runs/2026-11-21-e-full-gate-15-tasks-af3be8.md`, `CURSOR.md`, `bin/agent-spec-digest.py`
+
+## 2026-11-21 (evening) — Subagent delegation measured: test runs cost 2.5x bare
+
+### Learned
+- Delegating test runs to the agent-spec-verify subagent cost 2.5 times bare on bench task verify-suite (run 20261121T180024-c82667, 1 chat per arm, claude-haiku-5-5: $0.0351 against $0.0139, both 5 of 5 correct). The model already trims test output itself (`pytest -v | tail -n 200` once, then `pytest -q | tail -n 4`, 340 B), and each subagent starts cold at 26k to 56k token-equivalents; the main chat was not smaller (62k against 52k at turn 4). The preToolUse delegation nudge therefore fires only on a noisy run with no pipe and no redirect. Subagent value is still untested for read-heavy search sweeps and for a subagent on a cheaper model than the main chat.
+- Claude Code under `--permission-mode dontAsk` refuses a shell redirect into a file (`pytest > log 2>&1`) even when `Bash(python3:*)` is allowed, because the redirect counts as a file write; `acceptEdits` allows writes inside the working directory and still refuses unlisted commands (curl). A `claude -p` turn that waits on a background task emits two `result` events: `usage` covers its own segment, `total_cost_usd` is the running total. The bench now uses acceptEdits, joins answers and sums usage.
+
+### Done
+- hooks/cursor-pre-tool-use.py: delegate-verify nudge (once per command, command position only, skips subagent calls via `parent_tool_call_id` or `agent_id`, asks for a foreground call, leaves a `delegate-verify` guard event), and Claude Code's own verdict shape (`hookSpecificOutput`) when `hook_event_name` is `PreToolUse`.
+- bin/agent-spec-cursor-bench.py: harness arm gets the preToolUse hook on Bash only; permission mode acceptEdits; `echo` and `pwd` allowlisted; two-result turns graded on all answers.
+- bin/agent-spec-risk.py (and the installed .agent-spec/bin copy): redirects to /dev/null, `&1`, `&2` and an interpreter in front of a harness script no longer make the protected-path check fire; `ls .agent-spec/bin/x 2>/dev/null` had blocked a search subagent, and `python3 .agent-spec/bin/agent-spec-memory.py handoff` would have been blocked too. The new test fails on the old code.
+- Tests: 79 pass across test_pre_tool_use, test_cursor_bench, test_risk, test_risk_api, test_hook_logs.
+- harness-test/README.md section 4 now carries the measured result; report copied to harness-test/runs/2026-11-21-f-subagent-verify-c82667.md.
+
+### Corrections
+- I first made the hook nudge redirected runs too (`pytest > log; tail log`); probe c82667 showed that doubled the turn's cost ($0.0106 against $0.0046), so it was reverted.
+- `pkill -f agent-spec-cursor-bench` also killed my own shell, so the edit in the same command never ran; it was re-applied.
+- Two machine restarts wiped /tmp and killed runs dad368 and the first probe; bench logs now go to .agent-spec/eval/probe.log.
+
+### Open
+- The full 15-task gate (af3be8, -2.5%) ran under dontAsk; re-run it under acceptEdits before the README claims new totals.
+- timeout-sweep (search subagent) has not been run with the hook.
+- Next subagent measurement to choose: a cheaper subagent model than the main chat, or a read-heavy search sweep.
+- tests/test_run_dir.py::test_list_and_compact is flaky (1 of 3 full runs); a suggested task was raised for it.
+- Nothing is committed (this session adds the hook, risk gate, bench, tests and README changes to the earlier uncommitted set). b240f94 is not pushed. Ask before committing; run `./install.sh --skills-only` after.
+- Memory is over its cap (45 of 40 after this promote).
+
+### Load next session
+`harness-test/README.md`, `hooks/cursor-pre-tool-use.py`, `bin/agent-spec-cursor-bench.py`, `.agent-spec/eval/cursor-bench-20261121T180024-c82667.md`
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -177,3 +128,13 @@ writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates
 - **2026-11-19 (night) — End-to-end review; memory controls on the dashboard** — Goal. The user asked for a full review of the project (no redundancy, keep the needed
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-092542.md`. Nothing is deleted.
 - **2026-11-19/20 (late night) — Short prompts stopped paying for code work; bench measures it** — Goal. The user found that the harness made short prompts and plain chat dearer than no
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-094706.md`. Nothing is deleted.
+- **2026-11-20/21 — Harness cost on Claude Code: bench billing fixed, cost gate, levers under test** — Goal. Prove with live runs that the token levers save money: graph search, the search
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-102827.md`. Nothing is deleted.
+- **2026-11-21 — End-to-end review: graph ranking, memory search, warm resume, recall** — Graph `context` now scores symbol names, stems, 4-letter prefixes and IDF, and puts tests after
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-111044.md`. Nothing is deleted.
+- **2026-11-21 (later) — Cost levers, memory consolidation, committed as b240f94** — Bench run 20261121T083158-7b6a09 (old version, Haiku 5.5, 8 tasks x 3) finished with the cost
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-141253.md`. Nothing is deleted.
+- **2026-11-21 (late morning) — Turn-6 save cost traced to shell quoting; `promote` added** — Fact text in a double-quoted shell argument breaks the save. Claude Code in dontAsk mode refuses `agent-spec-m
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-182220.md`. Nothing is deleted.
+- **2026-11-21 (midday) — Turn-6 handoff cost brought to parity with `handoff`** — Appending a section to a large SESSION-SNAPSHOT.md by hand is what made the harness's handoff turn dear, not m

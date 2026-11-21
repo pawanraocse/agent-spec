@@ -55,10 +55,25 @@ A snapshot section is read by a human catching up. A fact is read by every sessi
 automatically. Anything from this session that will still be true in three months belongs
 in both:
 
+The cheapest way to add the section: Write it, and only it, to `.agent-spec/HANDOFF.md`,
+then one call puts it above the archive index, records the picked bullets and rotates:
+
 ```bash
-./.agent-spec/bin/agent-spec-memory.py add --type decision --subject "<short>" \
-  --source "SESSION-SNAPSHOT <date>" "<one sentence>"
+./.agent-spec/bin/agent-spec-memory.py handoff --promote 2,4 --type decision
 ```
+
+That never reads or edits the large snapshot file. For a section already in the file:
+
+```bash
+./.agent-spec/bin/agent-spec-memory.py promote                 # numbers the new section's bullets
+./.agent-spec/bin/agent-spec-memory.py promote --pick 2,4 --type decision
+```
+
+`promote` reads the fact text from the section you just wrote, so each fact is written once
+and never passes through shell quoting. Typing the fact into an `add` command instead puts
+backticks inside double quotes: a shell runs them as commands and the fact is saved mangled,
+and a permission-gated agent has the call refused. If you must use `add`, single-quote the
+text: `add --type gotcha --subject 'short' 'one sentence'`.
 
 Promote sparingly — a decision and its reason, a constraint someone imposed, a trap that
 cost time. Not the narrative. See [`agent-spec-remember`](../agent-spec-remember/SKILL.md).

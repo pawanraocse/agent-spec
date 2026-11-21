@@ -96,13 +96,25 @@ LIMIT_MARKERS = ("usage limit", "ActionRequiredError", "not logged in", "Authent
 CLAUDE_MODEL = "claude-haiku-5-5"
 CLAUDE_USAGE = {"input_tokens": "inputTokens", "output_tokens": "outputTokens",
                 "cache_read_input_tokens": "cacheReadTokens", "cache_creation_input_tokens": "cacheWriteTokens"}
-# What a coding chat needs, nothing else: no web, no MCP. dontAsk denies anything not listed.
+# What a coding chat needs, nothing else: no web, no MCP. Under -p nobody answers a prompt, so anything
+# not listed is refused. The mode is acceptEdits, not dontAsk: dontAsk also refuses a shell redirect into
+# the workspace (`pytest > log 2>&1`), which Claude Code counts as a file write that `Bash(python3:*)`
+# does not cover. The harness arm, told to keep output small, runs exactly that and bare does not, so
+# under dontAsk the bench measured the permission mode, not the harness (runs 0857cd and 896893: every
+# harness test run refused at turn 1). acceptEdits allows writes inside the workspace copy and still
+# refuses unlisted commands such as curl (probed 2026-11-21). `echo` and `pwd` are listed because a
+# compound command is allowed only when every part is.
 CLAUDE_TOOLS = ("Read,Grep,Glob,Edit,Write,MultiEdit,Skill,Agent,Bash(python3:*),Bash(grep:*),Bash(rg:*),Bash(ls:*),"
                 "Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(sed -n:*),Bash(git diff:*),Bash(git status:*),Bash(git grep:*),"
-                "Bash(git log:*),Bash(wc:*),Bash(find:*),Bash(cd:*),Bash(bash -n:*),Bash(test:*),"
+                "Bash(git log:*),Bash(wc:*),Bash(find:*),Bash(cd:*),Bash(bash -n:*),Bash(test:*),Bash(echo:*),Bash(pwd:*),"
                 "Bash(./.agent-spec/bin/graphify-cli.py:*),Bash(.agent-spec/bin/graphify-cli.py:*),"
                 "Bash(./.agent-spec/bin/agent-spec-digest.py:*),Bash(./.agent-spec/bin/agent-spec-memory.py:*)")
 WS_PREFIX = "aspec-claude-bench-"
+PRE_TOOL_HOOK = "agent-spec-pre-tool-use.py"
+# The bench's own task files and the results kept from earlier runs hold the expected answers.
+# A chat that greps the project would find them (on run af3be8 both arms hit evals/*.jsonl in 13
+# answers), so neither arm gets them: what is measured is the project, not the answer key.
+ANSWER_KEYS = ("evals/", "harness-test/")
 PKG = os.path.dirname(HERE)
 HARNESS_TASKS = os.path.join(PKG, "evals", "harness-bench.jsonl")
 # Short prompts that need no repo access: the harness must not make them dearer (v2.1.0 tiers).
@@ -205,7 +217,7 @@ def claude_argv(model: str | None, session: str | None) -> list:
     # reconnect on every resumed turn, re-injecting their tool lists (~16k tokens of cache write each
     # time, at random turns in either arm). Neither arm gets any MCP server.
     argv = ["-p", "--output-format", "stream-json", "--verbose", "--model", model or CLAUDE_MODEL,
-            "--setting-sources", "project", "--strict-mcp-config", "--permission-mode", "dontAsk",
+            "--setting-sources", "project", "--strict-mcp-config", "--permission-mode", "acceptEdits",
             "--allowedTools=" + CLAUDE_TOOLS]
     return argv + (["--resume", session] if session else [])
 
@@ -317,11 +329,19 @@ def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session:
                     row["subagent_calls"] += block.get("name") in ("Agent", "Task")
                     row["workflow_read"] |= WORKFLOW_RULE in json.dumps(block)
         elif typ == "result":
-            row["answer"] = str(obj.get("result") or "")
+            # A turn that starts a background task ends twice: one result when the model stops to
+            # wait, another after the task's notice wakes it. `usage` covers its own segment only and
+            # `total_cost_usd` is the running total (probe, 2026-11-21), so answers are joined, usage
+            # is summed and the last cost is kept. Keeping only the last result graded a correct
+            # answer as wrong (run 0857cd, bare turn 1: its last text only acknowledged the notice).
+            text = str(obj.get("result") or "")
+            row["answer"] = row["answer"] + "\n\n" + text if row["answer"] and text else (row["answer"] or text)
             error = bool(obj.get("is_error"))
             u = obj.get("usage")
             if isinstance(u, dict):
-                row["usage"] = {dst: u[src] for src, dst in CLAUDE_USAGE.items() if isinstance(u.get(src), int)}
+                seg = {dst: u[src] for src, dst in CLAUDE_USAGE.items() if isinstance(u.get(src), int)}
+                prev = row["usage"] or {}
+                row["usage"] = {k: prev.get(k, 0) + seg.get(k, 0) for k in set(prev) | set(seg)}
             if isinstance(obj.get("total_cost_usd"), (int, float)):
                 row["cost_usd"] = round(float(obj["total_cost_usd"]), 6)
     path = transcript(row["session_id"])
@@ -382,7 +402,7 @@ def build_template(project: str, skill: str | None, harness: bool = True, packag
                                     cwd=project).decode().split("\0")
     for rel in filter(None, files):
         src = os.path.join(project, rel)
-        if os.path.isfile(src) and not rel.startswith((".claude/", ".agent-spec/")):
+        if os.path.isfile(src) and not rel.startswith((".claude/", ".agent-spec/") + ANSWER_KEYS):
             os.makedirs(os.path.dirname(os.path.join(tpl, rel)), exist_ok=True)
             shutil.copy2(src, os.path.join(tpl, rel))
     if skill:
@@ -428,6 +448,15 @@ def add_harness(project: str, tpl: str, package: str | None = None) -> None:
             shutil.copy2(os.path.join(agents, name), os.path.join(tpl, ".claude", "agents", name))
     hook = {"hooks": {"SessionStart": [{"matcher": "startup", "hooks": [
         {"type": "command", "command": "python3 .agent-spec/bin/agent-spec-digest.py", "timeout": 20}]}]}}
+    # The preToolUse hook a Cursor user gets, on shell calls only: Cursor rewrites Read and Write
+    # payloads so their nudges never fire there, and Claude Code would fire them, so leaving them
+    # out keeps the arm what a Cursor user has. On Bash it routes test runs to agent-spec-verify.
+    pre = os.path.join(package or PKG, "hooks", "cursor-pre-tool-use.py")
+    if os.path.isfile(pre):
+        os.makedirs(os.path.join(tpl, ".claude", "hooks"), exist_ok=True)
+        shutil.copy2(pre, os.path.join(tpl, ".claude", "hooks", PRE_TOOL_HOOK))
+        hook["hooks"]["PreToolUse"] = [{"matcher": "Bash", "hooks": [
+            {"type": "command", "command": "python3 .claude/hooks/" + PRE_TOOL_HOOK, "timeout": 5}]}]
     with open(os.path.join(tpl, ".claude", "settings.json"), "w", encoding="utf-8") as fh:
         json.dump(hook, fh, indent=1)
 
@@ -517,6 +546,21 @@ def known_names(project: str) -> set:
     return names
 
 
+# One-shot inputs the harness consumes inside the turn that writes them (memory.py handoff deletes
+# HANDOFF.md once its section is in the snapshot): real files, gone by the time the turn is scored.
+TRANSIENT_FILES = {"handoff.md"}
+
+
+def workspace_names(cwd: str) -> set:
+    """Base names of every file in a chat's copy as the turn left it: what the harness installed
+    (CLAUDE.md) and what the chat wrote (a rotated snapshot archive) exist, so are not invented."""
+    names = set()
+    for root, dirs, files in os.walk(cwd):
+        dirs[:] = [d for d in dirs if d not in (".git", "node_modules", "__pycache__")]
+        names.update(f.lower() for f in files)
+    return names
+
+
 def phantom_names(answer: str, known: set, allowed: set) -> list:
     """Cited file names that are in neither the project nor the task's own prompts."""
     out = []
@@ -581,7 +625,8 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
                      check=check, correct=is_correct(r["answer"], turn.get("expect"), turn.get("expect_any"), check),
                      skill=args.skill if arm == "skill" else None, ts=common.utc_now(), feature=feature,
                      max_tools=budget, tools_ok=None if budget is None else r["tools"] <= budget,
-                     phantom=phantom_names(r["answer"], args.known, allowed))
+                     phantom=phantom_names(r["answer"], args.known | TRANSIENT_FILES |
+                                           (workspace_names(cwd) if copies else set()), allowed))
             if not one_turn(r, task, arm, n, rows):
                 break
         if claude and arm in HARNESSED and rows and not any(x["skill_read"] for x in rows):
@@ -892,8 +937,9 @@ def report(rows: list, meta: dict, skill: str) -> str:
                      "of each chat), and in %d bare-arm turn(s)." % (withs["skill_read"], withs["turns"], plain["skill_read"]))
         notes.append("Bare: the project's files only, no CLAUDE.md, no .agent-spec/, no hooks. Harness: CURSOR.md as "
                      "CLAUDE.md, the project's .agent-spec/ (graph, memory, bins; not run state), the digest from a "
-                     "SessionStart hook, the agent-spec-search and agent-spec-verify subagents in .claude/agents/. "
-                     "No skill in either arm; no PreToolUse hook; no MCP server. --setting-sources project.")
+                     "SessionStart hook, the agent-spec-search and agent-spec-verify subagents in .claude/agents/, and "
+                     "Cursor's preToolUse hook on Bash calls only (it sends test and build runs to agent-spec-verify). "
+                     "No skill in either arm; no MCP server. --setting-sources project.")
         feats = meta.get("features") or {}
         if feats:
             notes.append("Tasks by the harness feature they exercise: %s. They were picked where the harness has "

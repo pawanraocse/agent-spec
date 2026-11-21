@@ -17,7 +17,7 @@ Reuse log: `.agent-spec/experience-reuse.jsonl` (`{"ts", "exp_id", "task"}`), wr
 1. Check `.agent-spec/memory/staged-candidates.jsonl` first.
    - If present with `status: pending`: present the staged correction candidate:
      `"Found staged correction from session <session_id>: '<candidate>' (context: '<task>'). Accept to save as memory fact? [constraint | gotcha | decision | decline]"`
-   - If accepted: run `agent-spec-memory.py add --type <type> --subject "<3 words>" --source "session <id>" "<one sentence, why>"`.
+   - If accepted: run `agent-spec-memory.py add --type <type> --subject '<3 words>' --source 'session <id>' '<one sentence, why>'` (single quotes: backticks inside double quotes run as commands).
    - Update candidate status to `"status": "accepted"` in `staged-candidates.jsonl`.
    - If declined: update candidate status to `"status": "declined"`.
 2. If no staged candidates, fall back to lines in `experience.jsonl` with `corrections` > 0, newest first, at most 10.

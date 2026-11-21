@@ -6,6 +6,8 @@ that needs one fact. This is the other half — one fact per file, typed, dated,
 and small enough that the whole set can be put in front of a session without reading it.
 
   add     record one fact
+  promote record the bullets of the newest snapshot section as facts (no shell quoting)
+  handoff insert a section written to .agent-spec/HANDOFF.md into the snapshot, promote, rotate
   list    what is remembered
   search  find a fact by keyword
   show    one fact in full
@@ -778,6 +780,141 @@ def _summary_line(body):
     return ""
 
 
+def snapshot_bullets(text):
+    """(heading, items) for the newest snapshot section: its top-level bullets, wrapped lines
+    joined, bold markers stripped. Sections append before the archive index, so the newest is
+    the last one `_split_snapshot` returns."""
+    sections = _sections(text)
+    if not sections:
+        return "", []
+    heading, body = sections[-1]
+    items = []
+    for line in body.split("\n"):
+        bullet = re.match(r"^(?:[-*]|\d+\.)\s+(.*)$", line)
+        if bullet:
+            items.append(bullet.group(1).strip())
+        elif items and items[-1] is not None and line.startswith((" ", "\t")) and line.strip():
+            items[-1] += " " + line.strip()  # a wrapped bullet continues on an indented line
+        elif line.strip():
+            items.append(None)  # prose or a heading ends the previous item
+    return _heading_name(heading), [i.replace("**", "").strip() for i in items if i]
+
+
+def cmd_promote(args):
+    """Record snapshot bullets as facts, read from the file rather than passed on a command line.
+
+    A model that writes `add ... "uses `serve.py`"` gets the backticks run as command
+    substitution: in a real shell the fact is silently mangled (and `serve.py` executed), and a
+    permission-gated agent has the call refused. Taking the text from the file it already wrote
+    also means each fact is written once, not twice, which is most of a handoff's output cost.
+    """
+    if not os.path.exists(SNAPSHOT):
+        print("no SESSION-SNAPSHOT.md — write the section first", file=sys.stderr)
+        return 2
+    heading, items = snapshot_bullets(open(SNAPSHOT, encoding="utf-8").read())
+    if not items:
+        print("the newest snapshot section has no bullets to promote", file=sys.stderr)
+        return 2
+    return _promote_items(heading, items, args.pick, args.all, args.type)
+
+
+def _promote_items(heading, items, pick, every, ftype):
+    if pick:
+        try:
+            picks = sorted({int(n) for n in re.split(r"[,\s]+", pick) if n})
+        except ValueError:
+            print("--pick takes bullet numbers, e.g. 1,3", file=sys.stderr)
+            return 2
+        bad = [n for n in picks if not 1 <= n <= len(items)]
+        if bad:
+            print("--pick: no bullet %s (the section has %d)" % (bad[0], len(items)), file=sys.stderr)
+            return 2
+    elif every:
+        picks = list(range(1, len(items) + 1))
+    else:
+        print("newest section: %s" % heading)
+        for n, item in enumerate(items, 1):
+            print("%3d. %s" % (n, item[:160]))
+        print("record with: promote --all | --pick 1,3  [--type %s]" % "|".join(TYPES))
+        return 0
+    # One summary line, not add's per-fact chatter: an agent reads every line a tool prints, and
+    # five copies of the cap warning cost more output explaining them than the facts did.
+    import contextlib
+    import io
+    worst, added, dupes, failed = 0, [], 0, []
+    for n in picks:
+        text = items[n - 1]
+        lead = re.match(r"^([^.:;—]{3,60}?)(?:[.:;]| — )\s", text)
+        subject = lead.group(1) if lead else " ".join(text.split()[:6])
+        one = argparse.Namespace(type=ftype, subject=subject, text=[text],
+                                 source="SESSION-SNAPSHOT %s" % heading, confidence=None, expires=None,
+                                 provenance=None, addresses=None, supersedes=None)
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = cmd_add(one)
+        worst = max(worst, code)
+        m = re.search(r"^remembered: (\S+)", out.getvalue(), re.M)
+        if m:
+            added.append(m.group(1))
+        elif "not duplicated" in out.getvalue():
+            dupes += 1
+        else:
+            failed.append("bullet %d: %s" % (n, (err.getvalue() or out.getvalue()).strip().splitlines()[0]))
+    print("remembered %d fact(s)%s%s" % (len(added), ": " + ", ".join(added) if added else "",
+                                         "; %d already recorded" % dupes if dupes else ""))
+    for line in failed:
+        print("! " + line, file=sys.stderr)
+    active = sum(1 for f in load_facts() if is_active(f))
+    if added and active > FACT_CAP:
+        print("! %d active facts, cap is %d: consolidate later with add --supersedes" % (active, FACT_CAP))
+    return worst
+
+
+HANDOFF = os.path.join(SPEC, "HANDOFF.md")
+
+
+def cmd_handoff(args):
+    """Put a new section into SESSION-SNAPSHOT.md without the agent reading or editing it.
+
+    Appending by hand means reading a large file to place the section above the archive index
+    and editing it with a long anchor: measured at 8 tool calls and about 3x the output of
+    writing a fresh file. Here the agent Writes only its new section to HANDOFF.md, and one call
+    with no quoted text inserts it, records the facts and rotates.
+    """
+    src = args.file or HANDOFF
+    if not os.path.isfile(src):
+        print("no %s — Write the section there first" % os.path.relpath(src, ROOT), file=sys.stderr)
+        return 2
+    section = open(src, encoding="utf-8").read().strip()
+    if len(section) < 20:
+        print("%s is empty" % os.path.relpath(src, ROOT), file=sys.stderr)
+        return 2
+    if not re.match(r"^## \d{4}-\d{2}-\d{2}", section):  # rotate and the digest find dated headings
+        section = "## %s — handoff\n\n%s" % (datetime.now().strftime("%Y-%m-%d"),
+                                               re.sub(r"^#+ .*\n+", "", section, count=1)
+                                               if section.startswith("#") else section)
+    text = open(SNAPSHOT, encoding="utf-8").read() if os.path.exists(SNAPSHOT) else ""
+    at = re.search(r"(?m)^" + re.escape(INDEX_HEADING) + r"\s*$", text)
+    if at:
+        text = text[:at.start()].rstrip("\n") + "\n\n" + section + "\n\n" + text[at.start():]
+    else:
+        text = (text.rstrip("\n") + "\n\n" if text.strip() else "") + section + "\n"
+    os.makedirs(SPEC, exist_ok=True)
+    with open(SNAPSHOT, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    if os.path.abspath(src) == os.path.abspath(HANDOFF):
+        os.remove(src)  # a one-shot input; its content now lives in the snapshot
+    print("snapshot: section added to %s" % os.path.relpath(SNAPSHOT, ROOT))
+    code = 0
+    if args.promote and args.promote != "none":
+        heading, items = snapshot_bullets(text)
+        if items:
+            every = args.promote == "all"
+            code = _promote_items(heading, items, None if every else args.promote, every, args.type)
+    cmd_rotate(argparse.Namespace(force=False))
+    return code
+
+
 def cmd_snapshots(args):
     """Every snapshot section, live and archived, so the record can be reviewed
     without opening a 29 KB file to find out what is in it.
@@ -873,6 +1010,20 @@ def main():
                    help="id(s) this replaces, comma-separated to consolidate; each is kept as superseded, version bumps")
     p.add_argument("text", nargs="+")
     p.set_defaults(func=cmd_add)
+
+    p = sub.add_parser("promote", help="record the newest snapshot section's bullets as facts; "
+                       "no arguments lists them, so no fact text goes through shell quoting")
+    p.add_argument("--pick", default=None, help="bullet numbers, comma-separated")
+    p.add_argument("--all", action="store_true", help="every bullet of the newest section")
+    p.add_argument("--type", default="reference", choices=TYPES)
+    p.set_defaults(func=cmd_promote)
+
+    p = sub.add_parser("handoff", help="insert .agent-spec/HANDOFF.md into SESSION-SNAPSHOT.md above the "
+                       "archive index, promote its bullets, rotate; the snapshot is never read by the agent")
+    p.add_argument("file", nargs="?", default=None, help="section file (default .agent-spec/HANDOFF.md)")
+    p.add_argument("--promote", default="none", help="all | none | bullet numbers like 1,3")
+    p.add_argument("--type", default="reference", choices=TYPES)
+    p.set_defaults(func=cmd_handoff)
 
     p = sub.add_parser("propose", help="queue a fact for approval in the dashboard (PI-009)")
     p.add_argument("--type", required=True, choices=TYPES)

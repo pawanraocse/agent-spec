@@ -392,6 +392,50 @@ def test_cursor_write_allowed_because_strreplace_arrives_as_write():
     assert call(p, payload)["permission"] == "deny", "outside Cursor the rewrite nudge still applies"
 
 
+def shell(cmd, **extra):
+    payload = {"tool_name": "Shell", "tool_input": {"command": cmd}, "conversation_id": "c1",
+               "cursor_version": "2026.11.11"}
+    payload.update(extra)
+    return payload
+
+
+def test_test_suite_in_the_main_chat_is_routed_to_verify_once():
+    p = project()
+    first = call(p, shell("python3 -m pytest -v tests"))
+    assert first["permission"] == "deny"
+    assert "agent-spec-verify" in first["agent_message"] and "python3 -m pytest -v tests" in first["agent_message"]
+    assert call(p, shell("python3 -m pytest -v tests"))["permission"] == "allow", "retry must go through"
+    rows = [json.loads(l) for l in open(os.path.join(p, ".agent-spec", "metrics", "events.jsonl"))]
+    assert [r["rule"] for r in rows] == ["delegate-verify"], "the dashboard sees one guard event"
+
+
+def test_delegation_leaves_subagents_and_short_commands_alone():
+    p = project()
+    assert call(p, shell("npm test", parent_tool_call_id="t1"))["permission"] == "allow", "the subagent runs it"
+    for cmd in ("python3 -m pytest tests | tail -30", "grep make Makefile",
+                "python3 -m pytest -v tests > /tmp/run.txt 2>&1; echo \"exit=$?\"; tail -n 5 /tmp/run.txt",
+                "python3 tests/test_memory.py", "echo pytest", "ls"):
+        assert call(p, shell(cmd))["permission"] == "allow", cmd
+    for cmd in ("npm run build", "cd ui && npx tsc --noEmit", "CI=1 go test ./...", "make"):
+        assert call(p, shell(cmd))["permission"] == "deny", cmd
+
+
+def test_claude_code_gets_its_own_verdict_shape():
+    """Claude Code (the bench's harness arm) reads hookSpecificOutput and treats empty stdout as no say."""
+    p = project()
+    payload = {"hook_event_name": "PreToolUse", "session_id": "s9", "tool_name": "Bash",
+               "tool_input": {"command": "python3 -m pytest tests"}}
+    out = call(p, payload)["hookSpecificOutput"]
+    assert (out["hookEventName"], out["permissionDecision"]) == ("PreToolUse", "deny")
+    assert "agent-spec-verify" in out["permissionDecisionReason"]
+    e = dict(os.environ, TMPDIR=os.path.join(p, "tmp"))
+    for again in (payload, dict(payload, tool_input={"command": "ls"}),
+                  dict(payload, session_id="s10", agent_id="a1")):
+        res = subprocess.run([sys.executable, HOOK], cwd=p, input=json.dumps(again),
+                             capture_output=True, text=True, env=e)
+        assert (res.returncode, res.stdout) == (0, ""), res.stdout
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

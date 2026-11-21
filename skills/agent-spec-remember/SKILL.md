@@ -13,9 +13,14 @@ is known from then on, without anyone reading anything.
 
 ```bash
 ./.agent-spec/bin/agent-spec-memory.py add \
-  --type constraint --subject "push policy" --source "SESSION-SNAPSHOT 2026-08-26" \
-  "Pushing to main is allowed here at the user's explicit instruction, overriding the Hard Stops list."
+  --type constraint --subject 'push policy' --source 'SESSION-SNAPSHOT 2026-08-26' \
+  'Pushing to main is allowed here at the explicit instruction of the user, overriding the Hard Stops list.'
 ```
+
+Single quotes, always: inside double quotes a shell runs `` `backticks` `` and `$(…)` as
+commands, so the fact is saved mangled, and a permission-gated agent has the call refused.
+Facts already written in a snapshot section go in with `agent-spec-memory.py promote`, which
+reads them from the file.
 
 ## The four types
 

@@ -129,12 +129,41 @@ class CursorBenchTest(unittest.TestCase):
         spec.loader.exec_module(mod)
         return mod
 
+    def test_a_turn_that_waits_on_a_background_task_keeps_both_results(self):
+        """claude -p ends such a turn twice; usage is per segment, total_cost_usd a running total."""
+        mod = self._mod()
+        fake = os.path.join(self.tmp, "two-results")
+        seg = lambda text, out, cost: json.dumps({"type": "result", "session_id": "s1", "result": text,
+                                                   "total_cost_usd": cost, "usage": {"input_tokens": 4,
+                                                   "output_tokens": out, "cache_read_input_tokens": 100}})
+        with open(fake, "w") as fh:
+            fh.write("#!/bin/sh\ncat <<'EOF'\n%s\n%s\nEOF\n" % (
+                seg("5 failed: test_savings, test_redact, test_insights", 150, 0.002),
+                seg("The notice adds nothing new.", 254, 0.006)))
+        os.chmod(fake, 0o755)
+        row = mod.run_claude_turn(fake, self.tmp, "run the suite", None, None, 30, None)
+        self.assertIn("test_redact", row["answer"])
+        self.assertIn("adds nothing new", row["answer"])
+        self.assertEqual(row["usage"], {"inputTokens": 8, "outputTokens": 404, "cacheReadTokens": 200})
+        self.assertEqual(row["cost_usd"], 0.006)
+
     def test_phantom_names_flag_files_the_project_does_not_have(self):
         mod = self._mod()
         known = {"serve.py", "savings.py", "readme.md"}
         got = mod.phantom_names("See bin/aspec_platform/serve.py, routes.py, Node.js, README.md and new.py",
                                 known, {"new.py"})
         self.assertEqual(got, ["routes.py"])
+
+    def test_files_the_chat_or_harness_made_are_not_invented(self):
+        mod = self._mod()
+        with tempfile.TemporaryDirectory() as ws:
+            os.makedirs(os.path.join(ws, ".agent-spec", "memory", "snapshots"))
+            for rel in ("CLAUDE.md", ".agent-spec/memory/snapshots/snapshots-through-20261121-104101.md"):
+                open(os.path.join(ws, rel), "w").close()
+            known = {"serve.py"} | mod.TRANSIENT_FILES | mod.workspace_names(ws)
+            got = mod.phantom_names("Per CLAUDE.md I wrote .agent-spec/HANDOFF.md; older sections went to "
+                                    "snapshots-through-20261121-104101.md, see serve.py and ghost.py", known, set())
+        self.assertEqual(got, ["ghost.py"])
 
     def test_report_breaks_out_features_budgets_and_turn_position(self):
         mod = self._mod()
@@ -280,7 +309,12 @@ with open(os.environ["FAKE_LOG"], "a") as fh:
                          "graph": os.path.isdir(".agent-spec/graph"), "run_state": os.path.isdir(".agent-spec/platform"),
                          "skill": os.path.isdir(".claude/skills"),
                          "agents": sorted(os.listdir(".claude/agents")) if os.path.isdir(".claude/agents") else [],
-                         "workflow": os.path.isfile(".cursor/rules/agent-spec-workflow.mdc")}) + "\n")
+                         "workflow": os.path.isfile(".cursor/rules/agent-spec-workflow.mdc"),
+                         "answer_keys": [d for d in ("evals", "harness-test") if os.path.exists(d)],
+                         "pre_tool": [g["matcher"] + ":" + os.path.basename(h["command"].split()[-1]) for g in
+                                      (json.load(open(".claude/settings.json")).get("hooks", {}).get("PreToolUse", [])
+                                       if os.path.exists(".claude/settings.json") else []) for h in g["hooks"]
+                                      if os.path.isfile(h["command"].split()[-1])]}) + "\n")
 with open(os.environ["FAKE_LOG"]) as fh:
     ncall = sum(1 for _ in fh)
 prompt = argv[-1]
@@ -337,8 +371,11 @@ class ClaudeBenchTest(unittest.TestCase):
             fh.write('---\nname: x\n---\n\n# x\n\nGoverns every reply and tool call until "stop".\n')
         self.project = os.path.join(self.tmp, "proj")
         os.makedirs(self.project)
+        os.makedirs(os.path.join(self.project, "evals"))
+        os.makedirs(os.path.join(self.project, "harness-test"))
         for name, body in (("conf.txt", "size=152\n"), ("CURSOR.md", "rule\n"), ("CURSOR-WORKFLOW.md", "flow\n"),
-                           ("bug.txt", "broken\n")):
+                           ("bug.txt", "broken\n"), ("evals/key.jsonl", "size is 152\n"),
+                           ("harness-test/README.md", "size is 152\n")):
             with open(os.path.join(self.project, name), "w") as fh:
                 fh.write(body)
         for argv in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x"]):
@@ -470,6 +507,9 @@ class ClaudeBenchTest(unittest.TestCase):
         # CLAUDE.md points at the code-work rule; Claude Code never attaches it, so it must be there to Read.
         self.assertEqual((bare["workflow"], harness["workflow"]), (False, True))
         self.assertEqual((bare["agents"], harness["agents"]), ([], ["agent-spec-search.md", "agent-spec-verify.md"]))
+        # The task file and kept results hold the expected answers: neither arm may grep them.
+        self.assertEqual((bare["answer_keys"], harness["answer_keys"]), ([], []))
+        self.assertEqual((bare["pre_tool"], harness["pre_tool"]), ([], ["Bash:agent-spec-pre-tool-use.py"]))
         self.assertTrue(any(a.startswith("--allowedTools=") and ",Agent," in a for a in calls[0]["argv"]))
         self.assertFalse(any(c["argv"][-1].startswith("/") for c in calls))
         with open(os.path.join(aspec, "eval", "cursor-bench-results.jsonl")) as fh:

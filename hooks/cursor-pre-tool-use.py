@@ -28,6 +28,16 @@ RANGE_KEYS = ("limit", "offset", "start_line", "end_line", "line_start", "line_e
 WRITE_CAP = 2000
 EDIT_KEYS = ("old_string", "new_string", "old_str", "new_str", "search", "replace")
 FILTERED = ("|", ">", "head", "tail", "grep", "wc", "diffstat")
+# Commands whose output is long and mostly passing lines: test runners, builds, linters, type
+# checkers. Run in the main chat, all of it stays in context and is re-sent on every later turn;
+# the agent-spec-verify subagent runs it in its own context and hands back only the failures.
+# Matched in command position only (start, or after ; & ( ), so `grep make` is not a build.
+NOISY = re.compile(
+    r"(?:^|[;&(])\s*(?:\w+=\S*\s+)*(?:"
+    r"(?:python3?|uv run|poetry run)\s+-m\s+(?:pytest|unittest)\b|py\.?test\b|tox\b|nox\b"
+    r"|(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?(?:test|build|lint|typecheck|check)\b|npx\s+(?:jest|vitest|tsc|eslint)\b"
+    r"|jest\b|vitest\b|mocha\b|tsc\b|eslint\b|mypy\b|ruff\s+check\b"
+    r"|go\s+(?:test|build|vet)\b|cargo\s+(?:test|build|clippy)\b|mvn\b|\./?gradlew?\b|make\b)")
 MARKER_TTL = 86400
 
 
@@ -338,6 +348,11 @@ def _remember_ctx(payload):
         for key in ("conversation_id", "generation_id", "tool_name", "tool_use_id"):
             if payload.get(key):
                 _GUARD_CTX[key] = str(payload[key])[:128]
+        # Claude Code (the bench, and a Claude Code user of the package) names the event
+        # "PreToolUse" and reads its own verdict shape; Cursor sends "preToolUse".
+        _GUARD_CTX["claude"] = payload.get("hook_event_name") == "PreToolUse"
+        if _GUARD_CTX["claude"] and payload.get("session_id"):
+            _GUARD_CTX.setdefault("conversation_id", str(payload["session_id"])[:128])
     except Exception:
         pass
 
@@ -357,6 +372,33 @@ def _payload_meta(raw):
 
 # Images and PDFs are not read by line, so offset/limit cannot shrink them: never gate them.
 NOT_LINE_READ = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".ico", ".pdf")
+
+
+def in_subagent(payload):
+    """True for a tool call a subagent makes: Cursor tags it with `parent_tool_call_id`
+    (3.30), Claude Code with `agent_id`. The verify subagent must run the command itself."""
+    return bool(payload.get("parent_tool_call_id") or payload.get("agent_id"))
+
+
+def delegate_hit(tool, args, payload):
+    """(key, message) when the main chat is about to run a noisy command with nothing cutting its
+    output down, else None. A pipe into a filter (`| tail -n 4`) or a redirect into a log is left
+    alone: either is cheaper than a subagent, which starts cold (about 26k tokens of setup in
+    bench run c82667, against a 340 B `pytest -q | tail -n 4`). Nudging a redirect too doubled the
+    turn's cost there ($0.0106 against $0.0046)."""
+    if tool not in ("Shell", "Bash", "shell", "bash") or in_subagent(payload):
+        return None
+    cmd = str(args.get("command", ""))
+    if any(f in cmd for f in ("|", ">")) or not NOISY.search(cmd):
+        return None
+    return "delegate:" + " ".join(cmd.split()), (
+        "This project runs test suites, builds and linters through the agent-spec-verify "
+        "subagent, so their output stays out of this chat (it would be re-sent on every later "
+        "turn). Call the Task/Agent tool with subagent_type agent-spec-verify, in the foreground "
+        "(run_in_background false: you need its verdict before you go on), and the prompt: "
+        "Run `%s` and report. It returns the verdict and only the failures, verbatim with "
+        "file:line. Retry as-is only if you need the full output here." % cmd.strip()
+    )
 
 
 def check(tool, args):
@@ -420,7 +462,8 @@ def check(tool, args):
 
 
 def allow():
-    sys.stdout.write(json.dumps({"permission": "allow"}))
+    if not _GUARD_CTX.get("claude"):  # Claude Code: no output leaves its own permission rules in charge
+        sys.stdout.write(json.dumps({"permission": "allow"}))
     return 0
 
 
@@ -454,6 +497,11 @@ def guard_event(rule, target=""):
 
 def deny(message, user_message="agent-spec input discipline", rule="input-discipline", target=""):
     guard_event(rule, target)
+    if _GUARD_CTX.get("claude"):
+        sys.stdout.write(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "PreToolUse", "permissionDecision": "deny",
+            "permissionDecisionReason": message}}))
+        return 0
     sys.stdout.write(
         json.dumps(
             {
@@ -631,6 +679,18 @@ def main():
     if hard:
         debug_log(tool, payload, args, "deny-hard-cap")
         return deny(hard, rule="hard-cap", target=args.get("file_path") or args.get("path") or "")
+
+    try:
+        hit = delegate_hit(tool, args, payload)
+    except Exception:
+        hit = None
+    if hit:
+        if nudged_already(session_id, hit[0]):
+            debug_log(tool, payload, args, "allow-retry")
+            return allow()
+        debug_log(tool, payload, args, "deny-delegate")
+        return deny(hit[1], "agent-spec: delegate to agent-spec-verify", rule="delegate-verify",
+                    target=" ".join(str(args.get("command", "")).split()[:3]))
 
     try:
         hit = check(tool, args)

@@ -5,6 +5,7 @@ Run: python3 tests/test_memory.py
 Each test builds a throwaway project; the tool resolves paths from cwd.
 """
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -292,12 +293,6 @@ def test_digest_ranks_facts_about_the_files_in_play_first():
         off = subprocess.run([sys.executable, MEMORY, "digest"], cwd=t, capture_output=True, text=True, env=env_off)
         assert not off.stdout.startswith("- [gotcha] rank fusion weights"), "relevance can be turned off"
 
-if __name__ == "__main__":
-    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
-    for fn in tests:
-        fn()
-        print("  ok", fn.__name__)
-    print("%d memory tests passed" % len(tests))
 
 
 def test_rotate_splits_dated_headings_and_merges_index():
@@ -365,3 +360,83 @@ def test_consolidate_supersedes_several_and_cap_counts_active_only():
         assert "bench details" in index and "| a |" not in index, index
         assert "Alpha detail" in run(t, "search", "alpha").stdout  # superseded stays searchable
         assert run(t, "add", "--type", "gotcha", "--subject", "x", "--supersedes", "nope", "t").returncode == 2
+
+
+def _snapshot(t, body):
+    spec = os.path.join(t, ".agent-spec")
+    os.makedirs(spec, exist_ok=True)
+    with open(os.path.join(spec, "SESSION-SNAPSHOT.md"), "w", encoding="utf-8") as fh:
+        fh.write(body)
+
+
+def test_promote_records_snapshot_bullets_without_shell_quoting():
+    """Fact text with backticks comes from the file, so no shell ever sees it."""
+    with tempfile.TemporaryDirectory() as t:
+        _snapshot(t, "## 2026-11-01 — old\n\n- Old fact that must not be promoted again.\n\n"
+                     "## 2026-11-21 — handoff\n\n"
+                     "- **Dashboard server:** stdlib `ThreadingHTTPServer` in `serve.py`, port 8765.\n"
+                     "- Savings: `savings()` in `bin/aspec_platform/savings.py` prices one graph\n"
+                     "  answer at 152 bytes by default.\n"
+                     "\nPlain prose is not a fact.\n\n| a | b |\n|---|---|\n\n  An indented note after a table.\n\n"
+                     "## Archived sections\n- **2026-10-01** — earliest.\n")
+        listing = run(t, "promote")
+        assert listing.returncode == 0, listing.stderr
+        assert "  1. Dashboard server:" in listing.stdout and "  3." not in listing.stdout, listing.stdout
+        assert not os.path.isdir(os.path.join(t, ".agent-spec", "memory", "facts"))  # listing writes nothing
+        res = run(t, "promote", "--all", "--type", "gotcha")
+        assert res.returncode == 0 and "remembered 2 fact(s)" in res.stdout, res.stdout + res.stderr
+        facts = os.path.join(t, ".agent-spec", "memory", "facts")
+        bodies = [open(os.path.join(facts, f), encoding="utf-8").read() for f in sorted(os.listdir(facts))]
+        joined = "\n".join(bodies)
+        assert "`ThreadingHTTPServer` in `serve.py`" in joined, joined
+        assert "prices one graph answer at 152 bytes" in joined, joined  # wrapped line joined
+        assert "subject: Dashboard server" in joined and "type: gotcha" in joined, joined
+        assert "source: SESSION-SNAPSHOT 2026-11-21 — handoff" in joined, joined
+        assert "Old fact" not in joined
+        again = run(t, "promote", "--pick", "1")
+        assert again.returncode == 0 and "1 already recorded" in again.stdout, again.stdout
+        assert run(t, "promote", "--pick", "9").returncode == 2
+
+
+def test_promote_needs_a_snapshot_with_bullets():
+    with tempfile.TemporaryDirectory() as t:
+        assert run(t, "promote", "--all").returncode == 2
+        _snapshot(t, "## 2026-11-21 — empty\n\nOnly prose here.\n")
+        assert run(t, "promote", "--all").returncode == 2
+
+
+def test_handoff_inserts_above_the_archive_index_and_promotes():
+    with tempfile.TemporaryDirectory() as t:
+        _snapshot(t, "## 2026-11-20 — earlier\n\n- Earlier work.\n\n"
+                     "## Archived sections\n- **2026-10-01** — earliest.\n")
+        with open(os.path.join(t, ".agent-spec", "HANDOFF.md"), "w", encoding="utf-8") as fh:
+            fh.write("## 2026-11-21 — handoff\n\n- Server: stdlib `ThreadingHTTPServer` in `serve.py`.\n"
+                     "- Savings: one graph answer is priced at 152 bytes.\n")
+        res = run(t, "handoff", "--promote", "all")
+        assert res.returncode == 0 and "remembered 2 fact(s)" in res.stdout, res.stdout + res.stderr
+        body = open(os.path.join(t, ".agent-spec", "SESSION-SNAPSHOT.md"), encoding="utf-8").read()
+        assert body.index("## 2026-11-20") < body.index("## 2026-11-21 — handoff") < body.index("## Archived"), body
+        assert body.count("## Archived sections") == 1 and "- **2026-10-01** — earliest." in body
+        assert not os.path.exists(os.path.join(t, ".agent-spec", "HANDOFF.md"))
+        assert run(t, "handoff").returncode == 2  # consumed: a second run has nothing to add
+
+
+def test_handoff_dates_an_undated_section_and_creates_the_snapshot():
+    with tempfile.TemporaryDirectory() as t:
+        os.makedirs(os.path.join(t, ".agent-spec"))
+        with open(os.path.join(t, ".agent-spec", "HANDOFF.md"), "w", encoding="utf-8") as fh:
+            fh.write("# Handoff\n\n- The dashboard stores data in SQLite.\n")
+        res = run(t, "handoff")
+        assert res.returncode == 0, res.stderr
+        body = open(os.path.join(t, ".agent-spec", "SESSION-SNAPSHOT.md"), encoding="utf-8").read()
+        assert re.match(r"## \d{4}-\d{2}-\d{2} — handoff\n\n- The dashboard", body), body
+        assert "# Handoff" not in body
+        assert not os.path.isdir(os.path.join(t, ".agent-spec", "memory", "facts"))  # --promote defaults to none
+
+
+if __name__ == "__main__":
+    tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
+    for fn in tests:
+        fn()
+        print("  ok", fn.__name__)
+    print("%d memory tests passed" % len(tests))

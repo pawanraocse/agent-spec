@@ -132,9 +132,20 @@ class RunDirTest(unittest.TestCase):
         code, out, _ = self.sb.run("list")
         self.assertEqual(code, 0)
         self.assertEqual(out["runs"][0]["run_id"], rid)
+        rd = self.sb.run_dir(rid)
+        # compact keeps runs whose `started` is later than now - --days, and both
+        # sides come from the wall clock in separate processes. The wall clock can
+        # step backwards (WSL2 time sync moves it by up to ~1 s), which put a run
+        # started a moment ago "in the future" and made --days 0 keep it. Backdate
+        # the run so the test does not depend on the clock.
+        run_json = os.path.join(rd, "run.json")
+        run = read_json(run_json)
+        run["started"] = "2000-01-01T00:00:00.000Z"
+        with open(run_json, "w", encoding="utf-8") as fh:
+            json.dump(run, fh)
         code, out, _ = self.sb.run("compact", "--days", "0")
         self.assertEqual(code, 0, out)
-        rd = self.sb.run_dir(rid)
+        self.assertEqual(out["compacted"], [rid], out)
         self.assertTrue(os.path.isfile(os.path.join(rd, "run.json")))
         self.assertTrue(os.path.isfile(os.path.join(rd, "result.json")))
         self.assertFalse(os.path.exists(os.path.join(rd, "steps")))
