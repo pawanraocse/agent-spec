@@ -122,6 +122,31 @@ class CursorBenchTest(unittest.TestCase):
         self.assertIn("| Graph calls (graphify-cli) | 0 | 2 |", proc.stdout)
         self.assertEqual([n for n in os.listdir(self.tmp) if n.startswith("aspec-claude-bench-")], [])
 
+    def test_compare_full_opens_only_the_harness_arm_with_the_skill(self):
+        for argv in (["init", "-q"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x",
+                                                     "--allow-empty"]):
+            subprocess.run(["git"] + argv, cwd=self.project, check=True, capture_output=True)
+        os.makedirs(os.path.join(self.project, ".agent-spec", "memory", "facts"))
+        os.makedirs(os.path.join(self.project, ".agent-spec", "graph"))
+        with open(os.path.join(self.project, ".agent-spec", "graph", "knowledge-graph.json"), "w") as fh:
+            fh.write("{}")
+        cwd_log = os.path.join(self.tmp, "cwd.log")
+        env = dict(os.environ, AGENT_SPEC_FAKE_CURSOR_AGENT=self.fake, FAKE_LOG=self.log, FAKE_CWD_LOG=cwd_log,
+                   TMPDIR=self.tmp)
+        proc = subprocess.run([sys.executable, SCRIPT, "--project", self.project, "--tasks", self.tasks,
+                               "--compare", "full"], capture_output=True, text=True, env=env, timeout=120)
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        with open(cwd_log) as fh:
+            seen = [json.loads(x) for x in fh]
+        with open(self.log) as fh:
+            calls = [json.loads(x) for x in fh]
+        opened = [c[-1].startswith("/agent-spec-raw-code-full ") for c in calls]
+        # The registered copy (rules on) opens turn 1 with the skill; the bare copy never does.
+        self.assertTrue(all(not o for o, s in zip(opened, seen) if not s["rules"]))
+        self.assertEqual(sum(o for o, s in zip(opened, seen) if s["rules"]), 1)
+        self.assertIn("bare vs agent-spec (harness + /agent-spec-raw-code-full)", proc.stdout)
+        self.assertIn("| Metric | Bare | agent-spec | Change |", proc.stdout)
+
     def _mod(self):
         import importlib.util
         spec = importlib.util.spec_from_file_location("cbench", SCRIPT)
@@ -519,6 +544,40 @@ class ClaudeBenchTest(unittest.TestCase):
         self.assertIn("bare vs the agent-spec harness", proc.stdout)
         self.assertIn("| Metric | Bare | Harness | Change |", proc.stdout)
 
+    def test_compare_full_runs_bare_against_the_harness_with_the_skill(self):
+        aspec = os.path.join(self.project, ".agent-spec")
+        for d in ("graph", "bin"):
+            os.makedirs(os.path.join(aspec, d))
+        with open(os.path.join(aspec, "graph", "knowledge-graph.json"), "w") as fh:
+            fh.write("{}")
+        with open(os.path.join(aspec, "bin", "agent-spec-digest.py"), "w") as fh:
+            fh.write("print('most depended on: conf.txt')\n")
+        proc = self.run_bench("--compare", "full", "--only", "q")
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        with open(self.log) as fh:
+            calls = [json.loads(x) for x in fh][1:]  # after the preflight
+        bare, full = sorted(calls, key=lambda c: c["claude_md"])
+        self.assertEqual((bare["claude_md"], bare["graph"], bare["skill"]), (False, False, False))
+        self.assertEqual((full["claude_md"], full["graph"], full["skill"]), (True, True, True))
+        self.assertFalse(bare["argv"][-1].startswith("/"))
+        self.assertTrue(full["argv"][-1].startswith("/agent-spec-raw-code-full "))
+        with open(os.path.join(aspec, "eval", "cursor-bench-results.jsonl")) as fh:
+            rows = [json.loads(x) for x in fh]
+        self.assertEqual({r["arm"]: r["skill_read"] for r in rows}, {"bare": False, "full": True})
+        self.assertIn("| Metric | Bare | agent-spec | Change |", proc.stdout)
+
+    def test_compare_full_stops_when_the_skill_never_loads(self):
+        aspec = os.path.join(self.project, ".agent-spec")
+        for d in ("graph", "bin"):
+            os.makedirs(os.path.join(aspec, d))
+        with open(os.path.join(aspec, "graph", "knowledge-graph.json"), "w") as fh:
+            fh.write("{}")
+        with open(os.path.join(aspec, "bin", "agent-spec-digest.py"), "w") as fh:
+            fh.write("print('most depended on: conf.txt')\n")
+        proc = self.run_bench("--compare", "full", "--only", "q", FAKE_NO_SKILL="1")
+        self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
+        self.assertIn("did not both reach the full arm", proc.stderr)
+
     def test_compare_harness_stops_when_the_digest_never_arrives(self):
         aspec = os.path.join(self.project, ".agent-spec")
         os.makedirs(os.path.join(aspec, "graph"))
@@ -536,6 +595,16 @@ class ClaudeBenchTest(unittest.TestCase):
     def test_allow_nested_runs_without_passing_claudecode_on(self):
         proc = self.run_bench("--only", "q", "--allow-nested", CLAUDECODE="1")
         self.assertEqual(proc.returncode, 0, proc.stderr)
+
+    def test_golden_preset_names_tasks_that_exist(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("cb3", SCRIPT)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        got = mod.load_tasks(mod.TASKS + "," + mod.HARNESS_TASKS, ",".join(mod.PRESETS["golden"]), True)
+        self.assertEqual(sorted(t["id"] for t in got), sorted(mod.PRESETS["golden"]))
+        # Every edit task in the preset is scored by a check command, not by matching words.
+        self.assertTrue(all(any(x.get("check") for x in t["turns"]) for t in got if t.get("edits")))
 
     def test_other_agents_skip_edit_tasks(self):
         spec = __import__("importlib.util").util.spec_from_file_location("cb2", SCRIPT)

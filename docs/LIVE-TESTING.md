@@ -96,6 +96,45 @@ is what the model actually read. Check the line "Skill file read seen in N of M"
 Cursor may attach the skill without a visible read, but 0 together with identical numbers in
 both arms means the skill probably never loaded.
 
+### With and without agent-spec, in one table
+
+`--compare full` answers the question a reviewer asks first: what does a chat look like with
+the whole package against without it. The bare arm gets the project's files and nothing else.
+The agent-spec arm is the registered harness (graph, memory, digest, rules, hooks, subagents)
+with `/agent-spec-raw-code-full` opening turn 1, which is what a user who installs the package
+and uses the skill actually runs. The tasks default to `evals/harness-bench.jsonl`, where the
+graph and memory have something to answer.
+
+```bash
+python3 bin/agent-spec-cursor-bench.py --compare full --only ask-route,traces-import   # smoke, 4 chats
+python3 bin/agent-spec-cursor-bench.py --compare full --repeat 3                       # 5 tasks x 3 = 15 paired chats
+python3 bin/agent-spec-cursor-bench.py --compare full --tasks golden --repeat 2        # 9 golden tasks x 2 = 18 paired chats
+```
+
+`--tasks golden` is one task per area a code chat is judged on, taken from both task files: a
+pasted stack trace to a fix (`traceback-fix`), a failing test to a fix (`fix-bug`), new code
+(`edit-redact`), a multi-file rename (`rename-helper`), an edit that needs a remembered rule
+(`new-bin`), a test run through the verify subagent (`verify-suite`), a search sweep
+(`env-sweep`), callers before a change (`redact-callers`) and drift late in a long chat
+(`long-dashboard`). Every edit task is scored by a check command run in the chat's copy, not by
+matching words. `--only` narrows the preset. Edit tasks need a copy, so in Cursor they run only
+under `--compare harness` or `full`; elsewhere the bench prints which ones it skipped.
+
+The report's rows map onto the two claims:
+
+| Claim | Rows to read |
+|---|---|
+| Fewer tokens | All input (uncached + cache), Output tokens, the paired table's total change and its 95% CI |
+| Graph did the navigation | Graph calls (graphify-cli), Tool calls, Wall time, the per-feature table's graph chats |
+| Same or better answers | Correct, Invented file names, Accuracy by turn position (late turns of `long-dashboard`) |
+| Tighter replies | Output tokens |
+
+The run measures the case the harness was built for, not an average chat. Earlier local runs
+showed the skill adding about 60% input tokens on short questions that need no repository
+access (docs/evidence/H-050.md), so a fair summary quotes this table for code navigation and
+says that for direct questions the harness's target is "no dearer", not "cheaper". Under
+`--agent claude` the same command runs in Claude Code and adds billed cost per chat.
+
 ## The same tasks on Groq (not Cursor)
 
 When no Cursor plan is available, `--agent local` runs the same multi-turn tasks through

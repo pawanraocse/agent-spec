@@ -20,6 +20,12 @@ Every report adds, per arm: workflow-rule reads, invented file names (cited name
 nowhere in the project), a per-feature table (graph, memory, long-chat, direct: tokens, time,
 correctness, chats that used the graph) and accuracy by turn position.
 
+`--compare full` is the with-and-without answer: a bare arm (the project's files only) against
+the whole package as a user runs it, the registered harness (graph, memory, digest, rules, hooks)
+with `/<skill>` opening turn 1. It uses the harness tasks and the harness arm's set-up below, and
+the report reads "Bare" against "agent-spec". Under `--agent claude` the run stops unless both the
+digest and the skill reach the full arm.
+
 `--compare harness` measures the harness instead of a skill: a bare arm with the project's files
 and nothing else, against a harness arm. Under `--agent claude` the harness arm adds CLAUDE.md
 (CURSOR.md), the project's `.agent-spec/` (graph, memory, digest, CONSTITUTION) and a
@@ -119,12 +125,22 @@ PKG = os.path.dirname(HERE)
 HARNESS_TASKS = os.path.join(PKG, "evals", "harness-bench.jsonl")
 # Short prompts that need no repo access: the harness must not make them dearer (v2.1.0 tiers).
 DIRECT_TASKS = os.path.join(PKG, "evals", "direct-bench.jsonl")
+# `--tasks golden`: the areas a code chat is judged on, one task each (both task files): a stack
+# trace to a fix, a failing test to a fix, new code, a multi-file rename, an edit that needs a
+# remembered rule, a test run through the verify subagent, a search sweep, callers before a
+# change, and drift late in a long chat. Edit tasks run in a copy, so Cursor runs them only under
+# --compare harness or full; `--only` narrows the preset.
+PRESETS = {"golden": ("traceback-fix", "fix-bug", "edit-redact", "rename-helper", "new-bin", "verify-suite",
+                      "env-sweep", "redact-callers", "long-dashboard")}
 # (control, treatment) arm names per comparison; rows carry these names. `versions` runs the
 # harness from --base-ref (control) against the harness from this checkout (treatment).
-ARMS = {"skill": ("plain", "skill"), "harness": ("bare", "harness"), "versions": ("base", "head")}
-TREATED = {"skill", "harness", "head"}
+ARMS = {"skill": ("plain", "skill"), "harness": ("bare", "harness"), "versions": ("base", "head"),
+        "full": ("bare", "full")}
+TREATED = {"skill", "harness", "head", "full"}
 # Arms that carry the harness, so the digest must reach them under --agent claude.
 HARNESSED = {"harness", "base", "head"}
+# Arms whose turn 1 opens with /<skill>. `full` also carries the harness; its check needs both.
+SKILLED = {"skill", "full"}
 # The on-demand code-work rule (CURSOR-WORKFLOW.md): a tool call naming it is a visible load.
 WORKFLOW_RULE = "agent-spec-workflow.mdc"
 # Run state, history and the dashboard's own data: not part of what a chat is given.
@@ -231,7 +247,7 @@ def transcript(session: str | None) -> str | None:
 
 
 def run_turn(cli: str, project: str, prompt: str, model: str | None, session: str | None,
-             force: bool, skill: str | None, timeout: int, agent: str = "cursor", marker: str | None = None,
+             force: bool, skill: str | None, timeout: int, agent: str = "cursor", marker: str | tuple | None = None,
              trust: bool = False) -> dict:
     if agent == "claude":
         return run_claude_turn(cli, project, prompt, model, session, timeout, marker)
@@ -292,7 +308,7 @@ def run_turn(cli: str, project: str, prompt: str, model: str | None, session: st
 
 
 def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session: str | None, timeout: int,
-                    marker: str | None) -> dict:
+                    marker: str | tuple | None) -> dict:
     """One `claude -p` turn. `marker` is a line of the skill body: seen in the saved chat, the
     skill was loaded (typed in the skill arm, or picked by the model in the plain arm)."""
     t0 = time.monotonic()
@@ -350,7 +366,9 @@ def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session:
     if marker and path and (row["usage"] or {}).get("outputTokens"):
         try:
             with open(path, encoding="utf-8") as fh:
-                row["skill_read"] = marker in fh.read()
+                text = fh.read()
+            # A tuple (--compare full): the digest and the skill body must both be in the chat.
+            row["skill_read"] = all(m in text for m in (marker if isinstance(marker, tuple) else (marker,)))
         except OSError:
             pass
     blob = row["answer"] + "\n" + stderr
@@ -606,10 +624,10 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
                 # A context reset at a task boundary: same workspace (files written so far stay),
                 # a fresh session, so SessionStart fires again and the running cost restarts.
                 session, cost_so_far = None, 0.0
-            if arm == "skill" and n == 1:
+            if arm in SKILLED and n == 1:
                 prompt = "/%s %s" % (args.skill, prompt)
             r = run_turn(cli, cwd, prompt, args.model, session, args.force,
-                         args.skill if arm == "skill" else None, args.timeout, args.agent, args.marker,
+                         args.skill if arm in SKILLED else None, args.timeout, args.agent, args.marker,
                          trust=copies)
             session = r["session_id"] or session
             sessions.add(session)
@@ -623,7 +641,7 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
             budget = turn.get("max_tools", task.get("max_tools"))
             r.update(base, task=task["id"], arm=arm, turn=n, prompt=turn["prompt"], expect=turn.get("expect") or [],
                      check=check, correct=is_correct(r["answer"], turn.get("expect"), turn.get("expect_any"), check),
-                     skill=args.skill if arm == "skill" else None, ts=common.utc_now(), feature=feature,
+                     skill=args.skill if arm in SKILLED else None, ts=common.utc_now(), feature=feature,
                      max_tools=budget, tools_ok=None if budget is None else r["tools"] <= budget,
                      phantom=phantom_names(r["answer"], args.known | TRANSIENT_FILES |
                                            (workspace_names(cwd) if copies else set()), allowed))
@@ -635,6 +653,9 @@ def run_task(cli: str, project: str, task: dict, arm: str, args, base: dict) -> 
         if claude and arm == "skill" and rows and not any(x["skill_read"] for x in rows):
             raise SkillMissing("the skill never loaded in the skill arm of %s: /%s did not expand. Check that Claude Code "
                         "finds .claude/skills/%s with --setting-sources project." % (task["id"], args.skill, args.skill))
+        if claude and arm == "full" and rows and not any(x["skill_read"] for x in rows):
+            raise SkillMissing("the digest and /%s did not both reach the full arm of %s: check the SessionStart hook "
+                               "in .claude/settings.json and .claude/skills/%s." % (args.skill, task["id"], args.skill))
     finally:
         if copies and not args.keep:
             drop_workspace(cwd, {s for s in sessions if s} if claude else set())
@@ -850,12 +871,16 @@ def report(rows: list, meta: dict, skill: str) -> str:
     rows, unpaired = paired(rows)
     harness = meta.get("compare") == "harness"
     versions = meta.get("compare") == "versions"
+    full = meta.get("compare") == "full"
     plain = totals([r for r in rows if r["arm"] not in TREATED])
     withs = totals([r for r in rows if r["arm"] in TREATED])
     if versions:
         a, b, what = "Base %s" % meta.get("base_ref"), "Head", "head"
         title = "# %s head-to-head: harness at %s (%s) vs this checkout" % (
             AGENT_TITLE[meta["agent"]], meta.get("base_ref"), (meta.get("base_sha") or "")[:7])
+    elif full:
+        a, b, what = "Bare", "agent-spec", "agent-spec"
+        title = "# %s head-to-head: bare vs agent-spec (harness + /%s)" % (AGENT_TITLE[meta["agent"]], skill)
     elif harness:
         a, b, what = "Bare", "Harness", "harness"
         title = "# %s head-to-head: bare vs the agent-spec harness" % AGENT_TITLE[meta["agent"]]
@@ -924,6 +949,17 @@ def report(rows: list, meta: dict, skill: str) -> str:
                      "project's graph and memory in both. A short prompt should cost the same or less in head; "
                      "graph tasks should keep their graph calls and correctness." % (
                          meta.get("base_ref"), (meta.get("base_sha") or "")[:12]))
+    elif full:
+        notes.append("Bare: the project's files only, no rules, no .agent-spec/, no hooks, no skill. agent-spec: the "
+                     "harness arm of --compare harness (graph, memory, digest, rules, hooks, subagents) with /%s "
+                     "opening turn 1; the skill says it persists." % skill)
+        if meta["agent"] == "cursor":
+            notes.append("Skill file read seen in %d of %d agent-spec turn(s); Cursor may also attach it without a "
+                         "read. Whether cursor-agent ran the sessionStart hook is not visible in its output. Both "
+                         "arms: --trust --force." % (withs["skill_read"], withs["turns"]))
+        else:
+            notes.append("Digest and skill body both found in the saved chat in %d of %d agent-spec turn(s)."
+                         % (withs["skill_read"], withs["turns"]))
     elif meta["agent"] == "cursor" and not harness:
         notes.append("Skill file read seen in %d of %d skill-arm turn(s); Cursor may also attach it without a read."
                      % (withs["skill_read"], withs["turns"]))
@@ -968,12 +1004,12 @@ def main() -> int:
     ap.add_argument("--model", help="cursor-agent --model (default: the account's default)")
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--only", help="comma-separated task ids")
-    ap.add_argument("--tasks", help="task file, or several joined with commas (default: evals/cursor-bench.jsonl; "
+    ap.add_argument("--tasks", help="task file, several joined with commas, or the preset `golden` (default: evals/cursor-bench.jsonl; "
                                      "with --compare harness, evals/harness-bench.jsonl; with --compare versions, "
                                      "evals/direct-bench.jsonl,evals/harness-bench.jsonl)")
-    ap.add_argument("--compare", choices=("skill", "harness", "versions"), default="skill",
+    ap.add_argument("--compare", choices=("skill", "harness", "versions", "full"), default="skill",
                     help="skill: plain vs the skill, harness on in both arms; harness: bare vs the registered "
-                         "harness, no skill; versions: the harness from --base-ref vs the harness from this checkout")
+                         "harness, no skill; full: bare vs the harness plus the skill; versions: the harness from --base-ref vs the harness from this checkout")
     ap.add_argument("--base-ref", help="--compare versions: the git ref of this package to install the base arm "
                                        "from (e.g. v2.0.0 or a commit)")
     ap.add_argument("--skill", default="agent-spec-raw-code-full")
@@ -992,7 +1028,12 @@ def main() -> int:
     args = ap.parse_args()
     project = os.path.abspath(args.project)
     versions = args.compare == "versions"
-    harness = args.compare in ("harness", "versions")
+    harness = args.compare in ("harness", "versions", "full")
+    preset = PRESETS.get(args.tasks or "")
+    if preset:
+        wanted = {i.strip() for i in (args.only or "").split(",") if i.strip()}
+        args.only = ",".join(i for i in preset if not wanted or i in wanted)
+        args.tasks = TASKS + "," + HARNESS_TASKS
     args.tasks = args.tasks or (DIRECT_TASKS + "," + HARNESS_TASKS if versions else HARNESS_TASKS if harness else TASKS)
     if harness and args.agent == "local":
         print("--compare %s runs under --agent claude or cursor" % args.compare, file=sys.stderr)
@@ -1036,6 +1077,11 @@ def main() -> int:
         print("warning: %s is not registered (no .cursor/rules/agent-spec.mdc); both arms run without the harness. "
               "Register it: ./install.sh --register %s" % (project, project), file=sys.stderr)
     tasks = load_tasks(args.tasks, args.only, args.agent == "claude" or harness)
+    if preset:
+        skipped = [i for i in args.only.split(",") if i and i not in {t["id"] for t in tasks}]
+        if skipped:
+            print("note: edit tasks run only in a copy (--agent claude, or --compare harness or full); skipped: %s"
+                  % ", ".join(skipped), file=sys.stderr)
     if not tasks:
         print("no tasks in %s" % args.tasks, file=sys.stderr)
         return 2
@@ -1059,16 +1105,24 @@ def main() -> int:
         args.templates = {"base": build_template(project, None, harness=True, package=base_pkg),
                           "head": build_template(project, None, harness=True, package=PKG)}
     elif args.agent == "cursor" and harness:
+        # full: the same registered copy; the skill is the global one in ~/.cursor/skills.
+        treated = ARMS[args.compare][1]
         args.templates = {"bare": build_template(project, None, harness=False),
-                          "harness": build_template(project, None, harness=False)}
-        register_harness(project, args.templates["harness"])
+                          treated: build_template(project, None, harness=False)}
+        register_harness(project, args.templates[treated])
+    elif args.agent == "claude" and args.compare == "full":
+        args.templates = {"bare": build_template(project, None, harness=False),
+                          "full": build_template(project, args.skill, harness=True)}
     elif args.agent == "claude" and harness:
         args.templates = {"bare": build_template(project, None, harness=False),
                           "harness": build_template(project, None, harness=True)}
     elif args.agent == "claude":
         tpl = build_template(project, args.skill)
         args.templates = {"plain": tpl, "skill": tpl}
-    args.marker = (DIGEST_MARKER if harness else skill_marker(args.skill)) if args.agent == "claude" else None
+    args.marker = None
+    if args.agent == "claude":
+        args.marker = (tuple(m for m in (DIGEST_MARKER, skill_marker(args.skill)) if m) if args.compare == "full"
+                       else DIGEST_MARKER if harness else skill_marker(args.skill))
 
     run_id = time.strftime("%Y%m%dT%H%M%S") + "-" + uuid.uuid4().hex[:6]
     model = args.model or (CLAUDE_MODEL if args.agent == "claude" else None)
