@@ -376,5 +376,17 @@ class ApiTest(ApiCase):
         self.assertEqual(status, 401)
 
 
+class DiversifyTest(unittest.TestCase):
+    def test_one_file_cannot_fill_the_list(self):
+        from aspec_platform import retrieval
+        hits = [{"source": "big.py", "chunk_id": i} for i in range(6)] + [{"source": "small.py", "chunk_id": 9}]
+        out = retrieval.diversify(hits, 5)
+        self.assertEqual([h["source"] for h in out], ["big.py", "big.py", "small.py"])
+
+    def test_question_filler_is_not_a_search_term(self):
+        from aspec_platform import retrieval
+        self.assertEqual(retrieval.fts_query("What is the purpose of the gate script?"), '"gate" OR "script"')
+
+
 if __name__ == "__main__":
     unittest.main()

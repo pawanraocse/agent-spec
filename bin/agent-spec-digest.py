@@ -41,20 +41,56 @@ RESUME_CAP = 600  # bytes of the digest spent on warm resume; the full snapshot 
 DATED_SECTION = re.compile(r"^## (\d{4}-\d{2}-\d{2}.*)$", re.M)
 
 
+HEADING_ALIASES = {
+    "Open": ("Open", "Open items", "Still open", "Next"),
+    "Load next session": ("Load next session", "Files to load", "Load"),
+}
+
+
 def _bullets(body, heading, limit):
-    """The first `limit` bullet lines under a `### heading`, bold markers stripped."""
-    m = re.search(r"^### " + re.escape(heading) + r"\s*$(.*?)(?=^### |\Z)", body, re.M | re.S)
+    """The first `limit` items under a heading, bold markers stripped.
+
+    Snapshots are written by a model, so the heading comes in three shapes: `### Open`,
+    a bold lead-in (`**Open.**` with bullets below), or an inline label
+    (`Files to load: a, b`). A bullet that wraps onto indented lines is joined back into
+    one item, so the digest never cuts an open item mid-sentence at a line break.
+    """
+    names = "|".join(re.escape(n) for n in HEADING_ALIASES.get(heading, (heading,)))
+    m = re.search(r"^(?:###\s+|\*\*)(?:%s)\b[^\n]*$|^(?:%s)\s*:\s*(.+)$" % (names, names),
+                  body, re.M | re.I)
     if not m:
         return []
-    out = []
-    for line in m.group(1).splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        out.append(line.lstrip("-* ").replace("**", ""))
-        if len(out) >= limit:
+    if m.group(1):  # inline label: the rest of the paragraph is the one item
+        para = [m.group(1).strip()]
+        for line in body[m.end():].splitlines()[1:]:
+            if not line.strip() or re.match(r"^(#|[-*] |\*\*)", line.strip()):
+                break
+            para.append(line.strip())
+        return [" ".join(para).replace("**", "")][:limit]
+    head = m.group(0)
+    lead = re.sub(r"^\*\*[^*]*\*\*\s*", "", head) if head.startswith("**") else ""
+    out = [lead.replace("**", "")] if lead.strip() else []
+    joinable = bool(out)  # the next plain line continues the last item
+    saw_bullet = False
+    for line in body[m.end():].splitlines()[1:]:
+        stripped = line.strip()
+        if re.match(r"^(###|## |\*\*)", line):
             break
-    return out
+        if not stripped:
+            joinable = False
+            continue
+        bullet = re.match(r"^([-*]|\d+\.) ", stripped)
+        if not bullet and not joinable and saw_bullet:
+            break  # a paragraph after the list is the next topic, not another item
+        saw_bullet = saw_bullet or bool(bullet)
+        if bullet or not joinable:
+            if len(out) >= limit:
+                break
+            out.append(re.sub(r"^([-*]|\d+\.)\s+", "", stripped).replace("**", ""))
+        else:
+            out[-1] += " " + stripped.replace("**", "")
+        joinable = True
+    return out[:limit]
 
 
 def _clip_text(text, cap):
@@ -386,13 +422,14 @@ def build_digest():
     # The digest rides in every turn, including a one-line question that needs no tools, so
     # the guidance is scoped to code work and kept to the commands themselves.
     out.append(
-        "A question answerable from this chat needs no tools. For code: graph before grep or Read — "
+        "No tools for a question this chat answers. Code: graph before grep or Read — "
         "`./.agent-spec/bin/graphify-cli.py` `context --task \"<task>\"` | `search <word>` | "
-        "`callers --symbol <name>` | `query --file <path>` | `symbols --file <path>`, then a ranged Read."
+        "`callers --symbol <name>` | `query --file <path>`, then a ranged Read."
     )
     out.append(
-        "Do NOT open PROJECT-INDEX.md, KNOWLEDGE-GRAPH.md or SESSION-SNAPSHOT.md; it is already here. "
-        "More facts: ./.agent-spec/bin/agent-spec-memory.py search <term>."
+        "Do NOT open PROJECT-INDEX.md or KNOWLEDGE-GRAPH.md (summarized here). An earlier chat: "
+        "`./.agent-spec/bin/agent-spec-memory.py search <words>`, then only the newest `## ` section "
+        "of .agent-spec/SESSION-SNAPSHOT.md."
     )
     out.append("</agent-spec-digest>")
 

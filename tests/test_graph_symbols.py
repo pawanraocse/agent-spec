@@ -138,5 +138,48 @@ class SymbolsTest(unittest.TestCase):
         self.assertGreater(last["symbols"], 0)
 
 
+CONTEXT_FILES = {
+    "app/insights.py": "def home_kpis(db):\n    return saved_tokens(db)\n\n\ndef saved_tokens(db):\n    return 0\n",
+    "app/report.py": "def render():\n    return 'x'\n",
+    "app/tokens_util.py": "def count():\n    return 1\n",
+    "tests/test_insights.py": "def test_home_kpis():\n    assert True\n",
+}
+
+
+class ContextRankingTest(unittest.TestCase):
+    """`context` must find a file by the functions it declares, not only by its path."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        os.makedirs(os.path.join(self.tmp, ".agent-spec"))
+        for rel, body in CONTEXT_FILES.items():
+            path = os.path.join(self.tmp, rel)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(body)
+        subprocess.run([sys.executable, BUILD, "--quiet"], cwd=self.tmp,
+                       capture_output=True, text=True, check=True)
+
+    def context(self, task):
+        out = subprocess.run([sys.executable, CLI, "context", "--task", task, "--budget", "3"],
+                             cwd=self.tmp, capture_output=True, text=True).stdout
+        return [l.strip() for l in out.splitlines() if l.startswith("  ") and not l.startswith("      ")]
+
+    def test_symbol_match_beats_unrelated_path(self):
+        files = self.context("saved tokens shows zero on the home page")
+        self.assertEqual(files[0], "app/insights.py")
+        self.assertNotIn("app/report.py", files)
+
+    def test_tests_trail_their_subject_unless_asked(self):
+        files = self.context("home kpis")
+        self.assertLess(files.index("app/insights.py"), files.index("tests/test_insights.py"))
+        self.assertEqual(self.context("home kpis test")[0], "tests/test_insights.py")
+
+    def test_stems_meet_across_tense_and_plural(self):
+        files = self.context("token counting")
+        self.assertIn("app/tokens_util.py", files)
+
+
 if __name__ == "__main__":
     unittest.main()

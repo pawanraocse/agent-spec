@@ -24,6 +24,7 @@ from datetime import datetime
 HERE = os.path.dirname(os.path.abspath(__file__))
 MARKER = "agent-spec auto-index"
 MEMORY_INDEX_LIMIT = 8000
+MIN_PRUNE_DAYS = 30
 GRAPH_STALE_DAYS = 7
 SESSION_MARKER = "agent-spec-session-start.py"
 PRETOOL_MARKER = "agent-spec-pre-tool-use.py"
@@ -239,8 +240,12 @@ def check_memory(ctx):
     size = os.path.getsize(index) if os.path.isfile(index) else 0
     if size > MEMORY_INDEX_LIMIT:
         days = prune_days(os.path.join(ctx.spec, "memory", "facts"), size - MEMORY_INDEX_LIMIT)
-        fix = ("./.agent-spec/bin/agent-spec-memory.py prune --older-than %d --dry-run" % days if days is not None
-               else "merge or delete facts: ./.agent-spec/bin/agent-spec-memory.py lint")
+        # An age cut is only a sane hint when it spares recent work. Below a month it would
+        # sweep away last week's decisions, so point at a human review instead.
+        fix = ("./.agent-spec/bin/agent-spec-memory.py prune --older-than %d --dry-run" % days
+               if days is not None and days >= MIN_PRUNE_DAYS
+               else "review facts by hand (owner decides): ./.agent-spec/bin/agent-spec-memory.py lint, "
+                    "then forget <id>")
         return [("memory", "WARN", "memory INDEX.md is %d B (limit %d)" % (size, MEMORY_INDEX_LIMIT), fix)]
     return [("memory", "OK", "memory index %d B (limit %d)" % (size, MEMORY_INDEX_LIMIT), "")]
 

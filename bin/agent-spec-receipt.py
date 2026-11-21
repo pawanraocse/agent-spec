@@ -127,9 +127,9 @@ def facts_in_digest(digest):
         return 0
     count = 0
     for line in lines[lines.index("remembered:") + 1:]:
-        if line.startswith("Do NOT open"):
-            break
-        if line.strip():
+        if not line.startswith("- "):
+            break  # the fact list ends at the first non-bullet line (guidance follows it)
+        if not line.startswith("- ("):  # "- (N more facts …)" is a pointer, not a fact
             count += 1
     return count
 

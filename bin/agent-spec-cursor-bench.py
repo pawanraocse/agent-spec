@@ -23,7 +23,8 @@ correctness, chats that used the graph) and accuracy by turn position.
 `--compare harness` measures the harness instead of a skill: a bare arm with the project's files
 and nothing else, against a harness arm. Under `--agent claude` the harness arm adds CLAUDE.md
 (CURSOR.md), the project's `.agent-spec/` (graph, memory, digest, CONSTITUTION) and a
-SessionStart hook that injects the digest once per chat, as Cursor's sessionStart hook does.
+SessionStart hook that injects the digest once per chat, as Cursor's sessionStart hook does, and
+the agent-spec-search and agent-spec-verify subagents in `.claude/agents/`.
 Under `--agent cursor` it is the copy registered with `install.sh --project-only --register`
 (rules, hooks, bins), with the project's own graph and memory copied over it. Both agents run
 every chat in a fresh copy; Cursor gets `--trust --force` in both arms so either can run shell.
@@ -96,7 +97,7 @@ CLAUDE_MODEL = "claude-haiku-5-5"
 CLAUDE_USAGE = {"input_tokens": "inputTokens", "output_tokens": "outputTokens",
                 "cache_read_input_tokens": "cacheReadTokens", "cache_creation_input_tokens": "cacheWriteTokens"}
 # What a coding chat needs, nothing else: no web, no MCP. dontAsk denies anything not listed.
-CLAUDE_TOOLS = ("Read,Grep,Glob,Edit,Write,MultiEdit,Skill,Bash(python3:*),Bash(grep:*),Bash(rg:*),Bash(ls:*),"
+CLAUDE_TOOLS = ("Read,Grep,Glob,Edit,Write,MultiEdit,Skill,Agent,Bash(python3:*),Bash(grep:*),Bash(rg:*),Bash(ls:*),"
                 "Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(sed -n:*),Bash(git diff:*),Bash(git status:*),Bash(git grep:*),"
                 "Bash(git log:*),Bash(wc:*),Bash(find:*),Bash(cd:*),Bash(bash -n:*),Bash(test:*),"
                 "Bash(./.agent-spec/bin/graphify-cli.py:*),Bash(.agent-spec/bin/graphify-cli.py:*),"
@@ -115,6 +116,7 @@ HARNESSED = {"harness", "base", "head"}
 # The on-demand code-work rule (CURSOR-WORKFLOW.md): a tool call naming it is a visible load.
 WORKFLOW_RULE = "agent-spec-workflow.mdc"
 # Run state, history and the dashboard's own data: not part of what a chat is given.
+HARNESS_AGENTS = ("agent-spec-search.md", "agent-spec-verify.md")
 HARNESS_SKIP = {"platform", "eval", "metrics", "benchmark", "platform.db", "__pycache__", ".build.lock"}
 # A line of every digest; found in the saved chat, the SessionStart hook delivered it.
 DIGEST_MARKER = "most depended on:"
@@ -292,8 +294,8 @@ def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session:
         stdout = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
         stderr, code = "timeout after %ds" % timeout, -1
     row = {"session_id": session, "model": model or CLAUDE_MODEL, "answer": "", "usage": None, "cost_usd": None,
-           "tools": 0, "graph_calls": 0, "skill_read": False, "workflow_read": False, "exit": code,
-           "seconds": round(time.monotonic() - t0, 1)}
+           "tools": 0, "graph_calls": 0, "subagent_calls": 0, "skill_read": False, "workflow_read": False,
+           "exit": code, "seconds": round(time.monotonic() - t0, 1)}
     error = False
     for line in stdout.splitlines():
         try:
@@ -312,6 +314,7 @@ def run_claude_turn(cli: str, cwd: str, prompt: str, model: str | None, session:
                 if isinstance(block, dict) and block.get("type") == "tool_use":
                     row["tools"] += 1
                     row["graph_calls"] += GRAPH_CLI in json.dumps(block)
+                    row["subagent_calls"] += block.get("name") in ("Agent", "Task")
                     row["workflow_read"] |= WORKFLOW_RULE in json.dumps(block)
         elif typ == "result":
             row["answer"] = str(obj.get("result") or "")
@@ -399,7 +402,8 @@ def add_harness(project: str, tpl: str, package: str | None = None) -> None:
     the project's .agent-spec/ (graph, memory, bins) and the digest once per chat. A resumed turn is
     the same chat, so the hook matches `startup` only, or the digest would be re-sent on every bench
     turn. `package`: rules and bins from that package checkout instead (--compare versions)."""
-    rules = package or (project if os.path.isfile(os.path.join(project, "CURSOR.md")) else PKG)
+    # From the package, never the project: a user project may carry its own unrelated CURSOR.md.
+    rules = package or PKG
     rule = os.path.join(rules, "CURSOR.md")
     if os.path.isfile(rule):
         shutil.copy2(rule, os.path.join(tpl, "CLAUDE.md"))
@@ -417,6 +421,11 @@ def add_harness(project: str, tpl: str, package: str | None = None) -> None:
             if os.path.isfile(os.path.join(package, "bin", name)):
                 shutil.copy2(os.path.join(package, "bin", name), os.path.join(bins, name))
     os.makedirs(os.path.join(tpl, ".claude"), exist_ok=True)
+    agents = os.path.join(package or PKG, "agents")  # part of the package, not of the project
+    for name in HARNESS_AGENTS:  # the subagents install.sh ships to .cursor/agents/
+        if os.path.isfile(os.path.join(agents, name)):
+            os.makedirs(os.path.join(tpl, ".claude", "agents"), exist_ok=True)
+            shutil.copy2(os.path.join(agents, name), os.path.join(tpl, ".claude", "agents", name))
     hook = {"hooks": {"SessionStart": [{"matcher": "startup", "hooks": [
         {"type": "command", "command": "python3 .agent-spec/bin/agent-spec-digest.py", "timeout": 20}]}]}}
     with open(os.path.join(tpl, ".claude", "settings.json"), "w", encoding="utf-8") as fh:
@@ -605,7 +614,7 @@ def one_turn(r: dict, task: dict, arm: str, n: int, rows: list) -> bool:
 def totals(rows: list) -> dict:
     t = {k: 0 for k in USAGE_KEYS}
     t.update(turns=len(rows), scored=0, correct=0, tools=0, seconds=0.0, no_usage=0, skill_read=0, cost_usd=0.0,
-             costed=0, graph_calls=0, workflow_read=0, budget_scored=0, budget_ok=0, phantom=0, phantom_turns=0)
+             costed=0, graph_calls=0, subagent_calls=0, workflow_read=0, budget_scored=0, budget_ok=0, phantom=0, phantom_turns=0)
     for r in rows:
         u = r.get("usage")
         if u:
@@ -618,6 +627,7 @@ def totals(rows: list) -> dict:
             t["correct"] += bool(r["correct"])
         t["tools"] += r.get("tools") or 0
         t["graph_calls"] += r.get("graph_calls") or 0
+        t["subagent_calls"] += r.get("subagent_calls") or 0
         t["seconds"] += r.get("seconds") or 0
         t["skill_read"] += bool(r.get("skill_read"))
         t["workflow_read"] += bool(r.get("workflow_read"))
@@ -824,6 +834,7 @@ def report(rows: list, meta: dict, skill: str) -> str:
                        ("Cache-read tokens", "cacheReadTokens"), ("Cache-write tokens", "cacheWriteTokens"),
                        ("All input (uncached + cache)", "all_input"), ("Output tokens", "outputTokens"),
                        ("Tool calls", "tools"), ("Graph calls (graphify-cli)", "graph_calls"),
+                       ("Subagent calls", "subagent_calls"),
                        ("Workflow rule reads (turns)", "workflow_read"),
                        ("Invented file names", "phantom"), ("Turns citing an invented file", "phantom_turns"),
                        ("Wall time (s)", "seconds")):
@@ -881,7 +892,8 @@ def report(rows: list, meta: dict, skill: str) -> str:
                      "of each chat), and in %d bare-arm turn(s)." % (withs["skill_read"], withs["turns"], plain["skill_read"]))
         notes.append("Bare: the project's files only, no CLAUDE.md, no .agent-spec/, no hooks. Harness: CURSOR.md as "
                      "CLAUDE.md, the project's .agent-spec/ (graph, memory, bins; not run state), the digest from a "
-                     "SessionStart hook. No skill in either arm; no PreToolUse hook. --setting-sources project.")
+                     "SessionStart hook, the agent-spec-search and agent-spec-verify subagents in .claude/agents/. "
+                     "No skill in either arm; no PreToolUse hook; no MCP server. --setting-sources project.")
         feats = meta.get("features") or {}
         if feats:
             notes.append("Tasks by the harness feature they exercise: %s. They were picked where the harness has "

@@ -2,6 +2,49 @@
 
 ## Unreleased
 
+- **Graph `context` finds files by what they declare.** It used to match task words against
+  file paths only, so "saved tokens are zero on the home tab" returned `tabs.tsx` and missed
+  the module that computes the number. It now scores basenames, directories and symbol names,
+  folds plurals and tenses ("saved" meets "save"), matches 4-letter prefixes ("graph" meets
+  "graphify"), weights terms by inverse document frequency, and ranks tests below their
+  subject unless the task names tests. On this repository's commit history (subject as task,
+  changed files as answer) hit@4 rose from 20% to 56% and recall@12 from 27% to 53%.
+- **Memory search ranks free-text questions.** `agent-spec-memory.py search` was a substring
+  match, so "why does harness cost more" found 0 of 91 facts. It now scores each query term by
+  inverse document frequency (double weight in the subject), keeps an exact phrase match first,
+  and takes `--limit`.
+- **Warm resume reads the snapshots models actually write.** The digest only parsed `### Open`
+  and `### Load next session` headings, which the snapshot skill never asked for, so a new
+  chat got a title line and was then told not to open the snapshot. The parser now also reads
+  bold lead-ins (`**Open.**`) and inline labels (`Files to load:`), joins wrapped bullets, and
+  the snapshot skill prescribes the shape. The digest now points an "earlier chat" question at
+  `memory search` and the newest snapshot section instead of forbidding the file.
+- **Recall ignores paths and one-word coincidences.** A probe prompt naming `/tmp/claude-1000/…`
+  matched every later task mentioning Claude. Path tokens are dropped, and a task of three or
+  more words needs two shared words.
+- **Project search diversifies.** At most two chunks per file reach the result list, and
+  question filler ("purpose", "specific", "provided"…) is no longer a search term. Golden set:
+  keyword MRR 0.450 to 0.457, hit@5 62% to 63%.
+- **Output economy in the always-on rule.** The 2026-11-21 Claude bench put the harness at +2.4%
+  cost (not significant), with output tokens +19.5% (95% CI +5.5% to +33.2%), the only
+  significant difference, and output bills at about 50 times a cached context token. The
+  transcripts show the model re-confirming graph answers with grep. `CURSOR.md` now says to size
+  the answer to the question, skip recaps and narration, and trust a graph result.
+- **Memory consolidation without deletion.** `add --supersedes` takes several ids (full or the
+  trailing hash), records the extra ones under `merges:`, and keeps every original on disk as
+  superseded and searchable. The fact cap now counts active facts only, and `search` ranks active
+  facts above retired ones. This project's 91 active facts are now 38 topic facts (INDEX.md
+  9.6 KB to 4.1 KB, doctor green), and the stale "bin/*.py misclassified as test" gotcha is marked
+  fixed.
+- **The doctor no longer suggests sweeping away recent facts.** When `INDEX.md` is over its
+  limit and only an age cut under 30 days would fit, the fix line (printed in every digest)
+  asks for a review by the owner instead of `prune --older-than 7`.
+- Smaller fixes: the receipt counted the digest's guidance line as a remembered fact; the
+  dashboard's empty-index warning named a non-existent `ingest --what` flag; `CURSOR.md` names
+  the `sessionStart` hook again (the selftest checks it); three memory facts and the
+  constitution still named the pre-rename `.algosec-*` marker files; the `views-blast` bench
+  turn graded correct answers wrong because it expected `impact.py` where answers say `impact`.
+
 - **Demo fallback video (H-051).** `docs/demo/fallback-demo.mp4` plays the five-minute story
   if the demo machine fails; `examples/mesh-demo/record-video.mjs` re-records it against a
   fresh demo build, running each terminal command live. The demo's blocked edit now carries

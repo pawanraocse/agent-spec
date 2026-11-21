@@ -279,6 +279,7 @@ with open(os.environ["FAKE_LOG"], "a") as fh:
     fh.write(json.dumps({"argv": argv, "cwd": os.getcwd(), "claude_md": os.path.exists("CLAUDE.md"),
                          "graph": os.path.isdir(".agent-spec/graph"), "run_state": os.path.isdir(".agent-spec/platform"),
                          "skill": os.path.isdir(".claude/skills"),
+                         "agents": sorted(os.listdir(".claude/agents")) if os.path.isdir(".claude/agents") else [],
                          "workflow": os.path.isfile(".cursor/rules/agent-spec-workflow.mdc")}) + "\n")
 with open(os.environ["FAKE_LOG"]) as fh:
     ncall = sum(1 for _ in fh)
@@ -468,6 +469,8 @@ class ClaudeBenchTest(unittest.TestCase):
                          (True, True, False, False))
         # CLAUDE.md points at the code-work rule; Claude Code never attaches it, so it must be there to Read.
         self.assertEqual((bare["workflow"], harness["workflow"]), (False, True))
+        self.assertEqual((bare["agents"], harness["agents"]), ([], ["agent-spec-search.md", "agent-spec-verify.md"]))
+        self.assertTrue(any(a.startswith("--allowedTools=") and ",Agent," in a for a in calls[0]["argv"]))
         self.assertFalse(any(c["argv"][-1].startswith("/") for c in calls))
         with open(os.path.join(aspec, "eval", "cursor-bench-results.jsonl")) as fh:
             rows = [json.loads(x) for x in fh]

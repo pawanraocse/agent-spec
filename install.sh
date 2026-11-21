@@ -369,10 +369,12 @@ EOF
   done
   echo -e "  ${GREEN}✓${NC} .agent-spec/ framework content (personas, standards, …)"
 
-  # Thin AGENTS.md — create if missing; if present without marker, append pointer
+  # Thin AGENTS.md — create if missing; if present without the pointer, append it. The marker is
+  # the rule path, not the bare word: a user's AGENTS.md that merely mentions agent-spec still
+  # gets the pointer. Both the shipped AGENTS.md and the pointer contain this path.
   if [ ! -f "${project_root}/AGENTS.md" ]; then
     cp "${REPO_DIR}/AGENTS.md" "${project_root}/AGENTS.md"
-  elif ! grep -q "agent-spec\|agent-spec" "${project_root}/AGENTS.md" 2>/dev/null; then
+  elif ! grep -qF ".cursor/rules/agent-spec.mdc" "${project_root}/AGENTS.md" 2>/dev/null; then
     printf '\n---\n<!-- agent-spec: see .cursor/rules/agent-spec.mdc and .agent-spec/ -->\n' \
       >> "${project_root}/AGENTS.md"
   fi

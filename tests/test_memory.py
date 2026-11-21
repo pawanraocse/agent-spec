@@ -330,3 +330,38 @@ def test_rotate_splits_dated_headings_and_merges_index():
         arch = open(os.path.join(spec, "memory", "snapshots", archive[0]), encoding="utf-8").read()
         assert "## 2026-10-29 — second" in arch and "First one." in arch
         assert "Third section." not in arch
+
+
+def test_search_ranks_free_text_questions():
+    """A question in the user's words finds the fact without its exact phrasing."""
+    with tempfile.TemporaryDirectory() as t:
+        write_fact(t, "bill", "gotcha", "bench billing",
+                   "The bench summed running totals, so long chats cost more than they did.")
+        write_fact(t, "ui", "decision", "dashboard theme", "Dark mode follows the OS setting.")
+        out = run(t, "search", "why do long chats cost more").stdout
+        assert "bench billing" in out and "dashboard theme" not in out, out
+        assert "0 facts" in run(t, "search", "kubernetes").stdout
+
+
+def test_search_exact_phrase_leads():
+    with tempfile.TemporaryDirectory() as t:
+        write_fact(t, "a", "gotcha", "cache", "Cache reads bill at 0.1x while the prefix is stable.")
+        write_fact(t, "b", "gotcha", "prefix", "A stable prefix keeps cache reads cheap; edits rewrite it.")
+        lines = run(t, "search", "prefix is stable").stdout.splitlines()
+        assert "cache" in lines[1], lines
+
+
+def test_consolidate_supersedes_several_and_cap_counts_active_only():
+    with tempfile.TemporaryDirectory() as t:
+        write_fact(t, "20261101-a-aaaaaa", "gotcha", "a", "Alpha detail about the bench.")
+        write_fact(t, "20261101-b-bbbbbb", "gotcha", "b", "Beta detail about the bench.")
+        res = run(t, "add", "--type", "gotcha", "--subject", "bench details",
+                  "--supersedes", "aaaaaa,20261101-b-bbbbbb", "Alpha and beta details about the bench.")
+        assert res.returncode == 0, res.stderr
+        listing = run(t, "list").stdout
+        assert listing.count("superseded") == 2, listing
+        assert run(t, "lint").returncode == 0
+        index = open(os.path.join(t, ".agent-spec", "memory", "INDEX.md")).read()
+        assert "bench details" in index and "| a |" not in index, index
+        assert "Alpha detail" in run(t, "search", "alpha").stdout  # superseded stays searchable
+        assert run(t, "add", "--type", "gotcha", "--subject", "x", "--supersedes", "nope", "t").returncode == 2

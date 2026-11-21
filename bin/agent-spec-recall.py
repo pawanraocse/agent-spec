@@ -35,8 +35,19 @@ until very what when where which while will with would your the and for are but 
 was one our out use file files task please fix code""".split())
 
 
+PATHISH = re.compile(r"\S*[/\\]\S*")
+
+
 def words(text):
-    return {w for w in re.findall(r"[a-z0-9_]+", (text or "").lower()) if len(w) >= 4 and w not in STOP}
+    """Content words of a task. Paths are dropped first: a prompt that names
+    /tmp/claude-1000/... must not match every later task that mentions Claude."""
+    text = PATHISH.sub(" ", (text or "").lower())
+    return {w for w in re.findall(r"[a-z0-9_]+", text) if len(w) >= 4 and w not in STOP}
+
+
+def min_overlap(want):
+    """One shared word is chance once a task has three or more; ask for two."""
+    return 1 if len(want) <= 2 else 2
 
 
 def read_jsonl(path):
@@ -129,7 +140,7 @@ def candidates(repo_id, path, want, local):
         if decided.get(exp_id) == "deprecated":
             continue
         hit = want & words(row.get("task"))
-        if not hit:
+        if len(hit) < min_overlap(want):
             continue
         tok = row.get("tokens") or {}
         total = sum(v for v in tok.values() if isinstance(v, int)) if isinstance(tok, dict) else 0

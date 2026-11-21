@@ -26,6 +26,7 @@ import argparse
 import hashlib
 import json
 import glob
+import math
 import os
 import re
 import subprocess
@@ -282,9 +283,10 @@ def lint_v2(facts):
             findings.append(("BAD-FIELD", fid, "-", "version '%s' is not an integer" % ver))
         if valid_date(exp) and exp < today:
             findings.append(("EXPIRED", fid, "-", "expired %s" % exp))
-        target = f.get("supersedes")
-        if target and target not in ids:
-            findings.append(("MISSING-SUPERSEDES", fid, target, "supersedes target not found"))
+        targets = [f.get("supersedes")] + [m for m in re.split(r"[,\s]+", f.get("merges") or "") if m]
+        for target in targets:
+            if target and target not in ids:
+                findings.append(("MISSING-SUPERSEDES", fid, target, "supersedes target not found"))
     by_id = {f.get("id"): f.get("supersedes") for f in facts}
     reported = set()
     for start in by_id:
@@ -412,18 +414,26 @@ def cmd_add(args):
         return 2
 
     existing = load_facts()
+    # --supersedes takes one id or several (a consolidation): full ids, or the unique
+    # trailing hash `list`/INDEX.md show. Every named fact is kept on disk as superseded.
+    olds = []
+    for want in [w for w in re.split(r"[,\s]+", args.supersedes or "") if w]:
+        found = [f for f in existing if f.get("id") == want] or \
+                [f for f in existing if f.get("id", "").endswith("-" + want)]
+        if len(found) != 1:
+            print("--supersedes: %s fact with id '%s'" % ("no" if not found else "more than one", want),
+                  file=sys.stderr)
+            return 2
+        if found[0] not in olds:
+            olds.append(found[0])
+    replaced = {f.get("id") for f in olds}
+
     for f in existing:
         # An edit (--supersedes) may keep the text and change only the subject or type.
-        if f["body"].strip().lower() == text.lower() and f.get("id") != args.supersedes:
+        if f["body"].strip().lower() == text.lower() and f.get("id") not in replaced:
             print("Already recorded as %s — not duplicated." % f.get("id"))
             return 0
-
-    old = None
-    if args.supersedes:
-        old = next((f for f in existing if f.get("id") == args.supersedes), None)
-        if old is None:
-            print("--supersedes: no fact with id '%s'" % args.supersedes, file=sys.stderr)
-            return 2
+    old = olds[0] if olds else None
 
     os.makedirs(FACTS, exist_ok=True)
     fid = fact_id(args.subject, text)
@@ -443,22 +453,25 @@ def cmd_add(args):
     if old is not None:
         old_version = int(old["version"]) if re.match(r"\d+$", old.get("version", "")) else 1
         extra += "version: %d\nsupersedes: %s\n" % (old_version + 1, old["id"])
+        if len(olds) > 1:
+            extra += "merges: %s\n" % ", ".join(f["id"] for f in olds[1:])
     with open(path, "w", encoding="utf-8") as fh:
         fh.write("---\nid: %s\ntype: %s\nsubject: %s\ncreated: %s\nsource: %s\n%s---\n%s\n"
                  % (fid, args.type, args.subject, datetime.now().strftime("%Y-%m-%d"),
                     args.source or "conversation", extra, text))
-    if old is not None:
-        set_status(old["path"], "superseded")
+    for f in olds:
+        set_status(f["path"], "superseded")
     print("remembered: %s" % fid)
     write_index()
     related = [x for x in lint_facts(load_facts()) if fid in (x[1], x[2])]
     if related:
         print("! this fact overlaps an existing one — review:")
         _print_findings(related)
-    if len(existing) + 1 > FACT_CAP:
-        print("! %d facts, cap is %d. Prune or forget some: the digest shows only what fits its "
-              "byte cap, ranked by the files in play, then constraints, then age."
-              % (len(existing) + 1, FACT_CAP))
+    active = sum(1 for f in load_facts() if is_active(f))  # superseded facts stay on disk, uncounted
+    if active > FACT_CAP:
+        print("! %d active facts, cap is %d. Consolidate (add --supersedes id1,id2,...) or forget "
+              "some: the digest shows only what fits its byte cap, ranked by the files in play, "
+              "then constraints, then age." % (active, FACT_CAP))
     return 0
 
 
@@ -471,17 +484,59 @@ def cmd_list(args):
         print("  [%-10s] %-12s %s%s" % (f.get("type", "?"), f.get("created", "?"),
                                        f.get("subject", ""), _status_tag(f)))
         print("      %s" % f["body"].split("\n")[0][:110])
-    if len(facts) > FACT_CAP:
-        print("\n! over the cap of %d — prune." % FACT_CAP)
+    active = sum(1 for f in load_facts() if is_active(f))
+    if active > FACT_CAP:
+        print("\n! %d active facts, over the cap of %d — consolidate or prune." % (active, FACT_CAP))
     return 0
 
 
+def _stem(word):
+    """Fold plural and tense so 'costs', 'costed' and 'cost' meet on one key."""
+    for suf in ("ings", "ing", "ies", "ed", "es", "s"):
+        if word.endswith(suf) and len(word) - len(suf) >= 3:
+            word = word[: -len(suf)] + ("y" if suf == "ies" else "")
+            break
+    if word.endswith("e") and len(word) >= 4:
+        word = word[:-1]
+    return word
+
+
+def search_facts(query, facts):
+    """Rank facts for a free-text query.
+
+    An exact substring match of the whole query leads. Otherwise each query term the fact
+    carries scores its inverse document frequency, doubled when it is in the subject, so
+    'why does the harness cost more' finds a fact about bench billing without the user
+    knowing its exact wording. Active facts always rank above retired ones.
+    """
+    needle = query.lower().strip()
+    terms = {_stem(w) for w in _words(query)}
+    docs = []
+    for f in facts:
+        subj = {_stem(w) for w in _words(f.get("subject", ""))}
+        body = {_stem(w) for w in _words(f.get("body", ""))}
+        docs.append((f, subj, body))
+    n = max(1, len(docs))
+    df = {t: sum(1 for _, su, bo in docs if t in su or t in bo) for t in terms}
+    scored = []
+    for f, subj, body in docs:
+        text = (f.get("subject", "") + "\n" + f.get("body", "")).lower()
+        score = 100.0 if needle and needle in text else 0.0
+        for t in terms:
+            if df[t] and (t in subj or t in body):
+                score += math.log(1 + n / df[t]) * (2 if t in subj else 1)
+        if score > 0:
+            scored.append((score, is_active(f), f))
+    # Active facts first: a superseded fact is kept for its history, and its replacement
+    # restates it, so at any score the live wording is the one to read.
+    scored.sort(key=lambda x: (x[1], x[0]), reverse=True)
+    return [f for _, _, f in scored]
+
+
 def cmd_search(args):
-    needle = args.keyword.lower()
-    hits = [f for f in load_facts()
-            if needle in f["body"].lower() or needle in f.get("subject", "").lower()]
+    hits = search_facts(args.keyword, load_facts())
     print("=== '%s' — %d facts ===" % (args.keyword, len(hits)))
-    for f in hits[:20]:
+    for f in hits[: args.limit]:
         print("  %s  [%s]  %s%s" % (f.get("id"), f.get("type"), f.get("subject"), _status_tag(f)))
         print("      %s" % f["body"].replace("\n", " ")[:200])
     if not hits:
@@ -815,7 +870,7 @@ def main():
     p.add_argument("--addresses", default=None,
                    help="comma-separated review finding categories this fact should prevent (optional)")
     p.add_argument("--supersedes", default=None,
-                   help="id of the fact this replaces; it is marked superseded, version bumps")
+                   help="id(s) this replaces, comma-separated to consolidate; each is kept as superseded, version bumps")
     p.add_argument("text", nargs="+")
     p.set_defaults(func=cmd_add)
 
@@ -833,8 +888,9 @@ def main():
     p.add_argument("--limit", type=int, default=40)
     p.set_defaults(func=cmd_list)
 
-    p = sub.add_parser("search")
+    p = sub.add_parser("search", help="rank facts for a keyword or a free-text question")
     p.add_argument("keyword")
+    p.add_argument("--limit", type=int, default=8)
     p.set_defaults(func=cmd_search)
 
     p = sub.add_parser("show")

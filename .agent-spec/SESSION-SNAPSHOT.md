@@ -1,122 +1,103 @@
-## 2026-11-19 (night) — End-to-end review; memory controls on the dashboard
+## 2026-11-20/21 — Harness cost on Claude Code: bench billing fixed, cost gate, levers under test
 
-**Goal.** The user asked for a full review of the project (no redundancy, keep the needed
-skills, save tokens, an interactive dashboard, graph and memory across sessions, skills
-orchestration), then a fix for the largest gap found: memory could only be read on the dashboard.
+**Goal.** Prove with live runs that the token levers save money: graph search, the search
+subagent, and snapshot plus a new chat. The user's constraint: the harness must never cost more
+than bare.
 
-**Review fixes (all gates green: pytest, selftest, lint-refs, project copy, tsc, vitest, build+budget).**
-- Selftest was red: router skill 3263 B over its 3072 B limit. Cut to 2999 B by removing the
-  "Before handing off" section (CURSOR.md's code-change rule already says graph first) and the
-  "have we done this before" phrase that overlapped the learn row. No skill removed.
-- `db.migrate` race: two writers opening a fresh platform.db both applied migration 1
-  (`table requests already exists`; this was the flaky `test_health_reports_schema_and_counts`).
-  A first attempt (skip the step on error) was wrong: the v2 migration re-applies cleanly and
-  would have reset `user_version` to 2. The fix takes `BEGIN IMMEDIATE`, re-reads the version
-  under the lock and runs statements one at a time (split with `sqlite3.complete_statement`),
-  because `executescript` commits any open transaction. `connect` also retries the WAL switch,
-  which SQLite answers with SQLITE_BUSY without calling the busy handler. Stress: 198 failures
-  in 80 four-thread races before, 0 in 240 after.
-- Doctor: the memory fix hint `prune --older-than 90` removed nothing; it now computes an age
-  that fits (`prune_days`, tested). The token audit no longer repeats the memory warning.
-- CURSOR.md no longer lists the five graph commands; the digest carries them every session.
-- livetest_view `start` takes a lock (two clicks could start two runs); cursor-bench uses
-  `math.comb`.
-- Live API smoke on this repo: all 45 GET routes 200 (or 400/404 without required params),
-  under 2 s, no tracebacks.
+**What broke, and the correction.** My first diagnosis was wrong. I blamed the always-on
+prefix, but CURSOR.md plus the digest is only about 1.2k tokens per call. The real faults were
+in the bench, not the harness:
+- `claude -p --resume` reports `total_cost_usd` and `modelUsage` as the session's running total,
+  while `usage` is per turn. The bench summed the running totals, so long chats were overbilled.
+- The claude.ai MCP connectors ignore `--setting-sources project`. They reconnected on resumed
+  turns and wrote about 16k tokens of cache at random turns in either arm. `--strict-mcp-config`
+  removes them.
 
-**Memory controls.** New `bin/aspec_platform/memory_view.py`: GET `/api/memory` reads fact files
-directly (text, status, created, supersedes) plus injection counts from the DB; POST
-`/api/memory` add, edit (= `add --supersedes`), forget, prune (preview unless `apply: true`).
-Every write goes through `agent-spec-memory.py`, then `ingest.run(["memory"])`, then an audit row
-in `metrics/proposals.jsonl` (`proposals.audit`, made public). Team facts are read-only.
-`platform_data.api_memory` removed. CLI: new `forget <id>` (moves the file to
-`memory/forgotten/`); `add` collapses the subject to one line (a newline could forge frontmatter
-keys), and its duplicate check skips the fact being superseded (an edit of only subject or
-type was silently a no-op); INDEX.md lists active facts only. The Knowledge page was rewritten
-with react-query: search, type and scope filters, show retired, index meter, add, edit,
-two-click forget, prune preview then apply. Tests: `tests/test_memory_view.py` (6),
-`ui-src/src/pages/Knowledge.test.tsx` (4). The remember skill and DASHBOARD.md were corrected:
-the digest ranks facts by the files in play, then constraints, then age, not by age alone.
+Each chat's cost, recomputed as its last turn's running total:
 
-**Snapshot headings.** The four 2026-11-19 sections had `###` headings, which rotate and the
-digest's "last session" line ignore, so the digest still said 2026-11-18. They were promoted to
-`##` with no content change.
+| Run | Bare | Harness | Change |
+|---|---|---|---|
+| 4e5bb7 | $0.3301 | $0.4285 | +29.8% |
+| 3a9968 | $0.2744 | $0.2541 | −7.4% |
+| a3a5fd | $0.1018 | $0.1267 | +24.5% |
+
+All three runs predate the fixes.
+
+**Built, committed and pushed to main.**
+- `9dd9333`: each turn is billed its own cost, MCP is isolated, `new_chat` turns start a fresh
+  session in the same copy, and there is a `long-dashboard-compact` task.
+- `2417a73`: a cost gate. `--max-cost-change PCT` defaults to 0, so the run exits 4 when the
+  harness costs more than bare or gets fewer answers right. The verdict line goes into the report.
+
+**Built, not committed.**
+- `CURSOR.md` was trimmed from 2522 B to 1747 B. I removed the install note and the onboarding
+  steps, because the digest already prints ONBOARDING NEEDED.
+- The bench harness arm now installs `agent-spec-search` and `agent-spec-verify` into
+  `.claude/agents/`, and `Agent` is an allowed tool. A new "Subagent calls" metric counts their use.
+- Two new tasks: `traceback-fix` plants a bug in `savings.py` that only a `test_insights.py`
+  traceback reveals, and `env-sweep` is a sweep across files suited to a subagent.
+- `add_harness` takes CURSOR.md from the package, never from the project. A user project with its
+  own CURSOR.md had been benched as if that file were our rule.
+- In `install.sh`, the marker check on an existing AGENTS.md was `grep -q "agent-spec\|agent-spec"`.
+  This was left over from the vendor-name drop in 7101331, and any mention of agent-spec skipped
+  the pointer. It is now `grep -qF ".cursor/rules/agent-spec.mdc"`.
+- The 21 bench tests pass.
+
+**Answered.** install.sh does not write a CURSOR.md into a user's project. It writes the content
+into `.cursor/rules/agent-spec.mdc` and overwrites that file. AGENTS.md is copied in only if it is
+missing; otherwise a pointer is appended. hooks.json is merged.
 
 **Open.**
-- Memory INDEX.md is 8683 B against 8000 B. Prune preview at 79 days lists 9 facts; the user
-  decides (Memory page or `prune --older-than 79 --dry-run`). Nothing was deleted.
-- API routes that no page calls: `/api/home`, `/api/savings`, `/api/skills`, `/api/pricing`,
-  `/api/cursor/workspaces`, `/api/seed`; `/api/search` and `/api/signals` are used only by tests.
-  Not removed; ask first.
-- Owed in Cursor after the push: H-005 (Impact tab facts), H-042 (CI first run), H-050 (Cursor
-  bench), H-045 and H-053 (a person's run, presenter rehearsals), then T-042.
-- Nothing committed. `./install.sh` was re-run, so the global skills match this tree.
+- The clean Claude bench (8 tasks × 3 runs, about $2) was still running at snapshot time, so the
+  question "does it save now" has no answer yet. Next: read the newest
+  `.agent-spec/eval/cursor-bench-*.md` for the gate verdict, long-dashboard against
+  long-dashboard-compact, and graph and subagent calls in traceback-fix and env-sweep. If the gate
+  fails (exit 4), fix what the run shows.
+- Commit and push the uncommitted changes, after asking the user.
+- Memory holds 89 facts against a cap of 40, and INDEX.md is over 8000 B. Pruning deletes facts,
+  so it needs the user's confirmation.
+- `/agent-spec-raw-code-full` was measured 5% dearer before. Its SKILL.md is re-read every turn.
+  It needs its own A/B after the harness passes.
+- Not explained: 3 invented file names in the harness long chats of run 4e5bb7, and +56% wall
+  time in run 3a9968.
+- The Ollama 7B model never calls graphify, so local runs cannot test the graph lever.
 
-Files to load: `bin/aspec_platform/memory_view.py`, `ui-src/src/pages/Knowledge.tsx`,
-`bin/aspec_platform/db.py`, `bin/agent-spec-memory.py`, `todo-plan.md`.
+Files to load: `bin/agent-spec-cursor-bench.py`, `evals/harness-bench.jsonl`,
+`evals/cursor-bench.jsonl`, `CURSOR.md`, the newest `.agent-spec/eval/cursor-bench-*.md`.
 
-## 2026-11-19/20 (late night) — Short prompts stopped paying for code work; bench measures it
+## 2026-11-21 — End-to-end review: graph ranking, memory search, warm resume, recall
 
-**Goal.** The user found that the harness made short prompts and plain chat dearer than no
-harness. It only paid off for repo search, graph queries and session save/load.
+### Done
+- Graph `context` now scores symbol names, stems, 4-letter prefixes and IDF, and puts tests after
+  their subject. On commit history, hit@4 went from 20% to 56% and recall@12 from 27% to 53%.
+  Reproduce with `python3 evals/graph_context_eval.py`.
+- `agent-spec-memory.py search` ranks free-text questions (it was a substring match that found 0
+  facts) and takes `--limit`.
+- The digest's warm resume parses `### Open`, `**Open.**` and `Files to load:` shapes, and the
+  snapshot skill prescribes the shape. The digest no longer forbids SESSION-SNAPSHOT.md; it
+  points earlier-chat questions at memory search and then the newest section.
+- Recall drops path tokens and needs two shared words. RAG search keeps at most two chunks per
+  file and drops question filler (MRR 0.450 to 0.457).
+- Small fixes: the receipt fact counter, the `ingest --what` hint, `sessionStart` back in
+  CURSOR.md (the selftest checks it), stale `.algosec-*` names in facts, and the `views-blast`
+  grader.
+- Report: `docs/evidence/REVIEW-2026-11-21.md`. Nothing is committed yet.
 
-**Cause.** CURSOR.md (4342 B) and the digest (2216 B) rode in every turn. Worse, the rules
-forced tool calls before any answer: the raw-code preflight (`agent-spec-ensure.py`), the
-digest run, onboarding, a graph query and a Pre-Change Declaration. Each tool call re-sends the
-whole context, so a one-line question could cost several full round trips.
+### Corrections
+- I first assumed the RAG index only refreshed while the dashboard runs. `search` and `ask`
+  already refresh incrementally (0.35 s), so nothing needed to change there.
 
-**Built, committed on main (not pushed; main is 2 ahead of origin/main).**
-- `dae48a1` — rule split, VERSION 2.1.0. `CURSOR.md` → `.cursor/rules/agent-spec.mdc` is now
-  the always-on core (2564 B). It holds the Direct / Small / Code work tiers, session start and
-  hard stops; a Direct reply makes zero tool calls. `CURSOR-WORKFLOW.md` →
-  `.cursor/rules/agent-spec-workflow.mdc` (`alwaysApply: false`, Agent Requested) holds
-  personas, confidence tags, coding rules, implement gates, subagents and tool discipline.
-  The core tells the model to Read the workflow file with its first tool call if Cursor has not
-  attached it. The digest's guidance shrank to 1988 B and is scoped to code. The raw-code,
-  raw-code-full and router skills now run their preflight only with the first code-work tool
-  call and only when no digest is in context. install, uninstall, check-install, ensure (adds
-  the gap "no workflow rule") and doctor handle the second file. The token audit no longer
-  counts an `alwaysApply: false` rule as always-on. The selftest budget for CURSOR.md is now
-  3200 B, down from 4600 B. The commit also carried the pending live-test work from earlier
-  sessions.
-- `771d9ce` — bench. `evals/direct-bench.jsonl` has six direct prompts (`max_tools` 0) and one
-  small lookup (`max_tools` 1). `--compare versions --base-ref REF` installs the base arm from
-  `git archive REF` and the head arm from this checkout. `harness-bench.jsonl` gained three
-  graph tasks (answers taken from the graph and confirmed with grep) and `long-dashboard`, a
-  nine-turn chat that recalls early facts at the end. Every report adds workflow-rule reads,
-  invented file names (cited names that exist nowhere in the project), a per-feature table
-  (tokens, time, correctness, chats that used the graph) and accuracy by turn position. Docs
-  are in `docs/LIVE-TESTING.md`.
+### Open
+- The Claude bench run 20261121T083158-7b6a09 was still running. At about 1.5 of 3 repeats the
+  harness was +3.8%. It started before this session's ranking changes, so re-run it after
+  committing to measure them.
+- Memory holds 91 facts against a cap of 40. An age prune would delete load-bearing decisions,
+  so prune by relevance, and only with the user's approval.
+- The installed skills in ~/.cursor/skills predate the vendor-name drop (`.algosec-*` markers).
+  Re-run `./install.sh` when the user agrees.
 
-**What broke, and the correction.** `install.sh --register` appends the workspace to
-`~/.cursor/skills/.agent-spec-projects` and then re-installs every workspace listed
-there. Every past `--compare harness` run had left a `/tmp/...aspec-claude-bench-tpl-*` entry
-in the user's registry (11 of them). While debugging the versions mode, a manual install from
-`4852bfe` downgraded all registered workspaces to 2.0.0. They were restored at once with the
-current `install.sh`, and the three existing workspaces were confirmed back on 2.1.0. My
-earlier `install.sh --register "$PWD"` in this session had also refreshed `content-creation-ai`
-to 2.1.0 without my noticing. The bench now runs its installs under a throwaway HOME, and a
-test asserts the user's registry and workspaces are untouched. On the user's request, the
-11 stale bench lines were removed from the registry; a backup was kept in this session's
-scratchpad.
-
-**Also fixed in passing.** The bench's Cursor harness note never printed, because the
-skill-note branch matched first. `register_harness` no longer copies the project's
-`.agent-spec/bin` over the installed bins, so each arm runs its own version's digest.
-
-**Open / owed (live Cursor, not done).**
-- Push main, then on the Cursor machine run
-  `python3 bin/agent-spec-cursor-bench.py --agent cursor --compare versions --base-ref 4852bfe --repeat 2`
-  and `--compare harness --repeat 3`. Pass criteria: direct prompts at 0 tool calls, all within
-  budget, all-input tokens at or below base; graph tasks keep graph chats and correctness; the
-  harness shows no more invented files or late-turn misses than bare in long-dashboard.
-- Main risk: Cursor may not attach the Agent Requested workflow rule for code tasks. Proposed,
-  not built: preToolUse denies the first tool call of a conversation once, with the workflow
-  body in `agent_message` (reusing `nudged_already`), plus `globs` on the workflow mdc.
-- Doctor still flags memory INDEX.md at 8788 B (limit 8000).
-
-Files to load: `CURSOR.md`, `CURSOR-WORKFLOW.md`, `bin/agent-spec-cursor-bench.py`,
-`hooks/cursor-pre-tool-use.py`, `evals/direct-bench.jsonl`, `docs/LIVE-TESTING.md`.
+### Load next session
+`docs/evidence/REVIEW-2026-11-21.md`, `bin/graphify-cli.py`, `bin/agent-spec-digest.py`, `evals/graph_context_eval.py`
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -192,3 +173,7 @@ writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates
 - **2026-11-19 (later) — Measuring /agent-spec-raw-code-full: Groq runs, Claude Code bench, H-050** — Question from the user: why L18 showed the skill using more input tokens, and whether it saves
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261120-055846.md`. Nothing is deleted.
 - **2026-11-19 (evening) — Skill verdict, harness-vs-bare bench, graph never called** — Skill verdict. `/agent-spec-raw-code-full` does not save tokens. Every head-to-head so far
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-084418.md`. Nothing is deleted.
+- **2026-11-19 (night) — End-to-end review; memory controls on the dashboard** — Goal. The user asked for a full review of the project (no redundancy, keep the needed
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-092542.md`. Nothing is deleted.
+- **2026-11-19/20 (late night) — Short prompts stopped paying for code work; bench measures it** — Goal. The user found that the harness made short prompts and plain chat dearer than no

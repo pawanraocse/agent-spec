@@ -29,6 +29,26 @@ description: >-
 Record: what was built, what broke, decisions locked or still open, **corrections made to
 your own earlier work**, and which files the next session should load.
 
+Use this shape. The `sessionStart` digest lifts the heading, the first three `### Open`
+bullets and the `### Load next session` line into every new chat, so a section without
+them resumes with a title and nothing else:
+
+```markdown
+## YYYY-MM-DD — <one-line theme>
+
+### Done
+- <what was built, with commit hashes when committed>
+
+### Corrections
+- <what you got wrong earlier in the session, and the fix>
+
+### Open
+- <most important unfinished item first; one bullet each, one or two sentences>
+
+### Load next session
+`path/one.py`, `path/two.md`
+```
+
 ## Promote the durable facts
 
 A snapshot section is read by a human catching up. A fact is read by every session

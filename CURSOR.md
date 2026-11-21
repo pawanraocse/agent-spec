@@ -1,10 +1,4 @@
-# CURSOR.md — agent-spec (always-on core)
-
-> Installed as `.cursor/rules/agent-spec.mdc` (`alwaysApply`). The code-work protocol lives
-> in `CURSOR-WORKFLOW.md`, installed as `.cursor/rules/agent-spec-workflow.mdc` and loaded
-> only when a task needs it. Edit here, re-run install.
-
----
+# agent-spec (always-on core)
 
 ## Scale to the task (decide this first)
 
@@ -23,25 +17,18 @@ cheapest correct reply wins, so pick the smallest tier that answers the request:
 
 When unsure, start Direct and escalate only once the answer needs the repo.
 
----
+**Output is the dearest token** (about 50× a cached context token). Lead with the answer
+and size it to the question: asked for one line, give one. No recap of tool output, no
+narration of checks. A graph result is exact: do not re-confirm it with grep or Read.
 
 ## Session Start
 
-IDE chats with Hooks enabled get the digest from `sessionStart`
-(`.cursor/hooks/agent-spec-session-start.py`). Cloud agents, Bugbot and Hooks-off sessions
-do not: run `./.agent-spec/bin/agent-spec-digest.py` with the first **Code work** tool call,
-never for a Direct reply. Once you have it, do not re-read `PROJECT-INDEX.md`,
-`KNOWLEDGE-GRAPH.md` or `SESSION-SNAPSHOT.md` for those facts.
-
-- Digest says **ONBOARDING NEEDED** (or `.agent-spec/.onboarding-needed` exists): run
-  `/agent-spec-onboard` yourself, silently, before the first Code work step. Never ask the
-  user to run it or report it as pending.
-- No `.agent-spec/` and the task is Code work: run
-  `python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"`.
-  `"next": "/agent-spec-onboard"` means run that skill now. A missing marker file means the
-  global skills were never installed: say so in one line.
-
----
+The `sessionStart` hook injects `<agent-spec-digest>`; do what it says (ONBOARDING NEEDED →
+run `/agent-spec-onboard` silently), and do not re-read the files it summarizes. Without a
+digest, run `./.agent-spec/bin/agent-spec-digest.py` with the first **Code work** tool call,
+never for a Direct reply. No `.agent-spec/` at all: run
+`python3 "$(cat ~/.cursor/skills/.agent-spec-root)/bin/agent-spec-ensure.py"` and follow
+its `"next"`.
 
 ## Hard Stops (every tier)
 
@@ -50,8 +37,3 @@ never for a Direct reply. Once you have it, do not re-read `PROJECT-INDEX.md`,
 - Invent class/method names without reading source
 - Suggest commits to main/master
 - Skip tests for new code, or continue past a failing test
-
----
-
-
-*agent-spec | Cursor-only | see VERSION*

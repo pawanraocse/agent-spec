@@ -1,18 +1,18 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-20T06:30:15.199546",
+  "generated": "2026-11-21T09:45:21.355182",
   "generator": "graphify-build",
   "git": {
     "branch": "main",
-    "head_sha": "771d9cea1e780fa1b9b17266095e1c21b3ad6069",
+    "head_sha": "2417a733a507ad4d0e213c7fe8530d704d802630",
     "dirty": true,
     "operation": null,
     "conflicts": 0
   },
   "stack": "Node.js + React",
   "stats": {
-    "files": 219,
+    "files": 220,
     "internal_edges": 518,
     "integration_edges": 1,
     "external_packages": 91,
@@ -23,12 +23,12 @@
     "topics": 1,
     "layer_violations": 0,
     "languages": {
-      "python": 152,
+      "python": 153,
       "typescript": 62,
       "javascript": 5
     },
     "layers": {
-      "unknown": 116,
+      "unknown": 117,
       "test": 84,
       "controller": 12,
       "config": 5,
@@ -79,15 +79,15 @@
     "top_external": [
       [
         "os",
-        133
+        134
       ],
       [
         "json",
-        119
+        120
       ],
       [
         "sys",
-        114
+        115
       ],
       [
         "__future__",
@@ -95,7 +95,7 @@
       ],
       [
         "subprocess",
-        64
+        65
       ],
       [
         "unittest",
@@ -111,7 +111,7 @@
       ],
       [
         "re",
-        46
+        47
       ],
       [
         "shutil",
@@ -119,7 +119,7 @@
       ]
     ]
   },
-  "orphan_count": 69,
+  "orphan_count": 70,
   "services": {
     "examples/mesh-demo/shop-ui": "shop-ui",
     "ui-src": "ui-src"
@@ -139,7 +139,11 @@
     "test framework": [
       [
         "pytest",
-        178
+        246
+      ],
+      [
+        "Jest",
+        3
       ]
     ],
     "dependency injection": [
@@ -161,7 +165,13 @@
       ],
       [
         "generics",
-        29
+        9
+      ]
+    ],
+    "logging": [
+      [
+        "console",
+        3
       ]
     ]
   },
@@ -979,6 +989,19 @@
       "path": "docs/platform-design/templates/agent/handlers.py",
       "lang": "python",
       "layer": "controller",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "evals/graph_context_eval.py",
+      "type": "file",
+      "path": "evals/graph_context_eval.py",
+      "lang": "python",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "routes": [],
@@ -5963,266 +5986,273 @@
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 125
+      "line": 128
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::SkillMissing",
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 129
+      "line": 132
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::eval_dir",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 133
+      "line": 136
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::load_tasks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 137
+      "line": 140
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::package_sha",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 156
+      "line": 159
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::package_at",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 164
+      "line": 167
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::find_cli",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 180
+      "line": 183
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::cli_version",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 192
+      "line": 195
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::claude_argv",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 200
+      "line": 203
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::transcript",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 206
+      "line": 213
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::run_turn",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 214
+      "line": 221
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::run_claude_turn",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 275
+      "line": 282
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::preflight_claude",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 337
+      "line": 345
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::skill_marker",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 353
+      "line": 361
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::build_template",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 369
+      "line": 377
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::add_harness",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 391
+      "line": 399
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::register_harness",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 421
+      "line": 435
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::git",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 451
+      "line": 465
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::make_workspace",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 456
+      "line": 470
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::drop_workspace",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 474
+      "line": 488
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::known_names",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 491
+      "line": 505
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::phantom_names",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 506
+      "line": 520
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::run_check",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 516
+      "line": 530
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::is_correct",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 525
+      "line": 539
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::run_task",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 537
+      "line": 551
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::one_turn",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 575
+      "line": 599
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::totals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 590
+      "line": 614
+    },
+    {
+      "id": "bin/agent-spec-cursor-bench.py::cost_gate",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-cursor-bench.py",
+      "line": 647
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::delta",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 622
+      "line": 671
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::chat_sums",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 628
+      "line": 677
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::sign_p",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 644
+      "line": 693
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::boot_ci",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 653
+      "line": 702
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::paired_stats",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 668
+      "line": 717
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::correctness_stats",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 682
+      "line": 731
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::paired",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 698
+      "line": 747
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::feature_table",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 708
+      "line": 757
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::position_table",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 734
+      "line": 783
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::report",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 755
+      "line": 804
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-cursor-bench.py",
-      "line": 867
+      "line": 919
     },
     {
       "id": "bin/agent-spec-digest.py::read",
@@ -6243,350 +6273,350 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 44
+      "line": 50
     },
     {
       "id": "bin/agent-spec-digest.py::_clip_text",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 60
+      "line": 96
     },
     {
       "id": "bin/agent-spec-digest.py::resume_lines",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 64
+      "line": 100
     },
     {
       "id": "bin/agent-spec-digest.py::last_snapshot_summary",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 93
+      "line": 129
     },
     {
       "id": "bin/agent-spec-digest.py::gate",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 116
+      "line": 152
     },
     {
       "id": "bin/agent-spec-digest.py::graph_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 131
+      "line": 167
     },
     {
       "id": "bin/agent-spec-digest.py::mesh_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 157
+      "line": 193
     },
     {
       "id": "bin/agent-spec-digest.py::git_label",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 179
+      "line": 215
     },
     {
       "id": "bin/agent-spec-digest.py::remembered",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 199
+      "line": 235
     },
     {
       "id": "bin/agent-spec-digest.py::ensure_fresh_graph",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 218
+      "line": 254
     },
     {
       "id": "bin/agent-spec-digest.py::parse_team_yaml",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 271
+      "line": 307
     },
     {
       "id": "bin/agent-spec-digest.py::team_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 296
+      "line": 332
     },
     {
       "id": "bin/agent-spec-digest.py::doctor_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 306
+      "line": 342
     },
     {
       "id": "bin/agent-spec-digest.py::staged_learning_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 323
+      "line": 359
     },
     {
       "id": "bin/agent-spec-digest.py::build_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 340
+      "line": 376
     },
     {
       "id": "bin/agent-spec-digest.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 403
+      "line": 440
     },
     {
       "id": "bin/agent-spec-digest.py::cursor_hook",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-digest.py",
-      "line": 411
+      "line": 448
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx",
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-doctor.py",
-      "line": 35
+      "line": 36
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-doctor.py",
-      "line": 36
+      "line": 37
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx.script",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-doctor.py",
-      "line": 46
+      "line": 47
     },
     {
       "id": "bin/agent-spec-doctor.py::Ctx.register_cmd",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-doctor.py",
-      "line": 53
+      "line": 54
     },
     {
       "id": "bin/agent-spec-doctor.py::find_package",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 58
+      "line": 59
     },
     {
       "id": "bin/agent-spec-doctor.py::read",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 74
+      "line": 75
     },
     {
       "id": "bin/agent-spec-doctor.py::load_json",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 82
+      "line": 83
     },
     {
       "id": "bin/agent-spec-doctor.py::run",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 90
+      "line": 91
     },
     {
       "id": "bin/agent-spec-doctor.py::check_project",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 102
+      "line": 103
     },
     {
       "id": "bin/agent-spec-doctor.py::check_skills",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 108
+      "line": 109
     },
     {
       "id": "bin/agent-spec-doctor.py::_commands",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 128
+      "line": 129
     },
     {
       "id": "bin/agent-spec-doctor.py::check_hooks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 133
+      "line": 134
     },
     {
       "id": "bin/agent-spec-doctor.py::check_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 161
+      "line": 162
     },
     {
       "id": "bin/agent-spec-doctor.py::check_graph",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 193
+      "line": 194
     },
     {
       "id": "bin/agent-spec-doctor.py::prune_days",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 214
+      "line": 215
     },
     {
       "id": "bin/agent-spec-doctor.py::check_memory",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 237
+      "line": 238
     },
     {
       "id": "bin/agent-spec-doctor.py::check_memory_lint",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 248
+      "line": 253
     },
     {
       "id": "bin/agent-spec-doctor.py::native_path",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 265
+      "line": 270
     },
     {
       "id": "bin/agent-spec-doctor.py::check_register",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 274
+      "line": 279
     },
     {
       "id": "bin/agent-spec-doctor.py::check_version",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 293
+      "line": 298
     },
     {
       "id": "bin/agent-spec-doctor.py::_git_hooks_dir",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 306
+      "line": 311
     },
     {
       "id": "bin/agent-spec-doctor.py::check_git_hooks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 316
+      "line": 321
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 334
+      "line": 339
     },
     {
       "id": "bin/agent-spec-doctor.py::check_audit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 351
+      "line": 356
     },
     {
       "id": "bin/agent-spec-doctor.py::check_coexistence",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 371
+      "line": 376
     },
     {
       "id": "bin/agent-spec-doctor.py::check_onboarding",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 390
+      "line": 395
     },
     {
       "id": "bin/agent-spec-doctor.py::check_team_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 399
+      "line": 404
     },
     {
       "id": "bin/agent-spec-doctor.py::mcp_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 425
+      "line": 430
     },
     {
       "id": "bin/agent-spec-doctor.py::check_mcp",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 433
+      "line": 438
     },
     {
       "id": "bin/agent-spec-doctor.py::check_skill_proposals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 476
+      "line": 481
     },
     {
       "id": "bin/agent-spec-doctor.py::run_checks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 499
+      "line": 504
     },
     {
       "id": "bin/agent-spec-doctor.py::line_summary",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 513
+      "line": 518
     },
     {
       "id": "bin/agent-spec-doctor.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-doctor.py",
-      "line": 523
+      "line": 528
     },
     {
       "id": "bin/agent-spec-ensure.py::project_root",
@@ -7167,315 +7197,329 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 51
+      "line": 52
     },
     {
       "id": "bin/agent-spec-memory.py::fact_id",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 56
+      "line": 57
     },
     {
       "id": "bin/agent-spec-memory.py::parse_fact",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 61
+      "line": 62
     },
     {
       "id": "bin/agent-spec-memory.py::_today",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 86
+      "line": 87
     },
     {
       "id": "bin/agent-spec-memory.py::valid_date",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 90
+      "line": 91
     },
     {
       "id": "bin/agent-spec-memory.py::fact_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 101
+      "line": 102
     },
     {
       "id": "bin/agent-spec-memory.py::is_active",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 114
+      "line": 115
     },
     {
       "id": "bin/agent-spec-memory.py::_status_tag",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 118
+      "line": 119
     },
     {
       "id": "bin/agent-spec-memory.py::load_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 123
+      "line": 124
     },
     {
       "id": "bin/agent-spec-memory.py::team_source_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 147
+      "line": 148
     },
     {
       "id": "bin/agent-spec-memory.py::valid_team_fact",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 157
+      "line": 158
     },
     {
       "id": "bin/agent-spec-memory.py::load_team_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 176
+      "line": 177
     },
     {
       "id": "bin/agent-spec-memory.py::_key",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 186
+      "line": 187
     },
     {
       "id": "bin/agent-spec-memory.py::team_not_overridden",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 190
+      "line": 191
     },
     {
       "id": "bin/agent-spec-memory.py::_tokens",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 212
+      "line": 213
     },
     {
       "id": "bin/agent-spec-memory.py::_topic",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 217
+      "line": 218
     },
     {
       "id": "bin/agent-spec-memory.py::_is_negative",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 221
+      "line": 222
     },
     {
       "id": "bin/agent-spec-memory.py::_jaccard",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 225
+      "line": 226
     },
     {
       "id": "bin/agent-spec-memory.py::lint_facts",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 231
+      "line": 232
     },
     {
       "id": "bin/agent-spec-memory.py::lint_v2",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 261
+      "line": 262
     },
     {
       "id": "bin/agent-spec-memory.py::_print_findings",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 305
+      "line": 307
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_lint",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 310
+      "line": 312
     },
     {
       "id": "bin/agent-spec-memory.py::index_text",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 321
+      "line": 323
     },
     {
       "id": "bin/agent-spec-memory.py::write_index",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 337
+      "line": 339
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_index",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 343
+      "line": 345
     },
     {
       "id": "bin/agent-spec-memory.py::set_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 359
+      "line": 361
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_propose",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 374
+      "line": 376
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_add",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 393
+      "line": 395
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_list",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 465
+      "line": 478
+    },
+    {
+      "id": "bin/agent-spec-memory.py::_stem",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-memory.py",
+      "line": 493
+    },
+    {
+      "id": "bin/agent-spec-memory.py::search_facts",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-memory.py",
+      "line": 504
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 479
+      "line": 536
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_show",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 492
+      "line": 547
     },
     {
       "id": "bin/agent-spec-memory.py::_words",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 506
+      "line": 561
     },
     {
       "id": "bin/agent-spec-memory.py::working_set",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 516
+      "line": 571
     },
     {
       "id": "bin/agent-spec-memory.py::rank_for_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 537
+      "line": 592
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 546
+      "line": 601
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_merge_team",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 589
+      "line": 644
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_forget",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 639
+      "line": 694
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_prune",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 653
+      "line": 708
     },
     {
       "id": "bin/agent-spec-memory.py::_split_snapshot",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 683
+      "line": 738
     },
     {
       "id": "bin/agent-spec-memory.py::_heading_name",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 701
+      "line": 756
     },
     {
       "id": "bin/agent-spec-memory.py::_sections",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 705
+      "line": 760
     },
     {
       "id": "bin/agent-spec-memory.py::_summary_line",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 710
+      "line": 765
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_snapshots",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 726
+      "line": 781
     },
     {
       "id": "bin/agent-spec-memory.py::cmd_rotate",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 756
+      "line": 811
     },
     {
       "id": "bin/agent-spec-memory.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-memory.py",
-      "line": 804
+      "line": 859
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::skill_body",
@@ -7776,84 +7820,91 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 38
+      "line": 41
+    },
+    {
+      "id": "bin/agent-spec-recall.py::min_overlap",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/agent-spec-recall.py",
+      "line": 48
     },
     {
       "id": "bin/agent-spec-recall.py::read_jsonl",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 42
+      "line": 53
     },
     {
       "id": "bin/agent-spec-recall.py::manifest_members",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 58
+      "line": 69
     },
     {
       "id": "bin/agent-spec-recall.py::native_path",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 73
+      "line": 84
     },
     {
       "id": "bin/agent-spec-recall.py::registry",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 82
+      "line": 93
     },
     {
       "id": "bin/agent-spec-recall.py::peers",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 91
+      "line": 102
     },
     {
       "id": "bin/agent-spec-recall.py::overrides",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 113
+      "line": 124
     },
     {
       "id": "bin/agent-spec-recall.py::candidates",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 121
+      "line": 132
     },
     {
       "id": "bin/agent-spec-recall.py::rank_key",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 147
+      "line": 158
     },
     {
       "id": "bin/agent-spec-recall.py::recall",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 152
+      "line": 163
     },
     {
       "id": "bin/agent-spec-recall.py::log_reuse",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 163
+      "line": 174
     },
     {
       "id": "bin/agent-spec-recall.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-recall.py",
-      "line": 175
+      "line": 186
     },
     {
       "id": "bin/agent-spec-receipt.py::load_tokens",
@@ -10933,315 +10984,322 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 79
+      "line": 83
     },
     {
       "id": "bin/aspec_platform/retrieval.py::is_secret_path",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 83
+      "line": 87
     },
     {
       "id": "bin/aspec_platform/retrieval.py::classify",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 88
+      "line": 92
     },
     {
       "id": "bin/aspec_platform/retrieval.py::split_terms",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 111
+      "line": 115
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_git_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 126
+      "line": 130
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_walk_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 135
+      "line": 139
     },
     {
       "id": "bin/aspec_platform/retrieval.py::project_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 142
+      "line": 146
     },
     {
       "id": "bin/aspec_platform/retrieval.py::chunk_lines",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 167
+      "line": 171
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_file_docs",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 197
+      "line": 201
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_trace_doc",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 226
+      "line": 230
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_review_docs",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 262
+      "line": 266
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_known",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 279
+      "line": 283
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_replace",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 284
+      "line": 288
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_drop",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 295
+      "line": 299
     },
     {
       "id": "bin/aspec_platform/retrieval.py::index_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 300
+      "line": 304
     },
     {
       "id": "bin/aspec_platform/retrieval.py::index_traces",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 341
+      "line": 345
     },
     {
       "id": "bin/aspec_platform/retrieval.py::index_reviews",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 384
+      "line": 388
     },
     {
       "id": "bin/aspec_platform/retrieval.py::ingest_index",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 414
+      "line": 418
     },
     {
       "id": "bin/aspec_platform/retrieval.py::EmbedError",
       "type": "symbol",
       "kind": "class",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 434
+      "line": 438
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_loopback",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 438
+      "line": 442
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_post_json",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 443
+      "line": 447
     },
     {
       "id": "bin/aspec_platform/retrieval.py::OllamaEmbedder",
       "type": "symbol",
       "kind": "class",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 458
+      "line": 462
     },
     {
       "id": "bin/aspec_platform/retrieval.py::OllamaEmbedder.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 466
+      "line": 470
     },
     {
       "id": "bin/aspec_platform/retrieval.py::OllamaEmbedder.embed",
       "type": "symbol",
       "kind": "method",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 471
+      "line": 475
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_normalise",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 481
+      "line": 485
     },
     {
       "id": "bin/aspec_platform/retrieval.py::ollama_url",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 486
+      "line": 490
     },
     {
       "id": "bin/aspec_platform/retrieval.py::get_embedder",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 490
+      "line": 494
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_pack",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 501
+      "line": 505
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_unpack",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 505
+      "line": 509
     },
     {
       "id": "bin/aspec_platform/retrieval.py::embed_pending",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 511
+      "line": 515
     },
     {
       "id": "bin/aspec_platform/retrieval.py::fts_query",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 532
+      "line": 536
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_where",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 546
+      "line": 550
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_row",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 564
+      "line": 568
     },
     {
       "id": "bin/aspec_platform/retrieval.py::keyword_hits",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 570
+      "line": 574
     },
     {
       "id": "bin/aspec_platform/retrieval.py::vector_hits",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 586
+      "line": 590
     },
     {
       "id": "bin/aspec_platform/retrieval.py::fusion_weight",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 606
+      "line": 610
     },
     {
       "id": "bin/aspec_platform/retrieval.py::fuse",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 619
+      "line": 623
+    },
+    {
+      "id": "bin/aspec_platform/retrieval.py::diversify",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/retrieval.py",
+      "line": 647
     },
     {
       "id": "bin/aspec_platform/retrieval.py::index_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 640
+      "line": 663
     },
     {
       "id": "bin/aspec_platform/retrieval.py::search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 655
+      "line": 678
     },
     {
       "id": "bin/aspec_platform/retrieval.py::related_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 684
+      "line": 707
     },
     {
       "id": "bin/aspec_platform/retrieval.py::cite",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 709
+      "line": 732
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_sources_block",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 715
+      "line": 738
     },
     {
       "id": "bin/aspec_platform/retrieval.py::cursor_prompt",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 723
+      "line": 746
     },
     {
       "id": "bin/aspec_platform/retrieval.py::get_llm",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 730
+      "line": 753
     },
     {
       "id": "bin/aspec_platform/retrieval.py::ask",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 736
+      "line": 759
     },
     {
       "id": "bin/aspec_platform/risk_view.py::_risk_module",
@@ -12326,112 +12384,147 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 21
+      "line": 22
     },
     {
       "id": "bin/graphify-cli.py::match_node",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 36
+      "line": 37
     },
     {
       "id": "bin/graphify-cli.py::cmd_query",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 56
+      "line": 57
     },
     {
       "id": "bin/graphify-cli.py::cmd_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 109
+      "line": 110
     },
     {
       "id": "bin/graphify-cli.py::cmd_stats",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 121
+      "line": 122
     },
     {
       "id": "bin/graphify-cli.py::cmd_cycles",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 139
+      "line": 140
     },
     {
       "id": "bin/graphify-cli.py::cmd_module",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 170
+      "line": 171
     },
     {
       "id": "bin/graphify-cli.py::cmd_flow",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 190
+      "line": 191
     },
     {
       "id": "bin/graphify-cli.py::cmd_services",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 223
+      "line": 224
     },
     {
       "id": "bin/graphify-cli.py::cmd_endpoints",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 258
+      "line": 259
     },
     {
       "id": "bin/graphify-cli.py::cmd_layers",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 274
+      "line": 275
+    },
+    {
+      "id": "bin/graphify-cli.py::_stem",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-cli.py",
+      "line": 300
+    },
+    {
+      "id": "bin/graphify-cli.py::_id_words",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-cli.py",
+      "line": 311
+    },
+    {
+      "id": "bin/graphify-cli.py::_is_test",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-cli.py",
+      "line": 327
+    },
+    {
+      "id": "bin/graphify-cli.py::_rank",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-cli.py",
+      "line": 333
+    },
+    {
+      "id": "bin/graphify-cli.py::_score_files",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/graphify-cli.py",
+      "line": 344
     },
     {
       "id": "bin/graphify-cli.py::cmd_context",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 291
+      "line": 394
     },
     {
       "id": "bin/graphify-cli.py::_need_symbols",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 356
+      "line": 454
     },
     {
       "id": "bin/graphify-cli.py::cmd_symbols",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 363
+      "line": 461
     },
     {
       "id": "bin/graphify-cli.py::cmd_callers",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 377
+      "line": 475
     },
     {
       "id": "bin/graphify-cli.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/graphify-cli.py",
-      "line": 399
+      "line": 497
     },
     {
       "id": "bin/graphify-mesh.py::hub_paths",
@@ -12670,6 +12763,27 @@
       "kind": "function",
       "file": "docs/platform-design/templates/agent/handlers.py",
       "line": 50
+    },
+    {
+      "id": "evals/graph_context_eval.py::load_cli",
+      "type": "symbol",
+      "kind": "function",
+      "file": "evals/graph_context_eval.py",
+      "line": 25
+    },
+    {
+      "id": "evals/graph_context_eval.py::cases",
+      "type": "symbol",
+      "kind": "function",
+      "file": "evals/graph_context_eval.py",
+      "line": 32
+    },
+    {
+      "id": "evals/graph_context_eval.py::main",
+      "type": "symbol",
+      "kind": "function",
+      "file": "evals/graph_context_eval.py",
+      "line": 49
     },
     {
       "id": "examples/mesh-demo/acme-common/acme_common/events.py::order_created",
@@ -14279,84 +14393,98 @@
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_cursor_bench.py",
-      "line": 321
+      "line": 327
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 324
+      "line": 330
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 355
+      "line": 361
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_runs_each_chat_in_a_fresh_copy_and_reports_paired_stats",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 361
+      "line": 367
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_cost_gate_fails_when_the_treated_arm_is_over_budget",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 398
+    },
+    {
+      "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_new_chat_starts_a_fresh_session_in_the_same_copy",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_cursor_bench.py",
+      "line": 408
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_stops_when_the_skill_never_loads",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 392
+      "line": 431
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_expired_login_stops_before_any_chat",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 397
+      "line": 436
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_login_expiring_mid_run_stops_with_exit_3",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 405
+      "line": 444
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_runs_bare_against_the_harness",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 414
+      "line": 453
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_compare_harness_stops_when_the_digest_never_arrives",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 441
+      "line": 482
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_refuses_to_nest_in_claude_code",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 450
+      "line": 491
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_allow_nested_runs_without_passing_claudecode_on",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 455
+      "line": 496
     },
     {
       "id": "tests/test_cursor_bench.py::ClaudeBenchTest.test_other_agents_skip_edit_tasks",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_cursor_bench.py",
-      "line": 459
+      "line": 500
     },
     {
       "id": "tests/test_cursor_event.py::fixture",
@@ -15757,6 +15885,48 @@
       "kind": "method",
       "file": "tests/test_graph_symbols.py",
       "line": 133
+    },
+    {
+      "id": "tests/test_graph_symbols.py::ContextRankingTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_graph_symbols.py",
+      "line": 149
+    },
+    {
+      "id": "tests/test_graph_symbols.py::ContextRankingTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_graph_symbols.py",
+      "line": 152
+    },
+    {
+      "id": "tests/test_graph_symbols.py::ContextRankingTest.context",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_graph_symbols.py",
+      "line": 164
+    },
+    {
+      "id": "tests/test_graph_symbols.py::ContextRankingTest.test_symbol_match_beats_unrelated_path",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_graph_symbols.py",
+      "line": 169
+    },
+    {
+      "id": "tests/test_graph_symbols.py::ContextRankingTest.test_tests_trail_their_subject_unless_asked",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_graph_symbols.py",
+      "line": 174
+    },
+    {
+      "id": "tests/test_graph_symbols.py::ContextRankingTest.test_stems_meet_across_tense_and_plural",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_graph_symbols.py",
+      "line": 179
     },
     {
       "id": "tests/test_groq_agent.py::FakeGroq",
@@ -17628,6 +17798,27 @@
       "line": 303
     },
     {
+      "id": "tests/test_memory.py::test_search_ranks_free_text_questions",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_memory.py",
+      "line": 335
+    },
+    {
+      "id": "tests/test_memory.py::test_search_exact_phrase_leads",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_memory.py",
+      "line": 346
+    },
+    {
+      "id": "tests/test_memory.py::test_consolidate_supersedes_several_and_cap_counts_active_only",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_memory.py",
+      "line": 354
+    },
+    {
       "id": "tests/test_memory_view.py::MemoryApiTest",
       "type": "symbol",
       "kind": "class",
@@ -18293,6 +18484,13 @@
       "line": 88
     },
     {
+      "id": "tests/test_recall.py::RecallTest.test_paths_and_single_shared_words_do_not_match",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_recall.py",
+      "line": 93
+    },
+    {
       "id": "tests/test_receipt.py::make_env",
       "type": "symbol",
       "kind": "function",
@@ -18886,6 +19084,27 @@
       "kind": "method",
       "file": "tests/test_retrieval.py",
       "line": 371
+    },
+    {
+      "id": "tests/test_retrieval.py::DiversifyTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_retrieval.py",
+      "line": 379
+    },
+    {
+      "id": "tests/test_retrieval.py::DiversifyTest.test_one_file_cannot_fill_the_list",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_retrieval.py",
+      "line": 380
+    },
+    {
+      "id": "tests/test_retrieval.py::DiversifyTest.test_question_filler_is_not_a_search_term",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_retrieval.py",
+      "line": 386
     },
     {
       "id": "tests/test_risk.py::make_project",
@@ -22043,6 +22262,16 @@
       "type": "calls"
     },
     {
+      "source": "bin/agent-spec-cursor-bench.py::cost_gate",
+      "target": "bin/agent-spec-cursor-bench.py::paired",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::cost_gate",
+      "target": "bin/agent-spec-cursor-bench.py::totals",
+      "type": "calls"
+    },
+    {
       "source": "bin/agent-spec-cursor-bench.py::chat_sums",
       "target": "bin/aspec_platform/agent_exec.py::JobRegistry.get",
       "type": "calls"
@@ -22109,6 +22338,11 @@
     },
     {
       "source": "bin/agent-spec-cursor-bench.py::report",
+      "target": "bin/agent-spec-cursor-bench.py::cost_gate",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::report",
       "target": "bin/agent-spec-cursor-bench.py::delta",
       "type": "calls"
     },
@@ -22155,6 +22389,11 @@
     {
       "source": "bin/agent-spec-cursor-bench.py::main",
       "target": "bin/agent-spec-cursor-bench.py::cli_version",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-cursor-bench.py::main",
+      "target": "bin/agent-spec-cursor-bench.py::cost_gate",
       "type": "calls"
     },
     {
@@ -23471,6 +23710,11 @@
     },
     {
       "source": "bin/agent-spec-memory.py::cmd_add",
+      "target": "bin/agent-spec-memory.py::is_active",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_add",
       "target": "bin/agent-spec-memory.py::lint_facts",
       "type": "calls"
     },
@@ -23501,7 +23745,27 @@
     },
     {
       "source": "bin/agent-spec-memory.py::cmd_list",
+      "target": "bin/agent-spec-memory.py::is_active",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_list",
       "target": "bin/agent-spec-memory.py::load_facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::search_facts",
+      "target": "bin/agent-spec-memory.py::_stem",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::search_facts",
+      "target": "bin/agent-spec-memory.py::_words",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::search_facts",
+      "target": "bin/agent-spec-memory.py::is_active",
       "type": "calls"
     },
     {
@@ -23512,6 +23776,11 @@
     {
       "source": "bin/agent-spec-memory.py::cmd_search",
       "target": "bin/agent-spec-memory.py::load_facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-memory.py::cmd_search",
+      "target": "bin/agent-spec-memory.py::search_facts",
       "type": "calls"
     },
     {
@@ -24220,6 +24489,11 @@
     {
       "source": "bin/agent-spec-recall.py::overrides",
       "target": "bin/agent-spec-recall.py::read_jsonl",
+      "type": "calls"
+    },
+    {
+      "source": "bin/agent-spec-recall.py::candidates",
+      "target": "bin/agent-spec-recall.py::min_overlap",
       "type": "calls"
     },
     {
@@ -27914,6 +28188,11 @@
     },
     {
       "source": "bin/aspec_platform/retrieval.py::search",
+      "target": "bin/aspec_platform/retrieval.py::diversify",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/retrieval.py::search",
       "target": "bin/aspec_platform/retrieval.py::fuse",
       "type": "calls"
     },
@@ -29341,6 +29620,36 @@
       "type": "calls"
     },
     {
+      "source": "bin/graphify-cli.py::_id_words",
+      "target": "bin/graphify-cli.py::_stem",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-cli.py::_rank",
+      "target": "bin/graphify-cli.py::_is_test",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-cli.py::_score_files",
+      "target": "bin/graphify-cli.py::_id_words",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-cli.py::cmd_context",
+      "target": "bin/graphify-cli.py::_id_words",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-cli.py::cmd_context",
+      "target": "bin/graphify-cli.py::_rank",
+      "type": "calls"
+    },
+    {
+      "source": "bin/graphify-cli.py::cmd_context",
+      "target": "bin/graphify-cli.py::_score_files",
+      "type": "calls"
+    },
+    {
       "source": "bin/graphify-cli.py::cmd_symbols",
       "target": "bin/graphify-cli.py::_need_symbols",
       "type": "calls"
@@ -29593,6 +29902,16 @@
     {
       "source": "bin/graphify-mesh.py::cmd_query",
       "target": "bin/graphify-mesh.py::load_mesh",
+      "type": "calls"
+    },
+    {
+      "source": "evals/graph_context_eval.py::main",
+      "target": "evals/graph_context_eval.py::cases",
+      "type": "calls"
+    },
+    {
+      "source": "evals/graph_context_eval.py::main",
+      "target": "evals/graph_context_eval.py::load_cli",
       "type": "calls"
     },
     {
@@ -30686,6 +31005,30 @@
     },
     {
       "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_runs_each_chat_in_a_fresh_copy_and_reports_paired_stats",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_cost_gate_fails_when_the_treated_arm_is_over_budget",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_cost_gate_fails_when_the_treated_arm_is_over_budget",
+      "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_new_chat_starts_a_fresh_session_in_the_same_copy",
+      "target": "tests/test_cursor_bench.py::CursorBenchTest.run_bench",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_cursor_bench.py::ClaudeBenchTest.test_new_chat_starts_a_fresh_session_in_the_same_copy",
       "target": "tests/test_cursor_bench.py::ClaudeBenchTest.run_bench",
       "type": "calls",
       "confidence": "low"
@@ -32122,6 +32465,21 @@
     {
       "source": "tests/test_graph_symbols.py::SymbolsTest.test_trend_line_counts_symbols",
       "target": "tests/test_graph_symbols.py::SymbolsTest.graph",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_symbols.py::ContextRankingTest.test_symbol_match_beats_unrelated_path",
+      "target": "tests/test_graph_symbols.py::ContextRankingTest.context",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_symbols.py::ContextRankingTest.test_tests_trail_their_subject_unless_asked",
+      "target": "tests/test_graph_symbols.py::ContextRankingTest.context",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_graph_symbols.py::ContextRankingTest.test_stems_meet_across_tense_and_plural",
+      "target": "tests/test_graph_symbols.py::ContextRankingTest.context",
       "type": "calls"
     },
     {
@@ -34327,6 +34685,36 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_memory.py::test_search_ranks_free_text_questions",
+      "target": "tests/test_memory.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory.py::test_search_ranks_free_text_questions",
+      "target": "tests/test_memory.py::write_fact",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory.py::test_search_exact_phrase_leads",
+      "target": "tests/test_memory.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory.py::test_search_exact_phrase_leads",
+      "target": "tests/test_memory.py::write_fact",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory.py::test_consolidate_supersedes_several_and_cap_counts_active_only",
+      "target": "tests/test_memory.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_memory.py::test_consolidate_supersedes_several_and_cap_counts_active_only",
+      "target": "tests/test_memory.py::write_fact",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_memory_view.py::MemoryApiTest.post",
       "target": "tests/_api_support.py::ApiCase.request",
       "type": "calls"
@@ -35048,6 +35436,21 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_recall.py::RecallTest.test_paths_and_single_shared_words_do_not_match",
+      "target": "tests/test_recall.py::exp",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_recall.py::RecallTest.test_paths_and_single_shared_words_do_not_match",
+      "target": "tests/test_recall.py::RecallTest.run_recall",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_recall.py::RecallTest.test_paths_and_single_shared_words_do_not_match",
+      "target": "tests/test_recall.py::write_jsonl",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_receipt.py::test_receipt_counts",
       "target": "tests/test_receipt.py::make_env",
       "type": "calls"
@@ -35761,6 +36164,16 @@
     {
       "source": "tests/test_retrieval.py::ApiTest.test_bad_requests",
       "target": "tests/_api_support.py::ApiCase.request",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_retrieval.py::DiversifyTest.test_one_file_cannot_fill_the_list",
+      "target": "bin/aspec_platform/retrieval.py::diversify",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_retrieval.py::DiversifyTest.test_question_filler_is_not_a_search_term",
+      "target": "bin/aspec_platform/retrieval.py::fts_query",
       "type": "calls"
     },
     {
@@ -38118,15 +38531,15 @@
   "external": [
     [
       "os",
-      133
+      134
     ],
     [
       "json",
-      119
+      120
     ],
     [
       "sys",
-      114
+      115
     ],
     [
       "__future__",
@@ -38134,7 +38547,7 @@
     ],
     [
       "subprocess",
-      64
+      65
     ],
     [
       "unittest",
@@ -38150,7 +38563,7 @@
     ],
     [
       "re",
-      46
+      47
     ],
     [
       "shutil",
@@ -38177,6 +38590,10 @@
       24
     ],
     [
+      "argparse",
+      22
+    ],
+    [
       "_run_helpers",
       22
     ],
@@ -38185,12 +38602,8 @@
       22
     ],
     [
-      "argparse",
-      21
-    ],
-    [
       "importlib",
-      19
+      20
     ],
     [
       "http",
@@ -38241,6 +38654,10 @@
       5
     ],
     [
+      "math",
+      5
+    ],
+    [
       "statistics",
       5
     ],
@@ -38278,10 +38695,6 @@
     ],
     [
       "io",
-      3
-    ],
-    [
-      "math",
       3
     ],
     [
@@ -38549,6 +38962,7 @@
       "bin/agent-spec-run.py",
       "bin/aspec_platform/hook_logs.py",
       "bin/aspec_platform/risk_view.py",
+      "evals/graph_context_eval.py",
       "hooks/cursor-pre-tool-use.py",
       "hooks/cursor-session-end.py",
       "hooks/cursor-session-start.py",

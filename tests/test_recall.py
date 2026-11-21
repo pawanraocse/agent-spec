@@ -90,6 +90,15 @@ class RecallTest(unittest.TestCase):
         write_jsonl(os.path.join(lone, ".agent-spec", "experience.jsonl"), [exp("session:l1", "unrelated")])
         self.assertEqual(self.run_recall(lone, "NullPointerException checkout", "--no-log"), [])
 
+    def test_paths_and_single_shared_words_do_not_match(self):
+        lone = os.path.join(self.tmp, "lone2")
+        write_jsonl(os.path.join(lone, ".agent-spec", "experience.jsonl"), [
+            exp("session:p1", "Edit /tmp/claude-1000/scratch/notes.md with the string-replace tool"),
+            exp("session:p2", "hi"),
+            exp("session:p3", "Bench billing double counts resumed sessions")])
+        rows = self.run_recall(lone, "fix bench billing for resumed claude sessions", "--no-log")
+        self.assertEqual([r["exp_id"] for r in rows], ["session:p3"])
+
 
 if __name__ == "__main__":
     unittest.main()

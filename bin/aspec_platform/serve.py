@@ -85,7 +85,7 @@ def _search_filters(params) -> dict:
 
 
 NOT_INDEXED = {"query": "", "mode": "keyword", "hits": [], "related": [], "answer": None,
-               "warnings": ["the project index is empty: run `agent-spec-platform.py ingest --what index`"]}
+               "warnings": ["the project index is empty: run `agent-spec-platform.py ingest index`"]}
 
 
 def _search(project, conn, q, ask=False):
