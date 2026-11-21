@@ -1,26 +1,3 @@
-## 2026-11-21 (afternoon) — Full cost gate passed; harness-test/ evidence folder
-
-### Learned
-- Full gate run 20261121T133335-af3be8 (15 tasks x 3, Claude Code 2.1.328, claude-haiku-5-5) passed: harness $0.2460 against bare $0.2524 (-2.5%, 95% CI -9.0% to +4.2%), 125 against 124 of 126 turns correct. The harness was still dearer in 32 of 45 paired chats (sign test p = 0.0066): short prompts +13% to +29% and edit tasks +8% to +11% from the fixed start-of-chat context, outweighed by graph tasks (savings-importers -54%, views-blast -25%) and the handoff task (-12%). Claim "at least as cheap as bare", never "cheaper on every chat".
-- harness-test/ at the repo root holds the evidence for leadership: README.md (result, supported and unsupported claims, method, reproduce command, file hashes), runs/ (reports 7b6a09, 20d53a, 970b74, ad8ad1, af3be8) and data/ (636 per-turn result rows, the 15 task definitions). It is tracked by git, unlike .agent-spec/eval/, which is ignored.
-
-### Done
-- Watched the gate to its exit line (exit=0, about 29 minutes). Invented file names (bare 3, harness 6) were all on fix-bug turn 1 in both arms, with the same names (token.json, api_token.ts, secret_scan.py), so they are not caused by the harness.
-- Built harness-test/. Checked the copied data for the user's email and home paths: none.
-
-### Corrections
-- Earlier in this chat I said the refused turn-6 command was refused because of `M=` and `$M`. That was never verified; the other session's reading is that the hand-appending path itself was the cost, and the `handoff` command fixed it either way.
-- One reply ended with only the next-step box and no answer; the user had to ask again.
-
-### Open
-- Nothing is committed: memory.py, the bench, CURSOR.md, four skills, two test files, the snapshot sections and now harness-test/. b240f94 is not pushed. Ask before committing and pushing.
-- Run `./install.sh --skills-only` after committing; ~/.claude/skills still serves the old snapshot skill with the `add` example.
-- Next cost lever: the fixed per-chat context (CURSOR.md 2368 B plus the digest) that makes short prompts +13% to +29%.
-- Subagents are untested: 0 Agent calls in every run.
-
-### Load next session
-`harness-test/README.md`, `harness-test/runs/2026-11-21-e-full-gate-15-tasks-af3be8.md`, `CURSOR.md`, `bin/agent-spec-digest.py`
-
 ## 2026-11-21 (evening) — Subagent delegation measured: test runs cost 2.5x bare
 
 ### Learned
@@ -49,6 +26,31 @@
 
 ### Load next session
 `harness-test/README.md`, `hooks/cursor-pre-tool-use.py`, `bin/agent-spec-cursor-bench.py`, `.agent-spec/eval/cursor-bench-20261121T180024-c82667.md`
+
+## 2026-11-21 (night) — Compact test flake fixed; orchestration and prompt-lookup ideas weighed
+
+### Learned
+- The WSL2 wall clock on this machine steps backwards: 4 backward steps in 60 s, the worst 1.027657 s (measured with time.time() in a loop). Any test that compares wall-clock timestamps taken in two processes can flip; backdate the stored timestamp instead of sleeping. This was the cause of the tests/test_run_dir.py::test_list_and_compact flake: cmd_compact compares a run's `started` (not its finish time) against now - --days, and a run started a moment earlier looked like it started in the future.
+- Rejected: a once-per-chat project lookup (graphify-cli.py context --budget 4 plus agent-spec-memory.py search --limit 3, about 1.5 KB) on the first code-work prompt in the raw-code skills. It was added and reverted the same session because the user does not want cost to rise and it was unmeasured; memory search returns its top 3 even when none match, and the extra tool call re-sends the whole context. Revisit only with a relevance cut-off in memory search, a skip when the prompt names a file or carries a traceback, and a `--compare skill` bench run that shows no cost increase.
+
+### Done
+- tests/test_run_dir.py::test_list_and_compact now backdates run.json `started` to 2000-01-01 and asserts the run was compacted; bin/agent-spec-run.py is unchanged. 30/30 in a loop, full suite 617 passed three times.
+- Committed everything to main as 56f69f5 at the user's explicit request (the earlier uncommitted memory promote/handoff, pre-tool-use delegation, risk-gate, bench and skill changes, plus harness-test/). The empty nohup.out was left out. Not pushed.
+- Answered what the harness can claim, from harness-test/README.md, and recomputed the af3be8 totals from the raw rows (bare $0.2524 and 124/126, harness $0.2460 and 125/126).
+
+### Decisions and reasoning
+- Subagents run `model: inherit`, so delegation only pays when the output it keeps out of the main chat is large. A rough break-even (estimate, not measured): with a 30k-token subagent start, raw output must exceed about 21k tokens with 5 later turns, or about 11k with 20. The user's view is that validation in a subagent saves tokens; agreed for large or messy output, not for output the model already trims with `tail`.
+- Recommended next lever, not started: a deterministic test-output filter script (failures only, full log to a file) as the default, with the verify subagent kept for large output and the hook choosing from past output sizes.
+- Session-start does not improve the user's prompt: the digest is project context, beforeSubmitPrompt only logs (hooks/cursor-event.py:169), and raw-code shapes replies only. Nothing removes content already in a long chat; the only shrink is a handoff to a new chat.
+
+### Open
+- Whether Cursor's beforeSubmitPrompt can add context, and whether preToolUse/postToolUse can rewrite a command or its output, is unknown; /agent-spec-hook-probe can answer it.
+- The 15-task gate (af3be8) still needs a re-run under acceptEdits before the README claims new totals.
+- timeout-sweep (search subagent) is still unmeasured.
+- Push of 56f69f5 and `./install.sh` so Cursor gets the committed skill text are not done.
+
+### Load next session
+`harness-test/README.md`, `hooks/cursor-pre-tool-use.py`, `hooks/cursor-event.py`, `.cursor/agents/agent-spec-verify.md`
 
 ## Archived sections
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261031-184403.md`. Nothing is deleted.
@@ -138,3 +140,5 @@ writes one history row per build. `bin/agent-spec-check-all.sh` passes all gates
 - **2026-11-21 (late morning) — Turn-6 save cost traced to shell quoting; `promote` added** — Fact text in a double-quoted shell argument breaks the save. Claude Code in dontAsk mode refuses `agent-spec-m
 > Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-182220.md`. Nothing is deleted.
 - **2026-11-21 (midday) — Turn-6 handoff cost brought to parity with `handoff`** — Appending a section to a large SESSION-SNAPSHOT.md by hand is what made the harness's handoff turn dear, not m
+> Moved to `.agent-spec/memory/snapshots/snapshots-through-20261121-194237.md`. Nothing is deleted.
+- **2026-11-21 (afternoon) — Full cost gate passed; harness-test/ evidence folder** — Full gate run 20261121T133335-af3be8 (15 tasks x 3, Claude Code 2.1.328, claude-haiku-5-5) passed: harness $0.

@@ -2,9 +2,12 @@ import { expect, test } from "@playwright/test";
 
 // DV-061: Live -> request -> inspector -> Coach -> Learning against fixture data.
 test("live request, inspector, coach and learning", async ({ page }) => {
-  await page.goto("/?token=e2e");
+  await page.goto("/?token=e2e"); // the token is accepted on the index only; it sets the cookie
+  await expect(page.getByRole("heading", { name: "Needs you" })).toBeVisible(); // Today, the landing page
+  await page.goto("/requests");
   await expect(page.getByText("why does the login test fail").first()).toBeVisible();
   await expect(page.getByRole("tab", { name: /Orchestration/ })).toBeVisible();
+  await page.getByRole("tab", { name: /Orchestration/ }).click(); // the request opens on Impact
   await expect(page.locator(".react-flow__node").first()).toBeVisible();
 
   // inspector from the waterfall: the subagent span shows its task and summary
@@ -22,6 +25,7 @@ test("live request, inspector, coach and learning", async ({ page }) => {
   await page.getByRole("tab", { name: /Review/ }).click();
   await expect(page.getByText("Shell test run timed out")).toBeVisible();
 
+  await page.getByRole("link", { name: "Impact" }).click();
   await page.getByRole("link", { name: "Coach" }).click();
   await expect(page.getByText("Top issues")).toBeVisible();
   await expect(page.getByText("Shell test run timed out").first()).toBeVisible();

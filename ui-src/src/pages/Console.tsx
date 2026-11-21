@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bot, Check, Copy, Cpu, ExternalLink, FileSearch, FlaskConical, History, Lightbulb, Loader2, Network, Search, Send, Square, Wrench, User } from "lucide-react";
 import { apiGet, apiPost, getToken } from "../api/client";
@@ -63,7 +63,10 @@ export function Console() {
   const status = useQuery({ queryKey: ["agent-status"], queryFn: () => apiGet<AgentStatus>("/api/agent/status"), refetchInterval: 30000 });
   const [model, setModel] = useState("");
   const [mode, setMode] = useState<"ask" | "plan">("ask");
-  const [prompt, setPrompt] = useState("");
+  // Today's "Run in Console" opens /console?prompt=…: prefill, never auto-send.
+  const [params, setParams] = useSearchParams();
+  const [prompt, setPrompt] = useState(() => params.get("prompt") ?? "");
+  useEffect(() => { if (params.has("prompt")) setParams({}, { replace: true }); }, [params, setParams]);
   const [turns, setTurns] = useState<Turn[]>([]);
   const [chatId, setChatId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);

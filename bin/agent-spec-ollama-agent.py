@@ -30,6 +30,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 import time
@@ -54,8 +55,9 @@ READ_DEFAULT_LINES = 80           # a Read without a range returns this many lin
 DIGEST_KEEP = ("stack:",)         # digest header lines a local model can use; the rest is Cursor-session state
 REPEAT_NOTE = "You already made this exact call; its result is above. Make a different call or answer now."
 HARNESS_SYSTEM = ("You are a coding assistant working in %s. For any 'where is / which file' question, call "
-                  "search_project first, then graphify_context or a ranged Read to confirm. Never read a whole "
-                  "large file. Answer every part of the question, naming each file path. No preamble.\n%s")
+                  "search_project first, then graphify_context or a ranged Read to confirm. For 'who imports X', "
+                  "'what does X import' or 'what breaks if X changes', call graphify_file on X and answer only from "
+                  "its lists. Never read a whole large file. Answer every part of the question, naming each file path. No preamble.\n%s")
 BARE_SYSTEM = "You are a coding assistant working in %s. Use the tools to look at the code. Answer the question."
 CHAT_DIR = os.path.join(os.path.expanduser("~"), ".cache", "agent-spec", "ollama-chats")
 VERSION = "ollama-agent/1.0"  # traces.py tags any version naming ollama as origin "local"
@@ -78,12 +80,16 @@ TOOLS = [
         "description": "Files the dependency graph links to a task.",
         "parameters": {"type": "object", "required": ["task"], "properties": {"task": {"type": "string"}}}}},
     {"type": "function", "function": {
+        "name": "graphify_file",
+        "description": "Exact import graph of one file: what it imports and every file that imports it (blast radius).",
+        "parameters": {"type": "object", "required": ["file"], "properties": {"file": {"type": "string"}}}}},
+    {"type": "function", "function": {
         "name": "search_project",
         "description": "Ranked file:line hits from the project index (code, docs, memory). Use first.",
         "parameters": {"type": "object", "required": ["query"], "properties": {"query": {"type": "string"}}}}},
 ]
-HARNESS_TOOLS = ("graphify_context", "search_project")
-LOGGED_AS = {"graphify_context": "Shell", "search_project": "codebase_search"}
+HARNESS_TOOLS = ("graphify_context", "graphify_file", "search_project")
+LOGGED_AS = {"graphify_context": "Shell", "graphify_file": "Shell", "search_project": "codebase_search"}
 
 
 SKILL_PROMPT = re.compile(r"^/(agent-spec-[\w-]+)")
@@ -354,10 +360,18 @@ def run_tool(workspace: str, name: str, args: dict) -> tuple:
         root = os.path.realpath(workspace) + os.sep
         lines = [ln.replace(root, "")[:GREP_LINE_CHARS] for ln in proc.stdout.splitlines()[:GREP_LINES]]
         return "Grep", args, "\n".join(lines) or "no matches", proc.returncode in (0, 1)
-    if name == "graphify_context":
+    if name in ("graphify_context", "graphify_file"):
+        # argv, never a shell string: the task text is model output, and a file the agent read can
+        # steer it, so `$(...)` or backticks in it must stay text.
         cli = os.path.join(workspace, ".agent-spec", "bin", "graphify-cli.py")
-        cmd = "python3 %s context --task %s" % (cli, json.dumps(str(args.get("task") or "")))
-        proc = subprocess.run(cmd, shell=True, cwd=workspace, capture_output=True, text=True, timeout=30)
+        if name == "graphify_context":
+            argv = [sys.executable, cli, "context", "--task", str(args.get("task") or "")]
+        else:
+            target = str(args.get("file") or "")
+            full = _inside(workspace, target)
+            argv = [sys.executable, cli, "query", "--file", os.path.relpath(full, workspace) if full else target]
+        proc = subprocess.run(argv, cwd=workspace, capture_output=True, text=True, timeout=30)
+        cmd = " ".join(shlex.quote(a) for a in ["python3"] + argv[1:])
         return "Shell", {"command": cmd}, (proc.stdout or proc.stderr)[:TOOL_OUT_CAP], proc.returncode == 0
     if name == "search_project":
         return "codebase_search", args, project_search(workspace, str(args.get("query") or ""), args.get("kind")), True
@@ -430,7 +444,7 @@ def final_answer(url: str, model: str, think: bool, prompt: str, results: list, 
     return chat(url, model, msgs, think, on_delta, [])
 
 
-TEXT_TOOLS = ("Read", "Grep", "graphify_context", "search_project")
+TEXT_TOOLS = ("Read", "Grep", "graphify_context", "graphify_file", "search_project")
 TEXT_NAMES = {n.lower(): n for n in TEXT_TOOLS}
 
 
@@ -565,7 +579,9 @@ def main(argv: list) -> int:
             tool_calls += 1
             logged_name = LOGGED_AS.get(name, name)
             logged_input = ({"command": "graphify-cli.py context --task " + json.dumps(args.get("task", ""))}
-                            if name == "graphify_context" else args)
+                            if name == "graphify_context" else
+                            {"command": "graphify-cli.py query --file " + json.dumps(args.get("file", ""))}
+                            if name == "graphify_file" else args)
             verdicts = hooks.fire("preToolUse", {"tool_name": logged_name, "tool_input": logged_input,
                                                  "tool_use_id": tool_use_id})
             denied = next((v for v in verdicts if v.get("permission") == "deny"), None)

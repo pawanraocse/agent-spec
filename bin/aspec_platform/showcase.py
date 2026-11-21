@@ -98,6 +98,7 @@ def overview(project: str, conn) -> dict:
         tin = sum(a.get("input_tokens") or 0 for a in resp)
         tout = sum(a.get("output_tokens") or 0 for a in resp)
         cache = sum(a.get("cache_read_tokens") or 0 for a in resp)
+        totals["cache_reported"] += sum(1 for a in resp if isinstance(a.get("cache_read_tokens"), int))
         for r in imp.get("rules") or []:
             if r.get("pass") is not None:
                 rules_total += 1
@@ -163,7 +164,9 @@ def overview(project: str, conn) -> dict:
             "avoided": totals["avoided"], "plain_cursor": totals["plain"], "context_in": totals["context_in"],
             "reduction_pct": _pct(totals["avoided"], totals["plain"]),
             "billed_in": totals["billed_in"], "billed_out": totals["billed_out"], "cache_read": totals["cache_read"],
-            "cache_share_pct": _pct(totals["cache_read"], totals["billed_in"]),
+            # None, not 0%, when no response reported a cache figure (Ollama and Cursor hooks do not):
+            # a measured 0% would claim the cache never hit.
+            "cache_share_pct": _pct(totals["cache_read"], totals["billed_in"]) if totals["cache_reported"] else None,
             "whole_file_estimate": est, "provenance": "estimated",
         },
         "efficiency": {

@@ -229,7 +229,9 @@ export function Showcase() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        <Stat label="Cache-read share" value={pct(t.cache_share_pct)} p="measured" hint="of billed input, re-sent at 0.1×" />
+        {t.cache_share_pct === null || t.cache_share_pct === undefined
+          ? <Stat label="Requests completed" value={pct(a.completed_pct)} p="measured" hint="ended with a stop event" />
+          : <Stat label="Cache-read share" value={pct(t.cache_share_pct)} p="measured" hint="of billed input, re-sent at 0.1×" />}
         <Stat label="Harness rules pass" value={pct(a.rules_pass_pct)} p="measured" hint={`${n(a.rules_checked)} checks`} />
         <Stat label="Ranged reads" value={pct(e.ranged_read_pct)} p="measured" hint="of file reads" />
         <Stat label="Tool error rate" value={pct(a.tool_error_pct)} p="measured" hint={`${n(e.guard_blocks)} guard blocks`} />

@@ -422,7 +422,7 @@ def ingest_index(conn, project: str) -> dict:
     index_files(conn, project, stats, now)
     index_traces(conn, project, stats, now)
     index_reviews(conn, project, stats, now)
-    embedder = get_embedder()
+    embedder = get_embedder(conn)
     if embedder:
         try:
             stats["embedded"] = embed_pending(conn, embedder)
@@ -491,15 +491,40 @@ def ollama_url() -> str:
     return ollama.base_url()
 
 
-def get_embedder():
-    """`AGENT_SPEC_EMBED=ollama:<model>` -> embedder; unset or `none` -> None (keyword mode)."""
+def get_embedder(conn=None):
+    """`AGENT_SPEC_EMBED=ollama:<model>` -> that embedder; `none` -> None (keyword mode).
+
+    Unset: the model the index already holds the most vectors for, when the local Ollama is
+    reachable and serves it. Vectors someone paid to compute are used without an env var to
+    remember, and a machine with Ollama off stays in keyword mode (the probe is cached).
+    """
     spec = (os.environ.get("AGENT_SPEC_EMBED") or "").strip()
-    if not spec or spec == "none":
+    if spec == "none":
         return None
+    if not spec:
+        return _stored_embedder(conn) if conn is not None else None
     provider, _, model = spec.partition(":")
     if provider == "ollama" and model:
         return OllamaEmbedder(model, ollama_url())
     return None
+
+
+def _stored_embedder(conn):
+    try:
+        row = conn.execute("SELECT model, COUNT(*) AS n FROM chunk_vectors WHERE model LIKE 'ollama:%' "
+                           "GROUP BY model ORDER BY n DESC LIMIT 1").fetchone()
+    except Exception:  # noqa: BLE001 — an index without the vectors table is keyword-only
+        return None
+    if not row:
+        return None
+    model = row[0][len("ollama:"):].split("#", 1)[0]
+    found = ollama.probe()
+    names = [str(m.get("name") or "") if isinstance(m, dict) else str(m) for m in found.get("models") or []]
+    served = {n[: -len(":latest")] if n.endswith(":latest") else n for n in names}
+    if not found.get("reachable") or (model not in served and model.split(":")[0] not in served):
+        return None
+    emb = OllamaEmbedder(model, found.get("url") or ollama_url())
+    return emb if emb.name == row[0] else None
 
 
 def _pack(vec) -> bytes:
@@ -668,7 +693,7 @@ def index_status(conn) -> dict:
         last = conn.execute("SELECT value FROM meta WHERE key = 'index:last'").fetchone()
     except Exception:  # noqa: BLE001
         return {"ready": False, "by_kind": {}, "vectors": {}, "last": None, "embedder": None, "mode": "keyword"}
-    embedder = get_embedder()
+    embedder = get_embedder(conn)
     semantic_on = fusion_weight(conn)["semantic_weight"] > 0  # search() skips a zero-weight list
     mode = "hybrid" if embedder and vectors.get(embedder.name) and semantic_on else "keyword"
     return {"ready": bool(by_kind), "by_kind": by_kind, "vectors": vectors,
@@ -680,7 +705,7 @@ def search(conn, q: str, filters: dict | None = None, limit: int = 10, embedder=
     filters = filters or {}
     limit = max(1, min(int(limit or 10), 50))
     if embedder == "auto":
-        embedder = get_embedder()
+        embedder = get_embedder(conn)
     pool = max(limit * 4, 40)
     lists = [("keyword", keyword_hits(conn, q, filters, pool))]
     warnings = []

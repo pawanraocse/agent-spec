@@ -22,6 +22,24 @@ Live requests need the workspace registered (`./install.sh --register "$(pwd)"`)
 puts `hooks/cursor-event.py` on every traced Cursor hook. They appear without an ingest:
 the server tails `.agent-spec/metrics/events.jsonl` and pushes new rows over SSE.
 
+## Today: the landing page
+
+`/` (`GET /api/today`, `bin/aspec_platform/mission.py`) answers "what needs me, and what did the
+harness do?" on one screen:
+
+| Section | Source | What you do there |
+|---|---|---|
+| **Needs you** | risk, proposals, index health, live tests, hook coverage, doctor, reviews, memory, snapshot, SDLC gates | Ranked *waiting on you* → *needs a fix* → *make it smarter*. Each row carries its fix: an exact action runs on the server (Rebuild graph, Refresh mesh); anything that needs judgement is a **skill** — Copy for Cursor, or Run in Console when the skill is read-only (`/agent-spec-investigate`). |
+| **What the harness did for you** | `skill_savings`, memory, automations | Tokens kept out and re-sends avoided (estimated, per lever), facts injected, guard blocks, subagent sweeps, autopilot runs. |
+| **Pulse** | request traces | 14 days of requests, Cursor vs Console, with tool calls and errors. |
+| **Autopilot** | `metrics/automation.jsonl` | What the hooks ran on their own; repeats fold into one row with a count. |
+| **Latest requests**, **Skills at work** | request traces | Jump to a trace; one-click prompts that open the Console prefilled (`/console?prompt=…`, never auto-sent). |
+
+The page judges nothing itself (DEC-15): unreviewed chats become `/agent-spec-session-review <id>`,
+a failing live test becomes `/agent-spec-investigate …`, unproven hooks become
+`/agent-spec-hook-probe`, unlinked facts become `/agent-spec-learn`. Every source is read in its
+own guard, so an unreadable log shows as a warning line, not a blank page.
+
 ## Local mode: no Cursor plan needed
 
 ```bash
@@ -46,11 +64,11 @@ is `cursor-agent` only when `AGENT_SPEC_CONSOLE=1` is set (or `AGENT_SPEC_AGENT_
 
 | Command | What it measures |
 |---|---|
-| `agent-spec-platform.py rag-embed` | Embeds every pending index chunk (`AGENT_SPEC_EMBED=ollama:nomic-embed-text`). |
+| `agent-spec-platform.py rag-embed` | Embeds every pending index chunk (`AGENT_SPEC_EMBED=ollama:nomic-embed-text`). After that, search, Ask, the Console and ingest use those vectors with no env var whenever Ollama is reachable and serves the model; `AGENT_SPEC_EMBED=none` forces keyword mode. |
 | `agent-spec-platform.py rag-eval [--build] [--label L]` | hit@1, hit@k and MRR for keyword, semantic, hybrid and tuned search on `.agent-spec/eval/rag-golden.jsonl` (questions a local model writes without naming the file). Stores the semantic fusion weight with the best MRR; `search()` uses it, and a weight of 0 skips the embedding call. |
 | `agent-spec-bench.py [--model M]` | The same prompts on the same model with the harness on and off (`--bare`: no digest, no guard, no graph or search tool). Correct = the answer names every expected string in `.agent-spec/eval/agent-bench.jsonl`. |
 
-The **Impact › Summary** page (`/`, `GET /api/showcase`) puts these together: the A/B result per
+The **Impact › Summary** page (`/impact`, `GET /api/showcase`) puts these together: the A/B result per
 prompt with links to both traces, the RAG accuracy table and its history across changes, tokens
 avoided and billed, rule pass rate, ranged-read share, tool error rate, latency, a per-model table
 and the latest prompts. Each figure is labelled measured, estimated or AI-judged.

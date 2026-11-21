@@ -22,7 +22,7 @@ export function Space({ tabs, children, scroll = true }: { tabs: SpaceTab[]; chi
           </NavLink>
         ))}
       </nav>
-      <div className={cn("min-h-0 flex-1", scroll && "scrollbar-thin overflow-auto")}>{children}</div>
+      <div className={cn("min-h-0 flex-1", scroll && "scrollbar-thin overflow-auto focus:outline-none")} tabIndex={scroll ? 0 : undefined} aria-label={scroll ? "Page content" : undefined}>{children}</div>
     </div>
   );
 }

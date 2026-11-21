@@ -495,5 +495,43 @@ class FirstServeTest(EnvCase):
         out = showcase.overview(project, db.connect(path, readonly=True))
         self.assertEqual(out["requests"], 0)
 
+class GraphToolTest(unittest.TestCase):
+    """graphify_file answers 'who imports X' from the import graph, and no graph tool goes through
+    a shell: the task text is model output and must stay text."""
+
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("ollama_agent", AGENT)
+        self.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.mod)
+        self.ws = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.ws, True)
+        bindir = os.path.join(self.ws, ".agent-spec", "bin")
+        os.makedirs(bindir)
+        # A stand-in CLI that echoes its argv, so the test sees exactly what was passed.
+        with open(os.path.join(bindir, "graphify-cli.py"), "w") as fh:
+            fh.write("import json, sys\nprint(json.dumps(sys.argv[1:]))\n")
+
+    def test_file_query_passes_a_workspace_relative_path(self):
+        name, logged, out, ok = self.mod.run_tool(self.ws, "graphify_file", {"file": os.path.join(self.ws, "src", "a.py")})
+        self.assertTrue(ok)
+        self.assertEqual(json.loads(out), ["query", "--file", os.path.join("src", "a.py")])
+        self.assertEqual(name, "Shell")
+        self.assertIn("query --file", logged["command"])
+
+    def test_shell_metacharacters_stay_text(self):
+        marker = os.path.join(self.ws, "pwned")
+        task = "x $(touch %s) `touch %s`" % (marker, marker)
+        _, _, out, ok = self.mod.run_tool(self.ws, "graphify_context", {"task": task})
+        self.assertTrue(ok)
+        self.assertEqual(json.loads(out), ["context", "--task", task])
+        self.assertFalse(os.path.exists(marker), "the task was run by a shell")
+
+    def test_harness_tools_include_the_file_query(self):
+        names = [t["function"]["name"] for t in self.mod.TOOLS]
+        self.assertIn("graphify_file", names)
+        self.assertIn("graphify_file", self.mod.HARNESS_TOOLS)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -28,11 +28,11 @@ dependency. Close a row only here, with evidence.
 |-----------|------|----------|------|
 | M0 Baseline truth | 6 | 2d | Selftest and doctor green; no unreviewed code |
 | M1 Cross-repo that holds up | 8 | 10d | Blast radius crosses real repos, stays correct across branch switches |
-| M2 Dashboard control and transparency | 5 | 4.5d | Every automation visible and controllable from the dashboard |
+| M2 Dashboard control and transparency | 6 | 5d | Every automation visible and controllable from the dashboard |
 | M3 Guardrails and orchestration | 8 | 11d | Risky edits blocked by graph tier, approved from the dashboard, audited |
 | M4 Production hardening | 7 | 6d | CI, install matrix, retention, scale, security |
 | M5 Demo and release | 5 | 3d | Rehearsed 5-minute demo; v3.0.0 tagged |
-| **Total to done** | **39** | **≈36.5d** | |
+| **Total to done** | **40** | **≈37d** | |
 | Later (after the hackathon) | grouped | — | Not required for done |
 
 ---
@@ -79,6 +79,7 @@ another, and a member's graph copy goes stale on a branch switch until `build --
 | `[x]` | PI-009 | **Proposals inbox** | Project › Proposals lists `skill-proposals/` and proposed facts with diff and evidence; approve writes through the existing CLI and logs an audit row; nothing applied without a click. Includes promote and deprecate of experiences (absorbs P3-017) | 1.5d |
 | `[x]` | PI-010 | **Session comparison — complete** | Sessions already has Compare (`/api/compare`, tokens only). Add signals, quality dimensions and context side by side; every figure carries provenance | 0.75d |
 | `[x]` | PI-011 | **Skill effectiveness** | Per skill: requests, median outcome quality, failure rate, rework rate; "not enough data" below 10 reviewed requests | 0.75d |
+| `[x]` | H-022 | **Today landing page** | `/` answers "what needs me, what did the harness do" in one screen: attention queue ranked blocked → broken → improve from risk, proposals, index health, live tests, hook coverage, doctor, reviews, memory, snapshot and gates; judgement fixes are skills (copy for Cursor, or Console when read-only), exact fixes are server actions; value per lever, 14-day pulse, autopilot timeline. `tests/test_mission.py`, e2e smoke and a11y on `/` and `/impact` (2026-11-21) | 0.5d |
 
 ---
 

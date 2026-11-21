@@ -6,7 +6,8 @@ once with the agent-spec harness (digest, graph tool, input-discipline guard) an
 
 Cases come from `.agent-spec/eval/agent-bench.jsonl`, one `{"prompt", "expect": [..]}` per line;
 an answer is correct when it mentions every `expect` string (case-insensitive), so accuracy is
-a measured check, not a judgment. Each run appends one row per prompt and arm to
+a measured check, not a judgment. An optional `"reject": [..]` fails the answer when it names
+any of those strings, which catches a confident wrong file in a list. Each run appends one row per prompt and arm to
 `.agent-spec/eval/agent-bench-results.jsonl` with Ollama's measured token counts, the tool
 calls, wall time and the request id, which links to the full trace in the dashboard. Both arms
 are traced through the project's hooks, so the dashboard shows them like any other request.
@@ -90,7 +91,8 @@ def main(argv=None) -> int:
             text = (r["answer"] or "").lower()
             r.update(run_id=run_id, ts=common.utc_now(), case=i, arm=arm, prompt=case["prompt"], expect=case["expect"],
                      skill=args.skill if arm == "skill" else None,
-                     correct=r["exit"] == 0 and all(e.lower() in text for e in case["expect"]))
+                     correct=r["exit"] == 0 and all(e.lower() in text for e in case["expect"])
+                     and not any(x.lower() in text for x in case.get("reject") or []))
             r["answer"] = (r["answer"] or "")[:600]
             rows.append(r)
             with open(out_path, "a", encoding="utf-8") as fh:

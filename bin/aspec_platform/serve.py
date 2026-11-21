@@ -21,7 +21,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, audit_export, cursor_sessions, health, livetest_view, memory_view, mesh_view, proposals, risk_view, session_compare, skill_effect, traces, views
+from . import agent_exec, automations, common, db, demo_seed, insights, observe, platform_data, retrieval, savings, showcase, skill_savings, audit_export, cursor_sessions, health, livetest_view, memory_view, mesh_view, mission, proposals, risk_view, session_compare, skill_effect, traces, views
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_DIR = os.path.join(HERE, "ui")
@@ -119,6 +119,7 @@ PROJECT_ROUTES = {
     "/api/mesh/query": lambda project, conn, q: _mesh_query(project, q),
     "/api/audit-export": lambda project, conn, q: _audit_export(project, conn, q),
     "/api/showcase": lambda project, conn, q: showcase.overview(project, conn),
+    "/api/today": lambda project, conn, q: mission.overview(project, conn),
     "/api/compare": lambda project, conn, q: api_compare(project, conn, q),
     "/api/skill-savings": lambda project, conn, q: skill_savings.overview(project, conn, *traces.all_traces(project, conn)),
     "/api/search": lambda project, conn, q: _search(project, conn, q),

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Command } from "cmdk";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, Moon, Search, Settings, Sun, Monitor, Boxes, MessageSquareText, Trophy, Inbox } from "lucide-react";
+import { Activity, Moon, Search, Settings, Sun, Monitor, Boxes, MessageSquareText, Trophy, Inbox, Home } from "lucide-react";
 import { apiGet } from "../api/client";
 import { useInboxCounts } from "../api/inbox";
 import type { RequestList } from "../api/traces";
@@ -10,7 +10,8 @@ import { Sheet } from "./ui/sheet";
 import { cn } from "../lib/utils";
 
 const NAV = [
-  { to: "/", label: "Impact", icon: Trophy, hint: "What does the harness change? Tokens kept out, A/B, retrieval accuracy", match: ["/coach", "/learning"] },
+  { to: "/", label: "Today", icon: Home, hint: "What needs you, what the harness did, and the 14-day pulse", match: [] },
+  { to: "/impact", label: "Impact", icon: Trophy, hint: "What does the harness change? Tokens kept out, A/B, retrieval accuracy", match: ["/impact", "/coach", "/learning"] },
   { to: "/requests", label: "Activity", icon: Activity, hint: "Every request, chat and workflow run, live", match: ["/requests", "/chats", "/runs"] },
   { to: "/ask", label: "Ask", icon: MessageSquareText, hint: "Search the project's code, docs, memory and past sessions, or run the agent", match: ["/ask", "/console"] },
   { to: "/risk", label: "Inbox", icon: Inbox, hint: "Blocked risky edits, learning proposals and automations waiting on you", match: ["/risk", "/proposals", "/automations"] },

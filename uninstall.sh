@@ -52,6 +52,17 @@ remove_skills() {
 
 unregister_workspace() {
   local root="$1"
+  if [ ! -d "$root" ]; then
+    # The folder is gone (a deleted demo or temp dir): there is nothing to clean, but its
+    # registry line would otherwise stay forever and check-install would keep warning about it.
+    if [ -f "$PROJECTS_FILE" ]; then
+      tmp="$(mktemp)"
+      grep -Fxv "$root" "$PROJECTS_FILE" > "$tmp" || true
+      mv "$tmp" "$PROJECTS_FILE"
+    fi
+    echo "Unregister $root (folder no longer exists): removed from registry"
+    return 0
+  fi
   root="$(cd "$root" && pwd)"
   echo "Unregister $root"
   rm -f "$root/.cursor/rules/agent-spec.mdc" "$root/.cursor/rules/agent-spec-workflow.mdc"

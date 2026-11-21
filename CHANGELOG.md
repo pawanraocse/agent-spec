@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+- **Dashboard opens on Today.** A new landing page (`/`, `GET /api/today`) answers "what needs
+  me, and what did the harness do?" on one screen. *Needs you* ranks items waiting on you
+  (risky edits, proposals), then broken things (graph behind HEAD, mesh drift, failing live
+  tests, doctor), then what would make the agent smarter (unproven hooks, unreviewed chats,
+  facts not linked to a mistake class, a missing session handoff, an SDLC gate due). Exact
+  fixes run on the server; every fix that needs judgement is a skill (`/agent-spec-investigate`,
+  `/agent-spec-session-review <id>`, `/agent-spec-hook-probe`, `/agent-spec-learn`), copied for
+  Cursor or opened prefilled in the Console when it is read-only. Beside it: tokens kept out per
+  lever, facts injected, guard blocks, subagent sweeps, a 14-day pulse, the autopilot timeline
+  (repeats folded) and the latest requests. Impact › Summary moved to `/impact`; old links
+  redirect.
+- **Impact no longer shows a "0% cache-read share" no source measured.** Neither Ollama nor
+  Cursor's hooks report cache reads, so the figure is now "not reported" and the tile shows
+  the request completion rate instead.
+- **The local agent answers "who imports X" from the import graph.** A session review of a
+  Console chat found it listing four wrong importers of `views.py`: its only graph tool ranked
+  files by relevance. It now has `graphify_file` (`graphify-cli.py query --file`), and the system
+  prompt routes import and blast-radius questions to it; qwen2.5-coder 7B and 14B both answer
+  correctly in one call. The benchmark case is in `agent-bench.jsonl`, with a new optional
+  `reject` list that fails an answer naming a wrong file.
+- **Security: the local agent no longer runs graph queries through a shell.** The task text is
+  model output (and a file the agent read can steer it), and `$(...)` or backticks inside the
+  `json.dumps`-quoted string would have run. Both graph tools now pass an argv list.
+- **Hybrid search without an env var.** Search, Ask, the Console and ingest use the embedding
+  model the index already holds vectors for whenever Ollama is reachable and serves it;
+  `AGENT_SPEC_EMBED=none` still forces keyword mode. Before, 4,729 stored vectors sat unused
+  unless the dashboard was started through `agent-spec-live.py`.
+- **install.sh no longer strands installed skills.** A `--project-only` run (demo-setup.sh, the
+  register automation) deleted the old prefixed root marker without writing `.agent-spec-root`,
+  so every installed skill's preflight `cat` failed. Markers are now carried over to their new
+  name, and the old one is removed only when the same run re-copies the skills.
+- **uninstall.sh --unregister removes a folder that no longer exists** from the registry,
+  instead of failing on `cd` and leaving a line check-install warns about forever.
+- **Console takes `?prompt=`** to prefill (never auto-send) a question, so other pages can hand
+  it a skill invocation.
+- **E2E and accessibility.** The smoke test follows the current navigation (Today → Activity,
+  Impact → Coach) and opens the Orchestration tab explicitly; the scrollable page region is
+  keyboard-focusable, which clears the axe `scrollable-region-focusable` violation on Learning.
+  `/` and `/impact` are both checked in dark and light themes.
+
 - **Graph `context` finds files by what they declare.** It used to match task words against
   file paths only, so "saved tokens are zero on the home tab" returned `tabs.tsx` and missed
   the module that computes the number. It now scores basenames, directories and symbol names,

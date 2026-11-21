@@ -1,35 +1,35 @@
 {
   "version": "5.3",
   "project": "agent-spec",
-  "generated": "2026-11-21T18:21:10.450901",
+  "generated": "2026-11-21T20:21:41.434469",
   "generator": "graphify-build",
   "git": {
     "branch": "main",
-    "head_sha": "b240f94bc7314f632d65787848d0d71a0ae915c6",
+    "head_sha": "56f69f506137dd97c1d7e2b4ff9410d5d5dbf9a2",
     "dirty": true,
     "operation": null,
     "conflicts": 0
   },
   "stack": "Node.js + React",
   "stats": {
-    "files": 220,
-    "internal_edges": 518,
+    "files": 223,
+    "internal_edges": 539,
     "integration_edges": 1,
     "external_packages": 92,
-    "test_files": 84,
+    "test_files": 85,
     "cycles": 0,
     "services": 2,
     "endpoints": 25,
     "topics": 1,
     "layer_violations": 0,
     "languages": {
-      "python": 153,
-      "typescript": 62,
+      "python": 155,
+      "typescript": 63,
       "javascript": 5
     },
     "layers": {
-      "unknown": 117,
-      "test": 84,
+      "unknown": 119,
+      "test": 85,
       "controller": 12,
       "config": 5,
       "util": 2
@@ -37,61 +37,61 @@
     "most_depended": [
       [
         "ui-src/src/api/client.ts",
-        39
+        40
       ],
       [
         "bin/aspec_platform/__init__.py",
-        34
+        35
       ],
       [
         "ui-src/src/lib/utils.ts",
-        32
+        33
       ],
       [
         "bin/aspec_platform/common.py",
-        29
+        30
       ],
       [
         "ui-src/src/components/Num.tsx",
-        28
+        29
       ],
       [
         "ui-src/src/components/ui/card.tsx",
-        23
+        24
       ],
       [
         "bin/aspec_platform/traces.py",
-        21
+        22
       ],
       [
         "ui-src/src/components/ui/badge.tsx",
-        21
+        22
       ],
       [
         "bin/aspec_platform/db.py",
         19
       ],
       [
-        "ui-src/src/api/traces.ts",
+        "tests/_api_support.py",
         17
       ]
     ],
     "top_external": [
       [
         "os",
-        134
+        136
       ],
       [
         "json",
-        120
+        121
       ],
       [
         "sys",
-        115
+        116
       ],
       [
         "__future__",
-        88
+        90
       ],
       [
         "subprocess",
@@ -99,19 +99,19 @@
       ],
       [
         "unittest",
-        59
+        62
+      ],
+      [
+        "datetime",
+        61
       ],
       [
         "tempfile",
         57
       ],
       [
-        "datetime",
-        54
-      ],
-      [
         "re",
-        48
+        49
       ],
       [
         "shutil",
@@ -139,17 +139,7 @@
     "test framework": [
       [
         "pytest",
-        250
-      ],
-      [
-        "Jest",
-        3
-      ]
-    ],
-    "dependency injection": [
-      [
-        "Spring annotations",
-        3
+        191
       ]
     ],
     "error handling": [
@@ -161,17 +151,11 @@
     "typing": [
       [
         "type hints",
-        80
+        107
       ],
       [
         "generics",
-        9
-      ]
-    ],
-    "logging": [
-      [
-        "console",
-        3
+        29
       ]
     ]
   },
@@ -690,6 +674,19 @@
       "path": "bin/aspec_platform/mesh_view.py",
       "lang": "python",
       "layer": "controller",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
+      "id": "bin/aspec_platform/mission.py",
+      "type": "file",
+      "path": "bin/aspec_platform/mission.py",
+      "lang": "python",
+      "layer": "unknown",
       "service": null,
       "endpoints": [],
       "routes": [],
@@ -2068,6 +2065,19 @@
       "consumes": []
     },
     {
+      "id": "tests/test_mission.py",
+      "type": "test",
+      "path": "tests/test_mission.py",
+      "lang": "python",
+      "layer": "test",
+      "service": null,
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "tests/test_o020_framework_proof.py",
       "type": "test",
       "path": "tests/test_o020_framework_proof.py",
@@ -3206,6 +3216,19 @@
       "consumes": []
     },
     {
+      "id": "ui-src/src/pages/Today.tsx",
+      "type": "file",
+      "path": "ui-src/src/pages/Today.tsx",
+      "lang": "typescript",
+      "layer": "unknown",
+      "service": "ui-src",
+      "endpoints": [],
+      "routes": [],
+      "http_calls": [],
+      "produces": [],
+      "consumes": []
+    },
+    {
       "id": "ui-src/src/test/fixtures-v2.ts",
       "type": "test",
       "path": "ui-src/src/test/fixtures-v2.ts",
@@ -3641,6 +3664,61 @@
       "type": "imports"
     },
     {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/automations.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/common.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/health.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/livetest_view.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/memory_view.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/observe.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/platform_data.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/proposals.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/risk_view.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/skill_savings.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py",
+      "target": "bin/aspec_platform/traces.py",
+      "type": "imports"
+    },
+    {
       "source": "bin/aspec_platform/observe.py",
       "target": "bin/aspec_platform/common.py",
       "type": "imports"
@@ -3783,6 +3861,11 @@
     {
       "source": "bin/aspec_platform/serve.py",
       "target": "bin/aspec_platform/mesh_view.py",
+      "type": "imports"
+    },
+    {
+      "source": "bin/aspec_platform/serve.py",
+      "target": "bin/aspec_platform/mission.py",
       "type": "imports"
     },
     {
@@ -4398,6 +4481,21 @@
     {
       "source": "tests/test_mesh_api.py",
       "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_mission.py",
+      "target": "tests/_api_support.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_mission.py",
+      "target": "bin/aspec_platform/__init__.py",
+      "type": "imports"
+    },
+    {
+      "source": "tests/test_mission.py",
+      "target": "bin/aspec_platform/mission.py",
       "type": "imports"
     },
     {
@@ -5781,6 +5879,36 @@
       "type": "imports"
     },
     {
+      "source": "ui-src/src/pages/Today.tsx",
+      "target": "ui-src/src/api/client.ts",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx",
+      "target": "ui-src/src/components/Num.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx",
+      "target": "ui-src/src/components/ui/badge.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx",
+      "target": "ui-src/src/components/ui/button.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx",
+      "target": "ui-src/src/components/ui/card.tsx",
+      "type": "imports"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx",
+      "target": "ui-src/src/lib/utils.ts",
+      "type": "imports"
+    },
+    {
       "source": "ui-src/src/test/fixtures.ts",
       "target": "ui-src/src/test/fixtures-v2.ts",
       "type": "imports"
@@ -5958,28 +6086,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-bench.py",
-      "line": 32
+      "line": 33
     },
     {
       "id": "bin/agent-spec-bench.py::load_cases",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-bench.py",
-      "line": 36
+      "line": 37
     },
     {
       "id": "bin/agent-spec-bench.py::run_arm",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-bench.py",
-      "line": 49
+      "line": 50
     },
     {
       "id": "bin/agent-spec-bench.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-bench.py",
-      "line": 72
+      "line": 73
     },
     {
       "id": "bin/agent-spec-cursor-bench.py::Abort",
@@ -7561,161 +7689,161 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 92
+      "line": 98
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::emit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 105
+      "line": 111
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::parse_args",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 109
+      "line": 115
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::pick_model",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 126
+      "line": 132
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::ProviderError",
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 141
+      "line": 147
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::ProviderError.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 144
+      "line": 150
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::remote",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 149
+      "line": 155
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::api_key",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 159
+      "line": 165
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::openai_messages",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 169
+      "line": 175
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::openai_chat",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 203
+      "line": 209
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::chat",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 265
+      "line": 271
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks",
       "type": "symbol",
       "kind": "class",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 294
+      "line": 300
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 304
+      "line": 310
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::Hooks.fire",
       "type": "symbol",
       "kind": "method",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 312
+      "line": 318
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::_inside",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 331
+      "line": 337
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::run_tool",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 337
+      "line": 343
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::project_search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 367
+      "line": 381
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::slim_digest",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 399
+      "line": 413
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::compact_history",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 415
+      "line": 429
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::final_answer",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 424
+      "line": 438
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::text_tool_calls",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 437
+      "line": 451
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::save_history",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 458
+      "line": 472
     },
     {
       "id": "bin/agent-spec-ollama-agent.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/agent-spec-ollama-agent.py",
-      "line": 467
+      "line": 481
     },
     {
       "id": "bin/agent-spec-platform.py::cmd_init",
@@ -10476,6 +10604,104 @@
       "line": 134
     },
     {
+      "id": "bin/aspec_platform/mission.py::_guard",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 33
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_iso_day",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 41
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_short",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 45
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_item",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 50
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_skill",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 55
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_api",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 60
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_link",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 64
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_attention",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 70
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_pulse",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 195
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_value",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 211
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_autopilot",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 239
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_recent",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 257
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::_skills",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 267
+    },
+    {
+      "id": "bin/aspec_platform/mission.py::overview",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/mission.py",
+      "line": 279
+    },
+    {
       "id": "bin/aspec_platform/observe.py::_slug",
       "type": "symbol",
       "kind": "function",
@@ -11211,137 +11437,144 @@
       "line": 494
     },
     {
+      "id": "bin/aspec_platform/retrieval.py::_stored_embedder",
+      "type": "symbol",
+      "kind": "function",
+      "file": "bin/aspec_platform/retrieval.py",
+      "line": 512
+    },
+    {
       "id": "bin/aspec_platform/retrieval.py::_pack",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 505
+      "line": 530
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_unpack",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 509
+      "line": 534
     },
     {
       "id": "bin/aspec_platform/retrieval.py::embed_pending",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 515
+      "line": 540
     },
     {
       "id": "bin/aspec_platform/retrieval.py::fts_query",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 536
+      "line": 561
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_where",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 550
+      "line": 575
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_row",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 568
+      "line": 593
     },
     {
       "id": "bin/aspec_platform/retrieval.py::keyword_hits",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 574
+      "line": 599
     },
     {
       "id": "bin/aspec_platform/retrieval.py::vector_hits",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 590
+      "line": 615
     },
     {
       "id": "bin/aspec_platform/retrieval.py::fusion_weight",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 610
+      "line": 635
     },
     {
       "id": "bin/aspec_platform/retrieval.py::fuse",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 623
+      "line": 648
     },
     {
       "id": "bin/aspec_platform/retrieval.py::diversify",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 647
+      "line": 672
     },
     {
       "id": "bin/aspec_platform/retrieval.py::index_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 663
+      "line": 688
     },
     {
       "id": "bin/aspec_platform/retrieval.py::search",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 678
+      "line": 703
     },
     {
       "id": "bin/aspec_platform/retrieval.py::related_files",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 707
+      "line": 732
     },
     {
       "id": "bin/aspec_platform/retrieval.py::cite",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 732
+      "line": 757
     },
     {
       "id": "bin/aspec_platform/retrieval.py::_sources_block",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 738
+      "line": 763
     },
     {
       "id": "bin/aspec_platform/retrieval.py::cursor_prompt",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 746
+      "line": 771
     },
     {
       "id": "bin/aspec_platform/retrieval.py::get_llm",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 753
+      "line": 778
     },
     {
       "id": "bin/aspec_platform/retrieval.py::ask",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/retrieval.py",
-      "line": 759
+      "line": 784
     },
     {
       "id": "bin/aspec_platform/risk_view.py::_risk_module",
@@ -11453,210 +11686,210 @@
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 132
+      "line": 133
     },
     {
       "id": "bin/aspec_platform/serve.py::_audit_export",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 139
+      "line": 140
     },
     {
       "id": "bin/aspec_platform/serve.py::_signals",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 154
+      "line": 155
     },
     {
       "id": "bin/aspec_platform/serve.py::_use_v2_ui",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 165
+      "line": 166
     },
     {
       "id": "bin/aspec_platform/serve.py::_csp",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 169
+      "line": 170
     },
     {
       "id": "bin/aspec_platform/serve.py::_safe_dist_file",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 174
+      "line": 175
     },
     {
       "id": "bin/aspec_platform/serve.py::_inject_token_meta",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 190
+      "line": 191
     },
     {
       "id": "bin/aspec_platform/serve.py::ApiError",
       "type": "symbol",
       "kind": "class",
       "file": "bin/aspec_platform/serve.py",
-      "line": 199
+      "line": 200
     },
     {
       "id": "bin/aspec_platform/serve.py::ApiError.__init__",
       "type": "symbol",
       "kind": "method",
       "file": "bin/aspec_platform/serve.py",
-      "line": 200
+      "line": 201
     },
     {
       "id": "bin/aspec_platform/serve.py::_limit",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 206
+      "line": 207
     },
     {
       "id": "bin/aspec_platform/serve.py::_first",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 214
+      "line": 215
     },
     {
       "id": "bin/aspec_platform/serve.py::api_health",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 219
+      "line": 220
     },
     {
       "id": "bin/aspec_platform/serve.py::api_runs",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 224
+      "line": 225
     },
     {
       "id": "bin/aspec_platform/serve.py::api_run_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 241
+      "line": 242
     },
     {
       "id": "bin/aspec_platform/serve.py::api_home",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 250
+      "line": 251
     },
     {
       "id": "bin/aspec_platform/serve.py::api_gaps",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 254
+      "line": 255
     },
     {
       "id": "bin/aspec_platform/serve.py::api_tasks",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 258
+      "line": 259
     },
     {
       "id": "bin/aspec_platform/serve.py::api_savings",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 270
+      "line": 271
     },
     {
       "id": "bin/aspec_platform/serve.py::api_sessions",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 277
+      "line": 278
     },
     {
       "id": "bin/aspec_platform/serve.py::api_session_detail",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 281
+      "line": 282
     },
     {
       "id": "bin/aspec_platform/serve.py::api_skills",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 292
+      "line": 293
     },
     {
       "id": "bin/aspec_platform/serve.py::api_compare",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 296
+      "line": 297
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_workspaces",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 307
+      "line": 308
     },
     {
       "id": "bin/aspec_platform/serve.py::api_cursor_session",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 311
+      "line": 312
     },
     {
       "id": "bin/aspec_platform/serve.py::console_status",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 330
+      "line": 331
     },
     {
       "id": "bin/aspec_platform/serve.py::make_handler",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 341
+      "line": 342
     },
     {
       "id": "bin/aspec_platform/serve.py::make_server",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 761
+      "line": 762
     },
     {
       "id": "bin/aspec_platform/serve.py::start_hook_log_backfill",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 771
+      "line": 772
     },
     {
       "id": "bin/aspec_platform/serve.py::ensure_db",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 829
+      "line": 830
     },
     {
       "id": "bin/aspec_platform/serve.py::main",
       "type": "symbol",
       "kind": "function",
       "file": "bin/aspec_platform/serve.py",
-      "line": 839
+      "line": 840
     },
     {
       "id": "bin/aspec_platform/session_compare.py::summarize",
@@ -15278,6 +15511,20 @@
       "line": 188
     },
     {
+      "id": "tests/test_ensure.py::test_project_only_run_keeps_a_legacy_root_marker_readable",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_ensure.py",
+      "line": 196
+    },
+    {
+      "id": "tests/test_ensure.py::test_unregister_drops_a_folder_that_no_longer_exists",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_ensure.py",
+      "line": 218
+    },
+    {
       "id": "tests/test_fail_open.py::project",
       "type": "symbol",
       "kind": "function",
@@ -17651,6 +17898,41 @@
       "line": 484
     },
     {
+      "id": "tests/test_local_agent.py::GraphToolTest",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_local_agent.py",
+      "line": 498
+    },
+    {
+      "id": "tests/test_local_agent.py::GraphToolTest.setUp",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 502
+    },
+    {
+      "id": "tests/test_local_agent.py::GraphToolTest.test_file_query_passes_a_workspace_relative_path",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 515
+    },
+    {
+      "id": "tests/test_local_agent.py::GraphToolTest.test_shell_metacharacters_stay_text",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 522
+    },
+    {
+      "id": "tests/test_local_agent.py::GraphToolTest.test_harness_tools_include_the_file_query",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_local_agent.py",
+      "line": 530
+    },
+    {
       "id": "tests/test_manage_git_hooks.py::run_manage",
       "type": "symbol",
       "kind": "function",
@@ -18041,6 +18323,90 @@
       "kind": "method",
       "file": "tests/test_mesh_demo.py",
       "line": 23
+    },
+    {
+      "id": "tests/test_mission.py::now_iso",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_mission.py",
+      "line": 19
+    },
+    {
+      "id": "tests/test_mission.py::write_events",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_mission.py",
+      "line": 23
+    },
+    {
+      "id": "tests/test_mission.py::chat",
+      "type": "symbol",
+      "kind": "function",
+      "file": "tests/test_mission.py",
+      "line": 31
+    },
+    {
+      "id": "tests/test_mission.py::TodayApi",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_mission.py",
+      "line": 37
+    },
+    {
+      "id": "tests/test_mission.py::TodayApi.test_shape_and_empty_project",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 38
+    },
+    {
+      "id": "tests/test_mission.py::TodayApi.test_unreviewed_chat_is_a_session_review_skill",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 45
+    },
+    {
+      "id": "tests/test_mission.py::TodayApi.test_reviewed_chat_is_not_offered",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 57
+    },
+    {
+      "id": "tests/test_mission.py::Ranking",
+      "type": "symbol",
+      "kind": "class",
+      "file": "tests/test_mission.py",
+      "line": 68
+    },
+    {
+      "id": "tests/test_mission.py::Ranking.test_blocked_before_broken_before_improve",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 69
+    },
+    {
+      "id": "tests/test_mission.py::Ranking.test_autopilot_folds_repeats",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 74
+    },
+    {
+      "id": "tests/test_mission.py::Ranking.test_failed_source_is_reported_not_raised",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 82
+    },
+    {
+      "id": "tests/test_mission.py::Ranking.test_failing_live_test_offers_read_only_investigation",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_mission.py",
+      "line": 89
     },
     {
       "id": "tests/test_o020_framework_proof.py::O020ProofTest",
@@ -19121,123 +19487,130 @@
       "line": 265
     },
     {
-      "id": "tests/test_retrieval.py::HybridTest.test_ask_with_local_model_is_labelled",
+      "id": "tests/test_retrieval.py::HybridTest.test_stored_vectors_are_used_without_the_env_var",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
       "line": 274
     },
     {
+      "id": "tests/test_retrieval.py::HybridTest.test_ask_with_local_model_is_labelled",
+      "type": "symbol",
+      "kind": "method",
+      "file": "tests/test_retrieval.py",
+      "line": 294
+    },
+    {
       "id": "tests/test_retrieval.py::HybridTest.test_remote_endpoint_refused",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 284
+      "line": 304
     },
     {
       "id": "tests/test_retrieval.py::SignalsTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_retrieval.py",
-      "line": 294
+      "line": 314
     },
     {
       "id": "tests/test_retrieval.py::SignalsTest.build",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 295
+      "line": 315
     },
     {
       "id": "tests/test_retrieval.py::SignalsTest.test_signals_from_hook_rows",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 299
+      "line": 319
     },
     {
       "id": "tests/test_retrieval.py::SignalsTest.test_tool_edit_without_file_event_still_counts",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 315
+      "line": 335
     },
     {
       "id": "tests/test_retrieval.py::SignalsTest.test_env_prefix_in_shell_command_is_kept",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 327
+      "line": 347
     },
     {
       "id": "tests/test_retrieval.py::SignalsTest.test_rework_in_later_request",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 331
+      "line": 351
     },
     {
       "id": "tests/test_retrieval.py::ApiTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_retrieval.py",
-      "line": 341
+      "line": 361
     },
     {
       "id": "tests/test_retrieval.py::ApiTest.setUp",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 342
+      "line": 362
     },
     {
       "id": "tests/test_retrieval.py::ApiTest.tearDown",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 349
+      "line": 369
     },
     {
       "id": "tests/test_retrieval.py::ApiTest.get",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 355
+      "line": 375
     },
     {
       "id": "tests/test_retrieval.py::ApiTest.test_search_ask_index",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 359
+      "line": 379
     },
     {
       "id": "tests/test_retrieval.py::ApiTest.test_bad_requests",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 371
+      "line": 391
     },
     {
       "id": "tests/test_retrieval.py::DiversifyTest",
       "type": "symbol",
       "kind": "class",
       "file": "tests/test_retrieval.py",
-      "line": 379
+      "line": 399
     },
     {
       "id": "tests/test_retrieval.py::DiversifyTest.test_one_file_cannot_fill_the_list",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 380
+      "line": 400
     },
     {
       "id": "tests/test_retrieval.py::DiversifyTest.test_question_filler_is_not_a_search_term",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_retrieval.py",
-      "line": 386
+      "line": 406
     },
     {
       "id": "tests/test_risk.py::make_project",
@@ -19601,21 +19974,21 @@
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_run_dir.py",
-      "line": 143
+      "line": 154
     },
     {
       "id": "tests/test_run_dir.py::RunDirTest.test_usage_errors_exit_2",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_run_dir.py",
-      "line": 153
+      "line": 164
     },
     {
       "id": "tests/test_run_dir.py::RunDirTest.test_error_sanitization_and_cap",
       "type": "symbol",
       "kind": "method",
       "file": "tests/test_run_dir.py",
-      "line": 157
+      "line": 168
     },
     {
       "id": "tests/test_savings.py::add_reads",
@@ -20742,28 +21115,28 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 24
+      "line": 25
     },
     {
       "id": "ui-src/src/App.tsx::Inbox",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 43
+      "line": 44
     },
     {
       "id": "ui-src/src/App.tsx::Moved",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 55
+      "line": 56
     },
     {
       "id": "ui-src/src/App.tsx::App",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/App.tsx",
-      "line": 70
+      "line": 71
     },
     {
       "id": "ui-src/src/api/client.ts::getToken",
@@ -21029,42 +21402,42 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 24
+      "line": 25
     },
     {
       "id": "ui-src/src/components/Shell.tsx::readTheme",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 30
+      "line": 31
     },
     {
       "id": "ui-src/src/components/Shell.tsx::Palette",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 38
+      "line": 39
     },
     {
       "id": "ui-src/src/components/Shell.tsx::go",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 47
+      "line": 48
     },
     {
       "id": "ui-src/src/components/Shell.tsx::Shell",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 92
+      "line": 93
     },
     {
       "id": "ui-src/src/components/Shell.tsx::onKey",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/components/Shell.tsx",
-      "line": 103
+      "line": 104
     },
     {
       "id": "ui-src/src/components/Space.tsx::Space",
@@ -21736,21 +22109,21 @@
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 78
+      "line": 81
     },
     {
       "id": "ui-src/src/pages/Console.tsx::send",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 80
+      "line": 83
     },
     {
       "id": "ui-src/src/pages/Console.tsx::stop",
       "type": "symbol",
       "kind": "function",
       "file": "ui-src/src/pages/Console.tsx",
-      "line": 134
+      "line": 137
     },
     {
       "id": "ui-src/src/pages/Governance.tsx::Governance",
@@ -22052,6 +22425,69 @@
       "kind": "function",
       "file": "ui-src/src/pages/Showcase.tsx",
       "line": 209
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::ItemAction",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 47
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::AttentionRow",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 85
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::Hero",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 104
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::Value",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 143
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::Pulse",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 192
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::Autopilot",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 226
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::RecentList",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 250
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::Skills",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 286
+    },
+    {
+      "id": "ui-src/src/pages/Today.tsx::Today",
+      "type": "symbol",
+      "kind": "function",
+      "file": "ui-src/src/pages/Today.tsx",
+      "line": 314
     },
     {
       "id": "ui-src/src/test/fixtures.ts::span",
@@ -27520,6 +27956,141 @@
       "type": "calls"
     },
     {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::_api",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::_guard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::_item",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::_link",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::_short",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::_skill",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/common.py::agent_spec_dir",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/platform_data.py::api_gates",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/platform_data.py::api_status_bar",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/observe.py::learning",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/mission.py::overview",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_attention",
+      "target": "bin/aspec_platform/observe.py::reviews",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_pulse",
+      "target": "bin/aspec_platform/mission.py::_iso_day",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_value",
+      "target": "bin/aspec_platform/mission.py::_autopilot",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_value",
+      "target": "bin/aspec_platform/mission.py::_guard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_value",
+      "target": "bin/aspec_platform/memory_view.py::facts",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_value",
+      "target": "bin/aspec_platform/mission.py::overview",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_autopilot",
+      "target": "bin/aspec_platform/mission.py::_short",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::_recent",
+      "target": "bin/aspec_platform/mission.py::_short",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/mission.py::_attention",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/mission.py::_guard",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/mission.py::_pulse",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/mission.py::_recent",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/mission.py::_skills",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/mission.py::_value",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/traces.py::all_traces",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/mission.py::overview",
+      "target": "bin/aspec_platform/health.py::graph_health",
+      "type": "calls"
+    },
+    {
       "source": "bin/aspec_platform/observe.py::reviews",
       "target": "bin/aspec_platform/observe.py::_read_json",
       "type": "calls"
@@ -28321,7 +28892,27 @@
     },
     {
       "source": "bin/aspec_platform/retrieval.py::get_embedder",
+      "target": "bin/aspec_platform/retrieval.py::_stored_embedder",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/retrieval.py::get_embedder",
       "target": "bin/aspec_platform/retrieval.py::ollama_url",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/retrieval.py::_stored_embedder",
+      "target": "bin/aspec_platform/retrieval.py::OllamaEmbedder",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/retrieval.py::_stored_embedder",
+      "target": "bin/aspec_platform/retrieval.py::ollama_url",
+      "type": "calls"
+    },
+    {
+      "source": "bin/aspec_platform/retrieval.py::_stored_embedder",
+      "target": "bin/aspec_platform/ollama.py::probe",
       "type": "calls"
     },
     {
@@ -32156,6 +32747,21 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_ensure.py::test_project_only_run_keeps_a_legacy_root_marker_readable",
+      "target": "tests/test_ensure.py::run",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_ensure.py::test_project_only_run_keeps_a_legacy_root_marker_readable",
+      "target": "tests/test_ensure.py::workspace",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_ensure.py::test_unregister_drops_a_folder_that_no_longer_exists",
+      "target": "tests/test_ensure.py::run",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_fail_open.py::FailOpenTest.each_hook",
       "target": "tests/test_fail_open.py::FailOpenTest.run_hook",
       "type": "calls"
@@ -34383,6 +34989,12 @@
     },
     {
       "source": "tests/test_local_agent.py::OllamaAgentTest.setUp",
+      "target": "tests/test_local_agent.py::GraphToolTest.setUp",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_local_agent.py::OllamaAgentTest.setUp",
       "target": "tests/test_local_agent.py::write",
       "type": "calls"
     },
@@ -34500,6 +35112,12 @@
       "confidence": "low"
     },
     {
+      "source": "tests/test_local_agent.py::ConsoleApiTest.setUp",
+      "target": "tests/test_local_agent.py::GraphToolTest.setUp",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
       "source": "tests/test_local_agent.py::ConsoleApiTest._post",
       "target": "tests/test_local_agent.py::FakeOllama.close",
       "type": "calls"
@@ -34569,6 +35187,12 @@
     {
       "source": "tests/test_local_agent.py::RagEvalTest.setUp",
       "target": "tests/test_local_agent.py::ConsoleApiTest.setUp",
+      "type": "calls",
+      "confidence": "low"
+    },
+    {
+      "source": "tests/test_local_agent.py::RagEvalTest.setUp",
+      "target": "tests/test_local_agent.py::GraphToolTest.setUp",
       "type": "calls",
       "confidence": "low"
     },
@@ -34680,6 +35304,11 @@
     {
       "source": "tests/test_local_agent.py::FirstServeTest.test_summary_works_on_a_project_never_ingested",
       "target": "bin/aspec_platform/showcase.py::overview",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_local_agent.py::GraphToolTest.setUp",
+      "target": "tests/test_local_agent.py::write",
       "type": "calls"
     },
     {
@@ -35050,6 +35679,76 @@
     {
       "source": "tests/test_mesh_api.py::MeshApiTest.test_add_query_remove",
       "target": "tests/test_mesh_api.py::MeshApiTest.post",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_shape_and_empty_project",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_unreviewed_chat_is_a_session_review_skill",
+      "target": "tests/test_mission.py::chat",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_unreviewed_chat_is_a_session_review_skill",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_unreviewed_chat_is_a_session_review_skill",
+      "target": "tests/test_mission.py::now_iso",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_unreviewed_chat_is_a_session_review_skill",
+      "target": "tests/test_mission.py::write_events",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_reviewed_chat_is_not_offered",
+      "target": "tests/test_mission.py::chat",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_reviewed_chat_is_not_offered",
+      "target": "tests/_api_support.py::ApiCase.get_json",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_reviewed_chat_is_not_offered",
+      "target": "tests/test_mission.py::now_iso",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::TodayApi.test_reviewed_chat_is_not_offered",
+      "target": "tests/test_mission.py::write_events",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::Ranking.test_blocked_before_broken_before_improve",
+      "target": "bin/aspec_platform/mission.py::_item",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::Ranking.test_blocked_before_broken_before_improve",
+      "target": "bin/aspec_platform/mission.py::_link",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::Ranking.test_autopilot_folds_repeats",
+      "target": "bin/aspec_platform/mission.py::_autopilot",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::Ranking.test_failed_source_is_reported_not_raised",
+      "target": "bin/aspec_platform/mission.py::_attention",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_mission.py::Ranking.test_failing_live_test_offers_read_only_investigation",
+      "target": "bin/aspec_platform/mission.py::_attention",
       "type": "calls"
     },
     {
@@ -36323,6 +37022,26 @@
       "type": "calls"
     },
     {
+      "source": "tests/test_retrieval.py::HybridTest.test_stored_vectors_are_used_without_the_env_var",
+      "target": "tests/test_retrieval.py::Project.conn",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_retrieval.py::HybridTest.test_stored_vectors_are_used_without_the_env_var",
+      "target": "bin/aspec_platform/retrieval.py::get_embedder",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_retrieval.py::HybridTest.test_stored_vectors_are_used_without_the_env_var",
+      "target": "tests/test_retrieval.py::Project.index",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_retrieval.py::HybridTest.test_stored_vectors_are_used_without_the_env_var",
+      "target": "bin/aspec_platform/retrieval.py::search",
+      "type": "calls"
+    },
+    {
       "source": "tests/test_retrieval.py::HybridTest.test_ask_with_local_model_is_labelled",
       "target": "bin/aspec_platform/retrieval.py::ask",
       "type": "calls"
@@ -36732,6 +37451,11 @@
     {
       "source": "tests/test_run_dir.py::RunDirTest.test_event_command_refuses_script_owned_and_unknown_types",
       "target": "tests/_run_helpers.py::Sandbox.start",
+      "type": "calls"
+    },
+    {
+      "source": "tests/test_run_dir.py::RunDirTest.test_list_and_compact",
+      "target": "tests/_run_helpers.py::read_json",
       "type": "calls"
     },
     {
@@ -38796,6 +39520,61 @@
       "type": "calls"
     },
     {
+      "source": "ui-src/src/pages/Today.tsx::ItemAction",
+      "target": "ui-src/src/lib/utils.ts::copyText",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::AttentionRow",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::Hero",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::Hero",
+      "target": "ui-src/src/lib/utils.ts::fmtTokens",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::Value",
+      "target": "ui-src/src/lib/utils.ts::fmtTokens",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::Autopilot",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::Autopilot",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::Autopilot",
+      "target": "ui-src/src/lib/utils.ts::relTime",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::RecentList",
+      "target": "ui-src/src/lib/utils.ts::cn",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::RecentList",
+      "target": "ui-src/src/lib/utils.ts::fmtMs",
+      "type": "calls"
+    },
+    {
+      "source": "ui-src/src/pages/Today.tsx::RecentList",
+      "target": "ui-src/src/lib/utils.ts::relTime",
+      "type": "calls"
+    },
+    {
       "source": "ui-src/src/test/honesty.test.tsx::mount",
       "target": "ui-src/src/pages/Ask.tsx::toggle",
       "type": "calls"
@@ -38819,19 +39598,19 @@
   "external": [
     [
       "os",
-      134
+      136
     ],
     [
       "json",
-      120
+      121
     ],
     [
       "sys",
-      115
+      116
     ],
     [
       "__future__",
-      88
+      90
     ],
     [
       "subprocess",
@@ -38839,19 +39618,19 @@
     ],
     [
       "unittest",
-      59
+      62
+    ],
+    [
+      "datetime",
+      61
     ],
     [
       "tempfile",
       57
     ],
     [
-      "datetime",
-      54
-    ],
-    [
       "re",
-      48
+      49
     ],
     [
       "shutil",
@@ -38859,23 +39638,27 @@
     ],
     [
       "time",
-      38
+      39
     ],
     [
       "react",
-      33
+      34
+    ],
+    [
+      "collections",
+      28
     ],
     [
       "lucide-react",
       26
     ],
     [
-      "collections",
-      25
-    ],
-    [
       "type",
       24
+    ],
+    [
+      "@tanstack",
+      23
     ],
     [
       "argparse",
@@ -38886,11 +39669,11 @@
       22
     ],
     [
-      "@tanstack",
-      22
+      "importlib",
+      21
     ],
     [
-      "importlib",
+      "_api_support",
       20
     ],
     [
@@ -38898,19 +39681,15 @@
       19
     ],
     [
-      "_api_support",
-      19
-    ],
-    [
       "urllib",
       16
     ],
     [
-      "threading",
-      15
+      "react-router-dom",
+      16
     ],
     [
-      "react-router-dom",
+      "threading",
       15
     ],
     [
@@ -39006,15 +39785,15 @@
       3
     ],
     [
+      "recharts",
+      3
+    ],
+    [
       "platform",
       2
     ],
     [
-      "fnmatch",
-      2
-    ],
-    [
-      "html",
+      "shlex",
       2
     ]
   ],
@@ -39044,7 +39823,7 @@
       "bin/aspec_platform/livetest_view.py",
       "bin/aspec_platform/memory_view.py",
       "bin/aspec_platform/mesh_view.py",
-      "bin/aspec_platform/observe.py"
+      "bin/aspec_platform/mission.py"
     ],
     "_api_support.ApiCase": [
       "tests/test_api.py",
@@ -39057,6 +39836,7 @@
       "tests/test_local_agent.py",
       "tests/test_memory_view.py",
       "tests/test_mesh_api.py",
+      "tests/test_mission.py",
       "tests/test_o020_framework_proof.py",
       "tests/test_proposals.py",
       "tests/test_retrieval.py",
@@ -39131,6 +39911,7 @@
       "bin/agent-spec-tokens.py",
       "bin/aspec_platform/automations.py",
       "bin/aspec_platform/ingest.py",
+      "bin/aspec_platform/mission.py",
       "bin/aspec_platform/platform_data.py",
       "bin/aspec_platform/proposals.py",
       "bin/aspec_platform/risk_view.py",
@@ -39139,6 +39920,7 @@
     ],
     "collections.defaultdict": [
       "bin/agent-spec-tokens.py",
+      "bin/aspec_platform/mission.py",
       "bin/aspec_platform/showcase.py",
       "bin/aspec_platform/skill_savings.py",
       "bin/graphify-build.py",
@@ -39169,6 +39951,7 @@
       "bin/aspec_platform/health.py",
       "bin/aspec_platform/ingest.py",
       "bin/aspec_platform/insights.py",
+      "bin/aspec_platform/mission.py",
       "bin/aspec_platform/observe.py",
       "bin/aspec_platform/platform_data.py",
       "bin/aspec_platform/retention.py",
@@ -39177,11 +39960,13 @@
       "bin/graphify-mesh.py",
       "tests/test_doctor.py",
       "tests/test_ingest_gates.py",
+      "tests/test_mission.py",
       "tests/test_retention.py"
     ],
     "datetime.timedelta": [
       "bin/agent-spec-memory.py",
       "bin/aspec_platform/insights.py",
+      "bin/aspec_platform/mission.py",
       "bin/aspec_platform/observe.py",
       "bin/aspec_platform/retention.py",
       "tests/test_retention.py"
@@ -39190,11 +39975,13 @@
       "bin/aspec_platform/common.py",
       "bin/aspec_platform/ingest.py",
       "bin/aspec_platform/insights.py",
+      "bin/aspec_platform/mission.py",
       "bin/aspec_platform/observe.py",
       "bin/aspec_platform/platform_data.py",
       "bin/aspec_platform/retention.py",
       "bin/aspec_platform/traces.py",
       "bin/graphify-mesh.py",
+      "tests/test_mission.py",
       "tests/test_retention.py"
     ],
     "decimal.Decimal": [
@@ -39260,6 +40047,7 @@
       "tests/test_graph_mesh.py",
       "tests/test_graph_signals.py",
       "tests/test_livetest_view.py",
+      "tests/test_local_agent.py",
       "tests/test_receipt.py",
       "tests/test_risk.py",
       "tests/test_risk_api.py",
@@ -39282,6 +40070,8 @@
     ],
     "unittest.mock": [
       "tests/test_livetest_view.py",
+      "tests/test_mission.py",
+      "tests/test_retrieval.py",
       "tests/test_traces.py"
     ],
     "urllib.error": [

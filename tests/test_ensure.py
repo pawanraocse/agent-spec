@@ -193,6 +193,43 @@ def test_full_install_writes_its_marker():
     assert not os.path.exists(os.path.join(dest, ".agent-spec-lean"))
 
 
+def test_project_only_run_keeps_a_legacy_root_marker_readable():
+    """Skills an older release copied read `.<prefix>-agent-spec-root`. A --project-only run
+    (demo-setup.sh, the ensure automation) used to delete it without writing the new name, so
+    every installed skill lost the clone. Now it is carried over, and kept until skills re-copy."""
+    home, proj = workspace()
+    dest = os.path.join(home, ".cursor", "skills")
+    os.makedirs(dest)
+    legacy = os.path.join(dest, ".acme-agent-spec-root")
+    with open(legacy, "w") as fh:
+        fh.write(REPO_DIR + "\n")
+    res = subprocess.run(["bash", os.path.join(REPO_DIR, "install.sh"), "--project-only", "--register", proj],
+                         capture_output=True, text=True, env=dict(os.environ, HOME=home), timeout=240)
+    assert res.returncode == 0, res.stderr[-800:]
+    assert os.path.isfile(legacy), "old skills still read the legacy marker"
+    with open(os.path.join(dest, ".agent-spec-root")) as fh:
+        assert fh.read().strip() == REPO_DIR
+    res = subprocess.run(["bash", os.path.join(REPO_DIR, "install.sh"), "--skills-only"],
+                         capture_output=True, text=True, env=dict(os.environ, HOME=home), timeout=240)
+    assert res.returncode == 0, res.stderr[-800:]
+    assert not os.path.exists(legacy), "a skills install re-copies them, so the legacy name goes"
+
+
+def test_unregister_drops_a_folder_that_no_longer_exists():
+    """A deleted demo or temp folder stays in the registry forever if unregister has to cd into it."""
+    home = os.path.realpath(tempfile.mkdtemp())
+    dest = os.path.join(home, ".cursor", "skills")
+    os.makedirs(dest)
+    gone = os.path.join(home, "deleted-demo")
+    with open(os.path.join(dest, ".agent-spec-projects"), "w") as fh:
+        fh.write("/kept/project\n%s\n" % gone)
+    res = subprocess.run(["bash", os.path.join(REPO_DIR, "uninstall.sh"), "--unregister", gone],
+                         capture_output=True, text=True, env=dict(os.environ, HOME=home), timeout=60)
+    assert res.returncode == 0, res.stderr[-600:]
+    with open(os.path.join(dest, ".agent-spec-projects")) as fh:
+        assert fh.read().split() == ["/kept/project"]
+
+
 if __name__ == "__main__":
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     for fn in tests:

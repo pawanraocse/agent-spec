@@ -7,7 +7,8 @@ import { lazy, Suspense, type ReactNode } from "react";
 import { useInboxCounts } from "./api/inbox";
 import { Live } from "./pages/Live";
 
-// Impact is the landing space; the others (and Recharts with them) load on first visit.
+// Today is the landing page; every space (and Recharts with them) loads on first visit.
+const Today = lazy(() => import("./pages/Today").then((m) => ({ default: m.Today })));
 const Showcase = lazy(() => import("./pages/Showcase").then((m) => ({ default: m.Showcase })));
 const Coach = lazy(() => import("./pages/Coach").then((m) => ({ default: m.Coach })));
 const Learning = lazy(() => import("./pages/Learning").then((m) => ({ default: m.Learning })));
@@ -26,7 +27,7 @@ const L = ({ children }: { children: ReactNode }) => <Suspense fallback={<p clas
 const client = new QueryClient({ defaultOptions: { queries: { staleTime: 5_000, retry: 1, refetchOnWindowFocus: false } } });
 
 const IMPACT: SpaceTab[] = [
-  { to: "/", label: "Summary", end: true },
+  { to: "/impact", label: "Summary", end: true },
   { to: "/coach", label: "Coach" },
   { to: "/learning", label: "Learning" },
 ];
@@ -60,7 +61,7 @@ function Moved({ to }: { to: string }) {
 }
 
 const MOVED: [string, string][] = [
-  ["showcase", "/"], ["project/overview", "/"],
+  ["showcase", "/impact"], ["project/overview", "/impact"], ["today", "/"],
   ["sessions", "/chats"], ["sessions/:id", "/chats/:id"], ["project/sessions", "/chats"], ["project/sessions/:id", "/chats/:id"],
   ["project/runs", "/runs"], ["project/runs/:id", "/runs/:id"],
   ["project/risk", "/risk"], ["project/proposals", "/proposals"], ["project/automations", "/automations"],
@@ -74,7 +75,8 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route element={<Shell />}>
-              <Route index element={<Space tabs={IMPACT}><L><Showcase /></L></Space>} />
+              <Route index element={<L><Today /></L>} />
+              <Route path="impact" element={<Space tabs={IMPACT}><L><Showcase /></L></Space>} />
               <Route path="coach" element={<Space tabs={IMPACT}><L><Coach /></L></Space>} />
               <Route path="learning" element={<Space tabs={IMPACT}><L><Learning /></L></Space>} />
 

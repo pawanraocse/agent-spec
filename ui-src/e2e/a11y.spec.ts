@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 
 // DV-062: no serious or critical WCAG 2 A/AA violations on the v3 spaces, in both themes.
 for (const theme of ["dark", "light"]) {
-  for (const path of ["/", "/coach", "/learning"]) {
+  for (const path of ["/", "/impact", "/coach", "/learning"]) {
     test(`a11y ${theme} ${path}`, async ({ page }) => {
       await page.goto("/?token=e2e");
       await page.evaluate((t) => localStorage.setItem("aspec-theme", t), theme);

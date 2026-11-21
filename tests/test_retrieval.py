@@ -271,6 +271,26 @@ class HybridTest(Project):
         self.assertEqual(r["mode"], "hybrid")
         self.assertTrue(any("semantic" in h["matched_by"] for h in r["hits"]))
 
+    def test_stored_vectors_are_used_without_the_env_var(self):
+        """Unset AGENT_SPEC_EMBED: the model the index holds vectors for, when Ollama serves it."""
+        from unittest import mock
+        self.index()
+        os.environ.pop("AGENT_SPEC_EMBED", None)
+        conn = self.conn()
+        up = {"url": self.fake.url, "reachable": True, "models": [{"name": "fake:latest"}]}
+        with mock.patch.object(retrieval.ollama, "probe", return_value=up):
+            self.assertEqual(retrieval.get_embedder(conn).name, "ollama:fake")
+            self.assertEqual(retrieval.search(conn, "build from events", {}, 5)["mode"], "hybrid")
+        down = {"url": None, "reachable": False, "models": []}
+        with mock.patch.object(retrieval.ollama, "probe", return_value=down):
+            self.assertIsNone(retrieval.get_embedder(conn), "Ollama off: keyword mode, no embed call")
+        other = dict(up, models=["llama3:8b"])
+        with mock.patch.object(retrieval.ollama, "probe", return_value=other):
+            self.assertIsNone(retrieval.get_embedder(conn), "model not served: keyword mode")
+        os.environ["AGENT_SPEC_EMBED"] = "none"
+        with mock.patch.object(retrieval.ollama, "probe", return_value=up):
+            self.assertIsNone(retrieval.get_embedder(conn), "none still forces keyword")
+
     def test_ask_with_local_model_is_labelled(self):
         os.environ["AGENT_SPEC_LLM"] = "ollama:fake"
         self.index()

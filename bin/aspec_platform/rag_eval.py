@@ -140,7 +140,7 @@ def run(conn, project: str, k: int = 5, label: str | None = None) -> dict:
     cases = load_golden(project)
     if not cases:
         return {"ok": False, "error": "no golden set; run: agent-spec-platform.py rag-eval --build"}
-    embedder = retrieval.get_embedder()
+    embedder = retrieval.get_embedder(conn)
     has_vec = bool(embedder) and conn.execute(
         "SELECT 1 FROM chunk_vectors WHERE model = ? LIMIT 1", (embedder.name,)).fetchone() is not None
     pool = max(k * 4, 40)

@@ -447,7 +447,17 @@ for legacy in "${CURSOR_SKILLS}"/.*-agent-spec-projects; do
   rm -f "$legacy"
   echo -e "  ${GREEN}✓${NC} migrated registry $(basename "$legacy") → $(basename "${PROJECTS_FILE}")"
 done
-rm -f "${CURSOR_SKILLS}"/.*-agent-spec-root "${CURSOR_SKILLS}"/.*-agent-spec-lean "${CURSOR_SKILLS}"/.*-agent-spec-full
+# Markers too: carry each over to its new name. The prefixed file is removed only when this run
+# re-copies the skills, because skills an older release copied still `cat` the prefixed root
+# marker in their preflight; deleting it on a --project-only run (demo-setup.sh, the ensure
+# automation) left every installed skill unable to find the clone.
+for kind in root lean full; do
+  for legacy in "${CURSOR_SKILLS}"/.*-agent-spec-"${kind}"; do
+    [ -f "$legacy" ] || continue
+    [ -f "${CURSOR_SKILLS}/.agent-spec-${kind}" ] || cp "$legacy" "${CURSOR_SKILLS}/.agent-spec-${kind}"
+    [ "$DO_SKILLS" = "true" ] && rm -f "$legacy"
+  done
+done
 
 # ---------------------------------------------------------------------------
 # 1. Machine-wide skills → ~/.cursor/skills  (default)

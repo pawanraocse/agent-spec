@@ -129,7 +129,7 @@ export function Ask() {
         <p className="text-[11px] text-muted-foreground">
           {st?.ready ? (
             <>Local index: <Num p="measured">{total}</Num> passages from <Num p="measured">{Object.values(st.by_kind).reduce((a, b) => a + b.sources, 0)}</Num> sources ·
-              {" "}<span className="font-medium">{st.mode === "hybrid" ? `keyword + semantic (${st.embedder})` : "keyword (BM25); set AGENT_SPEC_EMBED=ollama:<model> for semantic"}</span>
+              {" "}<span className="font-medium">{st.mode === "hybrid" ? `keyword + semantic (${st.embedder})` : "keyword (BM25); semantic turns on by itself once the index has vectors and Ollama serves that model (agent-spec-live.py embeds them)"}</span>
               {st.last ? <> · updated <time dateTime={st.last.ts}>{relTime(st.last.ts)}</time></> : null} · nothing leaves this machine</>
           ) : status.isLoading ? "Loading index…" : "The index is empty. It builds in the background while the dashboard runs, or run: agent-spec-platform.py ingest index"}
         </p>
