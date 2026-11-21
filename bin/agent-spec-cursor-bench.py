@@ -634,6 +634,30 @@ def totals(rows: list) -> dict:
     return t
 
 
+def cost_gate(rows: list, max_change: float) -> tuple:
+    """(ok, line): the treated arm may not cost more than the base arm plus `max_change` percent,
+    nor get fewer turns right; a cheaper wrong answer is not a saving. Billed cost when the agent
+    reports it, all input tokens otherwise (the local agent). Paired chats only."""
+    rows, _ = paired(rows)
+    base = totals([r for r in rows if r["arm"] not in TREATED])
+    treated = totals([r for r in rows if r["arm"] in TREATED])
+    if base["costed"] or treated["costed"]:
+        what, a, b, fmt = "cost", base["cost_usd"], treated["cost_usd"], "$%.4f"
+    else:
+        what, a, b, fmt = "all input tokens", base["all_input"], treated["all_input"], "%d"
+    limit = a * (1 + max_change / 100.0)
+    fails = []
+    if b > limit:
+        fails.append(("%s " + fmt + " is over the limit " + fmt + " (base " + fmt + " %+.1f%%)")
+                     % (what, b, limit, a, max_change))
+    if treated["correct"] < base["correct"]:
+        fails.append("correct turns fell from %d to %d" % (base["correct"], treated["correct"]))
+    if fails:
+        return False, "**Cost gate: FAIL** — " + "; ".join(fails) + "."
+    return True, ("**Cost gate: PASS** — %s " + fmt + " vs base " + fmt + " (limit %+.1f%%), correct %d vs %d.") % (
+        what, b, a, max_change, treated["correct"], base["correct"])
+
+
 def delta(a, b) -> str:
     if not a:
         return "—"
@@ -788,6 +812,7 @@ def report(rows: list, meta: dict, skill: str) -> str:
         "Run `%s`, %s. %s `%s`, model `%s`, %d task(s) x %d turn(s), %d repeat(s), %s." % (
             meta["run_id"], meta["ts"], AGENT_LABEL[meta["agent"]], meta["cli_version"], meta["model"] or "default",
             meta["tasks"], meta["turns"], meta["repeat"], meta["os"]), "",
+        cost_gate(rows, meta.get("max_cost_change", 0.0))[1], "",
         "| Metric | %s | %s | Change |" % (a, b),
         "|---|---|---|---|",
     ]
@@ -903,6 +928,9 @@ def main() -> int:
     ap.add_argument("--keep", action="store_true", help="claude: keep each chat's workspace copy and session files")
     ap.add_argument("--force", action="store_true", help="pass --force (allow shell commands without approval)")
     ap.add_argument("--timeout", type=int, default=600, help="seconds per turn")
+    ap.add_argument("--max-cost-change", type=float, default=0.0, metavar="PCT",
+                    help="cost gate: exit 4 when the treated arm costs more than the base arm plus PCT percent "
+                         "(billed cost, or all input tokens without one) or gets fewer turns right (default 0)")
     args = ap.parse_args()
     project = os.path.abspath(args.project)
     versions = args.compare == "versions"
@@ -988,6 +1016,7 @@ def main() -> int:
     model = args.model or (CLAUDE_MODEL if args.agent == "claude" else None)
     meta = {"run_id": run_id, "ts": common.utc_now(), "cli_version": cli_version(cli), "model": model,
             "agent": args.agent, "compare": args.compare, "base_ref": args.base_ref,
+            "max_cost_change": args.max_cost_change,
             "base_sha": package_sha(args.base_ref) if versions else None,
             "features": {f: [t["id"] for t in tasks if t.get("feature") == f]
                          for f in sorted({t["feature"] for t in tasks if t.get("feature")})},
@@ -1028,7 +1057,12 @@ def main() -> int:
     print("results -> %s\nreport  -> %s" % (out_path, md_path))
     if stopped:
         print("the run stopped early: the report covers only the chats above", file=sys.stderr)
-    return 3 if stopped else 0
+        return 3
+    ok, line = cost_gate(rows, args.max_cost_change)
+    if not ok:
+        print(line.replace("**", ""), file=sys.stderr)
+        return 4
+    return 0
 
 
 if __name__ == "__main__":

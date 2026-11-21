@@ -394,6 +394,39 @@ class ClaudeBenchTest(unittest.TestCase):
         self.assertEqual(os.listdir(self.tmpdir), [])  # every copy deleted
         self.assertEqual(os.listdir(os.path.join(self.home, ".claude", "projects")), [])
 
+    def test_cost_gate_fails_when_the_treated_arm_is_over_budget(self):
+        ok = self.run_bench("--only", "q")
+        self.assertEqual(ok.returncode, 0, ok.stderr)
+        self.assertIn("**Cost gate: PASS** — cost $0.0100 vs base $0.0200 (limit +0.0%), correct 1 vs 1.", ok.stdout)
+        # The skill arm is 50% cheaper here; a limit of -60% demands more than that.
+        tight = self.run_bench("--only", "q", "--max-cost-change", "-60")
+        self.assertEqual(tight.returncode, 4, tight.stderr)
+        self.assertIn("**Cost gate: FAIL** — cost $0.0100 is over the limit $0.0080", tight.stdout)
+        self.assertIn("Cost gate: FAIL", tight.stderr)
+
+    def test_new_chat_starts_a_fresh_session_in_the_same_copy(self):
+        with open(self.tasks, "w") as fh:
+            fh.write(json.dumps({"id": "c", "turns": [
+                {"prompt": "Change size to 200", "check": "grep -q size=200 conf.txt"},
+                {"prompt": "Which file?", "expect": ["conf.txt"]},
+                {"prompt": "Is size 200?", "new_chat": True, "check": "grep -q size=200 conf.txt"},
+                {"prompt": "Which file again?", "expect": ["conf.txt"]}]}) + "\n")
+        proc = self.run_bench()
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        with open(self.log) as fh:
+            calls = [json.loads(x) for x in fh][1:]  # drop the preflight turn
+        for arm_calls in (calls[:4], calls[4:]):
+            resumed = ["--resume" in c["argv"] for c in arm_calls]
+            self.assertEqual(resumed, [False, True, False, True])
+            self.assertEqual(len({c["cwd"] for c in arm_calls}), 1)  # the edit from chat 1 is still there
+        with open(os.path.join(self.project, ".agent-spec", "eval", "cursor-bench-results.jsonl")) as fh:
+            rows = [json.loads(x) for x in fh]
+        self.assertTrue(all(r["correct"] for r in rows))
+        plain = sorted((r for r in rows if r["arm"] == "plain"), key=lambda r: r["turn"])
+        self.assertEqual([r["cost_usd"] for r in plain], [0.02, 0.02, 0.02, 0.02])  # never a running total
+        self.assertEqual([r["cost_cum_usd"] for r in plain], [0.02, 0.04, 0.02, 0.04])
+        self.assertNotEqual(plain[1]["session_id"], plain[2]["session_id"])
+
     def test_stops_when_the_skill_never_loads(self):
         proc = self.run_bench("--only", "q", FAKE_NO_SKILL="1")
         self.assertEqual(proc.returncode, 3, proc.stdout + proc.stderr)
