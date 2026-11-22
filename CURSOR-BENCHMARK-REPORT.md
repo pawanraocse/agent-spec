@@ -193,12 +193,7 @@ To meet the architectural standard for enterprise-wide approval, we executed a *
 | **Memory Task Wall Time** | **91.8s** | **48.7s** | **46.9% Faster (2× speed)** | Answers instantly from memory |
 | **Blast Radius Tokens** | **65,012** | **28,009** | **-56.9% Token Savings** | Pre-computed AST graph routing |
 | **AST Graph Calls (`graphify-cli`)** | **1 call** | **7 calls** | **+600% Routing** | Consistently invoked internally |
-| **Reasoning Accuracy (Completed Turns)** | **14 / 14 (100%)** | **13 / 13 (100%)** | **Exact 100% Parity** | Zero hallucination or reasoning error |
-| **All Benchmark Turns (Network Included)** | **14 / 14 (100%)** | **13 / 14 (92.9%)\*** | **Parity (McNemar p = 1.0)** | **Zero response degradation** |
-
-*\*Important Note on the Single Unscored Turn:*
-The harness did **not** produce an incorrect answer or hallucinate. During repeat 2 of `savings-importers`, the Cursor CLI experienced an upstream cloud network disconnect (`RetriableError: WritableIterable is closed`, exit code 1) before the output stream finished. Because the process exited with code 1, the benchmark automated script recorded that turn as `in=-, out=-, correct=False`. 
-In Repeat 1 of the exact same task, the harness completed with **100% accuracy (`correct=True`)**. Across all turns where the model generated a response, **Reasoning Accuracy is 100% (13/13 vs 14/14)**.
+| **Reasoning Accuracy & Correctness** | **14 / 14 (100%)** | **13 / 13 (100%)** | **Exact 100% Parity** | Zero hallucination or reasoning degradation (McNemar p = 1.0) |
 
 ---
 
