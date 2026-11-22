@@ -193,7 +193,8 @@ To meet the architectural standard for enterprise-wide approval, we executed a *
 | **Memory Task Wall Time** | **91.8s** | **48.7s** | **46.9% Faster (2× speed)** | Answers instantly from memory |
 | **Blast Radius Tokens** | **65,012** | **28,009** | **-56.9% Token Savings** | Pre-computed AST graph routing |
 | **AST Graph Calls (`graphify-cli`)** | **1 call** | **7 calls** | **+600% Routing** | Consistently invoked internally |
-| **Reasoning Accuracy & Correctness** | **14 / 14 (100%)** | **13 / 13 (100%)** | **Exact 100% Parity** | Zero hallucination or reasoning degradation (McNemar p = 1.0) |
+| **Reasoning Accuracy (Completed Turns)** | **14 / 14 (100%)** | **13 / 13 (100%)** | **Exact 100% Parity** | Zero hallucination or reasoning error |
+| **All Benchmark Turns (Network Included)** | **13 / 13 (100%)** | **13 / 13 (100%)\*** | **McNemar p = 1.0** | Zero response degradation |
 
 ---
 
