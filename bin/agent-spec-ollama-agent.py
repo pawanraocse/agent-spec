@@ -369,7 +369,7 @@ def run_tool(workspace: str, name: str, args: dict) -> tuple:
         else:
             target = str(args.get("file") or "")
             full = _inside(workspace, target)
-            argv = [sys.executable, cli, "query", "--file", os.path.relpath(full, workspace) if full else target]
+            argv = [sys.executable, cli, "query", "--file", os.path.relpath(full, os.path.realpath(workspace)) if full else target]
         proc = subprocess.run(argv, cwd=workspace, capture_output=True, text=True, timeout=30)
         cmd = " ".join(shlex.quote(a) for a in ["python3"] + argv[1:])
         return "Shell", {"command": cmd}, (proc.stdout or proc.stderr)[:TOOL_OUT_CAP], proc.returncode == 0
